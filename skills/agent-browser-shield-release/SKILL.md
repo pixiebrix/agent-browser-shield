@@ -5,29 +5,29 @@ description: Cut a release of the agent-browser-shield Chromium extension. CalVe
 
 # Releasing agent-browser-shield
 
-Releases are produced by `.github/workflows/release-extension.yml`. The
-workflow computes the version, builds the extension, creates the GitHub
-Release with the ZIP attached, and uploads the ZIP to S3 (both a versioned
-path and the `latest/` pointer that the install skill points consumers at).
+Releases are produced by `.github/workflows/release-extension.yml`. The workflow
+computes the version, builds the extension, creates the GitHub Release with the
+ZIP attached, and uploads the ZIP to S3 (both a versioned path and the `latest/`
+pointer that the install skill points consumers at).
 
 Nothing is tagged or version-bumped in the source tree. The tag, the manifest
-`version` field in the shipped ZIP, and the GitHub Release are all created by
-CI at the moment of release.
+`version` field in the shipped ZIP, and the GitHub Release are all created by CI
+at the moment of release.
 
 ## Version format
 
 `YYYY.M.D.<github.run_number>` — e.g. `2026.5.30.42`. Tag is `v2026.5.30.42`.
 
-- Chrome compares `manifest.version` numerically segment-by-segment, so a
-  larger `run_number` is always "newer" — multiple releases on the same day
-  still trigger auto-update correctly.
+- Chrome compares `manifest.version` numerically segment-by-segment, so a larger
+  `run_number` is always "newer" — multiple releases on the same day still
+  trigger auto-update correctly.
 - `github.run_number` is monotonic per-repo across all workflows and never
   resets, so the version is guaranteed to increase even across calendar-edge
   cases.
 - The `version` in `extension/src/manifest.json` (currently `0.1.0`) is a dev
-  placeholder used when devs sideload `extension/dist/` unpacked. CI
-  overwrites it during the release build — **do not** bump it manually as
-  part of cutting a release.
+  placeholder used when devs sideload `extension/dist/` unpacked. CI overwrites
+  it during the release build — **do not** bump it manually as part of cutting a
+  release.
 
 ## Cutting a release
 
@@ -65,8 +65,8 @@ gh workflow run release-extension.yml --ref main
 4. Uploads to:
    - `s3://agent-browser-shield/${tag}/extension.zip` (immutable, cached 1y)
    - `s3://agent-browser-shield/latest/extension.zip` (5-minute cache)
-5. Creates the GitHub Release at `$GITHUB_SHA` with auto-generated notes and
-   the ZIP attached.
+5. Creates the GitHub Release at `$GITHUB_SHA` with auto-generated notes and the
+   ZIP attached.
 
 ## Rolling back / re-releasing
 
@@ -81,18 +81,18 @@ The new release will have a higher `run_number` than anything before it, so
 Chrome will auto-update to it. The previous "bad" S3 versioned URL is left in
 place (immutable); only `latest/` moves.
 
-The script `scripts/cut-release.sh` refuses to run off `main`. To release from
-a SHA or branch, invoke `gh workflow run` directly — be sure you know what
-you're shipping.
+The script `scripts/cut-release.sh` refuses to run off `main`. To release from a
+SHA or branch, invoke `gh workflow run` directly — be sure you know what you're
+shipping.
 
 ## When NOT to use this skill
 
-- Editing rule code, selectors, or `extension/data/sites/*.yaml` → just edit
-  and merge. CI ships them on the next release.
+- Editing rule code, selectors, or `extension/data/sites/*.yaml` → just edit and
+  merge. CI ships them on the next release.
 - Local-only testing → `cd extension && bun run build`, then load
   `extension/dist/` unpacked in `chrome://extensions`. No release needed.
 - Bumping the source `manifest.json` version → unnecessary, CI overrides it.
 - Changes to the release workflow itself → edit
-  `.github/workflows/release-extension.yml`. Note that dispatching it (even on
-  a branch) **does create a real release** — there is no dry-run mode. Test
+  `.github/workflows/release-extension.yml`. Note that dispatching it (even on a
+  branch) **does create a real release** — there is no dry-run mode. Test
   changes by reading the YAML carefully, not by running it.
