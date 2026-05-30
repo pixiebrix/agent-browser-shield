@@ -42,8 +42,8 @@ jobs:
       - name: Upload extension zip
         uses: actions/upload-artifact@v7
         with:
-          name: extension-zip
           path: output/extension.zip
+          archive: false
           if-no-files-found: error
 
   demo-site:
