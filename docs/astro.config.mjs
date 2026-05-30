@@ -21,6 +21,7 @@ export default defineConfig({
         { label: "Install", slug: "install" },
         { label: "Use with Browserbase (Python)", slug: "browserbase-python" },
         { label: "Use with OpenClaw", slug: "openclaw" },
+        { label: "Use with Hermes Agent", slug: "hermes-agent" },
       ],
     }),
   ],
