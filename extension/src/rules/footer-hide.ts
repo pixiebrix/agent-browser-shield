@@ -48,6 +48,9 @@ const { rule, selectorsFor } = createSelectorHideRule({
   ],
   siteRules: FOOTER_HIDE_SITE_RULES,
   candidateFilter: isPageFooter,
+  // Per-frame footers don't exist in practice — the rule only targets the
+  // page-level footer, which lives on the top frame.
+  topFrameOnly: true,
   // Costco (Next.js) wraps the footer in a Suspense boundary that bails to
   // CSR — at document_idle the SSR <footer> exists, but React then tears down
   // the boundary subtree and re-mounts the footer client-side, wiping any

@@ -48,6 +48,9 @@ interface SelectorHideRuleOptions {
   // widgets, newsletter modals) that have no natural in-flow position —
   // a placeholder there would just be dead space.
   removeEntirely?: boolean;
+  // Propagated to the Rule. See `Rule.topFrameOnly` for semantics. Default
+  // is false: the rule runs in every frame the content script reaches.
+  topFrameOnly?: boolean;
 }
 
 export interface SelectorHideRule {
@@ -71,6 +74,7 @@ export function createSelectorHideRule(
     candidateFilter,
     watchSubtrees = false,
     removeEntirely = false,
+    topFrameOnly = false,
   } = options;
 
   if (!removeEntirely && hideLabel === undefined) {
@@ -154,10 +158,11 @@ export function createSelectorHideRule(
         label,
         description,
         defaultEnabled,
+        topFrameOnly,
         apply,
         teardown: () => watcher.stop(),
       }
-    : { id, label, description, defaultEnabled, apply };
+    : { id, label, description, defaultEnabled, topFrameOnly, apply };
 
   return { rule, selectorsFor };
 }

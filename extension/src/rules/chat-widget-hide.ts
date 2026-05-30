@@ -57,6 +57,12 @@ const { rule, selectorsFor } = createSelectorHideRule({
   // (HubSpot's conversations-embed.js, Intercom's loader, etc.) — re-scan on
   // DOM mutations.
   watchSubtrees: true,
+  // The wrapper element (`#intercom-frame`, `#hubspot-messages-iframe-container`,
+  // Zendesk's `iframe#launcher`, etc.) always lives on the top frame — the
+  // widget's own iframe content is reached by hiding the wrapper, not by
+  // descending into it. Running this rule inside vendor iframes would also
+  // try to delete the vendor's own UI.
+  topFrameOnly: true,
 });
 
 export { selectorsFor };

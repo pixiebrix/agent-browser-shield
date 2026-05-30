@@ -13,6 +13,12 @@ export interface Rule {
   // Optional note rendered alongside the disabled toggle when `available` is
   // false, explaining why the rule is unavailable.
   unavailableReason?: string;
+  // When true, the rule is only applied in the top-level browsing context.
+  // Set this for rules whose targets are inherently page-wide (site footer,
+  // cookie/newsletter overlays, per-host URL recipes) so they don't fire
+  // pointlessly — or, worse, inject duplicate UI — in every same-origin or
+  // covered cross-origin iframe.
+  topFrameOnly?: boolean;
   apply(root: ParentNode): void;
   // Release any long-lived resources (mutation observers, throttled callbacks,
   // pending timeouts) that `apply` set up. Called by the engine when the rule

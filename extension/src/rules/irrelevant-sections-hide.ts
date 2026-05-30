@@ -311,6 +311,9 @@ export const irrelevantSectionsHideRule = {
   defaultEnabled: false,
   available: false,
   unavailableReason: "LLM-based detection is turned off in this build.",
+  // Page-level recommendation rails live on the top frame; classifying the
+  // contents of every iframe would multiply LLM cost without benefit.
+  topFrameOnly: true,
   apply,
   teardown,
 } satisfies Rule;
