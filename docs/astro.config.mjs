@@ -17,7 +17,10 @@ export default defineConfig({
           href: "https://github.com/pixiebrix/agent-browser-shield",
         },
       ],
-      sidebar: [{ label: "Install", slug: "install" }],
+      sidebar: [
+        { label: "Install", slug: "install" },
+        { label: "Use with OpenClaw", slug: "openclaw" },
+      ],
     }),
   ],
 });
