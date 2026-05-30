@@ -16,8 +16,7 @@ import { createSelectorHideRule } from "../lib/selector-hide-rule";
 const { rule, selectorsFor } = createSelectorHideRule({
   id: "chat-widget-hide",
   label: "Remove Chat Widgets",
-  description:
-    "Remove live-chat widgets (Intercom, Drift, Zendesk, etc.).",
+  description: "Remove live-chat widgets (Intercom, Drift, Zendesk, etc.).",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [

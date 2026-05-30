@@ -26,8 +26,7 @@ function isOverlay(element: HTMLElement): boolean {
 const { rule, selectorsFor } = createSelectorHideRule({
   id: "cookie-banner-hide",
   label: "Remove Cookie Banners",
-  description:
-    "Remove GDPR/CCPA cookie consent banners.",
+  description: "Remove GDPR/CCPA cookie consent banners.",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [
