@@ -4,15 +4,14 @@ description: Run agent-browser-shield with browser-use by pointing its Agent at 
 ---
 
 [browser-use](https://github.com/browser-use/browser-use) drives Chromium over
-the Chrome DevTools Protocol. Its built-in `Browser()` launches a fresh
-Chromium that does not load unpacked extensions, so `agent-browser-shield` has
-to ride along on a browser the Agent merely *connects to* via `cdp_url`. Two
-paths work:
+the Chrome DevTools Protocol. Its built-in `Browser()` launches a fresh Chromium
+that does not load unpacked extensions, so `agent-browser-shield` has to ride
+along on a browser the Agent merely *connects to* via `cdp_url`. Two paths work:
 
-- **Local Chromium via `cdp_url`** — install the extension in a dedicated
-  Chrome profile, launch it with `--remote-debugging-port`, and point the
-  Agent's `BrowserSession` at `http://localhost:9222`. Best for development
-  and for tasks that need your logged-in sessions.
+- **Local Chromium via `cdp_url`** — install the extension in a dedicated Chrome
+  profile, launch it with `--remote-debugging-port`, and point the Agent's
+  `BrowserSession` at `http://localhost:9222`. Best for development and for
+  tasks that need your logged-in sessions.
 - **Browserbase remote CDP** — upload a ZIP of the extension to Browserbase,
   create a session with the extension attached, and pass the session's
   `connect_url` as `cdp_url`. Best for headless / cloud runs.
@@ -24,16 +23,16 @@ paths work:
 Get the extension directory — either build from source (follow
 [Install](/agent-browser-shield/install/) through `bun run build` for
 `extension/dist/`) or download and unzip the
-[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). You
-will load that directory into the Chromium profile browser-use attaches to in
-step 3 — not your default Chrome profile.
+[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). You will
+load that directory into the Chromium profile browser-use attaches to in step 3
+— not your default Chrome profile.
 
 ### 2. Launch Chrome with remote debugging on a dedicated user-data-dir
 
-browser-use connects over CDP at `localhost:9222`. The `--user-data-dir` flag
-is **not optional**: launching a Chromium-family browser while a regular
-instance is already running will reuse that running process, which was not
-started with `--remote-debugging-port`, so port 9222 never opens.
+browser-use connects over CDP at `localhost:9222`. The `--user-data-dir` flag is
+**not optional**: launching a Chromium-family browser while a regular instance
+is already running will reuse that running process, which was not started with
+`--remote-debugging-port`, so port 9222 never opens.
 
 macOS:
 
@@ -90,9 +89,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-The Chrome you launched in step 2 stays running — browser-use attaches to it
-and drives whatever tab is open. Skip to [Verify](#verify) to confirm the
-shield woke up on the first page load.
+The Chrome you launched in step 2 stays running — browser-use attaches to it and
+drives whatever tab is open. Skip to [Verify](#verify) to confirm the shield
+woke up on the first page load.
 
 ### Caveats for the local-attach path
 
@@ -100,10 +99,10 @@ shield woke up on the first page load.
   whoever's logged into the dedicated profile. Treat it like any other
   session-bearing browser.
 - **Extension reloads need a tab refresh.** After `bun run watch` rebuilds,
-  click the reload icon at `chrome://extensions` and refresh the agent's
-  tabs — browser-use won't do it for you.
-- **`is_local=True` matters.** It tells browser-use the CDP endpoint is on
-  the same machine, which enables file-download handling and other local-only
+  click the reload icon at `chrome://extensions` and refresh the agent's tabs —
+  browser-use won't do it for you.
+- **`is_local=True` matters.** It tells browser-use the CDP endpoint is on the
+  same machine, which enables file-download handling and other local-only
   affordances.
 
 ## Browserbase remote CDP
@@ -112,8 +111,8 @@ When you can't keep a local browser open — headless runs, CI, disposable
 sessions — upload the extension to Browserbase and use the session's
 `connect_url` as `cdp_url`. Follow
 [Use with Browserbase (Python) → Upload the extension](/agent-browser-shield/browserbase-python/#upload-the-extension)
-to get an `extension_id`, then create the session yourself and hand its URL
-to browser-use:
+to get an `extension_id`, then create the session yourself and hand its URL to
+browser-use:
 
 ```python
 import asyncio
@@ -149,20 +148,20 @@ if __name__ == "__main__":
 ```
 
 The session is bound to the **extension at creation time**. A session created
-without `extension_id` runs unguarded — there is no way to attach the
-extension after the session starts. End it and start a new one.
+without `extension_id` runs unguarded — there is no way to attach the extension
+after the session starts. End it and start a new one.
 
 ## Brief the agent on what the shield changes
 
 The extension rewrites the DOM — masked text becomes `[PII masked]`, dark
-patterns get suppressed, and `[data-abs-rule="<rule-id>"]` attributes appear
-on touched elements. Agents that don't know about these markers can get
-confused by the redactions or try to bypass them.
+patterns get suppressed, and `[data-abs-rule="<rule-id>"]` attributes appear on
+touched elements. Agents that don't know about these markers can get confused by
+the redactions or try to bypass them.
 
-The `skills/agent-browser-shield/SKILL.md` file in the repo is a
-system-prompt fragment briefing the agent on what to expect. Pass its body
-(frontmatter stripped) to the Agent via `extend_system_message` so the brief
-augments browser-use's default system prompt instead of replacing it:
+The `skills/agent-browser-shield/SKILL.md` file in the repo is a system-prompt
+fragment briefing the agent on what to expect. Pass its body (frontmatter
+stripped) to the Agent via `extend_system_message` so the brief augments
+browser-use's default system prompt instead of replacing it:
 
 ```python
 from pathlib import Path
@@ -188,8 +187,7 @@ On the first non-trivial page load, look for:
 - A circular shield-icon badge in the bottom-right corner (a11y name *"Open
   Agent Browser Shield options"*).
 - `[data-abs-rule="<rule-id>"]` attributes in the DOM.
-- Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive
-  data.
+- Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive data.
 
 If none of those markers appear, the extension is not attached:
 
@@ -205,5 +203,5 @@ If none of those markers appear, the extension is not attached:
 
 `Browser()` launches a fresh Chromium under browser-use's control and does not
 expose a hook for loading an unpacked extension. Both paths above work around
-that by handing browser-use a browser whose extension was loaded at launch
-and letting it attach over CDP instead of provision.
+that by handing browser-use a browser whose extension was loaded at launch and
+letting it attach over CDP instead of provision.
