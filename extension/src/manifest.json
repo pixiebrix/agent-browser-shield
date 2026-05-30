@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Agent Browser Shield",
+  "version": "0.1.0",
+  "description": "Improve AI agent effectiveness.",
+  "minimum_chrome_version": "148",
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.openai.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Agent Browser Shield"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "agent-browser-shield-extension",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "description": "Chromium MV3 extension prototype for agent-friendly browsing.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "PixieBrix, Inc.",
+  "homepage": "https://github.com/pixiebrix/agent-browser-shield#readme",
+  "bugs": "https://github.com/pixiebrix/agent-browser-shield/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pixiebrix/agent-browser-shield.git",
+    "directory": "extension"
+  },
+  "engines": {
+    "node": ">=24",
+    "bun": ">=1.1"
+  },
+  "packageManager": "bun@1.1.38",
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "watch": "bun run build.ts --watch",
+    "package": "bun run ../scripts/package-extension.ts",
+    "fetch-easylist": "uv run --directory .. scripts/fetch_easylist.py",
+    "build-site-data": "bun run scripts/build-site-data.ts",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "lodash": "^4.18.1",
+    "nanoid": "^5.1.11",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "urlpattern-polyfill": "10.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/bun": "^1.3.14",
+    "@types/chrome": "^0.1.42",
+    "@types/jest": "^30.0.0",
+    "@types/jsdom": "^28.0.3",
+    "@types/js-yaml": "^4.0.9",
+    "@types/lodash": "^4.17.24",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "jest": "^30",
+    "jest-environment-jsdom": "^30",
+    "js-yaml": "^4.1.0",
+    "jsdom": "29.1.1",
+    "ts-jest": "^29",
+    "typescript": "^6.0.3",
+    "zod": "^3.23.8"
+  }
+}

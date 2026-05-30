@@ -1,0 +1,23 @@
+hostnames:
+  - "news.ycombinator.com"
+
+rules:
+  comments-hide:
+    # The general selector covers item threads; /newcomments lists comments
+    # directly under #bigbox without a .comment-tree wrapper, so the
+    # pathname-narrowed entry hides the whole container on that page.
+    - selectors:
+        - ".comment-tree"
+    - pathnames:
+        - "/newcomments"
+      selectors:
+        - "#bigbox"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for news.ycombinator.com — prefer URL navigation over typing.
+      Front page: / ; newest: /newest ; best: /best ; ask: /ask ; show: /show ; jobs: /jobs
+      Item / comment thread: /item?id={itemId}
+      User profile: /user?id={username}
+      Score threshold: /over?points={n}
+      Full-text search is delegated to https://hn.algolia.com/?q={query}&sort={byPopularity|byDate}&type={story|comment|show_hn|ask_hn|front_page|poll}&dateRange={pastWeek|pastMonth|pastYear|last24h|forever|custom}&page={0-indexed}

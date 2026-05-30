@@ -1,0 +1,10 @@
+hostnames:
+  - "{*.}?bbc.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for bbc.com — prefer URL navigation over typing.
+      Search: /search?q={query}&filter={news|sport|...}&page={n}
+      News sections: /news, /news/world, /news/business, /news/technology, /news/science_and_environment, /news/health, /news/entertainment_and_arts
+      Article URL form: /news/{slug}-{numericId} (e.g., /news/world-us-canada-12345678) ; live pages: /news/live/{slug}-{id}

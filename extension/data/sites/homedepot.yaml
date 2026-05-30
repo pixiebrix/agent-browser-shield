@@ -1,0 +1,12 @@
+hostnames:
+  - "{*.}?homedepot.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for homedepot.com — prefer URL navigation over typing.
+      Search: /s/{query}?sortby={field}&sortorder={asc|desc}&Nao={offset}
+      Sort fields: topsellers (default), price, customerrating, mostpopular, newest
+      Pagination uses 0-based offset Nao= in multiples of 24 (page 1=0, page 2=24, …).
+      Category browse: /b/{slug}/N-{taxonomyId} (taxonomyId starts with `5yc1vZ`; accepts the same query params as /s/)
+      Direct product: /p/{slug-or-dash}/{omsId} (omsId is the 9-10 digit Internet number)

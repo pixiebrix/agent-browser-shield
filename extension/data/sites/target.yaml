@@ -1,0 +1,13 @@
+hostnames:
+  - "{*.}?target.com"
+
+rules:
+  reviews-hide:
+    # Target PDPs render the review section as `#Reviews` /
+    # `[data-test="ReviewsDashboard"]` with no schema.org microdata. The
+    # dashboard wraps the heading, histogram, and all UGC review cards, so a
+    # single placeholder covers the whole section. The inline rating link
+    # (`[data-test="ratingCountLink"]`) near the product title is left
+    # visible.
+    selectors:
+      - '[data-test="ReviewsDashboard"]'

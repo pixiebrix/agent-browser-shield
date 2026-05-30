@@ -1,0 +1,28 @@
+# Project-wide tooling config. The actual benchmark scripts under `scripts/`
+# are PEP 723 inline-dependency scripts (each declares its own deps in a
+# `# /// script` header and is run via `uv run scripts/<name>.py`), so this
+# file is intentionally not a package definition.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["benchmark/BU_Bench_V1.enc", "output", ".venv"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # bugbear
+  "UP",  # pyupgrade
+  "RUF", # ruff-specific
+]
+ignore = [
+  "E501",   # line length handled by formatter
+  "RUF001", # ambiguous unicode in strings (× and − used intentionally for dimensions/typography)
+  "RUF002", # ambiguous unicode in docstrings (same)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

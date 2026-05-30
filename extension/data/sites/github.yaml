@@ -1,0 +1,13 @@
+hostnames:
+  - "{*.}?github.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for github.com — prefer URL navigation over typing.
+      Global search: /search?q={query}&type={repositories|issues|code|users|commits|discussions}&sort={best-match|stars|forks|updated}&order={asc|desc}
+      Repo issue list: /{owner}/{repo}/issues?q={query}&sort={created|updated|comments}&direction={asc|desc}
+      Repo PR list: /{owner}/{repo}/pulls?q={query}&sort={created|updated|popularity|long-running}&direction={asc|desc}
+      Issue/PR query syntax (in q=): is:open, is:closed, is:issue, is:pr, is:draft, is:merged, label:{name}, author:{login}, assignee:{login}, milestone:{title}, no:label, sort:{field}-{asc|desc} — combine with + (URL-encoded space).
+      Trending: /trending or /trending/{language}?since={daily|weekly|monthly} (e.g., /trending/python?since=weekly).
+      Direct repo: /{owner}/{repo} ; file at ref: /{owner}/{repo}/blob/{branch}/{path}

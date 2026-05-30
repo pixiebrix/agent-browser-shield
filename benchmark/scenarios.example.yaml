@@ -1,0 +1,84 @@
+# Benchmark scenario config.
+#
+# Each scenario is one (extension, model, max_steps) combination. The runner
+# will execute every (scenario × task) pair. `defaults` fills in any field a
+# scenario omits.
+#
+# Fields:
+#   id          - stable slug used in result rows + report columns (required)
+#   extension   - true to load output/extension.zip; false to skip it (required)
+#   model       - Stagehand model name, e.g. openai/gpt-5-mini, anthropic/claude-haiku-4-5 (required)
+#   max_steps   - per-task step budget handed to the agent (default: 15)
+#
+# Model selection — Browserbase Model Gateway
+#   When MODEL_API_KEY is unset, Stagehand routes the agent's LLM calls
+#   through Browserbase, billed to your BROWSERBASE_API_KEY at the
+#   provider's market rate. Switch models by editing `model:` below.
+#
+#   Browserbase publicly lists three Gateway-supported providers (OpenAI,
+#   Anthropic, Google) and shows these example IDs in their docs:
+#     openai/gpt-5
+#     anthropic/claude-sonnet-4-6
+#     google/gemini-2.5-flash
+#   Other provider-prefixed IDs (e.g. openai/gpt-5-mini, claude-haiku-4-5,
+#   gemini-3-flash-preview) work in practice but aren't formally documented;
+#   if a model is rejected, fall back to a direct provider key in
+#   MODEL_API_KEY or ask Browserbase to add it. Docs:
+#   https://docs.browserbase.com/platform/model-gateway/overview
+#
+# SOTA vs. cheap suggestions (pair a frontier model with a budget one to see
+# how much of the agent-browser-shield signal survives at lower price points):
+#
+#   provider   | SOTA                              | cheap
+#   -----------+-----------------------------------+--------------------------
+#   OpenAI     | openai/gpt-5                      | openai/gpt-5-mini, openai/gpt-5-nano
+#   Anthropic  | anthropic/claude-sonnet-4-6       | anthropic/claude-haiku-4-5
+#   Google     | google/gemini-3-flash-preview     | google/gemini-2.5-flash
+#
+# Note: the judge model (defaults.judge_model below) calls OpenAI/Anthropic
+# directly — it does NOT go through Gateway. Set OPENAI_API_KEY (or
+# ANTHROPIC_API_KEY) in your env to match the judge provider, even when
+# the agent itself is on Gateway.
+#
+# `extension` may be a mapping in v2 (e.g. {rules: {pii-mask: true, ...}}), but
+# v1 ignores the rule list and treats any truthy value as "extension on with
+# default rule states".
+#
+# `judge_model` is consumed by scripts/benchmark_report.py, not the runner.
+#
+# `repetitions` runs each (scenario × task) N times in fresh sessions to
+# absorb agent variance. The runner's `--repetitions / -n` CLI flag
+# overrides this value. If neither is set, defaults to 3.
+
+defaults:
+  max_steps: 15
+  judge_model: openai/gpt-4o-mini
+  judge_temperature: 0
+  repetitions: 3
+
+scenarios:
+  - id: gpt5-mini-baseline
+    extension: false
+    model: openai/gpt-5-mini
+
+  - id: gpt5-mini-guarded
+    extension: true
+    model: openai/gpt-5-mini
+
+#  - id: gemini-flash-baseline
+#    extension: false
+#    model: google/gemini-2.5-flash
+#
+#  - id: gemini-flash-guarded
+#    extension: true
+#    model: google/gemini-2.5-flash
+
+#  - id: haiku-baseline
+#    extension: false
+#    model: anthropic/claude-haiku-4-5
+#    max_steps: 20
+#
+#  - id: haiku-guarded
+#    extension: true
+#    model: anthropic/claude-haiku-4-5
+#    max_steps: 20

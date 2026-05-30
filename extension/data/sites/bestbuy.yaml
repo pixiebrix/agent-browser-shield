@@ -1,0 +1,12 @@
+hostnames:
+  - "{*.}?bestbuy.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for bestbuy.com — prefer URL navigation over typing.
+      Search: /site/searchpage.jsp?st={query}&id=pcat17071&sp={sort}&cp={page}&intl=nosplash
+      Sort (sp=): '+currentprice skuidsaas' (low→high), '-currentprice skuidsaas' (high→low), '-customertopratedcount skuidsaas' (top rated), '-customerreviewcount skuidsaas' (most reviewed), '-startdate skuidsaas' (newest)
+      Category scope: &browsedCategory={abcat...orPcmcat...Id}
+      Add intl=nosplash to skip the country-selection interstitial.
+      Direct product: /site/{slug}/{productId}.p?skuId={sku}

@@ -1,0 +1,11 @@
+hostnames:
+  - "{*.}?npmjs.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for npmjs.com — prefer URL navigation over typing.
+      Search: /search?q={query} ; query supports qualifiers like `keywords:graph`, `author:sindresorhus`, `not:deprecated`.
+      Direct package: /package/{name} (scoped: /package/@scope/name, e.g., /package/@types/node)
+      Tabs on a package page: ?activeTab=readme (default) | versions | dependencies | dependents | code
+      Versions page exposes the full release history and is the canonical place to read 'latest published version'.

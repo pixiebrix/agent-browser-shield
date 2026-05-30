@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a defect in agent-browser-shield
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill in
+        as much of the form below as you can.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A concise description of the bug.
+      placeholder: |
+        When I load the extension and visit example.com, the …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A minimal, reliable repro. URLs help.
+      placeholder: |
+        1. Build the extension with `bun run build`
+        2. Load it as unpacked at chrome://extensions
+        3. Visit https://...
+        4. See …
+    validations:
+      required: true
+  - type: input
+    id: rule-id
+    attributes:
+      label: Which rule(s) are involved?
+      description: e.g. `cookie-banner-hide`, `pii-mask`. Leave blank if not rule-specific.
+  - type: input
+    id: chrome-version
+    attributes:
+      label: Chrome version
+      placeholder: e.g. 148.0.7280.0
+  - type: input
+    id: extension-commit
+    attributes:
+      label: agent-browser-shield commit SHA or version
+      placeholder: e.g. main @ 1a2b3c4
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output, screenshots, or trace bundle
+      description: |
+        For benchmark regressions, attach the trace bundle path
+        (`output/results/<run_id>/traces/<scenario>__<task>__r<n>/`).
+      render: shell

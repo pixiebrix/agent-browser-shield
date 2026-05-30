@@ -1,0 +1,84 @@
+// Uncheck every checkbox on checkout-like URLs so the agent inherits no
+// silently pre-selected state (insurance, extended warranty, gift wrap,
+// donations, expedited shipping, marketing opt-ins). The agent is then
+// responsible for re-checking what it actually wants — including required
+// agreements like terms-of-service or "ship to billing address".
+//
+// We re-scan added subtrees via a throttled MutationObserver so checkboxes
+// in lazily-loaded checkout steps are caught. We deliberately do NOT observe
+// attribute mutations: once we've cleared a checkbox, re-checks by the
+// agent/user must stick, or we'd be in a fight loop.
+
+import { isCheckoutUrl } from "../lib/checkout-url";
+import { log } from "../lib/log";
+import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import type { Rule } from "./types";
+
+const RULE_ID = "checkout-checkbox-clear" as const;
+
+// Marks checkboxes we've already cleared so re-scans skip them and a
+// subsequent re-check by the agent/user is not undone.
+const CLEARED_ATTR = "data-abs-cleared";
+
+// React/Vue track checked state internally; setting `.checked` directly skips
+// their value-tracker, so onChange handlers never fire and totals don't
+// recompute. Going through the prototype's native setter lets the framework
+// observe the change.
+const nativeCheckedSetter = Object.getOwnPropertyDescriptor(
+  HTMLInputElement.prototype,
+  "checked",
+)?.set;
+
+function uncheck(checkbox: HTMLInputElement): void {
+  nativeCheckedSetter?.call(checkbox, false);
+  checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+  checkbox.setAttribute(CLEARED_ATTR, "");
+}
+
+function scanAndClear(root: ParentNode): void {
+  if (!isCheckoutUrl(window.location.href)) return;
+
+  const checkboxes = root.querySelectorAll<HTMLInputElement>(
+    `input[type="checkbox"]:checked:not(:disabled):not([${CLEARED_ATTR}])`,
+  );
+
+  let cleared = 0;
+  for (const checkbox of checkboxes) {
+    if (!checkbox.isConnected) continue;
+    uncheck(checkbox);
+    cleared++;
+  }
+
+  if (cleared > 0) {
+    log("checkout checkboxes cleared", {
+      count: cleared,
+      url: window.location.href,
+    });
+  }
+}
+
+// childList only — we must not react to attribute mutations on existing
+// checkboxes, or we'd undo any re-check the agent/user performs. The shared
+// watcher observes { childList: true, subtree: true } which is exactly what
+// we want.
+const watcher = createSubtreeWatcher({
+  onSubtrees: (roots) => {
+    for (const root of roots) scanAndClear(root);
+  },
+});
+
+function apply(root: ParentNode): void {
+  scanAndClear(root);
+  watcher.start(root);
+}
+
+export const checkoutCheckboxClearRule = {
+  id: RULE_ID,
+  label: "Clear Checkout Checkboxes",
+  description:
+    'On checkout-like URLs (/cart, /checkout, /basket, /bag, /payment, /order), uncheck every pre-checked checkbox so the agent inherits no silently selected add-ons (insurance, warranty, gift wrap, donations, marketing opt-ins). The agent is then expected to re-check anything it actually wants to opt into, including required agreements. ARIA role="checkbox" widgets and radio groups are out of scope.',
+  defaultEnabled: true,
+  apply,
+  teardown: () => watcher.stop(),
+} satisfies Rule;

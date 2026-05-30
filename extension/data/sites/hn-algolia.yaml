@@ -1,0 +1,11 @@
+hostnames:
+  - "hn.algolia.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for hn.algolia.com (Hacker News search) — prefer URL navigation over typing.
+      Search: /?q={query}&sort={byPopularity|byDate}&type={story|comment|show_hn|ask_hn|front_page|poll}&dateRange={pastWeek|pastMonth|pastYear|last24h|forever|custom}&page={n}
+      Pagination is 0-indexed (page=0 is the first page).
+      Custom date window: dateRange=custom&dateStart={epochSec}&dateEnd={epochSec}
+      Prefix (autocomplete-style) match: &prefix=true

@@ -1,0 +1,73 @@
+import { RULE_IDS, RULES, type RuleId } from "../rules";
+
+export { RULE_IDS, type RuleId };
+
+export type RuleStates = Record<RuleId, boolean>;
+
+const STORAGE_KEY = "agent-browser-shield.rules";
+
+// Defaults derived once at module load — each rule carries its own
+// `defaultEnabled` and `available` flags. No separate map to keep in sync.
+const DEFAULT_STATES: RuleStates = Object.fromEntries(
+  RULES.map((rule) => [rule.id, rule.defaultEnabled]),
+) as RuleStates;
+
+const UNAVAILABLE_RULE_IDS: ReadonlySet<RuleId> = new Set(
+  RULES.filter((rule) => rule.available === false).map((rule) => rule.id),
+);
+
+function normalize(raw: unknown): RuleStates {
+  const result: RuleStates = { ...DEFAULT_STATES };
+  if (raw && typeof raw === "object") {
+    for (const id of RULE_IDS) {
+      const value = (raw as Record<string, unknown>)[id];
+      if (typeof value === "boolean") {
+        result[id] = value;
+      }
+    }
+  }
+  for (const id of UNAVAILABLE_RULE_IDS) {
+    result[id] = false;
+  }
+  return result;
+}
+
+export async function getRuleStates(): Promise<RuleStates> {
+  const stored = await chrome.storage.local.get(STORAGE_KEY);
+  return normalize(stored[STORAGE_KEY]);
+}
+
+export async function setRuleEnabled(
+  id: RuleId,
+  enabled: boolean,
+): Promise<void> {
+  const current = await getRuleStates();
+  current[id] = enabled;
+  await chrome.storage.local.set({ [STORAGE_KEY]: current });
+}
+
+export async function setAllRuleStates(
+  states: Partial<RuleStates>,
+): Promise<void> {
+  const next = normalize(states);
+  await chrome.storage.local.set({ [STORAGE_KEY]: next });
+}
+
+export type RuleStatesListener = (
+  next: RuleStates,
+  previous: RuleStates,
+) => void;
+
+export function subscribe(listener: RuleStatesListener): () => void {
+  const handler = (
+    changes: Record<string, chrome.storage.StorageChange>,
+    areaName: string,
+  ) => {
+    if (areaName !== "local") return;
+    const change = changes[STORAGE_KEY];
+    if (!change) return;
+    listener(normalize(change.newValue), normalize(change.oldValue));
+  };
+  chrome.storage.onChanged.addListener(handler);
+  return () => chrome.storage.onChanged.removeListener(handler);
+}

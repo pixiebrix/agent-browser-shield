@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest a new rule, capability, or improvement
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Describe the user-visible problem. "Agent gets distracted by chat
+        widgets on docs sites" is more useful than "add chat-widget-hide".
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        Sketch the rule, capability, or change. For new rules, include the
+        target site categories and what the rule would do (hide / strip /
+        modify / annotate).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      multiple: true
+      options:
+        - New defense rule
+        - Existing rule improvement
+        - Benchmark / evaluation
+        - Skills / Claude Code integration
+        - Build / tooling
+        - Documentation
+        - Other

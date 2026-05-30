@@ -1,0 +1,7 @@
+hostnames:
+  - "{*.}?youtube.com"
+
+rules:
+  comments-hide:
+    selectors:
+      - "ytd-comments"

@@ -1,0 +1,11 @@
+hostnames:
+  - "forecast.weather.gov"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for forecast.weather.gov — prefer URL navigation over typing.
+      Point forecast: /MapClick.php?lat={lat}&lon={lon} (decimal degrees, west longitude is negative)
+      Examples: New York NY lat=40.7142&lon=-74.0064 ; Los Angeles CA lat=34.0537&lon=-118.2428 ; Chicago IL lat=41.8843&lon=-87.6324
+      The same page renders the 7-day day-by-day forecast cards (skip overnight cards for daytime highs).
+      There is no keyword search — lat/lon is the primary key. If only a city is known, look up coordinates first.

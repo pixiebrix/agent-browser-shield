@@ -1,0 +1,8 @@
+default: true
+
+# mdformat owns paragraph wrapping, so markdownlint should not report long lines.
+MD013: false
+
+# mdformat normalizes ordered lists to consecutive numbering with --number.
+MD029:
+  style: ordered

@@ -1,0 +1,43 @@
+# Amazon — reviews-hide, footer-hide, search-url-helper.
+#
+# `hostnames` here is the union across all rules on this file. Per-rule
+# `hostnames` narrow further (reviews-hide is only authored for amazon.com;
+# footer-hide ships across the international storefronts).
+
+hostnames:
+  - "{*.}?amazon.com"
+  - "{*.}?amazon.co.uk"
+  - "{*.}?amazon.co.jp"
+  - "{*.}?amazon.ca"
+  - "{*.}?amazon.de"
+
+rules:
+  reviews-hide:
+    # Amazon doesn't expose schema.org microdata in the rendered DOM. Keep
+    # `#averageCustomerReviews` near the product title visible — it only
+    # contains the aggregate ("4.5 out of 5 stars (6,777)"), not UGC. All
+    # review cards (`[data-hook="review"]`) live inside `#reviewsMedley`, so
+    # the medley selector covers the customer reviews section on its own.
+    hostnames:
+      - "{*.}?amazon.com"
+    selectors:
+      - "#reviewsMedley"
+      - '[data-hook="review"]'
+
+  footer-hide:
+    # Amazon's footer is a plain `<div id="navFooter">` with no semantic
+    # `<footer>` or `role="contentinfo"`, so it needs a site selector.
+    selectors:
+      - "#navFooter"
+
+  search-url-helper:
+    hostnames:
+      - "{*.}?amazon.com"
+    recipe: |
+      abs URL helper for amazon.com — prefer URL navigation over typing.
+      Search: /s?k={query}&s={sort}&rh={facets}
+      Sort (s=): relevanceblender (default), price-asc-rank, price-desc-rank, review-rank, review-count-rank, date-desc-rank
+      Facets (rh=): comma-joined key:value pairs, URL-encoded (`:`→%3A, `,`→%2C). Common keys: n:{nodeId} (category), p_89:{brandName}, p_72:{ratingBin}, p_85:{primeBin}
+      Price range: low-price={cents}&high-price={cents} (USD cents)
+      Pagination: page=N (1-indexed, capped at 20)
+      Direct product: /dp/{ASIN} ; reviews: /product-reviews/{ASIN}?sortBy=recent&reviewerType=avp_only_reviews

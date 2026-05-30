@@ -1,0 +1,11 @@
+hostnames:
+  - "developer.mozilla.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for developer.mozilla.org — prefer URL navigation over typing.
+      Search: /{locale}/search?q={query} (locale default en-US, e.g., /en-US/search?q=Array.map)
+      Direct doc: /{locale}/docs/{Path/With/Slashes}
+      Examples: /en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map, /en-US/docs/Web/API/fetch
+      Browser compat tables are anchored at #browser_compatibility on the method's page.

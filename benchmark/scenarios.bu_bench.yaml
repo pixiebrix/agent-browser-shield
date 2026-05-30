@@ -1,0 +1,31 @@
+# BU Bench V1 scenario config.
+#
+# Pre-tuned for Browser Use's BU Bench V1 (100 tasks across BrowseComp, GAIA,
+# InteractionTests, OM2W2, WebBenchREAD). Run with:
+#
+#   uv run scripts/benchmark_run.py \
+#     --scenarios benchmark/scenarios.bu_bench.yaml \
+#     --tasks benchmark/BU_Bench_V1.enc
+#
+# Differences vs scenarios.example.yaml:
+#   - max_steps: 50 (BU Bench tasks are longer; upstream uses ~50)
+#   - repetitions: 1 (matches upstream methodology; bump with -n to add reps)
+#
+# Judge stays on openai/gpt-4o-mini — no GOOGLE_API_KEY needed despite upstream's
+# default. BU Bench tasks embed any required starting URL in the task text;
+# the runner skips pre-navigation when task.url is null.
+
+defaults:
+  max_steps: 50
+  judge_model: openai/gpt-4o-mini
+  judge_temperature: 0
+  repetitions: 1
+
+scenarios:
+  - id: gpt5-mini-baseline
+    extension: false
+    model: openai/gpt-5-mini
+
+  - id: gpt5-mini-guarded
+    extension: true
+    model: openai/gpt-5-mini

@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ['--allow-multiple-documents']
+      - id: check-json
+        name: Check JSON syntax
+      - id: end-of-file-fixer
+        name: Fix end of files
+        exclude: \.generated\.(ts|tsx|js|jsx)$
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: \.generated\.(ts|tsx|js|jsx)$
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+      - id: mdformat
+        args: [--number]
+        additional_dependencies:
+          - mdformat-frontmatter
+          - mdformat-gfm
+        exclude: (node_modules|\.venv)/
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.20.0
+    hooks:
+      - id: markdownlint-cli2
+        name: Lint Markdown files
+
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.4.15
+    hooks:
+      - id: biome-check
+        name: Biome check (format + lint)
+        additional_dependencies: ["@biomejs/biome@2.4.15"]
+        files: ^extension/.*\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc)$
+        exclude: ^extension/dist/|\.generated\.(ts|tsx|js|jsx)$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
+    hooks:
+      - id: ruff-check
+        name: Ruff lint
+        args: [--fix]
+      - id: ruff-format
+        name: Ruff format

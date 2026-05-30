@@ -1,0 +1,11 @@
+hostnames:
+  - "arxiv.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for arxiv.org — prefer URL navigation over typing.
+      Recent submissions in an archive: /list/{archive}/recent (e.g., /list/cs.AI/recent, /list/stat.ML/recent)
+      Search: /search/?searchtype=all&query={query}&start={offset} ; searchtype values: all, title, author, abstract, comments, journal_ref, acm_class, msc_class, report_num, paper_id, doi, orcid, license
+      Direct paper: /abs/{paperId} (HTML abstract) ; PDF: /pdf/{paperId}
+      Paper IDs use the YYMM.NNNNN form (e.g., 2401.12345).

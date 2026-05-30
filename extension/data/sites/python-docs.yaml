@@ -1,0 +1,11 @@
+hostnames:
+  - "docs.python.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for docs.python.org — prefer URL navigation over typing.
+      Search: /3/search.html?q={query} (replace `3` with another series like `3.12` to pin a minor version)
+      Direct library page: /3/library/{module}.html (e.g., /3/library/functions.html for builtins, /3/library/os.path.html)
+      Symbol anchor: append #{symbol} to the library URL (e.g., /3/library/functions.html#len, /3/library/os.path.html#os.path.join)
+      Genindex: /3/genindex-all.html ; tutorial: /3/tutorial/

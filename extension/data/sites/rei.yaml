@@ -1,0 +1,20 @@
+hostnames:
+  - "{*.}?rei.com"
+
+rules:
+  reviews-hide:
+    # REI PDPs render no schema.org microdata. The accordion marked
+    # `[data-ui="product-reviews"]` wraps the heading, histogram, and all UGC
+    # review cards. The inline aggregate (`[data-ui="review-summary"]`) sits
+    # outside it near the product title and stays visible.
+    selectors:
+      - '[data-ui="product-reviews"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for rei.com — prefer URL navigation over typing.
+      Search: /search?q={query}&page={n}&sort={sort}
+      Sort: relevance (default), price-low-to-high, price-high-to-low, best-seller, top-rated, newest
+      Category browse: /c/{slug} (e.g., /c/backpacking-tents)
+      Faceted filters on /c/ and /search use r={facet}%3A{value} repeated for each, e.g., r=brand%3AREI+Co-op, r=minTrailWeight%3A0-4, r=capacity%3A2-person
+      Direct product: /product/{productId}/{slug}

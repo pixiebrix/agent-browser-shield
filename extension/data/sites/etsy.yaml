@@ -1,0 +1,12 @@
+hostnames:
+  - "{*.}?etsy.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for etsy.com — prefer URL navigation over typing.
+      Search: /search?q={query}&order={sort}&min={min}&max={max}&color={color}&marketplace={handmade|vintage|craft_supplies}&free_shipping=true&page={n}
+      Sort (order=): most_relevant (default), price_asc, price_desc, date_desc
+      Category browse: /c/{slug-path} (e.g., /c/jewelry/necklaces/pendants) — accepts the same query params as /search.
+      Shop home: /shop/{shopName} ; shop reviews: /shop/{shopName}/reviews
+      Listing detail: /listing/{listingId}

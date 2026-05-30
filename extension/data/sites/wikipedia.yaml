@@ -1,0 +1,17 @@
+# Wikipedia and Wiktionary share the MediaWiki URL contract; one recipe
+# covers both.
+hostnames:
+  - "{*.}?wikipedia.org"
+  - "{*.}?wiktionary.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for wikipedia.org — prefer URL navigation over typing.
+      Direct article: /wiki/{Title_With_Underscores} (spaces → `_`, first letter auto-capitalized).
+      Examples: /wiki/Albert_Einstein, /wiki/Python_(programming_language)
+      Full-text search: /w/index.php?title=Special:Search&search={query}&fulltext=1
+      Without fulltext=1, an exact title match auto-redirects to the article (the search box 'Go' behavior).
+      Specific revision: /wiki/{Title}?oldid={revId} ; diff: ?diff=prev&oldid={revId}
+      Section anchors: /wiki/{Title}#{Section_heading_with_underscores}
+      Language editions live on lang subdomains (en, de, ja, simple, …); the path contract is identical.
