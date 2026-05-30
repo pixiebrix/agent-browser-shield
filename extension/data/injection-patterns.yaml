@@ -1,0 +1,56 @@
+# Source data for prompt-injection-hide regex patterns.
+#
+# Pattern sources are base64-encoded so coding agents browsing this repo do
+# not have to scan literal adversarial phrasing. The codegen script
+# `scripts/build-injection-patterns.ts` decodes each `source_b64` and emits
+# `src/rules/injection-patterns.generated.ts` with plaintext RegExp literals
+# — the shipped extension bundle therefore contains no `atob` decoding of
+# pattern strings (matters for Chrome Web Store review).
+#
+# Each `name` is a terse, non-adversarial identifier used only for codegen
+# comments. To inspect a pattern, decode `source_b64` with `atob()`.
+
+patterns:
+  - name: instruction-override-ignore
+    source_b64: "XGIoPzppZ25vcmV8ZGlzcmVnYXJkfGZvcmdldClccysoPzphbGxccyspPyg/OnRoZVxzKyk/KD86cHJldmlvdXN8cHJpb3J8YWJvdmV8cHJlY2VkaW5nfGVhcmxpZXJ8Zm9yZWdvaW5nKVxzKyg/Omluc3RydWN0aW9ucz98cHJvbXB0cz98bWVzc2FnZXM/fGRpcmVjdGl2ZXM/fGNvbW1hbmRzP3xydWxlcz98ZGlyZWN0aW9ucz98Y29udGV4dHxjb252ZXJzYXRpb258c3lzdGVtXHMrcHJvbXB0KVxi"
+    flags: i
+
+  - name: guardrail-bypass
+    source_b64: "XGIoPzpvdmVycmlkZXxieXBhc3N8ZGlzYWJsZXxjaXJjdW12ZW50KVxzKyg/OmFsbFxzKyk/KD86eW91clxzK3x0aGVccyspPyg/OnNhZmV0eVxzK3xzZWN1cml0eVxzK3xzeXN0ZW1ccyt8Y29udGVudFxzKyk/KD86aW5zdHJ1Y3Rpb25zP3xmaWx0ZXJzP3xndWFyZHJhaWxzP3xndWlkZWxpbmVzP3xyZXN0cmljdGlvbnM/fHNhZmVndWFyZHM/fHBvbGljaWVzPylcYg=="
+    flags: i
+
+  - name: persona-declarative
+    source_b64: "XGJ5b3VccythcmVccysoPzpub3dccyspPyg/OmFuP1xzKyk/KD86REFOfGRvXHMrYW55dGhpbmdccytub3d8amFpbGJyb2tlbnx1bnJlc3RyaWN0ZWR8dW5jZW5zb3JlZHx1bmZpbHRlcmVkKVxi"
+    flags: i
+
+  - name: persona-imperative
+    source_b64: "XGIoPzphY3R8cHJldGVuZHxiZWhhdmV8cm9sZXBsYXl8cmVzcG9uZClccythc1xzKyg/OmlmXHMreW91XHMrKD86YXJlfHdlcmUpXHMrKT8oPzphbj9ccyspPyg/OkRBTnxkb1xzK2FueXRoaW5nXHMrbm93fGphaWxicm9rZW58dW5yZXN0cmljdGVkfHVuY2Vuc29yZWR8dW5maWx0ZXJlZClcYg=="
+    flags: i
+
+  - name: mode-activation
+    source_b64: "XGIoPzpkZXZlbG9wZXJ8Z29kfGFkbWlufHN1ZG98ZGVidWcpXHMrbW9kZVxzKyg/OmVuYWJsZWR8YWN0aXZhdGVkfG9ufGVuZ2FnZWR8dW5sb2NrZWQpXGI="
+    flags: i
+
+  - name: chatml-im-token
+    source_b64: "PFx8aW1fKD86c3RhcnR8ZW5kKVx8Pg=="
+    flags: i
+
+  - name: chatml-endoftext-token
+    source_b64: "PFx8ZW5kb2Z0ZXh0XHw+"
+    flags: i
+
+  - name: llama-inst-token
+    source_b64: "XFtcLz9JTlNUXF0="
+    flags: ""
+
+  - name: llama-sys-token
+    source_b64: "PDxcLz9TWVM+Pg=="
+    flags: ""
+
+  - name: system-prompt-directive
+    source_b64: "XGJzeXN0ZW1ccytwcm9tcHRccypbOj1d"
+    flags: i
+
+  - name: new-directive-prefix
+    source_b64: "XGJuZXdccysoPzppbnN0cnVjdGlvbnM/fGRpcmVjdGl2ZXM/fHRhc2t8cHJvbXB0fHJ1bGVzPylccyo6"
+    flags: i
