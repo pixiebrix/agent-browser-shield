@@ -73,7 +73,7 @@ export const searchUrlHelperRule = {
   id: RULE_ID,
   label: "Embed Search URL Recipes",
   description:
-    "On covered hosts (Amazon, Best Buy, Etsy, IKEA, Home Depot, REI, GitHub, Wikipedia, Hacker News, MDN, npm, weather.gov, arXiv, Python docs, BBC), embed a screen-reader-only landmark at the top of the page describing how to run searches, filters, sorts, and direct lookups via URL. Lets agents navigate by URL instead of typing into search boxes and clicking facets. No visible affordance — landmark is preserved by `hidden-text-strip` via the `sr-only` class allowlist and the 1×1 + overflow:hidden + position:absolute envelope.",
+    "On covered hosts, embed a screen-reader-only landmark describing how to run searches and filters by URL, so agents can navigate by URL instead of clicking through search UI.",
   defaultEnabled: true,
   // Recipes are URL navigation hints for the page the agent is viewing —
   // the top-level URL — not for whatever third-party content happens to be

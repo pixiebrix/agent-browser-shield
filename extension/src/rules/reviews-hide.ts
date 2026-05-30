@@ -15,7 +15,7 @@ const { rule, selectorsFor } = createSelectorHideRule({
   id: "reviews-hide",
   label: "Hide Reviews",
   description:
-    "Hide user-generated review text so agents aren't exposed to potential prompt injection from reviewers. Covers schema.org microdata and supported sites (Amazon, Walmart); aggregate star ratings are kept visible.",
+    "Hide user-generated review text. Aggregate star ratings stay visible.",
   defaultEnabled: true,
   hideLabel: "[review section hidden — click to reveal]",
   // schema.org/Review marks UGC. schema.org/AggregateRating is the summary

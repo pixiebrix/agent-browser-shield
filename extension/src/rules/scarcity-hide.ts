@@ -101,7 +101,7 @@ export const scarcityHideRule = {
   id: RULE_ID,
   label: "Hide Scarcity Warnings",
   description:
-    'Hide scarcity- and activity-based urgency messages ("Only 3 left", "Selling fast", "12 viewing now") so agents aren\'t pressured by manufactured scarcity. Out-of-stock indicators and bestseller badges are kept visible because they convey real purchaseability or preference information.',
+    'Hide scarcity messages like "Only 3 left" or "12 viewing now". Out-of-stock indicators and bestseller badges stay visible.',
   defaultEnabled: true,
   apply,
   teardown: () => watcher.stop(),

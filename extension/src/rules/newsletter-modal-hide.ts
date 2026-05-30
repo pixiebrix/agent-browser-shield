@@ -57,7 +57,7 @@ const { rule, selectorsFor } = createSelectorHideRule({
   id: "newsletter-modal-hide",
   label: "Remove Newsletter Modals",
   description:
-    "Remove interstitial newsletter signup modals that cover the page. Detects fixed-position dialogs containing signup language and an email input. These modals float above the page, so they're removed entirely rather than replaced with an in-flow placeholder. Standard login modals, paywalls, and small toasts are kept visible.",
+    "Remove interstitial newsletter signup modals. Login modals and paywalls stay visible.",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [

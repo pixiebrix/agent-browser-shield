@@ -68,7 +68,7 @@ const { rule: baseRule, selectorsFor } = createSelectorHideRule({
   id: "ads-hide",
   label: "Hide Ads & Sponsored Results",
   description:
-    "Remove display ads and paid/sponsored search results. Well-known surfaces (AdSense, GAM, Outbrain, Taboola, Google/Bing/Amazon sponsored results) are stripped from the DOM so the agent never sees them. ~13k additional ad selectors from EasyList are injected as a display:none stylesheet for broader coverage of third-party ad networks.",
+    "Remove display ads and paid/sponsored search results. Uses EasyList for broad coverage.",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [

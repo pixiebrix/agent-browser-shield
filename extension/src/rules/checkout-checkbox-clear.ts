@@ -80,7 +80,7 @@ export const checkoutCheckboxClearRule = {
   id: RULE_ID,
   label: "Clear Checkout Checkboxes",
   description:
-    'On checkout-like URLs (/cart, /checkout, /basket, /bag, /payment, /order), uncheck every pre-checked checkbox so the agent inherits no silently selected add-ons (insurance, warranty, gift wrap, donations, marketing opt-ins). The agent is then expected to re-check anything it actually wants to opt into, including required agreements. ARIA role="checkbox" widgets and radio groups are out of scope.',
+    "On checkout pages, uncheck pre-checked checkboxes so the agent doesn't silently inherit add-ons or marketing opt-ins.",
   defaultEnabled: true,
   apply,
   teardown: () => watcher.stop(),

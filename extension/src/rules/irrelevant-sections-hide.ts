@@ -311,7 +311,7 @@ export const irrelevantSectionsHideRule = {
   id: RULE_ID,
   label: "Hide Irrelevant Sections (AI)",
   description:
-    "Use a small LLM to identify engagement/exploration rails (related products, 'you might also like', recommended articles, trending now, etc.) and replace them with click-to-reveal placeholders. Sends a compressed page tree with stable refs so the LLM can choose the right granularity; interactive elements (search, cart, checkout, login) are labeled as protected. Re-scans on scroll to catch lazy-loaded content. Requires an OpenAI API key (bundled at build time or provided on the options page).",
+    "Use a small LLM to identify engagement rails (related products, recommended articles, trending now) and replace them with click-to-reveal placeholders.",
   defaultEnabled: false,
   available: createApiKeyAvailability(
     "Set an OpenAI API key on the options page to enable this rule.",

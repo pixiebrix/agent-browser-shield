@@ -15,7 +15,7 @@ const { rule, selectorsFor } = createSelectorHideRule({
   id: "comments-hide",
   label: "Hide Comments",
   description:
-    "Hide user-generated comment threads so agents aren't exposed to potential prompt injection from commenters. Covers common platforms (Disqus, Facebook) plus Reddit, YouTube, and Hacker News.",
+    "Hide user-generated comment threads (Disqus, Facebook, Reddit, YouTube, Hacker News).",
   defaultEnabled: true,
   hideLabel: "[comment section hidden — click to reveal]",
   // Selectors that ship on many sites (Disqus, Livefyre, Facebook comment

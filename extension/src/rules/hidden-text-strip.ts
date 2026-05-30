@@ -257,7 +257,7 @@ export const hiddenTextStripRule = {
   id: RULE_ID,
   label: "Strip Hidden Text",
   description:
-    'Remove text that is invisible to humans (foreground matching background, visibility:hidden, opacity:0, font-size:0, off-screen positioning, zero-area clipping) but still readable by agents. Defends against "unseeable" prompt injection. Screen-reader-only text is preserved via class (.sr-only, .visually-hidden, .a-offscreen, .aok-offscreen, MUI visuallyHidden) and via the 1×1 + overflow:hidden + position:absolute envelope, so a11y-tree affordances like Amazon SERP prices stay intact regardless of which specific clip/positioning trick the framework uses. display:none is left alone so collapsed menus and tab panels keep working.',
+    'Remove text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
   defaultEnabled: true,
   apply,
   teardown: () => watcher.stop(),

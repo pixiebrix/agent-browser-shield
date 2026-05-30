@@ -69,7 +69,7 @@ export const promptInjectionHideRule = {
   id: RULE_ID,
   label: "Hide Prompt Injection",
   description:
-    "Hide page sections containing phrases commonly used in prompt-injection attacks — instruction overrides, jailbreak personas, and chat-template tokens. Regex-based heuristic; an ML classifier is planned.",
+    "Hide page sections containing phrases common in prompt-injection attacks.",
   defaultEnabled: true,
   apply,
 } satisfies Rule;

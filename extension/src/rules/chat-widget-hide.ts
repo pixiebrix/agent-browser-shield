@@ -16,8 +16,7 @@ import { createSelectorHideRule } from "../lib/selector-hide-rule";
 const { rule, selectorsFor } = createSelectorHideRule({
   id: "chat-widget-hide",
   label: "Remove Chat Widgets",
-  description:
-    "Remove live-chat widgets (Intercom, Drift, Zendesk, Crisp, Tawk.to, HubSpot, Olark, LiveChat, Freshchat, Zopim). These bubbles float above the page, so they're removed entirely rather than replaced with an in-flow placeholder.",
+  description: "Remove live-chat widgets (Intercom, Drift, Zendesk, etc.).",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [
