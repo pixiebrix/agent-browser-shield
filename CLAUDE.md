@@ -3,6 +3,11 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with
 code in this repository.
 
+## Branching workflow
+
+This repo follows GitHub flow. For any new task, create a feature branch off
+`main`, push it, and open a PR — do not commit directly to `main`.
+
 ## Repository Purpose
 
 Prototyping browser extension capabilities for improving browser use agent
