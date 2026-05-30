@@ -120,6 +120,11 @@ that deliberately packs the threats and dark patterns agent-browser-shield
 defends against onto a few pages. Load it with and without the extension to see
 the before/after difference.
 
+Live deployment:
+<https://shield-dark-pattern-demo.vercel.app/>
+
+To run it locally instead:
+
 ```sh
 cd demo-site
 bun install

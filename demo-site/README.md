@@ -8,6 +8,8 @@ not loading) the extension produces an immediate visible difference.
 This site is **not** part of the benchmark. It exists so reviewers can open it
 in a browser and see "before / after" by toggling the extension on or off.
 
+Live deployment: <https://shield-dark-pattern-demo.vercel.app/>
+
 ## What's embedded
 
 | Page                            | Rules exercised                                                                                                                                              |
