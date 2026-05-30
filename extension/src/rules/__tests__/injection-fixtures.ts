@@ -1,6 +1,3 @@
-// Copyright (c) 2026 PixieBrix, Inc.
-// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
-
 // Base64-encoded adversarial test fixtures shared across the
 // prompt-injection / hidden-text / html-comment rule tests. Decoded once at
 // module load. The string values are intentionally identical to the original

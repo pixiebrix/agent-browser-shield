@@ -1,6 +1,3 @@
-// Copyright (c) 2026 PixieBrix, Inc.
-// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
-
 import { PLACEHOLDER_CLASS, RULE_ATTR } from "../../lib/placeholder";
 import { matchesScarcityPattern, scarcityHideRule } from "../scarcity-hide";
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2026 PixieBrix, Inc.
-// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
-
 import { HIDDEN_ATTR, PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { chatWidgetHideRule } from "../chat-widget-hide";
 

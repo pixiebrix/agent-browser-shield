@@ -42,7 +42,11 @@ repos:
       - id: insert-license
         name: Insert copyright header (TS/JS)
         files: \.(ts|tsx|js|mjs|cjs)$
-        exclude: \.generated\.(ts|tsx|js|mjs|cjs)$|/\.astro/|/dist/|/node_modules/|\.d\.ts$
+        # __tests__/ is excluded because Jest's `@jest-environment` /
+        # `@jest-environment-options` docblock pragmas must live in the first
+        # comment block at the top of the file — a preceding `//` header
+        # silently disables them.
+        exclude: \.generated\.(ts|tsx|js|mjs|cjs)$|/\.astro/|/dist/|/node_modules/|\.d\.ts$|/__tests__/
         args:
           - --license-filepath
           - HEADER.txt
