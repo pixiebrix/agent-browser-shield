@@ -47,6 +47,12 @@ jest.mock("../frame", () => ({
   isTopFrame: jest.fn(),
 }));
 
+jest.mock("../enforcement", () => ({
+  getEnforcementEnabled: jest.fn(() => Promise.resolve(true)),
+  subscribeEnforcementEnabled: jest.fn(() => () => undefined),
+  ENFORCEMENT_ENABLED_DEFAULT: true,
+}));
+
 import { isTopFrame } from "../frame";
 import { start } from "../rule-engine";
 import { getRuleStates } from "../storage";

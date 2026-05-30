@@ -1,4 +1,8 @@
 import { RULES, type Rule } from "../rules";
+import {
+  getEnforcementEnabled,
+  subscribeEnforcementEnabled,
+} from "./enforcement";
 import { isTopFrame } from "./frame";
 import { log } from "./log";
 import {
@@ -172,6 +176,14 @@ function applyDisplayMode(mode: PlaceholderDisplayMode): void {
   document.documentElement.setAttribute(PLACEHOLDER_MODE_ATTR, mode);
 }
 
+const ALL_DISABLED: RuleStates = Object.fromEntries(
+  RULES.map((rule) => [rule.id, false]),
+) as RuleStates;
+
+function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
+  return enforcementEnabled ? states : ALL_DISABLED;
+}
+
 export async function start(): Promise<void> {
   const topFrame = isTopFrame();
   log("rule engine starting", { url: window.location.href, topFrame });
@@ -182,12 +194,29 @@ export async function start(): Promise<void> {
   void getPlaceholderDisplayMode().then(applyDisplayMode);
   subscribePlaceholderDisplayMode(applyDisplayMode);
 
-  const initial = await getRuleStates();
-  applyEnabled(initial, topFrame);
+  const [rawStates, enforcementInitial] = await Promise.all([
+    getRuleStates(),
+    getEnforcementEnabled(),
+  ]);
+  let rawCurrent = rawStates;
+  let enforcementCurrent = enforcementInitial;
+  applyEnabled(mask(rawCurrent, enforcementCurrent), topFrame);
 
-  let current = initial;
+  let effectiveCurrent = mask(rawCurrent, enforcementCurrent);
+
+  function applyChange(nextRaw: RuleStates, nextEnforcement: boolean): void {
+    const nextEffective = mask(nextRaw, nextEnforcement);
+    reconcile(nextEffective, effectiveCurrent, topFrame);
+    effectiveCurrent = nextEffective;
+    rawCurrent = nextRaw;
+    enforcementCurrent = nextEnforcement;
+  }
+
   subscribe((next) => {
-    reconcile(next, current, topFrame);
-    current = next;
+    applyChange(next, enforcementCurrent);
+  });
+  subscribeEnforcementEnabled((enabled) => {
+    log("enforcement toggle changed", { enabled });
+    applyChange(rawCurrent, enabled);
   });
 }
