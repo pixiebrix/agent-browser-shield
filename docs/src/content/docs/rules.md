@@ -17,9 +17,9 @@ If this page disagrees with the source, trust the source.
 
 ## Sensitive data masking
 
-Replace credentials and personal identifiers with placeholders before they
-reach the model. Both rules walk text nodes and substitute in place — the page
-still renders normally for humans.
+Replace credentials and personal identifiers with placeholders before they reach
+the model. Both rules walk text nodes and substitute in place — the page still
+renders normally for humans.
 
 ### Mask PII
 
@@ -45,9 +45,9 @@ user-generated text, invisible text, and HTML comments.
 - **ID:** `prompt-injection-hide`
 - **Default:** on
 
-Hide page sections matching known prompt-injection patterns. The pattern set
-is intentionally not reproduced in docs — see the project README for how
-patterns are sourced and shipped.
+Hide page sections matching known prompt-injection patterns. The pattern set is
+intentionally not reproduced in docs — see the project README for how patterns
+are sourced and shipped.
 
 ### Strip Hidden Text
 
@@ -60,8 +60,8 @@ zero-area clipping) but still readable by agents. Defends against "unseeable"
 prompt injection. Screen-reader-only text is preserved (via `.sr-only`,
 `.visually-hidden`, `.a-offscreen`, `.aok-offscreen`, MUI `visuallyHidden`, and
 the 1×1 + `overflow:hidden` + `position:absolute` envelope) so a11y-tree
-affordances like Amazon SERP prices stay intact. `display:none` is left alone
-so collapsed menus and tab panels keep working.
+affordances like Amazon SERP prices stay intact. `display:none` is left alone so
+collapsed menus and tab panels keep working.
 
 ### Strip HTML Comments
 
@@ -78,9 +78,9 @@ within the current page load.
 - **ID:** `comments-hide`
 - **Default:** on
 
-Hide user-generated comment threads so agents aren't exposed to potential
-prompt injection from commenters. Covers common platforms (Disqus, Facebook)
-plus Reddit, YouTube, and Hacker News.
+Hide user-generated comment threads so agents aren't exposed to potential prompt
+injection from commenters. Covers common platforms (Disqus, Facebook) plus
+Reddit, YouTube, and Hacker News.
 
 ### Hide Reviews
 
@@ -133,23 +133,22 @@ convey real purchaseability or preference information.
 
 On checkout-like URLs (`/cart`, `/checkout`, `/basket`, `/bag`, `/payment`,
 `/order`), uncheck every pre-checked checkbox so the agent inherits no silently
-selected add-ons (insurance, warranty, gift wrap, donations, marketing
-opt-ins). The agent is then expected to re-check anything it actually wants to
-opt into, including required agreements. `role="checkbox"` widgets and radio
-groups are out of scope.
+selected add-ons (insurance, warranty, gift wrap, donations, marketing opt-ins).
+The agent is then expected to re-check anything it actually wants to opt into,
+including required agreements. `role="checkbox"` widgets and radio groups are
+out of scope.
 
 ### Flag Cart Add-Ons (Sneak-Into-Basket)
 
 - **ID:** `cart-addon-flag`
 - **Default:** on
 
-On checkout-like URLs, prepend a visible `[abs: likely cart add-on]`
-annotation to line items matching common sneak-into-basket patterns
-(protection plans, extended warranties, AppleCare/SquareTrade/Asurion,
-insurance, donation/round-up, gift wrap, carbon offset, shipping/package
-protection, Route, Seel, Navidium, driver tips). The line item is **not**
-removed — the agent reads the annotation and decides whether to click the
-line's remove control.
+On checkout-like URLs, prepend a visible `[abs: likely cart add-on]` annotation
+to line items matching common sneak-into-basket patterns (protection plans,
+extended warranties, AppleCare/SquareTrade/Asurion, insurance,
+donation/round-up, gift wrap, carbon offset, shipping/package protection, Route,
+Seel, Navidium, driver tips). The line item is **not** removed — the agent reads
+the annotation and decides whether to click the line's remove control.
 
 ## Token-saving cleanup
 
@@ -202,9 +201,9 @@ login modals, paywalls, and small toasts are kept visible.
 
 Remove display ads and paid/sponsored search results. Well-known surfaces
 (AdSense, GAM, Outbrain, Taboola, Google/Bing/Amazon sponsored results) are
-stripped from the DOM so the agent never sees them. ~13k additional ad
-selectors from EasyList are injected as a `display:none` stylesheet for
-broader coverage of third-party ad networks.
+stripped from the DOM so the agent never sees them. ~13k additional ad selectors
+from EasyList are injected as a `display:none` stylesheet for broader coverage
+of third-party ad networks.
 
 ### Remove Unused SVG Sprites
 
@@ -212,8 +211,8 @@ broader coverage of third-party ad networks.
 - **Default:** on
 
 Remove hidden SVG sprite containers (those holding only `<symbol>`/`<defs>`
-definitions) when none of their symbols are referenced by any `<use>` element
-on the page. Referenced sprites are preserved so icons keep working.
+definitions) when none of their symbols are referenced by any `<use>` element on
+the page. Referenced sprites are preserved so icons keep working.
 
 ### Hide Irrelevant Sections (AI)
 
@@ -223,17 +222,17 @@ on the page. Referenced sprites are preserved so icons keep working.
 - **Availability:** disabled in shipped builds (requires `OPENAI_API_KEY` at
   build time)
 
-Use a small LLM to identify engagement/exploration rails (related products,
-"you might also like", recommended articles, trending now, etc.) and replace
-them with click-to-reveal placeholders. Sends a compressed page tree with
-stable refs so the LLM can choose the right granularity; interactive elements
-(search, cart, checkout, login) are labeled as protected. Re-scans on scroll
-to catch lazy-loaded content.
+Use a small LLM to identify engagement/exploration rails (related products, "you
+might also like", recommended articles, trending now, etc.) and replace them
+with click-to-reveal placeholders. Sends a compressed page tree with stable refs
+so the LLM can choose the right granularity; interactive elements (search, cart,
+checkout, login) are labeled as protected. Re-scans on scroll to catch
+lazy-loaded content.
 
 ## Agent affordances
 
-Inject hints that make pages easier for agents to navigate without changing
-the human-visible UI.
+Inject hints that make pages easier for agents to navigate without changing the
+human-visible UI.
 
 ### Embed Search URL Recipes
 
@@ -242,9 +241,9 @@ the human-visible UI.
 - **Scope:** top frame only
 
 On covered hosts (Amazon, Best Buy, Etsy, IKEA, Home Depot, REI, GitHub,
-Wikipedia, Hacker News, MDN, npm, weather.gov, arXiv, Python docs, BBC), embed
-a screen-reader-only landmark at the top of the page describing how to run
+Wikipedia, Hacker News, MDN, npm, weather.gov, arXiv, Python docs, BBC), embed a
+screen-reader-only landmark at the top of the page describing how to run
 searches, filters, sorts, and direct lookups via URL. Lets agents navigate by
 URL instead of typing into search boxes and clicking facets. No visible
-affordance — the landmark is preserved by `hidden-text-strip` via the
-`sr-only` class allowlist.
+affordance — the landmark is preserved by `hidden-text-strip` via the `sr-only`
+class allowlist.
