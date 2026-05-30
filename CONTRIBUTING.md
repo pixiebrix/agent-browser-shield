@@ -44,6 +44,9 @@ Load `extension/dist/` as unpacked at `chrome://extensions`.
 
 ### Demo site
 
+Live deployment: <https://shield-dark-pattern-demo.vercel.app/>. To run it
+locally:
+
 ```sh
 cd demo-site
 bun install
