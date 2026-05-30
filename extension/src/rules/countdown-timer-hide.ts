@@ -167,7 +167,7 @@ export const countdownTimerHideRule = {
   id: RULE_ID,
   label: "Hide Countdown Timers",
   description:
-    "Hide running countdown timers so agents aren't pressured by the artificial time-sensitivity dark pattern. Snapshots timer-shaped text and confirms the value decreased after 1.5s; re-scans on subtree mutations to catch lazy-loaded sections.",
+    "Hide running countdown timers (artificial-urgency dark pattern).",
   defaultEnabled: true,
   apply,
   teardown,

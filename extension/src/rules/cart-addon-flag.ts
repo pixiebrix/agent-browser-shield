@@ -186,7 +186,7 @@ export const cartAddonFlagRule = {
   id: RULE_ID,
   label: "Flag Cart Add-Ons (Sneak-Into-Basket)",
   description:
-    'On checkout-like URLs (/cart, /checkout, /basket, /bag, /payment, /order), prepend a visible "[abs: likely cart add-on]" annotation onto line items matching common sneak-into-basket patterns (protection plans, extended warranties, AppleCare/SquareTrade/Asurion, insurance, donation/round-up, gift wrap, carbon offset, shipping/package protection, Route, Seel, Navidium, driver tips). The line item is NOT removed — the agent reads the annotation and decides whether to click the line\'s remove control.',
+    "On checkout pages, flag likely sneak-into-basket line items (protection plans, warranties, insurance, donations, gift wrap, etc.) with a visible annotation. Items are not removed.",
   defaultEnabled: true,
   apply,
   teardown: () => watcher.stop(),

@@ -27,7 +27,7 @@ const { rule, selectorsFor } = createSelectorHideRule({
   id: "cookie-banner-hide",
   label: "Remove Cookie Banners",
   description:
-    "Remove GDPR/CCPA cookie consent banners (OneTrust, Cookiebot, TrustArc, Sourcepoint, Quantcast, Osano, Didomi, and generic patterns). These overlays float above the page, so they're removed entirely rather than replaced with an in-flow placeholder.",
+    "Remove GDPR/CCPA cookie consent banners.",
   defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [

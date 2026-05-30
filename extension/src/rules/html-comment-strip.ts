@@ -58,7 +58,7 @@ export const htmlCommentStripRule = {
   id: RULE_ID,
   label: "Strip HTML Comments",
   description:
-    "Remove HTML comments from the page. Comments are invisible to humans but readable by agents and can carry prompt-injection payloads. Comments inside <script>/<style>/<noscript> are preserved. Removal is not reversible within the current page load.",
+    "Remove HTML comments. Invisible to humans but readable by agents and can carry prompt-injection payloads.",
   defaultEnabled: true,
   apply,
   teardown: () => watcher.stop(),

@@ -29,7 +29,7 @@ const { rule, selectorsFor } = createSelectorHideRule({
   id: "footer-hide",
   label: "Hide Page Footer",
   description:
-    "Hide the page footer (legal links, sitemap, social icons, marketing copy) to save tokens. Per-section footers inside articles or asides are left visible.",
+    "Hide the page footer (legal links, sitemap, social) to save tokens.",
   defaultEnabled: true,
   hideLabel: "[footer hidden — click to reveal]",
   alwaysOnSelectors: [
