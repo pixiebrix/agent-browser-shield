@@ -1,0 +1,49 @@
+---
+title: agent-browser-shield
+description: Browser extension prototypes for improving browser-use agent performance.
+template: splash
+hero:
+  tagline: Prototype browser extension capabilities that make browser-use agents faster, safer, and more accurate.
+  actions:
+    - text: Install
+      link: /agent-browser-shield/install/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/pixiebrix/agent-browser-shield
+      icon: external
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+:::caution[Alpha prototype]
+APIs, rule contracts, and trace formats may change without notice. Pin a commit
+if you need stability.
+:::
+
+## What it explores
+
+<CardGrid>
+  <Card title="Token efficiency" icon="document">
+    Preprocess pages to hide irrelevant content so agents spend tokens on what
+    matters.
+  </Card>
+  <Card title="Security & compliance" icon="approve-check">
+    Mask PII and other sensitive data before it reaches the model.
+  </Card>
+  <Card title="Accuracy" icon="rocket">
+    Block dark patterns and suppress user-generated content that could carry
+    prompt-injection payloads.
+  </Card>
+</CardGrid>
+
+## Ideas in the repo
+
+- Masking and redacting sensitive information on the webpage.
+- Blocking and modifying dark patterns on the webpage.
+- Preprocessing webpage content to be more agent-friendly — hiding irrelevant
+  content, hiding user-generated comments that could contain prompt-injection
+  attacks, and similar.
+
+For the full project overview, see the
+[repository README](https://github.com/pixiebrix/agent-browser-shield#readme).

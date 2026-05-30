@@ -1,0 +1,23 @@
+{
+  "name": "agent-browser-shield-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Astro Starlight documentation site for agent-browser-shield.",
+  "packageManager": "bun@1.3.0",
+  "engines": {
+    "node": ">=24",
+    "bun": ">=1.3"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.39.2",
+    "astro": "6.3.7",
+    "sharp": "^0.34.5"
+  }
+}
