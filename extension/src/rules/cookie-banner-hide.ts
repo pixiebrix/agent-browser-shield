@@ -66,6 +66,9 @@ const { rule, selectorsFor } = createSelectorHideRule({
   // CMP scripts (OneTrust, Cookiebot, Sourcepoint, etc.) typically inject the
   // banner after document_idle once the consent state has been resolved.
   watchSubtrees: true,
+  // Cookie banners are full-page overlays mounted on the top document; CMPs
+  // never inject one into a content iframe.
+  topFrameOnly: true,
 });
 
 export { selectorsFor };

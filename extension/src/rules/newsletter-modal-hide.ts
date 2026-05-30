@@ -83,6 +83,9 @@ const { rule, selectorsFor } = createSelectorHideRule({
   // Newsletter modals commonly inject after a 5–30s timer or scroll-depth
   // trigger, well after document_idle.
   watchSubtrees: true,
+  // Modals are full-page overlays mounted on the top document; vendor
+  // scripts never inject them into a nested iframe's body.
+  topFrameOnly: true,
 });
 
 export { selectorsFor };
