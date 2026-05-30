@@ -10,14 +10,15 @@ export type RuleStates = Record<RuleId, boolean>;
 const STORAGE_KEY = "agent-browser-shield.rules";
 
 // Defaults derived once at module load — each rule carries its own
-// `defaultEnabled` and `available` flags. No separate map to keep in sync.
+// `defaultEnabled` flag. Availability is resolved separately via
+// `lib/availability.ts` (which supports reactive accessors), and the rule
+// engine gates application on it at apply time. We deliberately don't mask
+// unavailable rules' stored state here: if availability is reactive (e.g.
+// gated on a user-supplied API key) we want the user's toggle preference
+// preserved so it takes effect the moment the rule becomes available.
 const DEFAULT_STATES: RuleStates = Object.fromEntries(
   RULES.map((rule) => [rule.id, rule.defaultEnabled]),
 ) as RuleStates;
-
-const UNAVAILABLE_RULE_IDS: ReadonlySet<RuleId> = new Set(
-  RULES.filter((rule) => rule.available === false).map((rule) => rule.id),
-);
 
 function normalize(raw: unknown): RuleStates {
   const result: RuleStates = { ...DEFAULT_STATES };
@@ -28,9 +29,6 @@ function normalize(raw: unknown): RuleStates {
         result[id] = value;
       }
     }
-  }
-  for (const id of UNAVAILABLE_RULE_IDS) {
-    result[id] = false;
   }
   return result;
 }

@@ -3,6 +3,11 @@
 
 import { useEffect, useState } from "react";
 import {
+  getRuleAvailabilityStates,
+  type RuleAvailabilityStates,
+  subscribeRuleAvailability,
+} from "../lib/availability";
+import {
   getEnforcementEnabled,
   setEnforcementEnabled,
   subscribeEnforcementEnabled,
@@ -20,6 +25,8 @@ export function Popup() {
   const [enforcementEnabled, setEnforcementState] = useState<boolean | null>(
     null,
   );
+  const [availability, setAvailability] =
+    useState<RuleAvailabilityStates | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,20 +36,27 @@ export function Popup() {
     getEnforcementEnabled().then((value) => {
       if (!cancelled) setEnforcementState(value);
     });
+    getRuleAvailabilityStates().then((initial) => {
+      if (!cancelled) setAvailability(initial);
+    });
     const unsubscribe = subscribe((next) => {
       setStates(next);
     });
     const unsubscribeEnforcement = subscribeEnforcementEnabled((value) => {
       setEnforcementState(value);
     });
+    const unsubscribeAvailability = subscribeRuleAvailability((next) => {
+      setAvailability(next);
+    });
     return () => {
       cancelled = true;
       unsubscribe();
       unsubscribeEnforcement();
+      unsubscribeAvailability();
     };
   }, []);
 
-  if (!states || enforcementEnabled === null) {
+  if (!states || enforcementEnabled === null || !availability) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -97,7 +111,8 @@ export function Popup() {
         }
       >
         {RULES.map((rule) => {
-          const unavailable = rule.available === false;
+          const snapshot = availability[rule.id];
+          const unavailable = !snapshot?.available;
           const disabled = unavailable || !enforcementEnabled;
           return (
             <li
@@ -122,10 +137,8 @@ export function Popup() {
                     {rule.label}
                     {unavailable && <span className="badge">Unavailable</span>}
                   </strong>
-                  {unavailable && rule.unavailableReason && (
-                    <p className="unavailable-reason">
-                      {rule.unavailableReason}
-                    </p>
+                  {unavailable && snapshot?.reason && (
+                    <p className="unavailable-reason">{snapshot.reason}</p>
                   )}
                   <p>{rule.description}</p>
                 </div>

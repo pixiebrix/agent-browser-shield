@@ -1,0 +1,84 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
+// Shared resolution logic for `Rule.available`. A rule can be statically
+// available, statically unavailable (build-time), or reactively gated on
+// runtime state (e.g. user-supplied API key). This module hides the three-way
+// split behind a snapshot map so the engine, popup, and options page don't
+// each duplicate the resolution.
+
+import { RULES, type RuleId } from "../rules";
+import type {
+  AvailabilitySnapshot,
+  Rule,
+  RuleAvailability,
+} from "../rules/types";
+import {
+  getUserApiKey,
+  HAS_BUILT_IN_OPENAI_KEY,
+  subscribeUserApiKey,
+} from "./api-key-storage";
+
+export type RuleAvailabilityStates = Record<RuleId, AvailabilitySnapshot>;
+
+const ALWAYS_AVAILABLE: AvailabilitySnapshot = { available: true };
+
+function isReactive(value: Rule["available"]): value is RuleAvailability {
+  return typeof value === "object" && value !== null;
+}
+
+export async function resolveAvailability(
+  rule: Rule,
+): Promise<AvailabilitySnapshot> {
+  const accessor = rule.available;
+  if (isReactive(accessor)) return accessor.get();
+  if (accessor === false) {
+    return { available: false, reason: rule.unavailableReason };
+  }
+  return ALWAYS_AVAILABLE;
+}
+
+export async function getRuleAvailabilityStates(): Promise<RuleAvailabilityStates> {
+  const entries = await Promise.all(
+    RULES.map(
+      async (rule) => [rule.id, await resolveAvailability(rule)] as const,
+    ),
+  );
+  return Object.fromEntries(entries) as RuleAvailabilityStates;
+}
+
+// Subscribe to changes in any rule's reactive availability. The listener is
+// invoked with a freshly-resolved snapshot map whenever an underlying source
+// signals a change.
+export function subscribeRuleAvailability(
+  listener: (next: RuleAvailabilityStates) => void,
+): () => void {
+  const unsubs: Array<() => void> = [];
+  const refresh = () => {
+    void getRuleAvailabilityStates().then(listener);
+  };
+  for (const rule of RULES) {
+    if (!isReactive(rule.available)) continue;
+    unsubs.push(rule.available.subscribe(refresh));
+  }
+  return () => {
+    for (const unsub of unsubs) unsub();
+  };
+}
+
+// Factory for rules that depend on the OpenAI API key being available — either
+// bundled at build time or supplied by the user via the options page. The
+// snapshot recomputes when the stored user key changes so the popup/options
+// flip the toggle from "Unavailable" the moment a key is saved.
+export function createApiKeyAvailability(reason: string): RuleAvailability {
+  return {
+    async get() {
+      if (HAS_BUILT_IN_OPENAI_KEY) return { available: true };
+      const userKey = await getUserApiKey();
+      return userKey ? { available: true } : { available: false, reason };
+    },
+    subscribe(listener) {
+      return subscribeUserApiKey(listener);
+    },
+  };
+}

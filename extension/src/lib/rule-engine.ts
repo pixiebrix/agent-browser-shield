@@ -3,6 +3,11 @@
 
 import { RULES, type Rule } from "../rules";
 import {
+  getRuleAvailabilityStates,
+  type RuleAvailabilityStates,
+  subscribeRuleAvailability,
+} from "./availability";
+import {
   getEnforcementEnabled,
   subscribeEnforcementEnabled,
 } from "./enforcement";
@@ -111,12 +116,12 @@ function injectStyles(): void {
   document.documentElement.appendChild(style);
 }
 
-function isAvailable(rule: Rule): boolean {
-  return rule.available !== false;
-}
-
-function isApplicableHere(rule: Rule, topFrame: boolean): boolean {
-  if (!isAvailable(rule)) return false;
+function isApplicableHere(
+  rule: Rule,
+  topFrame: boolean,
+  availability: RuleAvailabilityStates,
+): boolean {
+  if (!availability[rule.id]?.available) return false;
   // topFrameOnly rules target page-wide concepts (site footer, cookie/newsletter
   // overlays, per-host URL recipes). Running them in subframes would either
   // be a no-op (selectors don't match) or actively harmful (duplicate
@@ -125,7 +130,11 @@ function isApplicableHere(rule: Rule, topFrame: boolean): boolean {
   return true;
 }
 
-function applyEnabled(states: RuleStates, topFrame: boolean): void {
+function applyEnabled(
+  states: RuleStates,
+  topFrame: boolean,
+  availability: RuleAvailabilityStates,
+): void {
   // document.body may be missing in some about:blank / about:srcdoc iframes
   // at document_idle if the parent injects the frame without children. Skip
   // rule application entirely in that case — there's nothing to scan, and
@@ -137,7 +146,7 @@ function applyEnabled(states: RuleStates, topFrame: boolean): void {
     return;
   }
   const enabled = RULES.filter(
-    (rule) => isApplicableHere(rule, topFrame) && states[rule.id],
+    (rule) => isApplicableHere(rule, topFrame, availability) && states[rule.id],
   ).map((r) => r.id);
   log("initial rule application", {
     enabled,
@@ -145,7 +154,7 @@ function applyEnabled(states: RuleStates, topFrame: boolean): void {
     topFrame,
   });
   for (const rule of RULES) {
-    if (!isApplicableHere(rule, topFrame)) continue;
+    if (!isApplicableHere(rule, topFrame, availability)) continue;
     if (states[rule.id]) {
       log("applying rule", { ruleId: rule.id });
       rule.apply(document.body);
@@ -153,18 +162,44 @@ function applyEnabled(states: RuleStates, topFrame: boolean): void {
   }
 }
 
-function reconcile(
-  next: RuleStates,
-  previous: RuleStates,
+// Effective application = enabled-by-user AND applicable-in-this-frame AND
+// currently-available. Reconciliation reads from this so a change in any input
+// (storage toggle, enforcement switch, availability flip) routes through the
+// same diff logic.
+function effectivelyApplied(
+  rule: Rule,
+  states: RuleStates,
   topFrame: boolean,
+  availability: RuleAvailabilityStates,
+): boolean {
+  return (
+    isApplicableHere(rule, topFrame, availability) && Boolean(states[rule.id])
+  );
+}
+
+function reconcile(
+  nextStates: RuleStates,
+  previousStates: RuleStates,
+  topFrame: boolean,
+  nextAvailability: RuleAvailabilityStates,
+  previousAvailability: RuleAvailabilityStates,
 ): void {
   if (!document.body) return;
   for (const rule of RULES) {
-    if (!isApplicableHere(rule, topFrame)) continue;
-    const wasEnabled = previous[rule.id];
-    const isEnabled = next[rule.id];
-    if (isEnabled === wasEnabled) continue;
-    if (isEnabled) {
+    const wasApplied = effectivelyApplied(
+      rule,
+      previousStates,
+      topFrame,
+      previousAvailability,
+    );
+    const isApplied = effectivelyApplied(
+      rule,
+      nextStates,
+      topFrame,
+      nextAvailability,
+    );
+    if (isApplied === wasApplied) continue;
+    if (isApplied) {
       log("rule enabled — applying", { ruleId: rule.id });
       rule.apply(document.body);
     } else {
@@ -197,29 +232,55 @@ export async function start(): Promise<void> {
   void getPlaceholderDisplayMode().then(applyDisplayMode);
   subscribePlaceholderDisplayMode(applyDisplayMode);
 
-  const [rawStates, enforcementInitial] = await Promise.all([
-    getRuleStates(),
-    getEnforcementEnabled(),
-  ]);
+  const [rawStates, enforcementInitial, availabilityInitial] =
+    await Promise.all([
+      getRuleStates(),
+      getEnforcementEnabled(),
+      getRuleAvailabilityStates(),
+    ]);
   let rawCurrent = rawStates;
   let enforcementCurrent = enforcementInitial;
-  applyEnabled(mask(rawCurrent, enforcementCurrent), topFrame);
+  let availabilityCurrent = availabilityInitial;
+  applyEnabled(
+    mask(rawCurrent, enforcementCurrent),
+    topFrame,
+    availabilityCurrent,
+  );
 
   let effectiveCurrent = mask(rawCurrent, enforcementCurrent);
 
-  function applyChange(nextRaw: RuleStates, nextEnforcement: boolean): void {
+  function applyChange(
+    nextRaw: RuleStates,
+    nextEnforcement: boolean,
+    nextAvailability: RuleAvailabilityStates,
+  ): void {
     const nextEffective = mask(nextRaw, nextEnforcement);
-    reconcile(nextEffective, effectiveCurrent, topFrame);
+    reconcile(
+      nextEffective,
+      effectiveCurrent,
+      topFrame,
+      nextAvailability,
+      availabilityCurrent,
+    );
     effectiveCurrent = nextEffective;
     rawCurrent = nextRaw;
     enforcementCurrent = nextEnforcement;
+    availabilityCurrent = nextAvailability;
   }
 
   subscribe((next) => {
-    applyChange(next, enforcementCurrent);
+    applyChange(next, enforcementCurrent, availabilityCurrent);
   });
   subscribeEnforcementEnabled((enabled) => {
     log("enforcement toggle changed", { enabled });
-    applyChange(rawCurrent, enabled);
+    applyChange(rawCurrent, enabled, availabilityCurrent);
+  });
+  subscribeRuleAvailability((next) => {
+    log("rule availability changed", {
+      snapshot: Object.fromEntries(
+        Object.entries(next).map(([id, snap]) => [id, snap.available]),
+      ),
+    });
+    applyChange(rawCurrent, enforcementCurrent, next);
   });
 }
