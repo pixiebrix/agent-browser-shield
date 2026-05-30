@@ -12,6 +12,8 @@ service-account*.json
 # Build output
 extension/dist/
 demo-site/dist/
+docs/dist/
+docs/.astro/
 output/
 
 # Dependencies

@@ -32,13 +32,14 @@ Ideas explored in this repository:
 
 ## Repository layout
 
-| Path         | What's there                                                       |
-| ------------ | ------------------------------------------------------------------ |
-| `extension/` | Chromium MV3 extension (Bun + TypeScript)                          |
-| `demo-site/` | Vite/React mock e-commerce site that exercises every rule          |
-| `benchmark/` | Tasks, scenarios, and pricing for the agent benchmark harness      |
-| `scripts/`   | PEP 723 scripts: agent task runner, benchmark harness, trace tools |
-| `skills/`    | Claude Code skills for installing, configuring, and diagnosing     |
+| Path         | What's there                                                                    |
+| ------------ | ------------------------------------------------------------------------------- |
+| `extension/` | Chromium MV3 extension (Bun + TypeScript)                                       |
+| `demo-site/` | Vite/React mock e-commerce site that exercises every rule                       |
+| `docs/`      | Astro Starlight docs site — <https://pixiebrix.github.io/agent-browser-shield/> |
+| `benchmark/` | Tasks, scenarios, and pricing for the agent benchmark harness                   |
+| `scripts/`   | PEP 723 scripts: agent task runner, benchmark harness, trace tools              |
+| `skills/`    | Claude Code skills for installing, configuring, and diagnosing                  |
 
 ## Extension
 
