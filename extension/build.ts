@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { generateInjectionPatterns } from "./scripts/build-injection-patterns";
 import { generateSiteData } from "./scripts/build-site-data";
 
 const ROOT = import.meta.dir;
@@ -43,9 +44,11 @@ const OPENAI_API_KEY =
   readEnvValue("OPENAI_API_KEY") || readEnvValue("MODEL_API_KEY");
 
 async function build(): Promise<void> {
-  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml.
+  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml and
+  // src/rules/injection-patterns.generated.ts from data/injection-patterns.yaml.
   // Cheap and idempotent; ensures dev never forgets to rerun codegen.
   generateSiteData();
+  generateInjectionPatterns();
 
   await rm(DIST, { recursive: true, force: true });
   await mkdir(DIST, { recursive: true });

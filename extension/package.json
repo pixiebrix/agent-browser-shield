@@ -24,6 +24,7 @@
     "package": "bun run ../scripts/package-extension.ts",
     "fetch-easylist": "uv run --directory .. scripts/fetch_easylist.py",
     "build-site-data": "bun run scripts/build-site-data.ts",
+    "build-injection-patterns": "bun run scripts/build-injection-patterns.ts",
     "clean": "rm -rf dist",
     "test": "jest",
     "check": "biome check .",

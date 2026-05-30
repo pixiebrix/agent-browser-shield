@@ -45,6 +45,20 @@ precedent). `bun run build` invokes codegen automatically; for a manual run use
 `bun run build-site-data`. To add or change site coverage, edit the YAML and
 rebuild — do not edit the generated file.
 
+## Prompt-injection patterns
+
+Regex sources for `prompt-injection-hide` live base64-encoded in
+`extension/data/injection-patterns.yaml`. The codegen in
+`extension/scripts/build-injection-patterns.ts` decodes them and emits
+`extension/src/rules/injection-patterns.generated.ts` with plaintext RegExp
+literals — this keeps the shipped bundle free of `atob`-decoded strings (which
+Chrome Web Store review treats as obfuscated code) while still keeping
+literal adversarial phrasing out of files a coding agent is likely to read.
+
+The generated file is committed and `bun run build` regenerates it; for a
+manual run use `bun run build-injection-patterns`. To add or change a pattern,
+edit the YAML and rebuild — do not edit the generated file.
+
 ## Benchmark output management
 
 Benchmark runs accumulate under `output/results/<run_id>/` (raw events, traces,
