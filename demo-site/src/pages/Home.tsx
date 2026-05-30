@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 import { products } from "../data/products";
 import ProductCard from "../components/ProductCard";
 import CountdownBadge from "../components/CountdownBadge";

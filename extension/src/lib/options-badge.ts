@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 const BADGE_SELECTOR = "data-abs";
 const BADGE_VALUE = "open-options";
 

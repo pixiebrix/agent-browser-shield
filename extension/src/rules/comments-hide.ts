@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide user-generated comment threads (Disqus, Reddit, YouTube, Hacker News,
 // etc.) from agents to reduce the prompt-injection surface — commenters are
 // untrusted and frequently the entry point for indirect prompt injection.

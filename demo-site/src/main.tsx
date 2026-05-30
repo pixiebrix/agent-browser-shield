@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";

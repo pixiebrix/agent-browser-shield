@@ -1,3 +1,6 @@
+# Copyright (c) 2026 PixieBrix, Inc.
+# Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 """Decrypt and adapt BU Bench V1 tasks to agent-browser-shield's Task shape.
 
 Browser Use's BU Bench V1 ships its 100 tasks as a Fernet-encrypted blob

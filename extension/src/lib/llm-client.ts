@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Content-script-side wrapper for LLM calls that must run from the background
 // worker to bypass page CSP.
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Stable, opaque identifiers for DOM elements that survive a round-trip through
 // the LLM. We hand the LLM a serialized page tree with `data-ref` attributes
 // stamped on candidate nodes; the LLM responds with refs to act on; the rule

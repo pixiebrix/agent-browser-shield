@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide display ads and paid/sponsored result blocks. Ads are token bloat,
 // distract agents from the actual page content, and (in the case of
 // sponsored search results) risk being treated as organic recommendations.

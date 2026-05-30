@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide active countdown timers ("Sale ends in 12:34:56", "Only 5m 30s left")
 // so agents aren't pressured by the artificial time-sensitivity dark pattern.
 // We can't reliably distinguish a countdown from a static clock from text

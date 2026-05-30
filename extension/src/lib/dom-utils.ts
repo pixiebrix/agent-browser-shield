@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Cross-rule DOM helpers. Lives in `lib/` so rules don't import each other.
 
 import { PLACEHOLDER_CLASS } from "./placeholder";

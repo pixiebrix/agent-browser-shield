@@ -36,6 +36,41 @@ repos:
       - id: markdownlint-cli2
         name: Lint Markdown files
 
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.6
+    hooks:
+      - id: insert-license
+        name: Insert copyright header (TS/JS)
+        files: \.(ts|tsx|js|mjs|cjs)$
+        # __tests__/ is excluded because Jest's `@jest-environment` /
+        # `@jest-environment-options` docblock pragmas must live in the first
+        # comment block at the top of the file — a preceding `//` header
+        # silently disables them.
+        exclude: \.generated\.(ts|tsx|js|mjs|cjs)$|/\.astro/|/dist/|/node_modules/|\.d\.ts$|/__tests__/
+        args:
+          - --license-filepath
+          - HEADER.txt
+          - --comment-style
+          - //
+      - id: insert-license
+        name: Insert copyright header (CSS)
+        files: \.css$
+        exclude: \.generated\.css$|/dist/|/node_modules/
+        args:
+          - --license-filepath
+          - HEADER.txt
+          - --comment-style
+          - /*| *| */
+      - id: insert-license
+        name: Insert copyright header (Python)
+        files: \.py$
+        exclude: /\.venv/|/\.ruff_cache/|/__pycache__/
+        args:
+          - --license-filepath
+          - HEADER.txt
+          - --comment-style
+          - "#"
+
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.4.15
     hooks:

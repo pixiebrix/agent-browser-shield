@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 import { useEffect, useState } from "react";
 import { getUserApiKey, setUserApiKey } from "../lib/api-key-storage";
 import {
@@ -351,6 +354,8 @@ export function Options() {
           })}
         </ul>
       </section>
+
+      <footer className="footer">© PixieBrix 2026</footer>
     </div>
   );
 }

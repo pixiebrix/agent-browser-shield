@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Detect whether the current document is the top-level browsing context.
 //
 // With `all_frames: true` in the manifest, the content script runs once per

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Strip text that's invisible to a sighted human but still readable by
 // agents walking the DOM or accessibility tree — the "unseeable injection"
 // pattern attackers use to smuggle instructions to LLM-driven browsers.

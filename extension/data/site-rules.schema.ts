@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Schema for per-site YAML files under extension/data/sites/. The codegen
 // script `scripts/build-site-data.ts` parses each YAML, validates it against
 // `SiteFileSchema`, and emits `src/rules/site-data.generated.ts`.

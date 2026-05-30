@@ -1,3 +1,6 @@
+# Copyright (c) 2026 PixieBrix, Inc.
+# Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 """LLM-as-judge + LLM-as-extractor helpers shared by benchmark_run.py and
 benchmark_report.py.
 

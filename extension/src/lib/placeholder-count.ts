@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Per-frame tally of hidden/masked elements, reported to the background so it
 // can render the total as a toolbar badge. Counts both placeholders that ship
 // with a reveal control and elements hidden in-place via display:none.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Build a compressed, semantic representation of the page suitable for sending
 // to an LLM. Strips layout/styling noise (script/style/empty divs), keeps
 // semantic attributes and current form values, and stamps `data-ref`

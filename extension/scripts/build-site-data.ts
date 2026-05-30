@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Compiles per-site YAML files under extension/data/sites/ into a single
 // TypeScript module consumed by the rule files. Mirrors the precedent set
 // by scripts/fetch_easylist.py — generated output is committed and bundled

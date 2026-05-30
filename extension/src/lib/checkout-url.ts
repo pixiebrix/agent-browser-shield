@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // URL gating for rules that should only run on cart / checkout pages
 // (`checkout-checkbox-clear`, `cart-addon-flag`). Lives in `lib/` instead of a
 // rule file so consumers don't import sibling rules.

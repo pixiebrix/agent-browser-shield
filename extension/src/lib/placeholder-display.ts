@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Stored separately from rule states so changing the cosmetic display mode
 // doesn't churn the rule-state listener path used by the engine and UIs.
 

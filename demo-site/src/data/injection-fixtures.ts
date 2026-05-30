@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Base64-encoded adversarial review bodies, hidden-text spans, ChatML
 // fragments, and HTML comments that the RiverMart demo site embeds on
 // purpose so the agent-browser-shield rules have something to defend

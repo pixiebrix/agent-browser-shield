@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Compiles extension/data/injection-patterns.yaml into a TypeScript module
 // consumed by `src/rules/prompt-injection-hide.ts`. Mirrors the precedent
 // set by `build-site-data.ts` — generated output is committed and bundled

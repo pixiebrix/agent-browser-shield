@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 import { walkTextNodes } from "../lib/dom-utils";
 import { type InlineMatch, replaceMatchesInTextNode } from "../lib/placeholder";
 import type { Rule } from "./types";

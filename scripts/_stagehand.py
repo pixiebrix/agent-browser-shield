@@ -1,3 +1,6 @@
+# Copyright (c) 2026 PixieBrix, Inc.
+# Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 """Helpers shared by scripts/agent_task.py and scripts/benchmark_run.py.
 
 This module is imported, not run as a script — its callers declare the

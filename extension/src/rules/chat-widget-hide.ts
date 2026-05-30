@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide live-chat widgets (Intercom, Drift, Zendesk, Crisp, Tawk.to, HubSpot,
 // Olark, LiveChat, Freshchat, Zopim). Agents almost never need to interact
 // with these and they cost 200–500 tokens per page.

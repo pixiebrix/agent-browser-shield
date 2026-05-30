@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Uncheck every checkbox on checkout-like URLs so the agent inherits no
 // silently pre-selected state (insurance, extended warranty, gift wrap,
 // donations, expedited shipping, marketing opt-ins). The agent is then

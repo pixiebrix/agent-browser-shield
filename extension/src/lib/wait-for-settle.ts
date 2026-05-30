@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Resolve once the page has been mutation-quiet for `quietMs` consecutive
 // milliseconds, or after `timeout` ms whichever comes first. Useful for rules
 // that need a stable DOM snapshot (e.g. before sending it to an LLM) — running
