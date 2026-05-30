@@ -3,10 +3,10 @@ title: Use with OpenClaw
 description: Drive OpenClaw against a Browserbase session that has the agent-browser-shield extension loaded.
 ---
 
-OpenClaw's [managed browser profile](https://docs.openclaw.ai/tools/browser)
-is deliberately isolated and does not accept Chromium extensions. To run
-OpenClaw with `agent-browser-shield` active, point it at a remote browser that
-does support extension upload — currently only
+OpenClaw's [managed browser profile](https://docs.openclaw.ai/tools/browser) is
+deliberately isolated and does not accept Chromium extensions. To run OpenClaw
+with `agent-browser-shield` active, point it at a remote browser that does
+support extension upload — currently only
 [Browserbase](https://docs.browserbase.com/platform/browser/core-features/browser-extensions#browser-extensions).
 
 The flow:
@@ -37,8 +37,8 @@ curl -X POST https://api.browserbase.com/v1/extensions \
   -F "file=@output/extension.zip"
 ```
 
-Stash the returned `id` — it's reusable across sessions until you upload a
-new build.
+Stash the returned `id` — it's reusable across sessions until you upload a new
+build.
 
 ## 3. Create a session with the extension attached
 
@@ -78,8 +78,8 @@ Add a remote CDP profile to your OpenClaw config:
 ```
 
 Read the API key and connect URL from environment variables rather than
-hardcoding them. Restart OpenClaw and start your task — the content script
-wakes up on the first page navigation.
+hardcoding them. Restart OpenClaw and start your task — the content script wakes
+up on the first page navigation.
 
 ## Verify
 
@@ -98,6 +98,6 @@ add the extension to an already-running session.
 
 OpenClaw's `openclaw` profile launches a dedicated Chromium under its own
 control service and intentionally rejects unpacked extensions for isolation.
-Pointing OpenClaw at a Browserbase CDP session moves the agent's traffic onto
-a browser that *does* allow extension upload, without giving up OpenClaw's
-control loop.
+Pointing OpenClaw at a Browserbase CDP session moves the agent's traffic onto a
+browser that *does* allow extension upload, without giving up OpenClaw's control
+loop.
