@@ -2,42 +2,73 @@
 // attacks (instruction overrides, jailbreak personas, chat-template tokens).
 // Regex-based heuristic for v1; an ML-based classifier is planned to replace
 // this once we can afford the latency budget.
+//
+// Pattern sources are base64-encoded so coding agents reading this file
+// don't have to scan literal adversarial phrasing. See
+// `lib/encoded-fixture.ts` for the helper. The decoded sources are
+// compiled into RegExp once at module load and never logged anywhere.
 
 import {
   filterToOutermost,
   isInsidePlaceholder,
   walkTextNodes,
 } from "../lib/dom-utils";
+import { decode } from "../lib/encoded-fixture";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import type { Rule } from "./types";
 
 const RULE_ID = "prompt-injection-hide" as const;
 const MIN_TEXT_LENGTH = 8;
 
-// Patterns are tuned for precision over recall — false positives are visible
-// to the user as hidden content, and a regex layer should not be aggressive.
-const INJECTION_PATTERNS: RegExp[] = [
+// Each entry is [base64-encoded RegExp source, RegExp flags].
+// Tuned for precision over recall — false positives are visible to the user
+// as hidden content, and a regex layer should not be aggressive. To inspect
+// a pattern, decode the first element with `atob()` (or
+// `lib/encoded-fixture#decode`).
+const ENCODED_PATTERNS: ReadonlyArray<readonly [string, string]> = [
   // "Ignore/disregard/forget (all) (the) previous/prior/above ..."
-  /\b(?:ignore|disregard|forget)\s+(?:all\s+)?(?:the\s+)?(?:previous|prior|above|preceding|earlier|foregoing)\s+(?:instructions?|prompts?|messages?|directives?|commands?|rules?|directions?|context|conversation|system\s+prompt)\b/i,
+  [
+    "XGIoPzppZ25vcmV8ZGlzcmVnYXJkfGZvcmdldClccysoPzphbGxccyspPyg/OnRoZVxzKyk/KD86cHJldmlvdXN8cHJpb3J8YWJvdmV8cHJlY2VkaW5nfGVhcmxpZXJ8Zm9yZWdvaW5nKVxzKyg/Omluc3RydWN0aW9ucz98cHJvbXB0cz98bWVzc2FnZXM/fGRpcmVjdGl2ZXM/fGNvbW1hbmRzP3xydWxlcz98ZGlyZWN0aW9ucz98Y29udGV4dHxjb252ZXJzYXRpb258c3lzdGVtXHMrcHJvbXB0KVxi",
+    "i",
+  ],
   // "Override/bypass/disable (your/the) (safety/system) instructions/guardrails/..."
-  /\b(?:override|bypass|disable|circumvent)\s+(?:all\s+)?(?:your\s+|the\s+)?(?:safety\s+|security\s+|system\s+|content\s+)?(?:instructions?|filters?|guardrails?|guidelines?|restrictions?|safeguards?|policies?)\b/i,
+  [
+    "XGIoPzpvdmVycmlkZXxieXBhc3N8ZGlzYWJsZXxjaXJjdW12ZW50KVxzKyg/OmFsbFxzKyk/KD86eW91clxzK3x0aGVccyspPyg/OnNhZmV0eVxzK3xzZWN1cml0eVxzK3xzeXN0ZW1ccyt8Y29udGVudFxzKyk/KD86aW5zdHJ1Y3Rpb25zP3xmaWx0ZXJzP3xndWFyZHJhaWxzP3xndWlkZWxpbmVzP3xyZXN0cmljdGlvbnM/fHNhZmVndWFyZHM/fHBvbGljaWVzPylcYg==",
+    "i",
+  ],
   // "You are now (DAN/unrestricted/jailbroken/uncensored/...)"
-  /\byou\s+are\s+(?:now\s+)?(?:an?\s+)?(?:DAN|do\s+anything\s+now|jailbroken|unrestricted|uncensored|unfiltered)\b/i,
+  [
+    "XGJ5b3VccythcmVccysoPzpub3dccyspPyg/OmFuP1xzKyk/KD86REFOfGRvXHMrYW55dGhpbmdccytub3d8amFpbGJyb2tlbnx1bnJlc3RyaWN0ZWR8dW5jZW5zb3JlZHx1bmZpbHRlcmVkKVxi",
+    "i",
+  ],
   // "Act/pretend/roleplay as (DAN/unrestricted/...)"
-  /\b(?:act|pretend|behave|roleplay|respond)\s+as\s+(?:if\s+you\s+(?:are|were)\s+)?(?:an?\s+)?(?:DAN|do\s+anything\s+now|jailbroken|unrestricted|uncensored|unfiltered)\b/i,
+  [
+    "XGIoPzphY3R8cHJldGVuZHxiZWhhdmV8cm9sZXBsYXl8cmVzcG9uZClccythc1xzKyg/OmlmXHMreW91XHMrKD86YXJlfHdlcmUpXHMrKT8oPzphbj9ccyspPyg/OkRBTnxkb1xzK2FueXRoaW5nXHMrbm93fGphaWxicm9rZW58dW5yZXN0cmljdGVkfHVuY2Vuc29yZWR8dW5maWx0ZXJlZClcYg==",
+    "i",
+  ],
   // Mode-activation jailbreak phrasing
-  /\b(?:developer|god|admin|sudo|debug)\s+mode\s+(?:enabled|activated|on|engaged|unlocked)\b/i,
+  [
+    "XGIoPzpkZXZlbG9wZXJ8Z29kfGFkbWlufHN1ZG98ZGVidWcpXHMrbW9kZVxzKyg/OmVuYWJsZWR8YWN0aXZhdGVkfG9ufGVuZ2FnZWR8dW5sb2NrZWQpXGI=",
+    "i",
+  ],
   // ChatML / OpenAI special tokens
-  /<\|im_(?:start|end)\|>/i,
-  /<\|endoftext\|>/i,
+  ["PFx8aW1fKD86c3RhcnR8ZW5kKVx8Pg==", "i"],
+  ["PFx8ZW5kb2Z0ZXh0XHw+", "i"],
   // Llama / instruct special tokens
-  /\[\/?INST\]/,
-  /<<\/?SYS>>/,
+  ["XFtcLz9JTlNUXF0=", ""],
+  ["PDxcLz9TWVM+Pg==", ""],
   // System-prompt directive markers
-  /\bsystem\s+prompt\s*[:=]/i,
-  // "New instructions: ..." — common injection prefix
-  /\bnew\s+(?:instructions?|directives?|task|prompt|rules?)\s*:/i,
-];
+  ["XGJzeXN0ZW1ccytwcm9tcHRccypbOj1d", "i"],
+  // Common injection-prefix
+  [
+    "XGJuZXdccysoPzppbnN0cnVjdGlvbnM/fGRpcmVjdGl2ZXM/fHRhc2t8cHJvbXB0fHJ1bGVzPylccyo6",
+    "i",
+  ],
+] as const;
+
+const INJECTION_PATTERNS: ReadonlyArray<RegExp> = ENCODED_PATTERNS.map(
+  ([source, flags]) => new RegExp(decode(source), flags),
+);
 
 // Containers we consider a reasonable unit to hide. Walking up from the text
 // node, we hide the closest matching ancestor — this keeps the placeholder
