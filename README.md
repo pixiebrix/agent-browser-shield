@@ -8,20 +8,18 @@
 
 ## Repository Purpose
 
-Prototyping browser extension capabilities for improving browser use agent
-performance:
+Prototyping browser extension capabilities for improving browser-use agent
+performance.
 
-- Token efficiency
-- Security/Compliance: e.g., exposure to PII, data loss prevention, etc.
-- Accuracy
+Benefits:
 
-Ideas explored in this repository:
-
-- Masking/Redacting sensitive information on the webpage
-- Blocking/Modifying dark patterns on the webpage
-- Preprocessing webpage content to be more agent-friendly, e.g., hiding
-  irrelevant content, hiding user-generated comments which could contain
-  prompt-injection attacks, etc.
+- **Token efficiency** — strip page chrome (footers, cookie banners, chat
+  widgets, sponsored content) so agents spend tokens on the user's task.
+- **Security & compliance** — mask PII and credentials before they reach the
+  model, and suppress hidden text, HTML comments, and user-generated content
+  that could carry prompt-injection payloads.
+- **Accuracy** — block manipulative dark patterns and hide engagement rails and
+  other content that could distract the model from the user's task.
 
 ## Prerequisites
 
