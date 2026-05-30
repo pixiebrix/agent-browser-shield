@@ -1,20 +1,19 @@
 name: Release extension
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
   id-token: write
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: release-extension
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Build and upload extension ZIP
+    name: Build and publish extension release
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -25,15 +24,32 @@ jobs:
         with:
           node-version: 24
 
-      - name: Verify tag matches manifest.json version
-        working-directory: extension
+      - name: Compute version
+        id: version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          MANIFEST_VERSION=$(jq -r .version src/manifest.json)
-          if [ "${TAG#v}" != "$MANIFEST_VERSION" ]; then
-            echo "::error::Release tag $TAG does not match extension/src/manifest.json version $MANIFEST_VERSION"
-            exit 1
-          fi
+          # CalVer + GitHub Actions run_number. Chrome accepts up to 4 integer
+          # segments and compares them numerically, so a monotonically
+          # increasing run_number guarantees every release looks "newer" to
+          # Chrome's auto-update — even multiple releases on the same day.
+          version="$(date -u +%Y.%-m.%-d).${RUN_NUMBER}"
+          tag="v${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${tag} (manifest version ${version})"
+
+      - name: Patch manifest version
+        working-directory: extension
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # CI is the source of truth for shipped versions; the version field
+          # in src/manifest.json is a dev placeholder for unpacked loads.
+          tmp=$(mktemp)
+          jq --arg v "$VERSION" '.version = $v' src/manifest.json > "$tmp"
+          mv "$tmp" src/manifest.json
+          jq '{version, name}' src/manifest.json
 
       - name: Install dependencies
         working-directory: extension
@@ -51,9 +67,11 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Upload versioned ZIP
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           aws s3 cp output/extension.zip \
-            s3://agent-browser-shield/${{ github.event.release.tag_name }}/extension.zip \
+            "s3://agent-browser-shield/${TAG}/extension.zip" \
             --content-type application/zip \
             --content-disposition 'attachment; filename="extension.zip"' \
             --cache-control 'public, max-age=31536000, immutable'
@@ -66,7 +84,13 @@ jobs:
             --content-disposition 'attachment; filename="extension.zip"' \
             --cache-control 'public, max-age=300'
 
-      - name: Attach ZIP to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: output/extension.zip
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            output/extension.zip \
+            --title "$TAG" \
+            --generate-notes \
+            --target "$GITHUB_SHA"
