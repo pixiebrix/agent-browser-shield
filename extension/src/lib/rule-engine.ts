@@ -1,8 +1,22 @@
 import { RULES, type Rule } from "../rules";
 import { isTopFrame } from "./frame";
 import { log } from "./log";
-import { LABEL_CLASS, PLACEHOLDER_CLASS, revealAll } from "./placeholder";
+import {
+  LABEL_CLASS,
+  LABEL_ICON_CLASS,
+  LABEL_TEXT_CLASS,
+  PLACEHOLDER_CLASS,
+  revealAll,
+} from "./placeholder";
+import {
+  getPlaceholderDisplayMode,
+  PLACEHOLDER_DISPLAY_MODE_DEFAULT,
+  type PlaceholderDisplayMode,
+  subscribePlaceholderDisplayMode,
+} from "./placeholder-display";
 import { getRuleStates, type RuleStates, subscribe } from "./storage";
+
+const PLACEHOLDER_MODE_ATTR = "data-abs-placeholder-mode";
 
 // Inline placeholders and the inner .${LABEL_CLASS} of block placeholders are
 // <button> elements so screen readers and browser-use agents see them as
@@ -45,7 +59,9 @@ const PLACEHOLDER_STYLES = `
   -webkit-appearance: none;
   position: sticky;
   top: 8px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 4px 8px;
   background: #fff;
   border: 1px solid #999;
@@ -53,6 +69,21 @@ const PLACEHOLDER_STYLES = `
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+.${LABEL_ICON_CLASS} {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  display: inline-block;
+}
+.${LABEL_TEXT_CLASS} {
+  display: inline;
+}
+[${PLACEHOLDER_MODE_ATTR}="icon"] .${LABEL_TEXT_CLASS} {
+  display: none;
+}
+[${PLACEHOLDER_MODE_ATTR}="icon"] .${LABEL_CLASS} {
+  padding: 4px;
 }
 .${PLACEHOLDER_CLASS}:hover {
   background: #fff8c5;
@@ -137,10 +168,20 @@ function reconcile(
   }
 }
 
+function applyDisplayMode(mode: PlaceholderDisplayMode): void {
+  document.documentElement.setAttribute(PLACEHOLDER_MODE_ATTR, mode);
+}
+
 export async function start(): Promise<void> {
   const topFrame = isTopFrame();
   log("rule engine starting", { url: window.location.href, topFrame });
   injectStyles();
+  // Set the default synchronously so any placeholder created before storage
+  // resolves gets the right CSS scoping.
+  applyDisplayMode(PLACEHOLDER_DISPLAY_MODE_DEFAULT);
+  void getPlaceholderDisplayMode().then(applyDisplayMode);
+  subscribePlaceholderDisplayMode(applyDisplayMode);
+
   const initial = await getRuleStates();
   applyEnabled(initial, topFrame);
 

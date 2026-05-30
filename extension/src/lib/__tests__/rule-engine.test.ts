@@ -37,6 +37,12 @@ jest.mock("../storage", () => ({
   subscribe: jest.fn(() => () => undefined),
 }));
 
+jest.mock("../placeholder-display", () => ({
+  getPlaceholderDisplayMode: jest.fn(() => Promise.resolve("icon")),
+  subscribePlaceholderDisplayMode: jest.fn(() => () => undefined),
+  PLACEHOLDER_DISPLAY_MODE_DEFAULT: "icon",
+}));
+
 jest.mock("../frame", () => ({
   isTopFrame: jest.fn(),
 }));

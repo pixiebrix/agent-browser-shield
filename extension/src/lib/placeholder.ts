@@ -3,6 +3,8 @@ import type { RuleId } from "./storage";
 
 export const PLACEHOLDER_CLASS = "abs-placeholder";
 export const LABEL_CLASS = "abs-placeholder__label";
+export const LABEL_TEXT_CLASS = "abs-placeholder__text";
+export const LABEL_ICON_CLASS = "abs-placeholder__icon";
 export const RULE_ATTR = "data-abs-rule";
 // Stamped onto the original element after the user clicks to reveal, so a
 // rule's subtree watcher doesn't immediately re-hide it on the next scan.
@@ -61,13 +63,63 @@ function attachReveal(container: HTMLElement, original: Node): void {
   container.addEventListener("click", reveal);
 }
 
-function createRevealButton(label: string): HTMLButtonElement {
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// 24×24 viewBox SVG paths, stroke-style (no fill) so they read well at 14px.
+// Each path stands alone — multi-path icons would need to render multiple
+// children, and the visual differentiation we want is fine with a single
+// expressive silhouette per rule. Default shield is used when no rule-specific
+// icon is registered.
+const SHIELD_PATH = "M12 21a9 9 0 0 1-9-9V5l9-3 9 3v7a9 9 0 0 1-9 9z";
+
+const RULE_ICON_PATHS: Partial<Record<RuleId, string>> = {
+  "reviews-hide":
+    "M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.9l-5.9 3.4 1.7-6.6L2.6 9.3l6.8-.5L12 2.5z",
+  "comments-hide":
+    "M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-5l-5 4v-4H6a3 3 0 0 1-3-3V6z",
+  "prompt-injection-hide": "M12 3l10 18H2L12 3zM12 10v5M12 17.5v.01",
+  "countdown-timer-hide": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3",
+  "scarcity-hide":
+    "M12 22c-4 0-7-3-7-7 0-3 2-5 3-6-1 4 2 6 2 6 1-3 3-6 3-9 4 3 6 6 6 10 0 4-3 7-7 7z",
+  "footer-hide": "M4 5h16v10H4zM4 19h16",
+  "social-embed-hide": "M5 9h14M5 15h14M10 5l-2 14M16 5l-2 14",
+  "irrelevant-sections-hide": "M3 4h18l-7 9v6l-4 2v-8L3 4z",
+};
+
+function createIcon(ruleId: RuleId): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", LABEL_ICON_CLASS);
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.75");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", RULE_ICON_PATHS[ruleId] ?? SHIELD_PATH);
+  svg.appendChild(path);
+  return svg;
+}
+
+function createRevealButton(ruleId: RuleId, label: string): HTMLButtonElement {
   const button = document.createElement("button");
   // type="button" prevents form submission when the placeholder happens to be
   // inserted inside a <form>.
   button.type = "button";
   button.className = LABEL_CLASS;
-  button.textContent = label;
+  // aria-label and title carry the descriptor in icon-only mode where the text
+  // span is hidden by CSS. In button mode the visible text repeats the label;
+  // screen readers prefer aria-label when both are present so there's no
+  // double-announcement.
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.appendChild(createIcon(ruleId));
+  const text = document.createElement("span");
+  text.className = LABEL_TEXT_CLASS;
+  text.textContent = label;
+  button.appendChild(text);
   return button;
 }
 
@@ -87,7 +139,7 @@ export function replaceWithBlockPlaceholder(
   placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--block`;
   placeholder.setAttribute(RULE_ATTR, ruleId);
 
-  placeholder.appendChild(createRevealButton(label));
+  placeholder.appendChild(createRevealButton(ruleId, label));
 
   placeholder.style.width = `${rect.width}px`;
   placeholder.style.minHeight = `${rect.height}px`;

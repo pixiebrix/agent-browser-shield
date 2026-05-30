@@ -229,6 +229,49 @@
       .section.section--unavailable {
         background: #fafafa;
       }
+      .radio-group {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .radio {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 4px;
+      }
+      .radio:hover {
+        background: #f4f4f5;
+      }
+      .radio input {
+        margin-top: 2px;
+      }
+      .radio strong {
+        display: block;
+        font-weight: 600;
+      }
+      .radio p {
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.3;
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
       .section.section--unavailable .api-key-input,
       .section.section--unavailable button {
         opacity: 0.6;
