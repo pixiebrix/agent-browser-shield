@@ -37,6 +37,14 @@ jobs:
         run: bun run test
       - name: Build
         run: bun run build
+      - name: Package extension zip
+        run: bun run package
+      - name: Upload extension zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: output/extension.zip
+          if-no-files-found: error
 
   demo-site:
     name: Demo site (build)
