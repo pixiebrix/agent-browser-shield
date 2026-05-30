@@ -45,8 +45,10 @@ attach Playwright to the same `connect_url` for surgical interventions.
 
 ## Prerequisites
 
-- A packaged extension zip — follow [Install](/agent-browser-shield/install/)
-  through `bun run package` to produce `output/extension.zip`.
+- A packaged extension zip — download the
+  [prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), or
+  follow [Install](/agent-browser-shield/install/) through `bun run package` to
+  produce `output/extension.zip` from source.
 - `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` from *Settings → API Keys*
   at <https://www.browserbase.com>.
 - Python ≥ 3.11 with the [`browserbase`](https://pypi.org/project/browserbase/)
