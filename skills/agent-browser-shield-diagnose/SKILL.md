@@ -112,9 +112,10 @@ Once you see *what* the agent saw differently, read its `reasoning` text on the
 step immediately after the diverging `ariaTree`. That's where the agent decided
 what to do with the new view of the page. Common failure shapes:
 
-- **Misread placeholder** — agent treats `[… hidden — click to reveal]` as the
-  literal answer instead of clicking through. Check the `agent-browser-shield`
-  skill's "Required behavior" section for the contract.
+- **Misread placeholder** — agent treats the placeholder's descriptor
+  (`[… hidden — click to reveal]`, on the button's `aria-label`) as the literal
+  answer instead of clicking through. Check the `agent-browser-shield` skill's
+  "Required behavior" section for the contract.
 - **Lost landmark** — agent can't find the element the baseline used; falls back
   to a worse heuristic and lands on the wrong row/listing/price.
 - **Step exhaustion** — guarded run hits `max_steps` because the agent burns

@@ -13,12 +13,17 @@ surfaces **before you see the page**.
 
 - `[data-abs-rule="<rule-id>"]` — any element this extension inserted; the
   attribute value names the rule.
-- `.abs-placeholder` with button text `[<thing> hidden — click to reveal]` —
-  reveal-on-click placeholder replacing hidden content. The
+- `.abs-placeholder` — reveal-on-click placeholder replacing hidden content.
+  Each placeholder has a `<button>` whose `aria-label` (and `title`) describes
+  what was hidden: `[<thing> hidden — click to reveal]`. The
   `irrelevant-sections-hide` rule embeds an AI-generated one-sentence summary
   instead: `[hidden: <summary> — click to reveal]` (e.g.
   `[hidden: Carousel of 6 related kitchen knives with prices and ratings — click to reveal]`).
-  Use that summary to decide whether to reveal.
+  Use that descriptor to decide whether to reveal. The same string appears as
+  visible button text only when the user has selected "Button with label" on the
+  options page; in the default "Icon only" display mode the button shows just a
+  rule-specific shield-style SVG icon and the visible text is hidden by CSS, so
+  always read the descriptor from `aria-label`, not `textContent`.
 - `.abs-cart-addon-flag` — warning chip prepended into a cart line item flagged
   as a likely sneak-into-basket add-on (protection plan, warranty, insurance,
   donation, round-up, gift wrap, carbon offset, shipping protection, driver tip,

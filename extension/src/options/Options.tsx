@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { getUserApiKey, setUserApiKey } from "../lib/api-key-storage";
 import {
+  getPlaceholderDisplayMode,
+  type PlaceholderDisplayMode,
+  setPlaceholderDisplayMode,
+  subscribePlaceholderDisplayMode,
+} from "../lib/placeholder-display";
+import {
   getRuleStates,
   RULE_IDS,
   type RuleId,
@@ -62,6 +68,9 @@ export function Options() {
   const [status, setStatus] = useState<string | null>(null);
   const [apiKeyDraft, setApiKeyDraft] = useState("");
   const [apiKeyStatus, setApiKeyStatus] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<PlaceholderDisplayMode | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -71,12 +80,19 @@ export function Options() {
     getUserApiKey().then((key) => {
       if (!cancelled) setApiKeyDraft(key);
     });
+    getPlaceholderDisplayMode().then((mode) => {
+      if (!cancelled) setDisplayMode(mode);
+    });
     const unsubscribe = subscribe((next) => {
       setStates(next);
+    });
+    const unsubscribeMode = subscribePlaceholderDisplayMode((mode) => {
+      setDisplayMode(mode);
     });
     return () => {
       cancelled = true;
       unsubscribe();
+      unsubscribeMode();
     };
   }, []);
 
@@ -117,6 +133,11 @@ export function Options() {
     setTimeout(() => setApiKeyStatus(null), 1500);
   };
 
+  const handleDisplayModeChange = (mode: PlaceholderDisplayMode) => {
+    setDisplayMode(mode);
+    void setPlaceholderDisplayMode(mode);
+  };
+
   return (
     <div className="options">
       <h1>Agent Browser Shield — Options</h1>
@@ -124,6 +145,7 @@ export function Options() {
       <nav className="toc" aria-label="Sections">
         <a href="#apply">Apply configuration</a>
         <a href="#export">Export configuration</a>
+        <a href="#display">Placeholder display</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
       </nav>
@@ -181,6 +203,61 @@ export function Options() {
             Export JSON
           </button>
         </div>
+      </section>
+
+      <section id="display" className="section">
+        <h2>
+          <a
+            href="#display"
+            className="anchor"
+            aria-label="Link to Placeholder display"
+          >
+            #
+          </a>
+          Placeholder display
+        </h2>
+        <p className="hint">
+          How the reveal control on each placeholder is rendered. The
+          descriptive label (e.g., what kind of content was hidden) is always
+          exposed to screen readers and agents via <code>aria-label</code>.
+        </p>
+        <fieldset className="radio-group">
+          <legend className="visually-hidden">Reveal control style</legend>
+          <label className="radio">
+            <input
+              type="radio"
+              name="placeholder-display-mode"
+              value="icon"
+              checked={displayMode === "icon"}
+              disabled={displayMode === null}
+              onChange={() => handleDisplayModeChange("icon")}
+            />
+            <div>
+              <strong>Icon only</strong>
+              <p>
+                Compact shield icon. Best when placeholders would otherwise grow
+                larger than the content they replace.
+              </p>
+            </div>
+          </label>
+          <label className="radio">
+            <input
+              type="radio"
+              name="placeholder-display-mode"
+              value="button"
+              checked={displayMode === "button"}
+              disabled={displayMode === null}
+              onChange={() => handleDisplayModeChange("button")}
+            />
+            <div>
+              <strong>Button with label</strong>
+              <p>
+                Shield icon plus a visible label describing what was hidden.
+                Larger, but visually self-explanatory.
+              </p>
+            </div>
+          </label>
+        </fieldset>
       </section>
 
       <section id="api-key" className="section section--unavailable">
