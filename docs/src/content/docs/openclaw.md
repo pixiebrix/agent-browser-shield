@@ -24,12 +24,15 @@ attaches via CDP and inherits whatever's already loaded.
 
 ### 1. Install the extension into the profile
 
-Follow [Install](/agent-browser-shield/install/) through `bun run build`, then
-in the Chromium-based browser whose profile OpenClaw will drive:
+Get the extension directory — either build from source (follow
+[Install](/agent-browser-shield/install/) through `bun run build` for
+`extension/dist/`) or download and unzip the
+[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). Then, in
+the Chromium-based browser whose profile OpenClaw will drive:
 
 1. Open `chrome://extensions` (or `brave://extensions`, `edge://extensions`).
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and select `extension/dist/`.
+3. Click **Load unpacked** and select that directory.
 4. Pin the shield icon so it's easy to confirm the extension is live.
 
 Use a dedicated browser profile for agent runs if you don't want OpenClaw
@@ -106,11 +109,13 @@ The flow:
    connect URL.
 4. Configure OpenClaw to use that URL as a remote CDP profile.
 
-### 1. Package the extension
+### 1. Get the extension ZIP
 
-Follow [Install](/agent-browser-shield/install/) through `bun run package`.
-You'll end up with `output/extension.zip` whose `manifest.json` sits at the
-archive root.
+Download the
+[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), or
+follow [Install](/agent-browser-shield/install/) through `bun run package` to
+build one yourself at `output/extension.zip`. Either way, `manifest.json` sits
+at the archive root — do not re-zip it.
 
 ### 2. Upload to Browserbase
 

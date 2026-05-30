@@ -13,9 +13,12 @@ that Hermes *attaches* to.
 
 ### 1. Install the extension
 
-Follow [Install](/agent-browser-shield/install/) through `bun run build`. You
-will load `extension/dist/` into the Chromium profile that Hermes attaches to in
-step 3 — not your default Chrome profile.
+Get the extension directory — either build from source (follow
+[Install](/agent-browser-shield/install/) through `bun run build` for
+`extension/dist/`) or download and unzip the
+[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). You will
+load that directory into the Chromium profile that Hermes attaches to in step 3
+— not your default Chrome profile.
 
 ### 2. Launch Chrome with remote debugging on a dedicated user-data-dir
 
@@ -46,7 +49,8 @@ brave-browser \
 
 Because this is a fresh user-data-dir, load the extension into *this* profile:
 open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**,
-and select `extension/dist/`. Pin the shield icon so you can confirm it's live.
+and select the directory from step 1. Pin the shield icon so you can confirm
+it's live.
 
 ### 3. Attach from the Hermes CLI
 

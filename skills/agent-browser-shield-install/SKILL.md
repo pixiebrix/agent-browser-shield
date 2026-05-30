@@ -21,13 +21,13 @@ only covers getting the extension loaded.
 | Attaching via CDP / MCP to a Chrome the user already controls | **Path C** |
 
 The hosted ZIP is at
-`https://agent-guard-extension-dev.s3.us-east-1.amazonaws.com/extension.zip` and
-has `manifest.json` at the archive root. Do not re-zip it.
+`https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
+and has `manifest.json` at the archive root. Do not re-zip it.
 
 ## Path A — Local headed Chromium, unpacked load
 
 1. Download
-   `https://agent-guard-extension-dev.s3.us-east-1.amazonaws.com/extension.zip`
+   `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
    and unzip to a stable directory, e.g.
    `~/.cache/agent-browser-shield/extension/`. The unzipped directory must
    contain `manifest.json` directly (no nested folder).
@@ -62,7 +62,7 @@ has `manifest.json` at the archive root. Do not re-zip it.
    ```
 
 2. **Download** the ZIP from
-   `https://agent-guard-extension-dev.s3.us-east-1.amazonaws.com/extension.zip`.
+   `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`.
    Do not unzip.
 
 3. **Upload** the ZIP and capture the returned `id`. Pick one of the four
@@ -131,7 +131,7 @@ attaches.
 
 1. Tell the user (once, then remember it's done):
    1. Download
-      `https://agent-guard-extension-dev.s3.us-east-1.amazonaws.com/extension.zip`
+      `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
       and unzip somewhere stable.
    2. Open `chrome://extensions`, enable **Developer mode**, click **Load
       unpacked**, select the unzipped directory.
