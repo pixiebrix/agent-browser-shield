@@ -18,9 +18,9 @@ https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip
 ```
 
 `manifest.json` is at the archive root, so the ZIP can be uploaded straight to
-[Browserbase](#using-it-with-browserbase), or unzipped and loaded into Chrome
-as an unpacked extension (see [Load it into Chrome](#load-it-into-chrome)). Do
-not re-zip after unpacking.
+[Browserbase](#using-it-with-browserbase), or unzipped and loaded into Chrome as
+an unpacked extension (see [Load it into Chrome](#load-it-into-chrome)). Do not
+re-zip after unpacking.
 
 Build from source instead if you're iterating on rules or want a specific
 commit.
@@ -62,7 +62,8 @@ After each rebuild, click the reload icon for the extension at
 
 ## Using it with Browserbase
 
-The [Browserbase extensions API](https://docs.browserbase.com/platform/browser/core-features/browser-extensions#browser-extensions)
+The
+[Browserbase extensions API](https://docs.browserbase.com/platform/browser/core-features/browser-extensions#browser-extensions)
 accepts the prebuilt ZIP directly — download it from
 `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
 and upload as-is.
