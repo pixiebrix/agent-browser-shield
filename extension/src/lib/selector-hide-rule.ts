@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Factory for the common "find elements matching a list of selectors and
 // replace each outermost match with a block placeholder" rule shape used by
 // reviews-hide, comments-hide, and footer-hide.

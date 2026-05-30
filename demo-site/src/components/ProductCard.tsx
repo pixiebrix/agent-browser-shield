@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 import { Link } from "react-router-dom";
 import type { Product } from "../data/products";
 import ScarcityBadge from "./ScarcityBadge";

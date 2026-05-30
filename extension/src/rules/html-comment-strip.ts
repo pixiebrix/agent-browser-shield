@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Remove HTML comments from the page. Comments aren't rendered to humans but
 // are present in the DOM, so a browser-use agent walking the tree will read
 // them — including any prompt-injection payloads hidden as <!-- ignore prior

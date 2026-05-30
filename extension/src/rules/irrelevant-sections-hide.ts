@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Use a small LLM to identify page elements that are engagement / exploration
 // rails ("related products", "you might also like", "more from this site",
 // etc.) and replace them with click-to-reveal placeholders. Static selectors

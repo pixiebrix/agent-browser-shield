@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide embedded social-media widgets (Twitter/X tweets, YouTube videos,
 // Facebook posts, Instagram posts, TikTok videos, LinkedIn shares, Reddit
 // posts, Spotify players, SoundCloud players). Embeds are in-flow content,

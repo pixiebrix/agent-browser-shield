@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide user-generated review content from agents to reduce the prompt-injection
 // surface. Aggregate ratings (e.g. "4.1 out of 5, 8 ratings") are kept visible
 // where they can be cleanly separated from review text.

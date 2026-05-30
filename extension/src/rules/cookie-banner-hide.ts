@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide GDPR/CCPA cookie consent banners. These overlays sit on the majority
 // of major web pages, consuming 300–800 tokens each, and rarely matter to a
 // browser-use agent (which can be configured to accept the default cookie

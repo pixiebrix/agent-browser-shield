@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Global on/off switch for the extension's enforcement. When disabled, the
 // rule engine reveals all placeholders and tears down rules without mutating
 // any per-rule state — so flipping it back on restores the previous selection.

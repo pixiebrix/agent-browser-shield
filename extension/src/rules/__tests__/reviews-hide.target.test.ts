@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 /**
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://www.target.com/p/apple-magic-mouse-touch-surface/-/A-1010687683"}

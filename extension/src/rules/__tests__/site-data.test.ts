@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Validates per-site YAML files under extension/data/sites/. Run on every
 // CI build to catch typos in hostnames, selectors, or rule ids before the
 // codegen output ships.

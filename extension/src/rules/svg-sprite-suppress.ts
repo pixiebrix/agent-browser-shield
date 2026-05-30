@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Remove unused SVG sprite containers. Many sites ship sprite sheets — a
 // hidden <svg> whose only children are <symbol>/<defs> definitions — that
 // add 1k+ tokens of <path> data to every page even when nothing references

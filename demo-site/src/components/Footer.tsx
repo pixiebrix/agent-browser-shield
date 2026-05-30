@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 export default function Footer() {
   return (
     <footer className="mt-12 bg-slate-900 text-stone-200">

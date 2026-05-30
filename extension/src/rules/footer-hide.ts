@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide the page footer (legal links, sitemap, social icons, marketing copy)
 // from agents. Footers carry navigation and boilerplate that agents almost
 // never need to act on but that consume tokens on every page load.

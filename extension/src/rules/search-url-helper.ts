@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Embed a short URL-recipe note into the accessibility tree on covered
 // hosts so browser-use agents can navigate by URL (search, filter, sort,
 // direct lookup) instead of typing into search boxes and clicking facet

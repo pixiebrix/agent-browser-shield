@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide page sections containing phrases commonly used in prompt-injection
 // attacks (instruction overrides, jailbreak personas, chat-template tokens).
 // Regex-based heuristic for v1; an ML-based classifier is planned to replace

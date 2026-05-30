@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Hide scarcity-based urgency dark patterns ("Only 3 left in stock!",
 // "Selling fast", "12 people are viewing this") so agents aren't pressured
 // into rushing a purchase. Complements `countdown-timer-hide`, which covers

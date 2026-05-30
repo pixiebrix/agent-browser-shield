@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Persistent storage for the user-supplied OpenAI API key. Split from
 // rule-state storage so the background service worker doesn't transitively
 // import every rule module just to read a key.

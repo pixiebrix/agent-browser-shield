@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Surface sneak-into-basket dark patterns on cart/checkout pages: line
 // items that get auto-added without explicit user opt-in (extended
 // warranties, protection plans, package/shipping protection, charitable

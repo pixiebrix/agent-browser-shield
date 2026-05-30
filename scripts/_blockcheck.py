@@ -1,3 +1,6 @@
+# Copyright (c) 2026 PixieBrix, Inc.
+# Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 """LLM-as-detector helper that decides whether a benchmark run was blocked
 by an anti-agent / anti-scraping defense (Cloudflare, hCaptcha,
 "Press & Hold", "Access Denied" / 403, 429 rate-limit, login walls, etc.).

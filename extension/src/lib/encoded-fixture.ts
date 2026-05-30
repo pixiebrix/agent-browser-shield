@@ -1,3 +1,6 @@
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
+
 // Base64 decode helper for adversarial fixture text.
 //
 // Several files in this repo legitimately need to embed phrases that look
