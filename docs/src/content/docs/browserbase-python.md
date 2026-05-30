@@ -27,32 +27,31 @@ Two patterns work with the extension, and the choice is independent of the
 shield itself:
 
 - **Managed agent run (Stagehand)** — you hand Stagehand a natural-language
-  instruction and stream back tool-call events. Stagehand owns the LLM ↔
-  browser loop server-side; you don't write the loop. Easy model swaps via
-  Browserbase Model Gateway. Best for "give the agent a task and watch it
-  go" — research, form-filling, end-to-end task benchmarks.
+  instruction and stream back tool-call events. Stagehand owns the LLM ↔ browser
+  loop server-side; you don't write the loop. Easy model swaps via Browserbase
+  Model Gateway. Best for "give the agent a task and watch it go" — research,
+  form-filling, end-to-end task benchmarks.
 - **Pure CDP (Playwright / Selenium)** — you connect your own client to the
-  session's `connect_url` and write the automation loop yourself, whether
-  that's deterministic scraping or a custom agent framework (browser-use,
-  LangChain, your own). Full Playwright API surface — waits, screenshots,
-  request interception, multi-page coordination. Best for deterministic
-  scrapers, integrations with non-Stagehand agent frameworks, or fine-grained
-  DOM work the agent shouldn't be making decisions about.
+  session's `connect_url` and write the automation loop yourself, whether that's
+  deterministic scraping or a custom agent framework (browser-use, LangChain,
+  your own). Full Playwright API surface — waits, screenshots, request
+  interception, multi-page coordination. Best for deterministic scrapers,
+  integrations with non-Stagehand agent frameworks, or fine-grained DOM work the
+  agent shouldn't be making decisions about.
 
 Both paths upload and attach the extension the same way — only the driver
-differs. You can also mix them: start with a Stagehand-managed session and
-later attach Playwright to the same `connect_url` for surgical interventions.
+differs. You can also mix them: start with a Stagehand-managed session and later
+attach Playwright to the same `connect_url` for surgical interventions.
 
 ## Prerequisites
 
 - A packaged extension zip — follow [Install](/agent-browser-shield/install/)
   through `bun run package` to produce `output/extension.zip`.
-- `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` from *Settings → API
-  Keys* at <https://www.browserbase.com>.
-- Python ≥ 3.11 with the
-  [`browserbase`](https://pypi.org/project/browserbase/) SDK, plus
-  [`stagehand`](https://pypi.org/project/stagehand/) (managed agent run) or
-  [`playwright`](https://pypi.org/project/playwright/) (pure CDP).
+- `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` from *Settings → API Keys*
+  at <https://www.browserbase.com>.
+- Python ≥ 3.11 with the [`browserbase`](https://pypi.org/project/browserbase/)
+  SDK, plus [`stagehand`](https://pypi.org/project/stagehand/) (managed agent
+  run) or [`playwright`](https://pypi.org/project/playwright/) (pure CDP).
 
 ## Upload the extension
 
@@ -130,8 +129,8 @@ attach `output/extension.zip` automatically.
 
 ## Path B: Pure CDP (Playwright)
 
-You own the session and the driver. Create the Browserbase session yourself
-with `extension_id`, then connect Playwright (or Selenium) to `connect_url`:
+You own the session and the driver. Create the Browserbase session yourself with
+`extension_id`, then connect Playwright (or Selenium) to `connect_url`:
 
 ```python
 import os
@@ -167,20 +166,19 @@ agent runner.
 ## Brief the agent on what the shield changes
 
 The extension rewrites the DOM — masked text becomes `[PII masked]`, dark
-patterns get suppressed, and `[data-abs-rule="<rule-id>"]` attributes appear
-on touched elements. Agents that don't know about these markers can get
-confused by the redactions or try to bypass them.
+patterns get suppressed, and `[data-abs-rule="<rule-id>"]` attributes appear on
+touched elements. Agents that don't know about these markers can get confused by
+the redactions or try to bypass them.
 
 The `skills/agent-browser-shield/SKILL.md` file in the repo is a system-prompt
 fragment briefing the agent on what to expect:
 
-- **Stagehand agent run** — prepend the skill body (frontmatter stripped) to
-  the `instruction` you pass to `execute_options`. `scripts/agent_task.py`
-  does this automatically when `--with-extension` is set.
-- **Pure CDP with your own agent** — prepend the skill body to whatever
-  system prompt your agent framework uses.
-- **Deterministic scrapers** — skip the brief; just read the markers
-  directly.
+- **Stagehand agent run** — prepend the skill body (frontmatter stripped) to the
+  `instruction` you pass to `execute_options`. `scripts/agent_task.py` does this
+  automatically when `--with-extension` is set.
+- **Pure CDP with your own agent** — prepend the skill body to whatever system
+  prompt your agent framework uses.
+- **Deterministic scrapers** — skip the brief; just read the markers directly.
 
 ## Verify
 
@@ -189,12 +187,11 @@ On the first non-trivial page load, look for:
 - A circular shield-icon badge in the bottom-right corner (a11y name *"Open
   Agent Browser Shield options"*).
 - `[data-abs-rule="<rule-id>"]` attributes in the DOM.
-- Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive
-  data.
+- Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive data.
 
 Open the session's live view at
-`https://www.browserbase.com/sessions/<session.id>` to inspect the rendered
-page directly.
+`https://www.browserbase.com/sessions/<session.id>` to inspect the rendered page
+directly.
 
 If none of those markers appear, the session was almost certainly created
 without the `extension_id` — confirm the upload step succeeded and that
