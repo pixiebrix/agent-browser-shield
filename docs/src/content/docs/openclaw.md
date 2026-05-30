@@ -68,6 +68,7 @@ Then, with the browser running:
 
 1. Open `chrome://inspect` (or the equivalent for your browser) and enable
    remote debugging.
+
 2. Start the session:
 
    ```sh
@@ -78,8 +79,8 @@ Then, with the browser running:
 3. Approve the connection prompt the browser shows when OpenClaw attaches.
 
 Because `attachOnly: true` is set, OpenClaw will not launch or kill the browser
-— keep it running for the duration of the agent task. Skip to
-[Verify](#verify) to confirm the shield is active.
+— keep it running for the duration of the agent task. Skip to [Verify](#verify)
+to confirm the shield is active.
 
 ### Caveats for the local-profile path
 
@@ -94,8 +95,8 @@ Because `attachOnly: true` is set, OpenClaw will not launch or kill the browser
 ## Using a Browserbase remote CDP session
 
 When OpenClaw can't attach to a local browser — headless runs, CI, or anywhere
-you want disposable browser state — upload the extension to Browserbase and
-have OpenClaw connect over CDP.
+you want disposable browser state — upload the extension to Browserbase and have
+OpenClaw connect over CDP.
 
 The flow:
 
