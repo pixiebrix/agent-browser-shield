@@ -17,6 +17,7 @@ import {
   pruneReferences,
   resolveReference,
 } from "../lib/automation-element-reference";
+import { createApiKeyAvailability } from "../lib/availability";
 import { isInsidePlaceholder } from "../lib/dom-utils";
 import { classifyIrrelevantSections } from "../lib/llm-client";
 import { log } from "../lib/log";
@@ -310,10 +311,11 @@ export const irrelevantSectionsHideRule = {
   id: RULE_ID,
   label: "Hide Irrelevant Sections (AI)",
   description:
-    "Use a small LLM to identify engagement/exploration rails (related products, 'you might also like', recommended articles, trending now, etc.) and replace them with click-to-reveal placeholders. Sends a compressed page tree with stable refs so the LLM can choose the right granularity; interactive elements (search, cart, checkout, login) are labeled as protected. Re-scans on scroll to catch lazy-loaded content. Requires OPENAI_API_KEY at build time.",
+    "Use a small LLM to identify engagement/exploration rails (related products, 'you might also like', recommended articles, trending now, etc.) and replace them with click-to-reveal placeholders. Sends a compressed page tree with stable refs so the LLM can choose the right granularity; interactive elements (search, cart, checkout, login) are labeled as protected. Re-scans on scroll to catch lazy-loaded content. Requires an OpenAI API key (bundled at build time or provided on the options page).",
   defaultEnabled: false,
-  available: false,
-  unavailableReason: "LLM-based detection is turned off in this build.",
+  available: createApiKeyAvailability(
+    "Set an OpenAI API key on the options page to enable this rule.",
+  ),
   // Page-level recommendation rails live on the top frame; classifying the
   // contents of every iframe would multiply LLM cost without benefit.
   topFrameOnly: true,

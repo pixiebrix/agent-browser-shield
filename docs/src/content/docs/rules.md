@@ -219,8 +219,9 @@ the page. Referenced sprites are preserved so icons keep working.
 - **ID:** `irrelevant-sections-hide`
 - **Default:** off
 - **Scope:** top frame only
-- **Availability:** disabled in shipped builds (requires `OPENAI_API_KEY` at
-  build time)
+- **Availability:** requires an OpenAI API key — either bundled at build time
+  via `OPENAI_API_KEY`, or saved on the extension's options page. Until a key is
+  configured the rule shows as Unavailable in the popup and options.
 
 Use a small LLM to identify engagement/exploration rails (related products, "you
 might also like", recommended articles, trending now, etc.) and replace them

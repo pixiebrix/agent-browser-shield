@@ -2,7 +2,16 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { useEffect, useState } from "react";
-import { getUserApiKey, setUserApiKey } from "../lib/api-key-storage";
+import {
+  getUserApiKey,
+  HAS_BUILT_IN_OPENAI_KEY,
+  setUserApiKey,
+} from "../lib/api-key-storage";
+import {
+  getRuleAvailabilityStates,
+  type RuleAvailabilityStates,
+  subscribeRuleAvailability,
+} from "../lib/availability";
 import {
   getPlaceholderDisplayMode,
   type PlaceholderDisplayMode,
@@ -19,8 +28,6 @@ import {
   subscribe,
 } from "../lib/storage";
 import { RULES } from "../rules";
-
-const HAS_BUILT_IN_OPENAI_KEY = process.env.HAS_BUILT_IN_OPENAI_KEY === "true";
 
 const RULE_ID_SET = new Set<string>(RULE_IDS);
 
@@ -74,6 +81,8 @@ export function Options() {
   const [displayMode, setDisplayMode] = useState<PlaceholderDisplayMode | null>(
     null,
   );
+  const [availability, setAvailability] =
+    useState<RuleAvailabilityStates | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,20 +95,27 @@ export function Options() {
     getPlaceholderDisplayMode().then((mode) => {
       if (!cancelled) setDisplayMode(mode);
     });
+    getRuleAvailabilityStates().then((initial) => {
+      if (!cancelled) setAvailability(initial);
+    });
     const unsubscribe = subscribe((next) => {
       setStates(next);
     });
     const unsubscribeMode = subscribePlaceholderDisplayMode((mode) => {
       setDisplayMode(mode);
     });
+    const unsubscribeAvailability = subscribeRuleAvailability((next) => {
+      setAvailability(next);
+    });
     return () => {
       cancelled = true;
       unsubscribe();
       unsubscribeMode();
+      unsubscribeAvailability();
     };
   }, []);
 
-  if (!states) {
+  if (!states || !availability) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -263,7 +279,7 @@ export function Options() {
         </fieldset>
       </section>
 
-      <section id="api-key" className="section section--unavailable">
+      <section id="api-key" className="section">
         <h2>
           <a
             href="#api-key"
@@ -272,22 +288,19 @@ export function Options() {
           >
             #
           </a>
-          OpenAI API key <span className="badge">Unavailable</span>
+          OpenAI API key
         </h2>
         <p className="hint">
-          Used by the <code>irrelevant-sections-hide</code> rule, which is
-          currently turned off in this build. Saving a key has no effect until
-          that rule is re-enabled.{" "}
+          Used by the <code>irrelevant-sections-hide</code> rule.{" "}
           {HAS_BUILT_IN_OPENAI_KEY
-            ? "A built-in key is bundled with this build."
-            : "No built-in key is bundled with this build."}
+            ? "A built-in key is bundled with this build; saving a key here overrides it."
+            : "No built-in key is bundled with this build — provide one here to enable the rule."}
         </p>
         <input
           type="password"
           className="api-key-input"
           autoComplete="off"
           spellCheck={false}
-          disabled
           placeholder={
             HAS_BUILT_IN_OPENAI_KEY ? "(blank — using built-in key)" : "sk-..."
           }
@@ -295,7 +308,7 @@ export function Options() {
           onChange={(event) => setApiKeyDraft(event.target.value)}
         />
         <div className="button-row">
-          <button type="button" onClick={handleSaveApiKey} disabled>
+          <button type="button" onClick={handleSaveApiKey}>
             Save key
           </button>
           {apiKeyStatus && (
@@ -315,7 +328,8 @@ export function Options() {
         </h2>
         <ul className="rules">
           {RULES.map((rule) => {
-            const unavailable = rule.available === false;
+            const snapshot = availability[rule.id];
+            const unavailable = !snapshot?.available;
             return (
               <li
                 key={rule.id}
@@ -341,10 +355,8 @@ export function Options() {
                         <span className="badge">Unavailable</span>
                       )}
                     </strong>
-                    {unavailable && rule.unavailableReason && (
-                      <p className="unavailable-reason">
-                        {rule.unavailableReason}
-                      </p>
+                    {unavailable && snapshot?.reason && (
+                      <p className="unavailable-reason">{snapshot.reason}</p>
                     )}
                     <p>{rule.description}</p>
                   </div>

@@ -69,10 +69,10 @@ keys and non-boolean values are rejected with an error.
   IKEA, Home Depot, REI, GitHub, Wikipedia, Hacker News, hn.algolia.com, MDN,
   npm, weather.gov, arXiv, Python docs, BBC) so agents can navigate by URL
   instead of typing into search boxes
-- `irrelevant-sections-hide` — **currently unavailable** (LLM-based detection is
-  turned off in this build). The toggle shows in the popup and options page as
-  disabled. AI-classified hide of engagement / exploration rails (related
-  products, "you might also like", recommended articles, trending now,
-  sponsored, site-wide navigation rails). Calls a small LLM in the background
-  worker; requires `OPENAI_API_KEY` injected at build time. Hidden sections
-  become click-to-reveal placeholders.
+- `irrelevant-sections-hide` — AI-classified hide of engagement / exploration
+  rails (related products, "you might also like", recommended articles, trending
+  now, sponsored, site-wide navigation rails). Calls a small LLM in the
+  background worker; requires an OpenAI API key — either bundled at build time
+  via `OPENAI_API_KEY` or saved on the options page. Until a key is configured
+  the toggle shows as Unavailable. Hidden sections become click-to-reveal
+  placeholders.
