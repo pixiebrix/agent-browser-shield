@@ -8,6 +8,7 @@ import { checkoutCheckboxClearRule } from "./checkout-checkbox-clear";
 import { commentsHideRule } from "./comments-hide";
 import { cookieBannerHideRule } from "./cookie-banner-hide";
 import { countdownTimerHideRule } from "./countdown-timer-hide";
+import { crossOriginFrameHideRule } from "./cross-origin-frame-hide";
 import { footerHideRule } from "./footer-hide";
 import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
@@ -51,6 +52,7 @@ const RULES_TUPLE = [
   cartAddonFlagRule,
   searchUrlHelperRule,
   irrelevantSectionsHideRule,
+  crossOriginFrameHideRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];

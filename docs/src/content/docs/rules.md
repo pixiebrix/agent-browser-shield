@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 20 rules grouped into five rough categories. Each rule is
+The extension ships 21 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -100,6 +100,28 @@ Hide embedded social-media widgets (Twitter/X, YouTube, Facebook, Instagram,
 TikTok, LinkedIn, Reddit, Spotify, SoundCloud). Replaced with a placeholder so
 the agent knows an embed lived there. Skipped on the embed providers' own
 domains, where embeds are the page content.
+
+### Hide Cross-Origin Frames (Experimental)
+
+- **ID:** `cross-origin-frame-hide`
+- **Default:** off
+
+Replace every `<iframe>` whose `src` resolves to a different web origin with a
+click-to-reveal placeholder, so a browser-use agent reading the parent page
+doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc`
+frames, and inert `about:`/`javascript:`/`data:`/`blob:` frames are left
+alone. Each frame in the page processes its own direct children, so a
+cross-origin frame nested inside a same-origin frame is also caught. Off by
+default because legitimate cross-origin embeds (payment widgets, OAuth
+pop-ins, video, third-party comments) are common and removing them will
+break those flows until the user reveals.
+
+Motivated by Roesner & Kohlbrenner,
+[*Agentic Browsers and the Same-Origin
+Policy*](https://www.franziroesner.com/pdf/roesner_kohlbrenner_2026_agentic_sop.pdf)
+(ICLR 2026 Workshop), which shows that agents willing to read cross-origin
+frame content turn the same-origin policy from a hard guarantee into a soft
+one.
 
 ## Dark-pattern blocking
 
