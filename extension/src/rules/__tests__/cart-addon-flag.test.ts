@@ -111,7 +111,7 @@ describe("cartAddonFlagRule on checkout URLs", () => {
     cartAddonFlagRule.apply(document.body);
 
     // Trigger another scan via an unrelated mutation.
-    document.body.appendChild(document.createElement("div"));
+    document.body.append(document.createElement("div"));
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
@@ -123,7 +123,7 @@ describe("cartAddonFlagRule on checkout URLs", () => {
 
     const late = document.createElement("div");
     late.innerHTML = `<span>Route Package Protection</span><span>$0.98</span>`;
-    document.body.appendChild(late);
+    document.body.append(late);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
@@ -156,9 +156,9 @@ describe("cartAddonFlagRule on checkout URLs", () => {
     for (let i = 0; i < 60; i++) {
       const row = document.createElement("div");
       row.textContent = i === 30 ? "Add SquareTrade Protection Plan" : "row";
-      big.appendChild(row);
+      big.append(row);
     }
-    document.body.appendChild(big);
+    document.body.append(big);
 
     cartAddonFlagRule.apply(document.body);
 
@@ -172,10 +172,10 @@ describe("cartAddonFlagRule on checkout URLs", () => {
 
 describe("cartAddonFlagRule URL gating", () => {
   it("does not annotate on a non-checkout URL", () => {
-    const originalHref = window.location.href;
+    const originalHref = globalThis.location.href;
     // jsdom doesn't allow direct href assignment in all paths; use the
     // history API to navigate within the same origin.
-    window.history.replaceState({}, "", "/product/widget");
+    globalThis.history.replaceState({}, "", "/product/widget");
 
     try {
       document.body.innerHTML = `
@@ -189,7 +189,7 @@ describe("cartAddonFlagRule URL gating", () => {
       expect(document.querySelectorAll(`[${FLAGGED_ATTR}]`).length).toBe(0);
       expect(document.querySelector(`.${FLAG_CLASS}`)).toBeNull();
     } finally {
-      window.history.replaceState({}, "", originalHref);
+      globalThis.history.replaceState({}, "", originalHref);
     }
   });
 });

@@ -98,7 +98,7 @@ describe("commentsHideRule.apply", () => {
     // re-scans document.body. Wait long enough for the 250ms throttle to fire.
     await new Promise((resolve) => setTimeout(resolve, 350));
 
-    expect(document.getElementById("comments")).not.toBeNull();
+    expect(document.querySelector("#comments")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
 
     commentsHideRule.teardown?.();

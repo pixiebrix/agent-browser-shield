@@ -18,7 +18,7 @@ describe("reviews-hide on amazon.com", () => {
     `;
     reviewsHideRule.apply(document.body);
 
-    expect(document.getElementById("reviewsMedley")).toBeNull();
+    expect(document.querySelector("#reviewsMedley")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -34,8 +34,8 @@ describe("reviews-hide on amazon.com", () => {
     `;
     reviewsHideRule.apply(document.body);
 
-    expect(document.getElementById("averageCustomerReviews")).not.toBeNull();
-    expect(document.getElementById("productTitle")).not.toBeNull();
+    expect(document.querySelector("#averageCustomerReviews")).not.toBeNull();
+    expect(document.querySelector("#productTitle")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe("reviews-hide on amazon.com", () => {
     `;
     reviewsHideRule.apply(document.body);
 
-    expect(document.getElementById("reviewsMedley")).toBeNull();
+    expect(document.querySelector("#reviewsMedley")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 });

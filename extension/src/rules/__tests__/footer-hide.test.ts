@@ -54,7 +54,7 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("f")).toBeNull();
+    expect(document.querySelector("#f")).toBeNull();
     const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
     expect(placeholder).not.toBeNull();
     expect(placeholder?.getAttribute(RULE_ATTR)).toBe("footer-hide");
@@ -65,7 +65,7 @@ describe("footerHideRule", () => {
     document.body.innerHTML = `<div role="contentinfo" id="f">links</div>`;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("f")).toBeNull();
+    expect(document.querySelector("#f")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -99,9 +99,9 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("footer")).toBeNull();
+    expect(document.querySelector("#footer")).toBeNull();
     expect(document.querySelector(".site-footer")).toBeNull();
-    expect(document.getElementById("page-footer")).toBeNull();
+    expect(document.querySelector("#page-footer")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(3);
   });
 
@@ -115,7 +115,7 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("navFooter")).toBeNull();
+    expect(document.querySelector("#navFooter")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("byline")).not.toBeNull();
+    expect(document.querySelector("#byline")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -140,9 +140,9 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("s")).not.toBeNull();
-    expect(document.getElementById("a")).not.toBeNull();
-    expect(document.getElementById("n")).not.toBeNull();
+    expect(document.querySelector("#s")).not.toBeNull();
+    expect(document.querySelector("#a")).not.toBeNull();
+    expect(document.querySelector("#n")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -153,8 +153,8 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("byline")).not.toBeNull();
-    expect(document.getElementById("page")).toBeNull();
+    expect(document.querySelector("#byline")).not.toBeNull();
+    expect(document.querySelector("#page")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -166,8 +166,8 @@ describe("footerHideRule", () => {
     `;
     footerHideRule.apply(document.body);
 
-    expect(document.getElementById("outer")).toBeNull();
-    expect(document.getElementById("inner")).toBeNull();
+    expect(document.querySelector("#outer")).toBeNull();
+    expect(document.querySelector("#inner")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -181,7 +181,7 @@ describe("footerHideRule", () => {
     placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("f")?.textContent).toBe("© 2026");
+    expect(document.querySelector("#f")?.textContent).toBe("© 2026");
   });
 
   it("does not re-process content inside an existing placeholder", () => {
@@ -193,7 +193,7 @@ describe("footerHideRule", () => {
     footerHideRule.apply(document.body);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
-    expect(document.getElementById("f")).not.toBeNull();
+    expect(document.querySelector("#f")).not.toBeNull();
   });
 
   // Costco's Next.js footer lives inside a Suspense boundary that bails to
@@ -216,12 +216,12 @@ describe("footerHideRule", () => {
       const footer = document.createElement("footer");
       footer.id = "late-footer";
       footer.textContent = "© 2026";
-      document.body.appendChild(footer);
+      document.body.append(footer);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-      expect(document.getElementById("late-footer")).toBeNull();
+      expect(document.querySelector("#late-footer")).toBeNull();
       expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
     });
 
@@ -232,19 +232,19 @@ describe("footerHideRule", () => {
         <footer id="ssr-footer">© 2026</footer>
       `;
       footerHideRule.apply(document.body);
-      expect(document.getElementById("ssr-footer")).toBeNull();
+      expect(document.querySelector("#ssr-footer")).toBeNull();
 
       // React tears down the placeholder subtree and mounts a fresh footer.
       document.body.querySelector(`.${PLACEHOLDER_CLASS}`)?.remove();
       const replacement = document.createElement("footer");
       replacement.id = "csr-footer";
       replacement.textContent = "© 2026";
-      document.body.appendChild(replacement);
+      document.body.append(replacement);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-      expect(document.getElementById("csr-footer")).toBeNull();
+      expect(document.querySelector("#csr-footer")).toBeNull();
       expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
         1,
       );
@@ -256,12 +256,12 @@ describe("footerHideRule", () => {
 
       const footer = document.createElement("footer");
       footer.id = "after-teardown";
-      document.body.appendChild(footer);
+      document.body.append(footer);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-      expect(document.getElementById("after-teardown")).not.toBeNull();
+      expect(document.querySelector("#after-teardown")).not.toBeNull();
     });
   });
 });

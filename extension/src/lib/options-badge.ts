@@ -51,5 +51,5 @@ export function injectOptionsBadge(): void {
     });
   });
 
-  host.appendChild(badge);
+  host.append(badge);
 }

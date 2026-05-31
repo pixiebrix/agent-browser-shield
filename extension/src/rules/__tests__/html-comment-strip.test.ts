@@ -53,7 +53,7 @@ describe("htmlCommentStripRule", () => {
     document.body.innerHTML = `<${tagName}></${tagName}>`;
     const element = document.querySelector(tagName);
     expect(element).not.toBeNull();
-    element?.appendChild(document.createComment(" preserved "));
+    element?.append(document.createComment(" preserved "));
 
     htmlCommentStripRule.apply(document.body);
 

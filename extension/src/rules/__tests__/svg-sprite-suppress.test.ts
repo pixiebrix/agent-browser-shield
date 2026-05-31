@@ -19,7 +19,7 @@ describe("svgSpriteSuppressRule", () => {
     `;
     svgSpriteSuppressRule.apply(document.body);
 
-    expect(document.getElementById("sprite")).toBeNull();
+    expect(document.querySelector("#sprite")).toBeNull();
     expect(document.querySelector("main")).not.toBeNull();
   });
 
@@ -32,7 +32,7 @@ describe("svgSpriteSuppressRule", () => {
     `;
     svgSpriteSuppressRule.apply(document.body);
 
-    expect(document.getElementById("sprite")).not.toBeNull();
+    expect(document.querySelector("#sprite")).not.toBeNull();
   });
 
   it("preserves a sprite referenced via xlink:href", () => {
@@ -44,7 +44,7 @@ describe("svgSpriteSuppressRule", () => {
     `;
     svgSpriteSuppressRule.apply(document.body);
 
-    expect(document.getElementById("sprite")).not.toBeNull();
+    expect(document.querySelector("#sprite")).not.toBeNull();
   });
 
   it("preserves a sprite referenced via an external-file href (path#id)", () => {
@@ -56,7 +56,7 @@ describe("svgSpriteSuppressRule", () => {
     `;
     svgSpriteSuppressRule.apply(document.body);
 
-    expect(document.getElementById("sprite")).not.toBeNull();
+    expect(document.querySelector("#sprite")).not.toBeNull();
   });
 
   it("removes a sprite hidden via inline width:0 + height:0", () => {
@@ -89,7 +89,7 @@ describe("svgSpriteSuppressRule", () => {
     `;
     svgSpriteSuppressRule.apply(document.body);
 
-    expect(document.getElementById("vis")).not.toBeNull();
+    expect(document.querySelector("#vis")).not.toBeNull();
   });
 
   it("leaves a hidden SVG with rendered shapes alongside symbols alone", () => {

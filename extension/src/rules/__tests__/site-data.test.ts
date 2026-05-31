@@ -23,7 +23,7 @@ const SITES_DIR = join(__dirname, "..", "..", "..", "data", "sites");
 function listSiteFiles(): string[] {
   return readdirSync(SITES_DIR)
     .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
-    .sort();
+    .toSorted();
 }
 
 describe("site data YAML files", () => {
@@ -34,7 +34,7 @@ describe("site data YAML files", () => {
   });
 
   it.each(files)("%s parses + validates against the schema", (fileName) => {
-    const raw = readFileSync(join(SITES_DIR, fileName), "utf-8");
+    const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
     const doc = load(raw);
     const result = SiteFileSchema.safeParse(doc);
     if (!result.success) {
@@ -49,7 +49,7 @@ describe("site data YAML files", () => {
   });
 
   it.each(files)("%s hostnames construct as URLPattern", (fileName) => {
-    const raw = readFileSync(join(SITES_DIR, fileName), "utf-8");
+    const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
     const doc = load(raw);
     const parsed = SiteFileSchema.parse(doc);
 
@@ -70,7 +70,7 @@ describe("site data YAML files", () => {
   it("only references rule ids declared in SITE_DATA_RULE_IDS", () => {
     const allowedIds = new Set<string>(SITE_DATA_RULE_IDS);
     for (const fileName of files) {
-      const raw = readFileSync(join(SITES_DIR, fileName), "utf-8");
+      const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
       const doc = load(raw) as { rules?: Record<string, unknown> };
       for (const key of Object.keys(doc?.rules ?? {})) {
         expect({

@@ -160,14 +160,14 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(window.location.href)) return;
+  if (!isCheckoutUrl(globalThis.location.href)) return;
   const candidates = findCandidates(root);
   if (candidates.length === 0) return;
   for (const candidate of candidates) flag(candidate);
   log("cart add-ons flagged", {
     count: candidates.length,
     labels: candidates.map((c) => c.label),
-    url: window.location.href,
+    url: globalThis.location.href,
   });
 }
 

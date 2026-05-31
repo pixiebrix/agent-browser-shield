@@ -66,7 +66,7 @@ describe("adsHideRule.apply", () => {
 
     // #tads is the outer container being hidden — the data-text-ad descendants
     // become invisible by inheritance, but aren't individually marked.
-    expectHidden(document.getElementById("tads"));
+    expectHidden(document.querySelector("#tads"));
     expect(document.querySelector("#rso .g")?.textContent).toBe(
       "Organic result",
     );
@@ -122,9 +122,9 @@ describe("adsHideRule.apply", () => {
 
 describe("adsHideRule EasyList stylesheet", () => {
   it("injects the EasyList stylesheet on apply()", () => {
-    expect(document.getElementById(EASYLIST_STYLE_ID)).toBeNull();
+    expect(document.querySelector(`#${EASYLIST_STYLE_ID}`)).toBeNull();
     adsHideRule.apply(document.body);
-    const style = document.getElementById(EASYLIST_STYLE_ID);
+    const style = document.querySelector(`#${EASYLIST_STYLE_ID}`);
     expect(style).not.toBeNull();
     expect(style?.tagName).toBe("STYLE");
     // Sanity-check that the stylesheet contains real selector rules,
@@ -136,9 +136,9 @@ describe("adsHideRule EasyList stylesheet", () => {
 
   it("removes the EasyList stylesheet on teardown()", () => {
     adsHideRule.apply(document.body);
-    expect(document.getElementById(EASYLIST_STYLE_ID)).not.toBeNull();
+    expect(document.querySelector(`#${EASYLIST_STYLE_ID}`)).not.toBeNull();
     adsHideRule.teardown?.();
-    expect(document.getElementById(EASYLIST_STYLE_ID)).toBeNull();
+    expect(document.querySelector(`#${EASYLIST_STYLE_ID}`)).toBeNull();
   });
 
   it("does not duplicate the stylesheet when apply() runs twice", () => {
@@ -155,12 +155,12 @@ describe("adsHideRule lazy-loaded slots", () => {
     const lateSlot = document.createElement("div");
     lateSlot.id = "div-gpt-ad-late";
     lateSlot.innerHTML = "<iframe></iframe>";
-    document.body.appendChild(lateSlot);
+    document.body.append(lateSlot);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expectHidden(document.getElementById("div-gpt-ad-late"));
+    expectHidden(document.querySelector("#div-gpt-ad-late"));
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 });

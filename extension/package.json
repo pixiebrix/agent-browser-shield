@@ -27,10 +27,12 @@
     "build-injection-patterns": "bun run scripts/build-injection-patterns.ts",
     "clean": "rm -rf dist",
     "test": "jest",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
+    "check": "biome check . && eslint .",
+    "check:fix": "biome check --write . && eslint . --fix",
     "format": "biome format --write .",
-    "lint": "biome lint ."
+    "lint": "biome lint . && eslint .",
+    "lint:eslint": "eslint .",
+    "lint:eslint:fix": "eslint . --fix"
   },
   "dependencies": {
     "lodash": "^4.18.1",
@@ -41,20 +43,25 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
+    "@eslint/js": "10.0.1",
     "@types/bun": "^1.3.14",
     "@types/chrome": "^0.1.42",
     "@types/jest": "^30.0.0",
-    "@types/jsdom": "^28.0.3",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^28.0.3",
     "@types/lodash": "^4.17.24",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "eslint": "10.4.0",
+    "eslint-plugin-unicorn": "64.0.0",
+    "globals": "17.6.0",
     "jest": "^30",
     "jest-environment-jsdom": "^30",
     "js-yaml": "^4.1.0",
     "jsdom": "29.1.1",
     "ts-jest": "^29",
     "typescript": "^6.0.3",
+    "typescript-eslint": "8.59.4",
     "zod": "^4.4.3"
   }
 }

@@ -41,7 +41,7 @@ describe("newsletterModalHideRule", () => {
     `;
     newsletterModalHideRule.apply(document.body);
 
-    const container = document.getElementById("privy-container");
+    const container = document.querySelector("#privy-container");
     expect(container?.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
     expect(container?.style.display).toBe("none");
   });

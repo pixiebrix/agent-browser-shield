@@ -73,7 +73,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 // looking stale for the duration of those mutation observer cycles.
 subscribeEnforcementEnabled((enabled) => {
   if (enabled) return;
-  for (const tabId of Array.from(tabCounts.keys())) {
+  for (const tabId of tabCounts.keys()) {
     clearTab(tabId);
   }
 });

@@ -37,6 +37,24 @@ Ideas explored in this repository:
   for modern JS features
 - Python: use `uv` for all package management
 
+## Linting
+
+Two linters run on `extension/`: Biome owns formatting plus its recommended rule
+set; ESLint runs only rules Biome doesn't have. The split is mechanical — do not
+duplicate a rule between them.
+
+- Biome config: `extension/biome.json`.
+- ESLint config: `extension/eslint.config.js` (flat config) — pulls in
+  `@eslint/js`, `typescript-eslint`, and `eslint-plugin-unicorn`, then disables
+  unicorn rules that overlap with Biome or are too opinionated for this repo.
+- Custom rules: `extension/eslint-rules/*.js`. Each rule is one file, exported
+  via `extension/eslint-rules/index.js` under the
+  `agent-browser-shield/<rule-name>` namespace. Add a rule by dropping a file in
+  `eslint-rules/`, exporting it from `index.js`, and enabling it in
+  `eslint.config.js`.
+- `bun run check` runs Biome then ESLint; `bun run check:fix` runs both with
+  `--fix`/`--write`.
+
 ## Site-specific rule data
 
 Selectors and URL recipes for individual sites live in

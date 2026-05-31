@@ -16,7 +16,7 @@ const EMBED_OWNER_HOSTS =
   /(?:^|\.)(?:twitter|x|youtube|facebook|instagram|tiktok|reddit|linkedin|spotify|soundcloud)\.com$/i;
 
 function notOnEmbedOwnerSite(_element: HTMLElement): boolean {
-  return !EMBED_OWNER_HOSTS.test(window.location.hostname);
+  return !EMBED_OWNER_HOSTS.test(globalThis.location.hostname);
 }
 
 const { rule, selectorsFor } = createSelectorHideRule({

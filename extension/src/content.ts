@@ -9,6 +9,9 @@ import { start } from "./lib/rule-engine";
 // Content script runs in every frame (`all_frames: true`). The rule engine
 // applies frame-appropriate rules in each; the badge is a single UI affordance
 // that belongs only on the top frame so the user doesn't get one per iframe.
+// Top-level await is unavailable — the bundler emits a classic script for the
+// content-script entry, so a promise chain is required.
+// eslint-disable-next-line unicorn/prefer-top-level-await
 start().catch((error) => {
   console.error("[abs] failed to start rule engine", error);
 });

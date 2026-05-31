@@ -18,8 +18,8 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("hidden")).toBeNull();
-    expect(document.getElementById("visible")).not.toBeNull();
+    expect(document.querySelector("#hidden")).toBeNull();
+    expect(document.querySelector("#visible")).not.toBeNull();
     // Hidden-text removal does not insert a placeholder — the element is
     // gone from the DOM so DOM-scraping agents can't read it.
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
@@ -31,7 +31,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("removes text positioned off-screen", () => {
@@ -40,7 +40,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("removes text clipped to zero area via clip-path", () => {
@@ -49,7 +49,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("removes text with font-size:0", () => {
@@ -58,7 +58,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("preserves .sr-only text", () => {
@@ -67,7 +67,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   it("preserves .visually-hidden text", () => {
@@ -76,7 +76,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // MUI's `visuallyHidden` utility (and Tailwind's `sr-only` when compiled
@@ -99,7 +99,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("mui-style")).not.toBeNull();
+    expect(document.querySelector("#mui-style")).not.toBeNull();
   });
 
   it("preserves the structural SR-only pattern when expressed via clip-path", () => {
@@ -114,7 +114,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // Amazon's `a-offscreen`, eBay's accessible price labels, and many older
@@ -133,7 +133,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // Amazon's current `a-offscreen` ships a Bootstrap-5 style envelope:
@@ -159,7 +159,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // Bootstrap-5's `.visually-hidden` and many hand-rolled SR-only utilities
@@ -177,7 +177,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // An offscreen element that's large enough to carry prose is not an
@@ -194,7 +194,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("removes text whose foreground color matches the page background", () => {
@@ -204,7 +204,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   // Effective background comes from an ancestor, not the element itself.
@@ -218,7 +218,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).toBeNull();
+    expect(document.querySelector("#x")).toBeNull();
   });
 
   it("preserves text with normal contrast against its background", () => {
@@ -228,7 +228,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   it("preserves text inside aria-hidden=true ancestors", () => {
@@ -239,7 +239,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   it("leaves display:none text alone (collapsed menu / tab panel pattern)", () => {
@@ -248,14 +248,14 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("panel")).not.toBeNull();
+    expect(document.querySelector("#panel")).not.toBeNull();
   });
 
   it("leaves visible text alone", () => {
     document.body.innerHTML = `<p id="x">normal visible paragraph</p>`;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("x")).not.toBeNull();
+    expect(document.querySelector("#x")).not.toBeNull();
   });
 
   // Other rules drop their own placeholders that may legitimately contain
@@ -268,7 +268,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.getElementById("ph")).not.toBeNull();
-    expect(document.getElementById("inner")).not.toBeNull();
+    expect(document.querySelector("#ph")).not.toBeNull();
+    expect(document.querySelector("#inner")).not.toBeNull();
   });
 });

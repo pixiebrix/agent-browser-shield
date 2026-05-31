@@ -41,7 +41,7 @@ const PatternFile = z
   .strict();
 
 function decode(b64: string): string {
-  return Buffer.from(b64, "base64").toString("utf-8");
+  return Buffer.from(b64, "base64").toString("utf8");
 }
 
 function buildOutput(
@@ -55,8 +55,8 @@ function buildOutput(
     "export const INJECTION_PATTERNS: readonly RegExp[] = [",
   ];
   for (const { name, source, flags } of entries) {
-    lines.push(`  // ${name}`);
     lines.push(
+      `  // ${name}`,
       `  new RegExp(${JSON.stringify(source)}, ${JSON.stringify(flags)}),`,
     );
   }
@@ -65,13 +65,14 @@ function buildOutput(
 }
 
 export function generateInjectionPatterns(): void {
-  const raw = readFileSync(INPUT, "utf-8");
+  const raw = readFileSync(INPUT, "utf8");
   let doc: unknown;
   try {
     doc = load(raw);
   } catch (error) {
     throw new Error(
       `${relative(ROOT, INPUT)}: YAML parse error — ${(error as Error).message}`,
+      { cause: error },
     );
   }
   const result = PatternFile.safeParse(doc);
@@ -93,6 +94,7 @@ export function generateInjectionPatterns(): void {
     } catch (error) {
       throw new Error(
         `${relative(ROOT, INPUT)}: pattern "${entry.name}" is not a valid RegExp — ${(error as Error).message}`,
+        { cause: error },
       );
     }
     return { name: entry.name, source, flags: entry.flags };

@@ -47,7 +47,7 @@ function buildLandmark(recipe: string): HTMLElement {
 }
 
 function apply(_root: ParentNode): void {
-  const recipe = findRecipe(window.location.href);
+  const recipe = findRecipe(globalThis.location.href);
   if (recipe === null) return;
   // Idempotent: a previous apply (initial pass, re-enable from the
   // options page, or rule-engine re-fire on history navigation) may
@@ -58,7 +58,7 @@ function apply(_root: ParentNode): void {
   // the first element of <body> at the top of the a11y tree.
   document.body.prepend(buildLandmark(recipe));
   log("search-url-helper applied", {
-    host: window.location.hostname,
+    host: globalThis.location.hostname,
     recipeLength: recipe.length,
   });
 }

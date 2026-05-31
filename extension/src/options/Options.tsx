@@ -127,7 +127,7 @@ export function Options() {
     const link = document.createElement("a");
     link.href = url;
     link.download = "agent-browser-shield-config.json";
-    document.body.appendChild(link);
+    document.body.append(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
@@ -202,6 +202,11 @@ export function Options() {
           <button type="button" onClick={handleApply}>
             Apply
           </button>
+          {status && (
+            <span className="status" role="status">
+              {status}
+            </span>
+          )}
         </div>
       </section>
 

@@ -80,6 +80,16 @@ repos:
         files: ^extension/.*\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc)$
         exclude: ^extension/dist/|\.generated\.(ts|tsx|js|jsx)$
 
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint (unicorn + custom)
+        language: system
+        entry: bash -c 'cd extension && bun run lint:eslint'
+        files: ^extension/.*\.(ts|tsx|js|mjs|cjs)$
+        exclude: ^extension/dist/|\.generated\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.14
     hooks:

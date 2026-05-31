@@ -18,6 +18,10 @@
 // correctly (returns false for any nested frame).
 export function isTopFrame(): boolean {
   try {
+    // Comparison must use `window`, not `globalThis` — TypeScript types the
+    // latter as `typeof globalThis`, which doesn't overlap with the `Window`
+    // returned by `window.top`.
+    // eslint-disable-next-line unicorn/prefer-global-this
     return window === window.top;
   } catch {
     // Defensive fallback — if even the equality check throws, we are

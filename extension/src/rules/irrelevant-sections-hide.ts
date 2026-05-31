@@ -56,7 +56,7 @@ function placeholderLabel(summary: string): string {
 
 function describeElement(element: Element): Record<string, unknown> {
   const rect = element.getBoundingClientRect();
-  const text = (element.textContent ?? "").replace(/\s+/g, " ").trim();
+  const text = (element.textContent ?? "").replaceAll(/\s+/g, " ").trim();
   return {
     tag: element.tagName,
     id: element.id || undefined,
@@ -84,7 +84,7 @@ function checkHideable(element: Element): string | null {
   if (element.closest('[role="banner"]')) return "inside-banner";
 
   // Sticky / fixed elements leave a layout hole behind if replaced.
-  const position = window.getComputedStyle(element).position;
+  const position = globalThis.getComputedStyle(element).position;
   if (position === "fixed" || position === "sticky") {
     return `position-${position}`;
   }

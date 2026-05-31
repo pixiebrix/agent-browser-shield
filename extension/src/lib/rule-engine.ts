@@ -111,9 +111,9 @@ function injectStyles(): void {
   if (stylesInjected) return;
   stylesInjected = true;
   const style = document.createElement("style");
-  style.setAttribute("data-abs-styles", "");
+  style.dataset.absStyles = "";
   style.textContent = PLACEHOLDER_STYLES;
-  document.documentElement.appendChild(style);
+  document.documentElement.append(style);
 }
 
 function isApplicableHere(
@@ -141,7 +141,7 @@ function applyEnabled(
   // attempting to pass a null body would TypeError every rule.
   if (!document.body) {
     log("rule engine skipping — no document.body", {
-      url: window.location.href,
+      url: globalThis.location.href,
     });
     return;
   }
@@ -150,7 +150,7 @@ function applyEnabled(
   ).map((r) => r.id);
   log("initial rule application", {
     enabled,
-    url: window.location.href,
+    url: globalThis.location.href,
     topFrame,
   });
   for (const rule of RULES) {
@@ -224,7 +224,7 @@ function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
 
 export async function start(): Promise<void> {
   const topFrame = isTopFrame();
-  log("rule engine starting", { url: window.location.href, topFrame });
+  log("rule engine starting", { url: globalThis.location.href, topFrame });
   injectStyles();
   // Set the default synchronously so any placeholder created before storage
   // resolves gets the right CSS scoping.

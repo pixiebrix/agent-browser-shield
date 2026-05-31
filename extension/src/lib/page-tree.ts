@@ -77,7 +77,7 @@ const MAX_TEXT_NODE_CHARS = 160;
 // the edges, and cap the length. Returns null for content that's entirely
 // whitespace so callers can skip emitting an empty text node.
 function normalizeTextContent(raw: string): string | null {
-  const collapsed = raw.replace(/\s+/g, " ").trim();
+  const collapsed = raw.replaceAll(/\s+/g, " ").trim();
   if (collapsed.length === 0) return null;
   if (collapsed.length <= MAX_TEXT_NODE_CHARS) return collapsed;
   return `${collapsed.slice(0, MAX_TEXT_NODE_CHARS).trimEnd()}…`;
