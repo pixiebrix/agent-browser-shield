@@ -20,10 +20,8 @@ yet, create it once (the authenticated user becomes the owner):
 clawhub publisher create pixiebrix --display-name "PixieBrix"
 ```
 
-See the
-[ClawHub CLI docs](https://github.com/openclaw/clawhub/blob/main/docs/cli.md)
-for details on publisher management. Newly created org publishers are not marked
-trusted/official by default.
+See the [ClawHub CLI docs][clawhub-cli] for details on publisher management.
+Newly created org publishers are not marked trusted/official by default.
 
 ## Publish
 
@@ -69,3 +67,5 @@ If the skill was previously published under a personal handle, add
 Independent semver, **not** tied to the extension's `v2026.x.x` release tag.
 Bump only when the agent-facing contract changes (new DOM marker, new behavior
 rule). Extension bugfixes don't require a republish.
+
+[clawhub-cli]: https://github.com/openclaw/clawhub/blob/main/docs/cli.md
