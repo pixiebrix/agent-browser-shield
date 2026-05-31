@@ -104,7 +104,10 @@ domains, where embeds are the page content.
 ## Dark-pattern blocking
 
 Block manipulative UI patterns that work on humans and can mislead agents the
-same way.
+same way. For evidence that current computer-use agents are highly susceptible
+to these patterns — sometimes more so than humans — see
+[SusBench](https://arxiv.org/abs/2510.11035) (Guo et al., 2025) and
+[DECEPTICON](https://arxiv.org/abs/2512.22894) (Cuvin et al., 2025).
 
 ### Hide Countdown Timers
 
