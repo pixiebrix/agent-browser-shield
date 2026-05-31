@@ -1,0 +1,39 @@
+name: Publish ClawHub skill
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump level
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: Preview without publishing
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: clawhub-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish agent-browser-shield to ClawHub
+    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@v1
+    with:
+      skill_path: clawhub/agent-browser-shield
+      owner: pixiebrix
+      bump: ${{ inputs.bump }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets:
+      clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}
