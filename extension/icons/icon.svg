@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Agent Browser Shield</title>
+  <path d="M10 10 H54 V30 C54 46 44 55 32 60 C20 55 10 46 10 30 Z" fill="#2563eb"/>
+  <path d="M22 18 V48 L29 41 L34 52 L38 50 L33 39 H42 Z" fill="#ffffff"/>
+</svg>

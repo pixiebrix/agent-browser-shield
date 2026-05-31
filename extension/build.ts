@@ -10,6 +10,7 @@ import { generateSiteData } from "./scripts/build-site-data";
 const ROOT = import.meta.dir;
 const SRC = join(ROOT, "src");
 const DATA = join(ROOT, "data");
+const ICONS = join(ROOT, "icons");
 const DIST = join(ROOT, "dist");
 
 const watch = process.argv.includes("--watch");
@@ -89,6 +90,10 @@ async function build(): Promise<void> {
   await cp(join(SRC, "manifest.json"), join(DIST, "manifest.json"));
   await cp(join(SRC, "popup.html"), join(DIST, "popup.html"));
   await cp(join(SRC, "options.html"), join(DIST, "options.html"));
+  await cp(ICONS, join(DIST, "icons"), {
+    recursive: true,
+    filter: (src) => !src.endsWith(".svg"),
+  });
   console.log(`Built extension to ${DIST}`);
 }
 
