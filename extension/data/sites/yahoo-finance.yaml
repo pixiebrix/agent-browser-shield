@@ -1,0 +1,29 @@
+# Yahoo Finance — search-url-helper only.
+#
+# comments-hide is deliberately omitted: Yahoo Finance's Conversations module
+# on /quote/{TICKER}/community/ is an embedded third-party widget whose DOM
+# does not render to anonymous probes (sign-in required), and the surrounding
+# Yahoo shell uses hash-suffixed Lit-style class names (`yf-1073xd7`,
+# `_yb_z547h0`) that rotate per deploy. Author comments-hide here once stable
+# selectors are confirmed from an unblocked session.
+#
+# Footer (when rendered) is a semantic <footer> caught by the generic always-on
+# selector.
+
+hostnames:
+  - "finance.yahoo.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for finance.yahoo.com — prefer URL navigation over typing.
+      Symbol lookup: /lookup?s={query} (returns equities, ETFs, mutual funds, indices, futures, options, currencies, crypto matching the query)
+      Filtered lookup: /lookup/{kind}?s={query} where {kind} = equity, mutualfund, etf, index, future, currency, cryptocurrency
+      Quote pages: /quote/{TICKER}/ (e.g. /quote/AAPL/, /quote/BTC-USD/, /quote/^GSPC/ for S&P 500)
+      Quote subtabs (replace trailing slug): /quote/{TICKER}/{tab}/ where {tab} = chart, history, profile, financials, balance-sheet, cash-flow, analysis, options, holders, sustainability, community (forum), news, key-statistics
+      Historical prices: /quote/{TICKER}/history?period1={unixSeconds}&period2={unixSeconds}&frequency={1d|1wk|1mo}
+      Options chain: /quote/{TICKER}/options?date={unixSecondsExpiry}
+      Sector / industry pages: /sectors/, /sectors/{slug}/, /screener/predefined/{screenerSlug} (e.g. day_gainers, most_actives, undervalued_growth_stocks)
+      News search: /topic/{slug}/ for curated feeds (e.g. /topic/stock-market-news/, /topic/crypto/, /topic/earnings/). Site-wide news listing: /news/.
+      Calendar pages: /calendar/earnings?day={YYYY-MM-DD}, /calendar/economic?day={YYYY-MM-DD}, /calendar/ipo?day={YYYY-MM-DD}, /calendar/splits?day={YYYY-MM-DD}.
+      Currency cross: /quote/{FROM}{TO}=X/ (e.g. EURUSD=X). Crypto: /quote/{COIN}-{QUOTE}/ (e.g. BTC-USD).

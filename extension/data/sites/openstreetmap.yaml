@@ -1,0 +1,22 @@
+# OpenStreetMap — search-url-helper only.
+#
+# OSM does not host UGC reviews or open comments on the public map view
+# (notes/changeset discussions are inline editor metadata, not a page
+# comments section). Footer is a semantic <footer> caught by the generic
+# always-on selector.
+
+hostnames:
+  - "{*.}?openstreetmap.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for openstreetmap.org — prefer URL navigation over typing.
+      Geocode search (Nominatim-backed): /search?query={freeText} — site auto-pans to the first match and appends `#map={zoom}/{lat}/{lon}` to the URL.
+      Map view (no query): /#map={zoom}/{lat}/{lon} ; layers via &layers={M|C|T|H|O|N} (M Mapnik default, C Cycle, T Transport, H Humanitarian, O OpenTopo, N Notes overlay).
+      Direct element URLs: /node/{id}, /way/{id}, /relation/{id} (each has /history and /full subpaths). Edit URL: /edit?{node|way|relation}={id}.
+      Directions: /directions?engine={engine}&route={lat1},{lon1};{lat2},{lon2} where {engine} = fossgis_osrm_car, fossgis_osrm_bike, fossgis_osrm_foot, graphhopper_car, graphhopper_bike, graphhopper_foot, fossgis_valhalla_car.
+      User pages: /user/{username}, /user/{username}/notes, /user/{username}/traces, /user/{username}/history.
+      Changeset: /changeset/{id}. Note: /note/{id}.
+      Raw Nominatim API (separate host, no key, polite-use rate limit): https://nominatim.openstreetmap.org/search?q={query}&format={jsonv2|geojson|xml}&limit={n}&countrycodes={iso2list}&addressdetails=1 ; reverse: https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=jsonv2.
+      Tiles (separate host): https://tile.openstreetmap.org/{z}/{x}/{y}.png.

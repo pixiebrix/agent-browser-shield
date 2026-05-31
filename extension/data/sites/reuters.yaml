@@ -1,0 +1,20 @@
+# Reuters — search-url-helper only.
+#
+# Reuters article pages do not host an open comments section, and the page
+# footer is a semantic <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?reuters.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for reuters.com — prefer URL navigation over typing.
+      Search: /site-search/?query={query}&offset={offset}
+      Pagination (offset=): 0-indexed by 20 (page 2 = offset=20).
+      Sort (sort=): newest, oldest, relevance (default).
+      Date filter (date=): past_24h, past_week, past_month, past_year, any_time (default). Custom range: from={YYYY-MM-DD}&to={YYYY-MM-DD}.
+      Section filter (section=): world, business, markets, technology, sustainability, legal, sports, lifestyle, etc.
+      Section landing pages (no query): /world/, /business/, /markets/, /technology/, /sustainability/, /legal/, /sports/, /lifestyle/. Sub-sections via additional slug, e.g. /world/europe/, /markets/currencies/, /business/finance/, /technology/artificial-intelligence/.
+      Direct article: /{section}/{slug}-{YYYY-MM-DD}/ (kebab-cased slug; date suffix is part of the canonical URL).
+      Author pages: /authors/{first-last}/

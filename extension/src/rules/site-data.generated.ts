@@ -69,6 +69,25 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/imdb.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?imdb.com", pathname: "/title/*" }),
+    ],
+    selectors: [
+      "[data-testid=\"UserReviews\"]",
+    ],
+  },
+  {
+    // from data/sites/indeed.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?indeed.com", pathname: "/cmp/*/reviews" }),
+      new URLPattern({ hostname: "{*.}?indeed.com", pathname: "/cmp/*/reviews/*" }),
+    ],
+    selectors: [
+      "[data-testid=\"reviewsList\"]",
+    ],
+  },
+  {
     // from data/sites/lowes.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?lowes.com", pathname: "/pd/*" }),
@@ -84,6 +103,16 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       "[data-ui=\"product-reviews\"]",
+    ],
+  },
+  {
+    // from data/sites/rottentomatoes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?rottentomatoes.com", pathname: "/m/*" }),
+      new URLPattern({ hostname: "{*.}?rottentomatoes.com", pathname: "/tv/*" }),
+    ],
+    selectors: [
+      "[data-qa=\"section:audience-reviews\"]",
     ],
   },
   {
@@ -251,6 +280,21 @@ Direct product: /dp/{ASIN} ; reviews: /product-reviews/{ASIN}?sortBy=recent&revi
 `,
   },
   {
+    // from data/sites/apnews.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?apnews.com" }),
+    ],
+    recipe: `abs URL helper for apnews.com — prefer URL navigation over typing.
+Search: /search?q={query}&s={sort}&p={page}
+Sort (s=): 0 (Relevance, default), 3 (Newest), 2 (Oldest).
+Pagination (p=): 1-indexed.
+Section landing pages (no query): /politics, /us-news, /world-news, /business, /sports, /entertainment, /science, /technology, /health, /climate, /oddities. Sub-sections via additional slug (e.g. /world-news/europe, /business/inflation).
+Hub pages (curated topic feeds): /hub/{slug} — many of these now 302-redirect to a section landing page (e.g. /hub/politics → /politics).
+Direct article: /article/{slug-headline}-{32-hex-id} (e.g. /article/election-results-2024-abcdef0123456789abcdef0123456789).
+Live blog / projects: /projects/, /live/{slug}.
+`,
+  },
+  {
     // from data/sites/arxiv.yaml
     patterns: [
       new URLPattern({ hostname: "arxiv.org" }),
@@ -287,6 +331,24 @@ Direct product: /site/{slug}/{productId}.p?skuId={sku}
 `,
   },
   {
+    // from data/sites/bing.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?bing.com" }),
+    ],
+    recipe: `abs URL helper for bing.com — prefer URL navigation over typing.
+Web search: /search?q={query}
+Verticals (separate paths, same query param): /news/search?q={query}, /images/search?q={query}, /videos/search?q={query}, /maps?q={query}, /shop?q={query}
+Pagination (web): &first={1-indexed offset, default 1; page 2 starts at 11 when count=10}; &count={resultsPerPage, default 10}
+Market/region (mkt=): en-US, en-GB, en-CA, en-AU, de-DE, fr-FR, ja-JP, es-ES, etc. ({language}-{country})
+Language (setlang=): en, de, fr, es, ja, zh-Hans, etc.
+Safe search (safeSearch=): Off, Moderate, Strict
+Time filter (qft=): +filterui:age-lt1440 (past day), +filterui:age-lt10080 (past week), +filterui:age-lt43200 (past month), +filterui:age-lt525600 (past year). URL-encode the leading \`+\` as \`%2B\`.
+Custom date range (qft=): +filterui:age-custom_lt{YYYY-MM-DD}_gt{YYYY-MM-DD}
+Site filter: append to q= — \`q={query}+site:{domain}\`
+Direct file type / language operators in q=: \`filetype:pdf\`, \`language:en\`, \`intitle:\`, \`inurl:\`
+`,
+  },
+  {
     // from data/sites/booking.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?booking.com" }),
@@ -299,6 +361,25 @@ Pagination: offset={n} (multiples of 25)
 Currency / language: selected_currency=USD ; lang=en-us
 Filters (nflt= ; semicolon-joined): pri=1,2,3 (price band), class=4,5 (stars), ht_id=204 (hotels), review_score=80, hotelfacility=2 (parking), popular_activities=24 (spa)
 Direct property: /hotel/{cc}/{slug}.html (cc = 2-letter country code; e.g. /hotel/us/the-plaza.html)
+`,
+  },
+  {
+    // from data/sites/brave-search.yaml
+    patterns: [
+      new URLPattern({ hostname: "search.brave.com" }),
+    ],
+    recipe: `abs URL helper for search.brave.com — prefer URL navigation over typing.
+Web search: /search?q={query}
+Verticals (separate paths, same query param): /news?q={query}, /images?q={query}, /videos?q={query}, /goggles?q={query}
+Pagination (web): &offset={pageIndex} (0-indexed; page 2 = offset=1)
+Country (country=): us, gb, ca, au, de, fr, jp, etc. (ISO two-letter)
+Search language (search_lang=): en, de, fr, ja, es, etc.
+UI language (ui_lang=): {language}-{country} e.g. en-US, de-DE
+Safe search (safesearch=): off, moderate, strict
+Time filter (tf=): pd (past day), pw (past week), pm (past month), py (past year), {YYYY-MM-DDtoYYYY-MM-DD} (custom)
+Site filter / operators in q=: \`site:{domain}\`, \`filetype:pdf\`, \`intitle:\`, \`inurl:\`, prefix \`-\` to exclude
+Goggles (re-rankers, no login required to use): &goggles_id={publicGoggleUrlOrId} appended to /search
+AI Answer: anonymous users get summarizer cards inline on /search; no separate URL
 `,
   },
   {
@@ -484,6 +565,41 @@ Article numbers are 8 digits — the dotted form on receipts (e.g., 604.169.25) 
 `,
   },
   {
+    // from data/sites/imdb.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?imdb.com" }),
+    ],
+    recipe: `abs URL helper for imdb.com — prefer URL navigation over typing.
+Free-text search (all categories): /find/?q={query}&s={tt|nm|co|kw|ch} (titles, names, companies, keywords, characters)
+Direct lookup: /title/{ttId} (movie/TV), /name/{nmId} (person), /company/{coId}
+Title detail subpages: /title/{ttId}/reviews/ (user reviews — review list is sign-in-walled for anonymous), /title/{ttId}/fullcredits/, /title/{ttId}/plotsummary/, /title/{ttId}/parentalguide/, /title/{ttId}/awards/, /title/{ttId}/news/
+Advanced title search: /search/title/?title={query}&title_type={feature|tv_series|tv_movie|short|documentary}&release_date={YYYY-MM-DD,YYYY-MM-DD}&user_rating={low,high}&genres={action,drama,...}&countries={us,gb,...}&languages={en,...}&sort={moviemeter,asc|user_rating,desc|release_date,desc|num_votes,desc|alpha,asc|runtime,asc}&count={50|100|250}&start={1-indexed offset}
+Advanced name search: /search/name/?name={query}&birth_date={YYYY-MM-DD,YYYY-MM-DD}&death_date={YYYY-MM-DD,YYYY-MM-DD}&gender={male|female|non_binary}&sort={starmeter,asc|birth_date,desc}
+Charts (no query): /chart/top/ (top 250), /chart/moviemeter/, /chart/tvmeter/, /chart/boxoffice/
+`,
+  },
+  {
+    // from data/sites/indeed.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?indeed.com" }),
+    ],
+    recipe: `abs URL helper for indeed.com — prefer URL navigation over typing.
+Job search: /jobs?q={query}&l={locationOrZip}&start={offset}
+Pagination (start=): 0-indexed by 10 (page 2 = start=10).
+Sort (sort=): relevance (default), date.
+Date posted (fromage=): 1, 3, 7, 14 (days ago).
+Job type (jt=): fulltime, parttime, contract, temporary, internship.
+Radius (radius=): miles around the location (default 25; 0 means exact location).
+Salary estimate (salary=): "$70,000" style — URL-encode the dollar sign and comma.
+Remote (sc=): 0kf%3Aattr(DSQF7)%7C (remote-only filter; built from \`attr(...)\` opaque ids that Indeed surfaces on filter pills).
+Company pages: /cmp/{Company-Name} (Pascal-cased slug, hyphen-separated for multi-word names; e.g. /cmp/Google, /cmp/Stripe-Inc, /cmp/Pwc).
+Company subtabs: /cmp/{Company}/reviews, /cmp/{Company}/jobs, /cmp/{Company}/salaries, /cmp/{Company}/benefits, /cmp/{Company}/faq, /cmp/{Company}/about, /cmp/{Company}/locations.
+Review list sort/filter (review page): &fcountry=US&floc={city}&ftopic={wlbalance|paybenefits|jobsecadv|mgmt|culture}&fjobtitle={role}&sort=helpful (default) or sort=date.
+Direct job: /viewjob?jk={16-hex-jobKey}
+Salary explorer: /career/{role-slug}/salaries, /career/{role-slug}/salaries/{city}
+`,
+  },
+  {
     // from data/sites/kayak.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?kayak.com" }),
@@ -551,6 +667,22 @@ Versions page exposes the full release history and is the canonical place to rea
 `,
   },
   {
+    // from data/sites/npr.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?npr.org" }),
+    ],
+    recipe: `abs URL helper for npr.org — prefer URL navigation over typing.
+Search: /search/?query={query}&page={page}
+Pagination (page=): 1-indexed.
+Sort (sort=): relevance (default), date.
+Date filter (dateRange=): today, past+7+days, past+30+days, past+90+days, past+year, all (default). URL-encode the \`+\` as \`%20\` or \`+\`.
+Program filter (programName=): "Morning Edition", "All Things Considered", "Weekend Edition Sunday", "Weekend Edition Saturday", "Fresh Air", "Talk of the Nation", etc. URL-encode spaces.
+Section / topic landing pages (no query): /sections/news/, /sections/politics/, /sections/business/, /sections/health/, /sections/science/, /sections/world/, /sections/national/, /sections/climate/, /sections/technology/, /sections/education/, /sections/arts/, /sections/music/, /sections/books/, /sections/pop-culture/. NPR podcast pages live at /podcasts/{podcastId}/{slug}/.
+Direct article: /{YYYY}/{MM}/{DD}/{nprStoryId}/{slug} (e.g. /2024/05/30/1198765432/ai-news).
+Author page: /people/{personId}/{first-last}.
+`,
+  },
+  {
     // from data/sites/nytimes.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?nytimes.com" }),
@@ -564,6 +696,22 @@ Direct article URL: /{YYYY}/{MM}/{DD}/{section}/{slug}.html
 Section landing: /section/{sectionSlug} ; topic landing: /topic/{topicSlug}
 Wirecutter (reviews vertical): https://www.nytimes.com/wirecutter/search/?s={query}
 Cooking (separate subdomain): https://cooking.nytimes.com/search?q={query}
+`,
+  },
+  {
+    // from data/sites/openstreetmap.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?openstreetmap.org" }),
+    ],
+    recipe: `abs URL helper for openstreetmap.org — prefer URL navigation over typing.
+Geocode search (Nominatim-backed): /search?query={freeText} — site auto-pans to the first match and appends \`#map={zoom}/{lat}/{lon}\` to the URL.
+Map view (no query): /#map={zoom}/{lat}/{lon} ; layers via &layers={M|C|T|H|O|N} (M Mapnik default, C Cycle, T Transport, H Humanitarian, O OpenTopo, N Notes overlay).
+Direct element URLs: /node/{id}, /way/{id}, /relation/{id} (each has /history and /full subpaths). Edit URL: /edit?{node|way|relation}={id}.
+Directions: /directions?engine={engine}&route={lat1},{lon1};{lat2},{lon2} where {engine} = fossgis_osrm_car, fossgis_osrm_bike, fossgis_osrm_foot, graphhopper_car, graphhopper_bike, graphhopper_foot, fossgis_valhalla_car.
+User pages: /user/{username}, /user/{username}/notes, /user/{username}/traces, /user/{username}/history.
+Changeset: /changeset/{id}. Note: /note/{id}.
+Raw Nominatim API (separate host, no key, polite-use rate limit): https://nominatim.openstreetmap.org/search?q={query}&format={jsonv2|geojson|xml}&limit={n}&countrycodes={iso2list}&addressdetails=1 ; reverse: https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=jsonv2.
+Tiles (separate host): https://tile.openstreetmap.org/{z}/{x}/{y}.png.
 `,
   },
   {
@@ -636,6 +784,35 @@ Sort: relevance (default), price-low-to-high, price-high-to-low, best-seller, to
 Category browse: /c/{slug} (e.g., /c/backpacking-tents)
 Faceted filters on /c/ and /search use r={facet}%3A{value} repeated for each, e.g., r=brand%3AREI+Co-op, r=minTrailWeight%3A0-4, r=capacity%3A2-person
 Direct product: /product/{productId}/{slug}
+`,
+  },
+  {
+    // from data/sites/reuters.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?reuters.com" }),
+    ],
+    recipe: `abs URL helper for reuters.com — prefer URL navigation over typing.
+Search: /site-search/?query={query}&offset={offset}
+Pagination (offset=): 0-indexed by 20 (page 2 = offset=20).
+Sort (sort=): newest, oldest, relevance (default).
+Date filter (date=): past_24h, past_week, past_month, past_year, any_time (default). Custom range: from={YYYY-MM-DD}&to={YYYY-MM-DD}.
+Section filter (section=): world, business, markets, technology, sustainability, legal, sports, lifestyle, etc.
+Section landing pages (no query): /world/, /business/, /markets/, /technology/, /sustainability/, /legal/, /sports/, /lifestyle/. Sub-sections via additional slug, e.g. /world/europe/, /markets/currencies/, /business/finance/, /technology/artificial-intelligence/.
+Direct article: /{section}/{slug}-{YYYY-MM-DD}/ (kebab-cased slug; date suffix is part of the canonical URL).
+Author pages: /authors/{first-last}/
+`,
+  },
+  {
+    // from data/sites/rottentomatoes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?rottentomatoes.com" }),
+    ],
+    recipe: `abs URL helper for rottentomatoes.com — prefer URL navigation over typing.
+Search: /search?search={query}
+Direct lookup: /m/{slug} (movies), /tv/{slug} (TV series), /tv/{slug}/s{NN} (season), /tv/{slug}/s{NN}/e{NN} (episode), /celebrity/{slug} (person)
+Slugs use lowercase letters, digits, and underscores (e.g. /m/shawshank_redemption, /tv/breaking_bad).
+Reviews subpages: /m/{slug}/reviews (critics), /m/{slug}/reviews?type=user (audience), /m/{slug}/reviews?type=top_critics
+Curated browse pages (no query): /browse/movies_in_theaters/, /browse/movies_at_home/, /browse/tv_series_browse/, /top/bestofrt/ (annual best lists)
 `,
   },
   {
@@ -763,6 +940,24 @@ Without fulltext=1, an exact title match auto-redirects to the article (the sear
 Specific revision: /wiki/{Title}?oldid={revId} ; diff: ?diff=prev&oldid={revId}
 Section anchors: /wiki/{Title}#{Section_heading_with_underscores}
 Language editions live on lang subdomains (en, de, ja, simple, …); the path contract is identical.
+`,
+  },
+  {
+    // from data/sites/yahoo-finance.yaml
+    patterns: [
+      new URLPattern({ hostname: "finance.yahoo.com" }),
+    ],
+    recipe: `abs URL helper for finance.yahoo.com — prefer URL navigation over typing.
+Symbol lookup: /lookup?s={query} (returns equities, ETFs, mutual funds, indices, futures, options, currencies, crypto matching the query)
+Filtered lookup: /lookup/{kind}?s={query} where {kind} = equity, mutualfund, etf, index, future, currency, cryptocurrency
+Quote pages: /quote/{TICKER}/ (e.g. /quote/AAPL/, /quote/BTC-USD/, /quote/^GSPC/ for S&P 500)
+Quote subtabs (replace trailing slug): /quote/{TICKER}/{tab}/ where {tab} = chart, history, profile, financials, balance-sheet, cash-flow, analysis, options, holders, sustainability, community (forum), news, key-statistics
+Historical prices: /quote/{TICKER}/history?period1={unixSeconds}&period2={unixSeconds}&frequency={1d|1wk|1mo}
+Options chain: /quote/{TICKER}/options?date={unixSecondsExpiry}
+Sector / industry pages: /sectors/, /sectors/{slug}/, /screener/predefined/{screenerSlug} (e.g. day_gainers, most_actives, undervalued_growth_stocks)
+News search: /topic/{slug}/ for curated feeds (e.g. /topic/stock-market-news/, /topic/crypto/, /topic/earnings/). Site-wide news listing: /news/.
+Calendar pages: /calendar/earnings?day={YYYY-MM-DD}, /calendar/economic?day={YYYY-MM-DD}, /calendar/ipo?day={YYYY-MM-DD}, /calendar/splits?day={YYYY-MM-DD}.
+Currency cross: /quote/{FROM}{TO}=X/ (e.g. EURUSD=X). Crypto: /quote/{COIN}-{QUOTE}/ (e.g. BTC-USD).
 `,
   },
   {

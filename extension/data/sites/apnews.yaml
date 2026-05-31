@@ -1,0 +1,19 @@
+# AP News — search-url-helper only.
+#
+# AP article pages do not host an open comments section, and the page footer
+# is a semantic <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?apnews.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for apnews.com — prefer URL navigation over typing.
+      Search: /search?q={query}&s={sort}&p={page}
+      Sort (s=): 0 (Relevance, default), 3 (Newest), 2 (Oldest).
+      Pagination (p=): 1-indexed.
+      Section landing pages (no query): /politics, /us-news, /world-news, /business, /sports, /entertainment, /science, /technology, /health, /climate, /oddities. Sub-sections via additional slug (e.g. /world-news/europe, /business/inflation).
+      Hub pages (curated topic feeds): /hub/{slug} — many of these now 302-redirect to a section landing page (e.g. /hub/politics → /politics).
+      Direct article: /article/{slug-headline}-{32-hex-id} (e.g. /article/election-results-2024-abcdef0123456789abcdef0123456789).
+      Live blog / projects: /projects/, /live/{slug}.
