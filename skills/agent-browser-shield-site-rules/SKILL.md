@@ -20,8 +20,8 @@ writing a new one.
 Only these four keys are valid in a site YAML:
 
 - **`reviews-hide`** — selectors for the UGC review section on product/place
-  detail pages. Keep aggregate ratings near the product title visible; only
-  hide containers whose subtree is user-written review text. Amazon's
+  detail pages. Keep aggregate ratings near the product title visible; only hide
+  containers whose subtree is user-written review text. Amazon's
   `#reviewsMedley` / Walmart's `[data-testid="enhanced-review-section"]`
   pattern: the medley contains UGC, the aggregate badge lives elsewhere.
 
@@ -48,8 +48,8 @@ Chrome for Testing downloads (~170 MB) — let it complete before continuing.
 
 ### 1. Branch off main
 
-Per CLAUDE.md GitHub flow: one branch per host (or one bundled branch if
-you're sweeping many hosts at once).
+Per CLAUDE.md GitHub flow: one branch per host (or one bundled branch if you're
+sweeping many hosts at once).
 
 ```bash
 git checkout main
@@ -70,21 +70,21 @@ For each rule the host is getting:
   3. **Semantic HTML** — `<footer>`, `<article>`, sectioning elements.
   4. **Stable ids and data attributes** — `#reviewsMedley`,
      `[data-testid="PropertyReviewsRegionBlock"]`,
-     `[data-testid="Accordion_member_reviews"]`. These rarely break unless
-     the host ships a redesign.
+     `[data-testid="Accordion_member_reviews"]`. These rarely break unless the
+     host ships a redesign.
   5. **Class names** — last resort. Most likely to drift.
 
-  After picking a candidate, **validate against the primary content node**:
-  the selector must not, when removed, also remove `<main>`, `<article>`,
-  the product title, or the page's primary information. Walk the candidate's
-  ancestry to find the tightest container that wraps the UGC without
-  enveloping the aggregate rating chip.
+  After picking a candidate, **validate against the primary content node**: the
+  selector must not, when removed, also remove `<main>`, `<article>`, the
+  product title, or the page's primary information. Walk the candidate's
+  ancestry to find the tightest container that wraps the UGC without enveloping
+  the aggregate rating chip.
 
 - **footer-hide**: usually skip. Quick check: does the page footer match
-  `<footer>` (top-level, not nested inside `article`/`section`/`aside`/`nav`)
-  or `[role="contentinfo"]`? If yes, the generic always-on selector already
-  catches it — don't author a site entry. If the footer is a plain `<div>`
-  with an id or class (Amazon-style), author the selector.
+  `<footer>` (top-level, not nested inside `article`/`section`/`aside`/`nav`) or
+  `[role="contentinfo"]`? If yes, the generic always-on selector already catches
+  it — don't author a site entry. If the footer is a plain `<div>` with an id or
+  class (Amazon-style), author the selector.
 
 - **search-url-helper**: navigate to the host's search-bearing page, submit a
   sample query, and observe the resulting URL. Capture the base path, query
@@ -122,49 +122,45 @@ git push -u origin crawl/<slug>-rules
 gh pr create --base main --head crawl/<slug>-rules --title "Add <Host> site rules"
 ```
 
-If the change also affects the rule registry (`extension/src/rules/index.ts`)
-or adds a brand-new rule id, update
-`skills/agent-browser-shield-config/SKILL.md` so its rule ID list stays
-current.
+If the change also affects the rule registry (`extension/src/rules/index.ts`) or
+adds a brand-new rule id, update `skills/agent-browser-shield-config/SKILL.md`
+so its rule ID list stays current.
 
 ## Known traps
 
-- **DataDome / Akamai / Cloudflare bot challenges** — Yelp, Tripadvisor,
-  Costco PDPs, and many shopping detail pages serve a JS interstitial to
-  headless Chromium. Symptoms: `document.title === "<host>"`, body length
-  under ~2 KB, body text starts with `var dd={...` or contains
-  `geo.captcha-delivery.com`. Workarounds: retry after a few seconds (some
-  clear automatically), try the homepage first (lighter detection), or defer
-  reviews-hide and ship search-url-helper only with a comment in the YAML
-  explaining the deferral.
+- **DataDome / Akamai / Cloudflare bot challenges** — Yelp, Tripadvisor, Costco
+  PDPs, and many shopping detail pages serve a JS interstitial to headless
+  Chromium. Symptoms: `document.title === "<host>"`, body length under ~2 KB,
+  body text starts with `var dd={...` or contains `geo.captcha-delivery.com`.
+  Workarounds: retry after a few seconds (some clear automatically), try the
+  homepage first (lighter detection), or defer reviews-hide and ship
+  search-url-helper only with a comment in the YAML explaining the deferral.
 
-- **Heavy SPAs with obfuscated class names** — Google Maps, Booking's
-  embedded widgets, modern e-commerce React apps. Class names rotate per
-  session and won't survive deployment. Prefer `data-testid` /
-  `data-component` if the host ships them; otherwise rely on stable ids or
-  defer the rule.
+- **Heavy SPAs with obfuscated class names** — Google Maps, Booking's embedded
+  widgets, modern e-commerce React apps. Class names rotate per session and
+  won't survive deployment. Prefer `data-testid` / `data-component` if the host
+  ships them; otherwise rely on stable ids or defer the rule.
 
-- **Paywall / sign-in gateways** — NYTimes, Bloomberg, WSJ may serve
-  partial content to anonymous probes, and interactive clicks (e.g.
-  "Read N comments") can mount a sign-in dialog instead of the target
-  panel. Use `aria-controls` on the trigger button to find the panel id
-  without having to click.
+- **Paywall / sign-in gateways** — NYTimes, Bloomberg, WSJ may serve partial
+  content to anonymous probes, and interactive clicks (e.g. "Read N comments")
+  can mount a sign-in dialog instead of the target panel. Use `aria-controls` on
+  the trigger button to find the panel id without having to click.
 
-- **Lazy-loaded / collapsed content** — Costco's Material UI accordion
-  ships the reviews collapsed; the DOM is still present, so the
-  accordion-level `data-testid` is a valid hide target. Don't click to
-  expand just to find a selector — the collapsed container is fine.
+- **Lazy-loaded / collapsed content** — Costco's Material UI accordion ships the
+  reviews collapsed; the DOM is still present, so the accordion-level
+  `data-testid` is a valid hide target. Don't click to expand just to find a
+  selector — the collapsed container is fine.
 
-- **`form.submit()` strips event handlers** — some hosts attach JS to the
-  search input that constructs additional query params. If a programmatic
-  submit produces a partial URL, fall back to `mcp__playwright__browser_type`
-  with `submit: true` to trigger the host's own submit path.
+- **`form.submit()` strips event handlers** — some hosts attach JS to the search
+  input that constructs additional query params. If a programmatic submit
+  produces a partial URL, fall back to `mcp__playwright__browser_type` with
+  `submit: true` to trigger the host's own submit path.
 
 ## When to commit the generated file vs not
 
-Always commit `extension/src/rules/site-data.generated.ts` in the same PR as
-the YAML edit. The build step regenerates it, but landing the YAML without
-the regenerated artifact means `bun run build` becomes dirty for the next
+Always commit `extension/src/rules/site-data.generated.ts` in the same PR as the
+YAML edit. The build step regenerates it, but landing the YAML without the
+regenerated artifact means `bun run build` becomes dirty for the next
 contributor.
 
 ## Coordination with other skills
@@ -173,6 +169,5 @@ contributor.
   `skills/agent-browser-shield-config/SKILL.md`.
 - Changing the DOM markers / required agent behavior → update
   `skills/agent-browser-shield/SKILL.md`.
-- This skill stays in sync with the schema; if you extend
-  `SITE_DATA_RULE_IDS` in `site-rules.schema.ts`, update the Rule Types
-  section above.
+- This skill stays in sync with the schema; if you extend `SITE_DATA_RULE_IDS`
+  in `site-rules.schema.ts`, update the Rule Types section above.
