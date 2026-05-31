@@ -77,8 +77,8 @@ keys and non-boolean values are rejected with an error.
   the toggle shows as Unavailable. Hidden sections become click-to-reveal
   placeholders.
 - `cross-origin-frame-hide` — **experimental, off by default.** Replace
-  cross-origin `<iframe>` elements with click-to-reveal placeholders so an
-  agent reading the parent page doesn't ingest the embedded-origin content.
+  cross-origin `<iframe>` elements with click-to-reveal placeholders so an agent
+  reading the parent page doesn't ingest the embedded-origin content.
   Same-origin frames, `srcdoc` frames, and inert (`about:`/`javascript:`/
   `data:`/`blob:`) frames are left alone. Off by default because legitimate
   cross-origin embeds (payment widgets, OAuth pop-ins, video) are common and

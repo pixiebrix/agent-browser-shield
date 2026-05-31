@@ -108,20 +108,18 @@ domains, where embeds are the page content.
 
 Replace every `<iframe>` whose `src` resolves to a different web origin with a
 click-to-reveal placeholder, so a browser-use agent reading the parent page
-doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc`
-frames, and inert `about:`/`javascript:`/`data:`/`blob:` frames are left
-alone. Each frame in the page processes its own direct children, so a
-cross-origin frame nested inside a same-origin frame is also caught. Off by
-default because legitimate cross-origin embeds (payment widgets, OAuth
-pop-ins, video, third-party comments) are common and removing them will
-break those flows until the user reveals.
+doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc` frames,
+and inert `about:`/`javascript:`/`data:`/`blob:` frames are left alone. Each
+frame in the page processes its own direct children, so a cross-origin frame
+nested inside a same-origin frame is also caught. Off by default because
+legitimate cross-origin embeds (payment widgets, OAuth pop-ins, video,
+third-party comments) are common and removing them will break those flows until
+the user reveals.
 
 Motivated by Roesner & Kohlbrenner,
-[*Agentic Browsers and the Same-Origin
-Policy*](https://www.franziroesner.com/pdf/roesner_kohlbrenner_2026_agentic_sop.pdf)
-(ICLR 2026 Workshop), which shows that agents willing to read cross-origin
-frame content turn the same-origin policy from a hard guarantee into a soft
-one.
+[*Agentic Browsers and the Same-Origin Policy*](https://www.franziroesner.com/pdf/roesner_kohlbrenner_2026_agentic_sop.pdf)
+(ICLR 2026 Workshop), which shows that agents willing to read cross-origin frame
+content turn the same-origin policy from a hard guarantee into a soft one.
 
 ## Dark-pattern blocking
 
