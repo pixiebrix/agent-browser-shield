@@ -1,0 +1,26 @@
+# Google Scholar — search-url-helper only.
+#
+# Footer is `[role="contentinfo"]` (the `<div id="gs_ftr">` block) and is
+# already caught by the generic always-on selector. No reviews/comments
+# UGC sections on Scholar result pages — citations are bibliographic data
+# rendered by Google, not user-generated.
+
+hostnames:
+  - "scholar.google.com"
+  - "scholar.google.{*}"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for scholar.google.com — prefer URL navigation over typing.
+      Search: /scholar?q={query}&hl=en&as_sdt={collections}
+      Phrase / boolean syntax in q=: "exact phrase", -exclude, OR, intitle:{term}, author:"Name", source:"Journal"
+      Collections (as_sdt=): 0,5 = articles incl. case law (default web search) ; 0 = articles only ; 2006 = include patents ; 4 = case law only ; 7 = articles + patents
+      Date filter: as_ylo={year} (from), as_yhi={year} (to) — e.g., as_ylo=2020&as_yhi=2024
+      Sort by date: scisbd=1 (recency, no relevance ranking)
+      Pagination: start={offset} (multiples of 10; page 2 = start=10)
+      Language filter: lr=lang_{iso} (e.g., lang_en, lang_de, lang_zh-CN)
+      My Library (signed-in only): scilib=1
+      Cited-by / related (per result): /scholar?cites={clusterId} ; /scholar?q=related:{docId}:scholar.google.com/
+      Direct cluster page: /scholar?cluster={clusterId} (shows all versions of one paper)
+      Advanced search form: /scholar?as_q={all}&as_epq={phrase}&as_oq={any}&as_eq={none}&as_occt={any|title}&as_sauthors={author}&as_publication={venue}

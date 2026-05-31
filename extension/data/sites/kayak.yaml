@@ -1,0 +1,31 @@
+# Kayak — search-url-helper only.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# Kayak result pages aggregate prices from third-party suppliers and
+# don't expose first-party UGC reviews or comment threads.
+
+hostnames:
+  - "{*.}?kayak.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for kayak.com — prefer URL navigation over typing.
+      Flights (round trip): /flights/{ORIGIN}-{DEST}/{depart}/{return}[/{pax}adults][/{cls}]
+        Codes: IATA airport/city codes uppercase (SFO, JFK, NYC, LON). Multi-airport metro: "/SFO,SJC-JFK"
+        Dates: YYYY-MM-DD. One-way drops the {return} segment: /flights/SFO-JFK/2026-07-15
+        Pax: "1adults" through "9adults" ; add "-{n}children" / "-{n}seniors" / "-{n}youth" / "-{n}infantinlap" / "-{n}infantonseat"
+        Class: economy (default), premiumeconomy, business, first
+        Stops via query: ?stops=0 (nonstop) | ~1 (≤1 stop) ; sort: ?sort={best|price_a|duration_a|depart_a}
+        Nearby airports: append /nearbya for origin, /nearbyb for dest (e.g. /flights/SFO-JFK/2026-07-15/nearbya)
+      Hotels / stays: /hotels/{Location}/{checkin}/{checkout}/{n}adults
+        Location: "City,ST" or full slug ("Seattle,WA", "Paris,France", "London-United-Kingdom-c17")
+        Pax: "2adults" ; rooms: "/2adults/1room" ; kids: append "/2adults-2children-12-9" (ages comma-joined per child)
+        Sort: ?sort={rank|price_a|distance_a|reviews_d|stars_d}
+        Star filter: ?stars=4-5 ; price band: ?price=0-200
+      Cars: /cars/{Location}/{checkin}-{HH}h/{checkout}-{HH}h
+        Location: airport IATA or city slug. Different pickup/dropoff: /cars/{PICKUP}/{DROPOFF}/{checkin}-{HH}h/{checkout}-{HH}h
+      Packages (flight+hotel): /packages/{ORIGIN}-{DEST,YYYY-MM-DD}/{return}/{n}adults
+      Trains: /trains/{ORIGIN}-{DEST}/{depart}
+      Sort knob across verticals: ?sort=… ; results URLs are stable once Kayak finishes polling — wait for the URL to settle before constructing follow-ups.
+      Currency / locale: ?currency=USD ; site mirror: kayak.{co.uk|de|fr|es|com.au} (URL grammar identical).

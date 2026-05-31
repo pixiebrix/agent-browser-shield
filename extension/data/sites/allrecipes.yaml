@@ -1,0 +1,39 @@
+# AllRecipes — reviews-hide, comments-hide, search-url-helper.
+#
+# Footer is `[role="contentinfo"]` and is already caught by the generic
+# always-on selector. The aggregate star rating and review count near
+# the recipe title live in the recipe-card header (outside the UGC
+# wrappers below) and stay visible.
+
+hostnames:
+  - "{*.}?allrecipes.com"
+
+rules:
+  reviews-hide:
+    # The threaded UGC review section is mounted into a Vue island whose
+    # outer wrapper is `comp recipe-ugc-threaded-wrapper mntl-block`. The
+    # id (`recipe-ugc-threaded-wrapper_{slot}-{n}`) carries a numeric
+    # suffix that depends on layout slot, so target by class. The wrapper
+    # contains: the "Reviews (N)" heading, the rating breakdown, the
+    # "Featured Tweaks" carousel, and every review card on the page.
+    selectors:
+      - ".recipe-ugc-threaded-wrapper"
+
+  comments-hide:
+    # "Ask the Community" Q&A panel — same Vue-island wrapper pattern as
+    # reviews, but rendered into `recipe-ugc-qanda-wrapper`. Hides the
+    # heading, the question form, and every Q&A thread.
+    selectors:
+      - ".recipe-ugc-qanda-wrapper"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for allrecipes.com — prefer URL navigation over typing.
+      Search: /search?q={query}
+      Direct recipe: /recipe/{recipeId}/{slug}/ (recipeId is a 4-6 digit integer; trailing slug is informational and forgiving)
+      Category browse: /recipes/{categoryId}/{slug}/ (e.g., /recipes/77/drinks/, /recipes/96/everyday-cooking/vegetarian/)
+      Ingredient hub: /ingredients/{slug}/ (e.g., /ingredients/chicken/)
+      Cuisine hub: /cuisine-a-z-1947/ index page, then /recipes/{categoryId}/cuisine/{slug}/
+      Collections: /recipes/{categoryId}/{slug}/ also covers seasonal hubs (e.g., thanksgiving, super-bowl).
+      Pagination on search/category pages: ?page={n} (1-indexed; on /search/ also as path segment in some hubs).
+      Recipe data (for parsing without rendering): /recipe/{id}/ pages embed schema.org/Recipe JSON-LD in a `<script type="application/ld+json">` block — read it directly instead of scraping the rendered DOM.

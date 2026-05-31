@@ -1,0 +1,46 @@
+# Lowe's — reviews-hide, comments-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# The aggregate rating chip (`[data-testid="rating-trigger"]` showing
+# "4.7 / 654") lives in the product header outside the reviews accordion
+# and stays visible.
+
+hostnames:
+  - "{*.}?lowes.com"
+
+rules:
+  reviews-hide:
+    # PDP review section is a Bazaarvoice-backed accordion mounted under
+    # `[data-testid="reviews-accordion"]`. The wrapper carries the
+    # heading and the (often collapsed) review cards / breakdown. The
+    # collapsed container is still in the DOM, so hiding the wrapper
+    # works regardless of expand state.
+    hostnames:
+      - "{*.}?lowes.com"
+    pathnames:
+      - "/pd/*"
+    selectors:
+      - '[data-testid="reviews-accordion"]'
+
+  comments-hide:
+    # "Community Q & A" accordion. Same pattern as reviews — wrapper
+    # tagged with a stable data-testid, contents may be lazy-loaded.
+    hostnames:
+      - "{*.}?lowes.com"
+    pathnames:
+      - "/pd/*"
+    selectors:
+      - '[data-testid="communityQandA-accordion"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for lowes.com — prefer URL navigation over typing.
+      Free-text search: /search?searchTerm={query}
+      Narrow search to a Lowe's catalog node: /search?searchTerm={query}&catalog={catalogId} (catalogId is the 10-digit `taxonomy` node; read it off facet links on a result page)
+      Sort (sortMethod=): mostRelevant (default), priceLowToHigh, priceHighToLow, customerRating, mostReviewed, newest
+      Pagination: &page={n} (1-indexed); page size knob is `pageSize=24` (max ~48).
+      Category browse (canonical, no search term): /pl/{slug}/{plpNumber} (e.g., /pl/Drills-Drill-drivers-Power-tools-Tools/4294607722). Accepts the same sort/page params as /search.
+      Direct product (PDP): /pd/{slug}/{productId} — productId (a.k.a. "Item #") is 9-10 digits and is also exposed in the schema.org/Product JSON-LD on the page.
+      Reviews tab on a PDP: anchor `#reviews` (or `#community-q-a` for Q&A) — Lowe's accordion auto-expands when scrolled into view.
+      Local-store filter (defines availability + price): cookies set during /store/{storeNumber} navigation persist; many URLs accept `&storeNumber={n}` as an override.
+      Schema-rich product data: PDPs embed schema.org/Product JSON-LD with aggregate rating, brand, SKU, and price — prefer parsing it over scraping the rendered DOM.

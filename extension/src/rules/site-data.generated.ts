@@ -12,6 +12,15 @@ export interface SiteRecipe {
 
 export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
   {
+    // from data/sites/allrecipes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?allrecipes.com" }),
+    ],
+    selectors: [
+      ".recipe-ugc-threaded-wrapper",
+    ],
+  },
+  {
     // from data/sites/amazon.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?amazon.com" }),
@@ -60,6 +69,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/lowes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?lowes.com", pathname: "/pd/*" }),
+    ],
+    selectors: [
+      "[data-testid=\"reviews-accordion\"]",
+    ],
+  },
+  {
     // from data/sites/rei.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?rei.com" }),
@@ -75,6 +93,16 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       "[data-test=\"ReviewsDashboard\"]",
+    ],
+  },
+  {
+    // from data/sites/trustpilot.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?trustpilot.com", pathname: "/review/*" }),
+    ],
+    selectors: [
+      "[data-reviews-overview-section]",
+      "article[data-service-review-card-paper]",
     ],
   },
   {
@@ -101,6 +129,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
 
 export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
   {
+    // from data/sites/allrecipes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?allrecipes.com" }),
+    ],
+    selectors: [
+      ".recipe-ugc-qanda-wrapper",
+    ],
+  },
+  {
     // from data/sites/hackernews.yaml
     patterns: [
       new URLPattern({ hostname: "news.ycombinator.com" }),
@@ -116,6 +153,15 @@ export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       "#bigbox",
+    ],
+  },
+  {
+    // from data/sites/lowes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?lowes.com", pathname: "/pd/*" }),
+    ],
+    selectors: [
+      "[data-testid=\"communityQandA-accordion\"]",
     ],
   },
   {
@@ -174,6 +220,22 @@ export const FOOTER_HIDE_SITE_RULES: readonly SiteRule[] = [
 ];
 
 export const SEARCH_URL_HELPER_RECIPES: readonly SiteRecipe[] = [
+  {
+    // from data/sites/allrecipes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?allrecipes.com" }),
+    ],
+    recipe: `abs URL helper for allrecipes.com — prefer URL navigation over typing.
+Search: /search?q={query}
+Direct recipe: /recipe/{recipeId}/{slug}/ (recipeId is a 4-6 digit integer; trailing slug is informational and forgiving)
+Category browse: /recipes/{categoryId}/{slug}/ (e.g., /recipes/77/drinks/, /recipes/96/everyday-cooking/vegetarian/)
+Ingredient hub: /ingredients/{slug}/ (e.g., /ingredients/chicken/)
+Cuisine hub: /cuisine-a-z-1947/ index page, then /recipes/{categoryId}/cuisine/{slug}/
+Collections: /recipes/{categoryId}/{slug}/ also covers seasonal hubs (e.g., thanksgiving, super-bowl).
+Pagination on search/category pages: ?page={n} (1-indexed; on /search/ also as path segment in some hubs).
+Recipe data (for parsing without rendering): /recipe/{id}/ pages embed schema.org/Recipe JSON-LD in a \`<script type="application/ld+json">\` block — read it directly instead of scraping the rendered DOM.
+`,
+  },
   {
     // from data/sites/amazon.yaml
     patterns: [
@@ -330,6 +392,30 @@ Shelves with sort: /review/list/{userId}?shelf=read&sort=date_read&order=d
 `,
   },
   {
+    // from data/sites/google-flights.yaml
+    patterns: [
+      new URLPattern({ hostname: "www.google.com", pathname: "/travel/flights" }),
+      new URLPattern({ hostname: "www.google.com", pathname: "/travel/flights/*" }),
+    ],
+    recipe: `abs URL helper for google.com/travel/flights — prefer natural-language q= over Google's binary tfs= state.
+Search by natural language: /travel/flights?q={NL prompt}
+  Prompt shapes Google parses reliably:
+    "Flights from {origin} to {dest}"
+    "Flights from {origin} to {dest} on {YYYY-MM-DD}"
+    "Round trip flights from {origin} to {dest} {YYYY-MM-DD} to {YYYY-MM-DD}"
+    "One way flights from {origin} to {dest} on {date}"
+    "Flights from {origin} to {dest} {date} nonstop"
+    "Business class flights from {origin} to {dest} on {date}"
+  {origin}/{dest} may be IATA codes (SFO), city names (San Francisco), or "anywhere".
+Internal state URL (/travel/flights/search?tfs={base64-protobuf}) encodes the search graph as a protobuf. Treat it as opaque — do not construct or mutate tfs= manually; use the q= form instead.
+Currency / region (optional): &curr={ISO} ; &hl={lang} ; &gl={countryISO2}
+Date inputs accept ISO \`YYYY-MM-DD\`; relative phrases like "next Friday" parse but are non-deterministic — prefer absolute dates.
+Related Google products (separate hostnames/paths, not covered here):
+  Hotels:   /travel/hotels/{destination}?q=…
+  Things to do: /travel/things-to-do?q=…
+`,
+  },
+  {
     // from data/sites/google-maps.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?google.com", pathname: "/maps/*" }),
@@ -398,6 +484,49 @@ Article numbers are 8 digits — the dotted form on receipts (e.g., 604.169.25) 
 `,
   },
   {
+    // from data/sites/kayak.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?kayak.com" }),
+    ],
+    recipe: `abs URL helper for kayak.com — prefer URL navigation over typing.
+Flights (round trip): /flights/{ORIGIN}-{DEST}/{depart}/{return}[/{pax}adults][/{cls}]
+  Codes: IATA airport/city codes uppercase (SFO, JFK, NYC, LON). Multi-airport metro: "/SFO,SJC-JFK"
+  Dates: YYYY-MM-DD. One-way drops the {return} segment: /flights/SFO-JFK/2026-07-15
+  Pax: "1adults" through "9adults" ; add "-{n}children" / "-{n}seniors" / "-{n}youth" / "-{n}infantinlap" / "-{n}infantonseat"
+  Class: economy (default), premiumeconomy, business, first
+  Stops via query: ?stops=0 (nonstop) | ~1 (≤1 stop) ; sort: ?sort={best|price_a|duration_a|depart_a}
+  Nearby airports: append /nearbya for origin, /nearbyb for dest (e.g. /flights/SFO-JFK/2026-07-15/nearbya)
+Hotels / stays: /hotels/{Location}/{checkin}/{checkout}/{n}adults
+  Location: "City,ST" or full slug ("Seattle,WA", "Paris,France", "London-United-Kingdom-c17")
+  Pax: "2adults" ; rooms: "/2adults/1room" ; kids: append "/2adults-2children-12-9" (ages comma-joined per child)
+  Sort: ?sort={rank|price_a|distance_a|reviews_d|stars_d}
+  Star filter: ?stars=4-5 ; price band: ?price=0-200
+Cars: /cars/{Location}/{checkin}-{HH}h/{checkout}-{HH}h
+  Location: airport IATA or city slug. Different pickup/dropoff: /cars/{PICKUP}/{DROPOFF}/{checkin}-{HH}h/{checkout}-{HH}h
+Packages (flight+hotel): /packages/{ORIGIN}-{DEST,YYYY-MM-DD}/{return}/{n}adults
+Trains: /trains/{ORIGIN}-{DEST}/{depart}
+Sort knob across verticals: ?sort=… ; results URLs are stable once Kayak finishes polling — wait for the URL to settle before constructing follow-ups.
+Currency / locale: ?currency=USD ; site mirror: kayak.{co.uk|de|fr|es|com.au} (URL grammar identical).
+`,
+  },
+  {
+    // from data/sites/lowes.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?lowes.com" }),
+    ],
+    recipe: `abs URL helper for lowes.com — prefer URL navigation over typing.
+Free-text search: /search?searchTerm={query}
+Narrow search to a Lowe's catalog node: /search?searchTerm={query}&catalog={catalogId} (catalogId is the 10-digit \`taxonomy\` node; read it off facet links on a result page)
+Sort (sortMethod=): mostRelevant (default), priceLowToHigh, priceHighToLow, customerRating, mostReviewed, newest
+Pagination: &page={n} (1-indexed); page size knob is \`pageSize=24\` (max ~48).
+Category browse (canonical, no search term): /pl/{slug}/{plpNumber} (e.g., /pl/Drills-Drill-drivers-Power-tools-Tools/4294607722). Accepts the same sort/page params as /search.
+Direct product (PDP): /pd/{slug}/{productId} — productId (a.k.a. "Item #") is 9-10 digits and is also exposed in the schema.org/Product JSON-LD on the page.
+Reviews tab on a PDP: anchor \`#reviews\` (or \`#community-q-a\` for Q&A) — Lowe's accordion auto-expands when scrolled into view.
+Local-store filter (defines availability + price): cookies set during /store/{storeNumber} navigation persist; many URLs accept \`&storeNumber={n}\` as an override.
+Schema-rich product data: PDPs embed schema.org/Product JSON-LD with aggregate rating, brand, SKU, and price — prefer parsing it over scraping the rendered DOM.
+`,
+  },
+  {
     // from data/sites/mdn.yaml
     patterns: [
       new URLPattern({ hostname: "developer.mozilla.org" }),
@@ -438,6 +567,53 @@ Cooking (separate subdomain): https://cooking.nytimes.com/search?q={query}
 `,
   },
   {
+    // from data/sites/pubmed.yaml
+    patterns: [
+      new URLPattern({ hostname: "pubmed.ncbi.nlm.nih.gov" }),
+    ],
+    recipe: `abs URL helper for pubmed.ncbi.nlm.nih.gov — prefer URL navigation over typing.
+Search: /?term={query}
+Query syntax accepts PubMed field tags: term=crispr[Title]+AND+smith+jr[Author]+AND+2024[PDAT] (URL-encode brackets as %5B / %5D). Common tags: [Title], [TIAB] title/abstract, [Author], [Affiliation], [Journal], [MeSH Terms], [PDAT] publication date, [Substance].
+Sort (sort=): relevance (default "Best match"), date (most recent indexed), pubdate (publication date), fauth (first author), jour (journal).
+Page size: size={10|20|50|100|200} (default 10).
+Pagination: page={n} (1-indexed).
+Filters (filter=, repeatable):
+  Date range: filter=years.{from}-{to} (e.g., years.2020-2024)
+  Article type: filter=pubt.{type} — review, clinicaltrial, meta-analysis, systematicreview, randomizedcontrolledtrial, casereports, comparativestudy.
+  Text availability: filter=simsearch1.fha (Free full text), filter=simsearch2.ffrft (Full text), filter=simsearch3.fft (Abstract).
+  Species: filter=hum_ani.humans | hum_ani.animals
+  Languages: filter=lang.english (and other ISO English-name slugs)
+  Age groups: filter=age.infant | age.child | age.adult | age.aged
+Direct article: /{PMID}/ (e.g., /38123456/). Abstract page; the JSON-LD / Dublin Core meta tags carry full citation data.
+Linked surfaces (separate NCBI hostnames, not covered here):
+  Full text via PubMed Central: pmc.ncbi.nlm.nih.gov/articles/PMC{PMCID}/
+  NCBI taxonomy: ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={TaxID}
+  E-utilities API (programmatic): eutils.ncbi.nlm.nih.gov/entrez/eutils/{esearch|efetch|esummary}.fcgi
+Advanced search builder: /advanced (UI only; constructs the same term= string under the hood — prefer direct term construction over the builder).
+`,
+  },
+  {
+    // from data/sites/pypi.yaml
+    patterns: [
+      new URLPattern({ hostname: "pypi.org" }),
+    ],
+    recipe: `abs URL helper for pypi.org — prefer URL navigation over typing.
+Search: /search/?q={query}&o={sort}&c={classifier}&page={n}
+Sort (o=): empty / omit = Relevance (default) ; -created = Date last updated
+Pagination: page={n} (1-indexed)
+Classifier filter (c=): exact trove classifier string, URL-encoded with literal " :: " between segments. Examples: c=Programming%20Language%20%3A%3A%20Python%20%3A%3A%203.12 ; c=Framework%20%3A%3A%20FastAPI ; c=License%20%3A%3A%20OSI%20Approved%20%3A%3A%20MIT%20License
+Multiple classifiers: repeat &c= per filter (AND-combined).
+Direct project: /project/{name}/ (latest release) ; specific version: /project/{name}/{version}/
+Project sub-pages: /project/{name}/#description (default), /history (release timeline), /files (sdist/wheels), /#data (raw metadata)
+User profile: /user/{username}/ ; organization: /org/{slug}/
+JSON metadata (read-only API surface, no auth):
+  /pypi/{name}/json — latest release manifest
+  /pypi/{name}/{version}/json — specific release
+  /simple/{name}/ — PEP 503 plaintext index of all files
+Stats dashboard: /project/{name}/#data ; external Libraries.io / pypistats.org for download counts.
+`,
+  },
+  {
     // from data/sites/python-docs.yaml
     patterns: [
       new URLPattern({ hostname: "docs.python.org" }),
@@ -460,6 +636,26 @@ Sort: relevance (default), price-low-to-high, price-high-to-low, best-seller, to
 Category browse: /c/{slug} (e.g., /c/backpacking-tents)
 Faceted filters on /c/ and /search use r={facet}%3A{value} repeated for each, e.g., r=brand%3AREI+Co-op, r=minTrailWeight%3A0-4, r=capacity%3A2-person
 Direct product: /product/{productId}/{slug}
+`,
+  },
+  {
+    // from data/sites/scholar.yaml
+    patterns: [
+      new URLPattern({ hostname: "scholar.google.com" }),
+      new URLPattern({ hostname: "scholar.google.{*}" }),
+    ],
+    recipe: `abs URL helper for scholar.google.com — prefer URL navigation over typing.
+Search: /scholar?q={query}&hl=en&as_sdt={collections}
+Phrase / boolean syntax in q=: "exact phrase", -exclude, OR, intitle:{term}, author:"Name", source:"Journal"
+Collections (as_sdt=): 0,5 = articles incl. case law (default web search) ; 0 = articles only ; 2006 = include patents ; 4 = case law only ; 7 = articles + patents
+Date filter: as_ylo={year} (from), as_yhi={year} (to) — e.g., as_ylo=2020&as_yhi=2024
+Sort by date: scisbd=1 (recency, no relevance ranking)
+Pagination: start={offset} (multiples of 10; page 2 = start=10)
+Language filter: lr=lang_{iso} (e.g., lang_en, lang_de, lang_zh-CN)
+My Library (signed-in only): scilib=1
+Cited-by / related (per result): /scholar?cites={clusterId} ; /scholar?q=related:{docId}:scholar.google.com/
+Direct cluster page: /scholar?cluster={clusterId} (shows all versions of one paper)
+Advanced search form: /scholar?as_q={all}&as_epq={phrase}&as_oq={any}&as_eq={none}&as_occt={any|title}&as_sauthors={author}&as_publication={venue}
 `,
   },
   {
@@ -497,6 +693,48 @@ Direct property URLs (slug+two ids):
   Attraction:   /Attraction_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
 Pagination (review list on a property page): -or{offset} segment inserted before "-Reviews", offset is 0-indexed by 10 (page 2 = \`-or10-\`).
 Sort (hotel list, oa={offset}, ar=<rating>): /Hotels-g{geoId}-oa{offset}-{slug}-Hotels.html ; review-sort knob is \`sortOrder=\` with values RECENT, POPULAR, RATING_HIGH, RATING_LOW (appended as a query string).
+`,
+  },
+  {
+    // from data/sites/trustpilot.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?trustpilot.com" }),
+    ],
+    recipe: `abs URL helper for trustpilot.com — prefer URL navigation over typing.
+Free-text search (businesses): /search?query={query}
+Category browse: /categories/{category_slug} (snake_case, e.g., electronics_store, online_pharmacy, travel_agency)
+  Category pagination: /categories/{slug}?page={n} (1-indexed)
+Direct business reviews: /review/{domain} (host without scheme; e.g. /review/www.amazon.com, /review/booking.com)
+  Sort (sort=): mostrecent | recency (newest first) | usefulness (default ranking) | rating (highest first) — vocabulary varies; recency is the reliable knob
+  Star filter: stars={1|2|3|4|5} (repeat or comma-join for multiple)
+  Language filter: languages={ISO2} (e.g., languages=en, languages=de)
+  Date filter: date={last30days|last3months|last6months|last12months}
+  Pagination: page={n} (1-indexed)
+Direct individual review: /reviews/{reviewId} (24-char hex id from a review card link)
+Business profile JSON-ish surface (use only as a sanity check; not a stable API):
+  /api/businessunit-search/v1/profile-name/{domain}
+`,
+  },
+  {
+    // from data/sites/wayfair.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?wayfair.com" }),
+    ],
+    recipe: `abs URL helper for wayfair.com — prefer URL navigation over typing.
+Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}).
+Category browse (direct): /{department}/sb0/{slug}-c{categoryId}.html
+  Common departments: furniture, decor-pillows, rugs, kitchen-tabletop, bed-bath, outdoor, baby-kids, lighting, storage-organization, home-improvement, appliances, holiday-decor.
+  Pagination: ?curpage={n} (1-indexed)
+  Sort (filterids syntax, on category URLs): ?sortby={topreviews|topsellers|recommended|pricelowtohigh|pricehightolow|recentlyadded}
+  Price range: ?prc_pricerange_min={dollars}&prc_pricerange_max={dollars}
+  Customer rating min: ?prc_customerrating_avgcustomerreview={stars} (4 = "4+ Stars")
+  Free shipping: ?prc_freeshipping=true
+  Generic facet filter: filterids appears as \`?{facet}={value}\` pairs derived from the on-page chips — read the active filter URLs off the chip elements before constructing.
+Direct product (PDP): /{department}/pdp/{slug}-w{productId}.html — productId starts with \`w\` followed by 9 digits (e.g., w005059629).
+  Variant: ?piid={piidNumber[,piidNumber]} (comma-joined integer ids; each piid selects one option from a variant axis).
+Reviews tab on a PDP: append #section-customer-reviews (in-page anchor; the actual review list is fetched lazily).
+Sales / deals hub: /deals-and-sales/ ; daily sale slug: /sale/{event-slug}.
+Idea boards (signed-in only): /myideaboards (out of scope without auth).
 `,
   },
   {
@@ -541,6 +779,27 @@ Price filter: attrs=RestaurantsPriceRange2.{1|2|3|4} ($/$$/$$$/$$$$)
 Hours filter: open_now=1 ; specific time: open_time={HHMM}
 Direct business: /biz/{slug} (slug includes city, e.g. /biz/the-french-laundry-yountville)
 User profile: /user_details?userid={userId}
+`,
+  },
+  {
+    // from data/sites/zillow.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?zillow.com" }),
+    ],
+    recipe: `abs URL helper for zillow.com — prefer URL navigation over typing.
+Search by location (for sale): /homes/for_sale/{Location-State}/
+Other listing types: /homes/for_rent/{Location-State}/ ; /homes/recently_sold/{Location-State}/
+Location slug: "{City-State}" or "{City-State}_rb" (e.g., Seattle-WA, Seattle-WA_rb, Boston-MA, 98103). ZIP codes work bare.
+In-path filters (append segments before the trailing slash):
+  Beds: /{n}-_beds/ (min) or /{n}-{m}_beds/ (range) ; same shape for /{n}-_baths/
+  Price: /{min}-{max}_price/ (USD; use 0 for unbounded; e.g. /500000-750000_price/)
+  Home type: /houses/ /condos/ /apartments/ /townhomes/ /manufactured/ /lots/
+  Days on Zillow: /1_days/ /7_days/ /14_days/ /30_days/ /90_days/ /6m_days/
+  Has 3D tour: /3dtour_lt/ ; open houses only: /open_houses_lt/
+  Pagination: /{n}_p/ (page n, 1-indexed)
+Map / advanced filters: searchQueryState={url-encoded JSON} carries map bounds, filterState, regionSelection, isMapVisible. Prefer in-path filters for simple queries.
+Direct property: /homedetails/{slug}/{zpid}_zpid/ (zpid is Zillow's numeric property id)
+Agent / builder profile: /profile/{username}/
 `,
   },
 ];

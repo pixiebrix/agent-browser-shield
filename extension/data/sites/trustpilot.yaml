@@ -1,0 +1,46 @@
+# Trustpilot — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer role="contentinfo"> caught by the generic
+# always-on selector. No footer-hide entry needed.
+#
+# reviews-hide is pathname-narrowed to /review/* (business review pages).
+# The aggregate score, review count, claimed status, and category live in
+# the page header (above `[data-reviews-overview-section]`) and stay
+# visible. We do NOT hide `[data-summary-section]` — despite the name,
+# it wraps the business header card (name, score, category), not the AI
+# review summary.
+
+hostnames:
+  - "{*.}?trustpilot.com"
+
+rules:
+  reviews-hide:
+    hostnames:
+      - "{*.}?trustpilot.com"
+    pathnames:
+      - "/review/*"
+    selectors:
+      # Wraps the entire reviews region on a business page: section
+      # heading, star-rating breakdown derived from UGC, and the review
+      # card list. The aggregate score in the page header sits outside
+      # this container and stays visible.
+      - '[data-reviews-overview-section]'
+      # Defensive: individual review cards, in case the layout shifts a
+      # card outside the overview container (e.g. a featured-review slot).
+      - 'article[data-service-review-card-paper]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for trustpilot.com — prefer URL navigation over typing.
+      Free-text search (businesses): /search?query={query}
+      Category browse: /categories/{category_slug} (snake_case, e.g., electronics_store, online_pharmacy, travel_agency)
+        Category pagination: /categories/{slug}?page={n} (1-indexed)
+      Direct business reviews: /review/{domain} (host without scheme; e.g. /review/www.amazon.com, /review/booking.com)
+        Sort (sort=): mostrecent | recency (newest first) | usefulness (default ranking) | rating (highest first) — vocabulary varies; recency is the reliable knob
+        Star filter: stars={1|2|3|4|5} (repeat or comma-join for multiple)
+        Language filter: languages={ISO2} (e.g., languages=en, languages=de)
+        Date filter: date={last30days|last3months|last6months|last12months}
+        Pagination: page={n} (1-indexed)
+      Direct individual review: /reviews/{reviewId} (24-char hex id from a review card link)
+      Business profile JSON-ish surface (use only as a sanity check; not a stable API):
+        /api/businessunit-search/v1/profile-name/{domain}

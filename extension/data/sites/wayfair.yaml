@@ -1,0 +1,32 @@
+# Wayfair — search-url-helper only.
+#
+# reviews-hide is deliberately omitted: Wayfair PDPs return a PerimeterX
+# "Access to this page has been denied" interstitial when fetched
+# headlessly, so the review-section selector could not be verified
+# against a live render. Add the entry once selectors are confirmed
+# from an unblocked browser session.
+#
+# Footer (when the real page does render) is a semantic <footer> and is
+# already caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?wayfair.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for wayfair.com — prefer URL navigation over typing.
+      Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}).
+      Category browse (direct): /{department}/sb0/{slug}-c{categoryId}.html
+        Common departments: furniture, decor-pillows, rugs, kitchen-tabletop, bed-bath, outdoor, baby-kids, lighting, storage-organization, home-improvement, appliances, holiday-decor.
+        Pagination: ?curpage={n} (1-indexed)
+        Sort (filterids syntax, on category URLs): ?sortby={topreviews|topsellers|recommended|pricelowtohigh|pricehightolow|recentlyadded}
+        Price range: ?prc_pricerange_min={dollars}&prc_pricerange_max={dollars}
+        Customer rating min: ?prc_customerrating_avgcustomerreview={stars} (4 = "4+ Stars")
+        Free shipping: ?prc_freeshipping=true
+        Generic facet filter: filterids appears as `?{facet}={value}` pairs derived from the on-page chips — read the active filter URLs off the chip elements before constructing.
+      Direct product (PDP): /{department}/pdp/{slug}-w{productId}.html — productId starts with `w` followed by 9 digits (e.g., w005059629).
+        Variant: ?piid={piidNumber[,piidNumber]} (comma-joined integer ids; each piid selects one option from a variant axis).
+      Reviews tab on a PDP: append #section-customer-reviews (in-page anchor; the actual review list is fetched lazily).
+      Sales / deals hub: /deals-and-sales/ ; daily sale slug: /sale/{event-slug}.
+      Idea boards (signed-in only): /myideaboards (out of scope without auth).

@@ -1,0 +1,31 @@
+# PubMed — search-url-helper only.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# PubMed is a curated bibliographic database with no first-party UGC
+# reviews or comments — abstracts and citation metadata only.
+
+hostnames:
+  - "pubmed.ncbi.nlm.nih.gov"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for pubmed.ncbi.nlm.nih.gov — prefer URL navigation over typing.
+      Search: /?term={query}
+      Query syntax accepts PubMed field tags: term=crispr[Title]+AND+smith+jr[Author]+AND+2024[PDAT] (URL-encode brackets as %5B / %5D). Common tags: [Title], [TIAB] title/abstract, [Author], [Affiliation], [Journal], [MeSH Terms], [PDAT] publication date, [Substance].
+      Sort (sort=): relevance (default "Best match"), date (most recent indexed), pubdate (publication date), fauth (first author), jour (journal).
+      Page size: size={10|20|50|100|200} (default 10).
+      Pagination: page={n} (1-indexed).
+      Filters (filter=, repeatable):
+        Date range: filter=years.{from}-{to} (e.g., years.2020-2024)
+        Article type: filter=pubt.{type} — review, clinicaltrial, meta-analysis, systematicreview, randomizedcontrolledtrial, casereports, comparativestudy.
+        Text availability: filter=simsearch1.fha (Free full text), filter=simsearch2.ffrft (Full text), filter=simsearch3.fft (Abstract).
+        Species: filter=hum_ani.humans | hum_ani.animals
+        Languages: filter=lang.english (and other ISO English-name slugs)
+        Age groups: filter=age.infant | age.child | age.adult | age.aged
+      Direct article: /{PMID}/ (e.g., /38123456/). Abstract page; the JSON-LD / Dublin Core meta tags carry full citation data.
+      Linked surfaces (separate NCBI hostnames, not covered here):
+        Full text via PubMed Central: pmc.ncbi.nlm.nih.gov/articles/PMC{PMCID}/
+        NCBI taxonomy: ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={TaxID}
+        E-utilities API (programmatic): eutils.ncbi.nlm.nih.gov/entrez/eutils/{esearch|efetch|esummary}.fcgi
+      Advanced search builder: /advanced (UI only; constructs the same term= string under the hood — prefer direct term construction over the builder).

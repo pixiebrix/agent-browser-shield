@@ -1,0 +1,31 @@
+# Zillow — search-url-helper only.
+#
+# reviews-hide and comments-hide are deliberately omitted: Zillow's home
+# detail and search pages return a PerimeterX "Press & Hold" interstitial
+# when fetched headlessly, so the agent-reviews and Q&A region selectors
+# could not be verified against a live render. Add those entries once
+# selectors are confirmed from an unblocked browser session.
+#
+# Footer (when the real page does render) is a semantic <footer> and is
+# already caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?zillow.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for zillow.com — prefer URL navigation over typing.
+      Search by location (for sale): /homes/for_sale/{Location-State}/
+      Other listing types: /homes/for_rent/{Location-State}/ ; /homes/recently_sold/{Location-State}/
+      Location slug: "{City-State}" or "{City-State}_rb" (e.g., Seattle-WA, Seattle-WA_rb, Boston-MA, 98103). ZIP codes work bare.
+      In-path filters (append segments before the trailing slash):
+        Beds: /{n}-_beds/ (min) or /{n}-{m}_beds/ (range) ; same shape for /{n}-_baths/
+        Price: /{min}-{max}_price/ (USD; use 0 for unbounded; e.g. /500000-750000_price/)
+        Home type: /houses/ /condos/ /apartments/ /townhomes/ /manufactured/ /lots/
+        Days on Zillow: /1_days/ /7_days/ /14_days/ /30_days/ /90_days/ /6m_days/
+        Has 3D tour: /3dtour_lt/ ; open houses only: /open_houses_lt/
+        Pagination: /{n}_p/ (page n, 1-indexed)
+      Map / advanced filters: searchQueryState={url-encoded JSON} carries map bounds, filterState, regionSelection, isMapVisible. Prefer in-path filters for simple queries.
+      Direct property: /homedetails/{slug}/{zpid}_zpid/ (zpid is Zillow's numeric property id)
+      Agent / builder profile: /profile/{username}/
