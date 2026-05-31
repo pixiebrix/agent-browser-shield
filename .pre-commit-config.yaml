@@ -98,3 +98,12 @@ repos:
         args: [--fix]
       - id: ruff-format
         name: Ruff format
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        name: Bandit (Python security)
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^scripts/.*\.py$

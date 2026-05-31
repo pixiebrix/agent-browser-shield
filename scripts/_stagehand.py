@@ -74,7 +74,8 @@ def event_to_dict(event: Any) -> Any:
     if callable(dump):
         try:
             return event_to_dict(dump())
-        except Exception:
+        # Fall through to other serialization strategies if model_dump() raises.
+        except Exception:  # nosec B110
             pass
     if hasattr(event, "__dict__") and not isinstance(event, type):
         return {k: event_to_dict(v) for k, v in vars(event).items() if not k.startswith("_")}

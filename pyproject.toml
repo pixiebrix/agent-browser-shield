@@ -26,3 +26,10 @@ ignore = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.bandit]
+exclude_dirs = [".venv", "output", "benchmark", "node_modules"]
+# B404/B603/B607: subprocess import + fixed-argv calls + partial paths
+# (e.g. `sips`, `git`). These scripts are dev tooling, not user-facing
+# services; the argv lists are static and `shell=True` is never used.
+skips = ["B404", "B603", "B607"]
