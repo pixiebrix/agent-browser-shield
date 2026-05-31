@@ -20,9 +20,10 @@ yet, create it once (the authenticated user becomes the owner):
 clawhub publisher create pixiebrix --display-name "PixieBrix"
 ```
 
-See the [ClawHub CLI docs](https://github.com/openclaw/clawhub/blob/main/docs/cli.md)
-for details on publisher management. Newly created org publishers are not
-marked trusted/official by default.
+See the
+[ClawHub CLI docs](https://github.com/openclaw/clawhub/blob/main/docs/cli.md)
+for details on publisher management. Newly created org publishers are not marked
+trusted/official by default.
 
 ## Publish
 
