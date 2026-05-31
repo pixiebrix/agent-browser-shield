@@ -16,6 +16,16 @@ to. Two paths work:
 
 The rest of this page covers both.
 
+:::tip[Skill-aware agents]
+If you're driving OpenClaw with a skill-aware agent, install the
+`agent-browser-shield` skill from ClawHub instead of pasting these steps into a
+prompt — it bundles the install paths below plus the runtime behavior rules:
+
+```sh
+clawhub install agent-browser-shield
+```
+:::
+
 ## Letting OpenClaw run your browser profile
 
 This is the path you want when you'd rather hand OpenClaw the keys to a real
@@ -120,19 +130,21 @@ at the archive root — do not re-zip it.
 ### 2. Upload to Browserbase
 
 Grab `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` from *Settings → API
-Keys* at <https://www.browserbase.com>:
+Keys* at <https://www.browserbase.com>, then use the
+[`browse` CLI](https://docs.browserbase.com/integrations/skills/browse-cli) to
+upload:
 
 ```sh
+npm install -g browse
+
 export BROWSERBASE_API_KEY=bb_live_...
 export BROWSERBASE_PROJECT_ID=...
 
-curl -X POST https://api.browserbase.com/v1/extensions \
-  -H "X-BB-API-Key: $BROWSERBASE_API_KEY" \
-  -F "file=@output/extension.zip"
+browse cloud extensions upload ./output/extension.zip
 ```
 
-Stash the returned `id` — it's reusable across sessions until you upload a new
-build.
+Stash the printed extension `id` — it's reusable across sessions until you
+upload a new build.
 
 ### 3. Create a session with the extension attached
 
