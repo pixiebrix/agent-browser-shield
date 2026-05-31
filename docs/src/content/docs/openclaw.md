@@ -16,14 +16,15 @@ to. Two paths work:
 
 The rest of this page covers both.
 
-:::tip[Skill-aware agents]
-If you're driving OpenClaw with a skill-aware agent, install the
-`agent-browser-shield` skill from ClawHub instead of pasting these steps into a
-prompt — it bundles the install paths below plus the runtime behavior rules:
+:::tip[Skill-aware agents] If you're driving OpenClaw with a skill-aware agent,
+install the `agent-browser-shield` skill from ClawHub instead of pasting these
+steps into a prompt — it bundles the install paths below plus the runtime
+behavior rules:
 
 ```sh
 clawhub install agent-browser-shield
 ```
+
 :::
 
 ## Letting OpenClaw run your browser profile

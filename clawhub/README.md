@@ -17,9 +17,12 @@ clawhub whoami       # confirm
 
 1. Edit `agent-browser-shield/SKILL.md`. Keep it short — every line is loaded
    into the agent's context window per session.
-2. Bump the version: minor for additive markers/rules, major for
-   renamed/removed markers, patch for typos.
+
+2. Bump the version: minor for additive markers/rules, major for renamed/removed
+   markers, patch for typos.
+
 3. Dry-run:
+
    ```sh
    clawhub skill publish ./agent-browser-shield \
      --slug agent-browser-shield \
@@ -28,14 +31,19 @@ clawhub whoami       # confirm
      --changelog "<one-line summary>" \
      --dry-run
    ```
-4. Preview the generated skill card (ClawHub generates this from frontmatter
-   — we don't author or bundle one):
+
+4. Preview the generated skill card (ClawHub generates this from frontmatter —
+   we don't author or bundle one):
+
    ```sh
    clawhub skill publish ./agent-browser-shield --dry-run --card
    ```
+
 5. Eyeball the SKILL.md in a fresh agent session — dry-run validates
    frontmatter, not behavior.
+
 6. Drop `--dry-run` to publish. Verify with:
+
    ```sh
    clawhub inspect agent-browser-shield
    ```
@@ -43,6 +51,5 @@ clawhub whoami       # confirm
 ## Versioning
 
 Independent semver, **not** tied to the extension's `v2026.x.x` release tag.
-Bump only when the agent-facing contract changes (new DOM marker, new
-behavior rule). Extension bugfixes don't require a republish.
-
+Bump only when the agent-facing contract changes (new DOM marker, new behavior
+rule). Extension bugfixes don't require a republish.
