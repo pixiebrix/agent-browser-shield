@@ -1,0 +1,25 @@
+# PyPI — search-url-helper only.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# Project pages don't expose user-generated reviews or comments.
+
+hostnames:
+  - "pypi.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for pypi.org — prefer URL navigation over typing.
+      Search: /search/?q={query}&o={sort}&c={classifier}&page={n}
+      Sort (o=): empty / omit = Relevance (default) ; -created = Date last updated
+      Pagination: page={n} (1-indexed)
+      Classifier filter (c=): exact trove classifier string, URL-encoded with literal " :: " between segments. Examples: c=Programming%20Language%20%3A%3A%20Python%20%3A%3A%203.12 ; c=Framework%20%3A%3A%20FastAPI ; c=License%20%3A%3A%20OSI%20Approved%20%3A%3A%20MIT%20License
+      Multiple classifiers: repeat &c= per filter (AND-combined).
+      Direct project: /project/{name}/ (latest release) ; specific version: /project/{name}/{version}/
+      Project sub-pages: /project/{name}/#description (default), /history (release timeline), /files (sdist/wheels), /#data (raw metadata)
+      User profile: /user/{username}/ ; organization: /org/{slug}/
+      JSON metadata (read-only API surface, no auth):
+        /pypi/{name}/json — latest release manifest
+        /pypi/{name}/{version}/json — specific release
+        /simple/{name}/ — PEP 503 plaintext index of all files
+      Stats dashboard: /project/{name}/#data ; external Libraries.io / pypistats.org for download counts.

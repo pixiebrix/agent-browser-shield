@@ -1,0 +1,33 @@
+# Google Flights — search-url-helper only.
+#
+# Scoped to the /travel/flights pathname so this entry does not affect
+# unrelated google.com pages. Footer is a semantic <footer> caught by the
+# generic always-on selector. No UGC review/comment surfaces.
+
+hostnames:
+  - "www.google.com"
+
+rules:
+  search-url-helper:
+    hostnames:
+      - "www.google.com"
+    pathnames:
+      - "/travel/flights"
+      - "/travel/flights/*"
+    recipe: |
+      abs URL helper for google.com/travel/flights — prefer natural-language q= over Google's binary tfs= state.
+      Search by natural language: /travel/flights?q={NL prompt}
+        Prompt shapes Google parses reliably:
+          "Flights from {origin} to {dest}"
+          "Flights from {origin} to {dest} on {YYYY-MM-DD}"
+          "Round trip flights from {origin} to {dest} {YYYY-MM-DD} to {YYYY-MM-DD}"
+          "One way flights from {origin} to {dest} on {date}"
+          "Flights from {origin} to {dest} {date} nonstop"
+          "Business class flights from {origin} to {dest} on {date}"
+        {origin}/{dest} may be IATA codes (SFO), city names (San Francisco), or "anywhere".
+      Internal state URL (/travel/flights/search?tfs={base64-protobuf}) encodes the search graph as a protobuf. Treat it as opaque — do not construct or mutate tfs= manually; use the q= form instead.
+      Currency / region (optional): &curr={ISO} ; &hl={lang} ; &gl={countryISO2}
+      Date inputs accept ISO `YYYY-MM-DD`; relative phrases like "next Friday" parse but are non-deterministic — prefer absolute dates.
+      Related Google products (separate hostnames/paths, not covered here):
+        Hotels:   /travel/hotels/{destination}?q=…
+        Things to do: /travel/things-to-do?q=…
