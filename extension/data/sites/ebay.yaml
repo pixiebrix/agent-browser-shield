@@ -1,0 +1,31 @@
+# eBay — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer class="gh-footer"> caught by the generic
+# always-on selector — no footer-hide entry needed.
+
+hostnames:
+  - "{*.}?ebay.com"
+
+rules:
+  reviews-hide:
+    # `#UserReviews` (`.x-reviews`) is the product reviews module on
+    # catalog-mapped /itm/ listings — it contains the aggregate, top
+    # favorable/critical summaries, and the most-relevant review list.
+    # `.x-feedback-detail-list` is the seller feedback panel with buyer
+    # comments. The seller's overall rating chip (`.x-sellercard-atf`,
+    # "99.6% positive") and the detailed seller rating breakdown
+    # (`.fdbk-seller-rating`, aggregated metrics) stay visible.
+    selectors:
+      - "#UserReviews"
+      - ".x-feedback-detail-list"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for ebay.com — prefer URL navigation over typing.
+      Search: /sch/i.html?_nkw={query}&_sacat={categoryId}&_sop={sort}&_pgn={page}
+      Sort (_sop=): 12 (Best Match, default), 1 (Ending soonest), 10 (Newly listed), 15 (Price+Shipping low→high), 16 (Price+Shipping high→low), 7 (Distance nearest)
+      Filters (append): LH_BIN=1 (Buy It Now only), LH_Auction=1 (Auctions only), LH_PrefLoc=1 (US only), LH_PrefLoc=2 (North America), LH_PrefLoc=98 (Worldwide), LH_FS=1 (Free shipping), LH_ItemCondition={3000=Used,1000=New}
+      Category: _sacat={categoryId} (0 = all)
+      Direct listing: /itm/{itemId}
+      Seller's store: /str/{sellerName}
+      Catalog product page: /p/{epid} (epid from the listing's URL query)

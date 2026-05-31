@@ -1,0 +1,38 @@
+# Goodreads — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> — caught by the generic always-on
+# selector. comments-hide is not authored separately: Goodreads doesn't
+# have a distinct "comments" feature on book pages; reader reactions
+# live inside each review card and are covered by reviews-hide.
+
+hostnames:
+  - "{*.}?goodreads.com"
+
+rules:
+  reviews-hide:
+    # `article.ReviewCard` is the per-review container on `/book/show/*`
+    # pages — there are 150+ cards per book in the initial render.
+    # Hiding the cards keeps the "Community Reviews" heading, the
+    # aggregate rating chart, and the filter/sort/pagination controls
+    # visible (those sit outside any `ReviewCard`). `#SocialReviews` is
+    # the small "Friends & Following" recommendations strip — also UGC,
+    # also hidden.
+    hostnames:
+      - "{*.}?goodreads.com"
+    pathnames:
+      - "/book/show/*"
+    selectors:
+      - "article.ReviewCard"
+      - "#SocialReviews"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for goodreads.com — prefer URL navigation over typing.
+      Search: /search?q={query}&search_type=books (default) | people | groups | author
+      Field-restricted search (search%5Bfield%5D=): all (default), title, author, genre
+      Pagination: page={n} (1-indexed)
+      Direct book: /book/show/{bookId} or /book/show/{bookId}-{slug}
+      Author profile: /author/show/{authorId} or /author/show/{authorId}.{slug}
+      User profile: /user/show/{userId} or /user/show/{userId}-{slug}
+      Lists: /list/show/{listId} ; user shelves: /review/list/{userId}?shelf={shelfName}
+      Shelves with sort: /review/list/{userId}?shelf=read&sort=date_read&order=d

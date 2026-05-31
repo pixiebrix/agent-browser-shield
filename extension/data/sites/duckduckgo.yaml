@@ -1,0 +1,20 @@
+# DuckDuckGo — search-url-helper only.
+#
+# DDG has no UGC sections — no reviews-hide or comments-hide. Footer is a
+# small marketing strip caught by the generic semantic <footer>.
+
+hostnames:
+  - "{*.}?duckduckgo.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for duckduckgo.com — prefer URL navigation over typing.
+      Search: /?q={query}&ia={web|news|images|videos|maps|shopping}
+      Time filter (df=): d (past day), w (past week), m (past month), y (past year), {YYYY-MM-DD..YYYY-MM-DD} (custom range)
+      Region (kl=): wt-wt (worldwide, default), us-en, uk-en, ca-en, au-en, de-de, fr-fr, jp-jp, etc. (ISO {country}-{language})
+      SafeSearch (kp=): -2 (off), -1 (moderate), 1 (strict)
+      Lite/HTML-only (no JS): https://html.duckduckgo.com/html/?q={query}
+      Pagination (HTML mode): &s={offset} (multiples of ~30)
+      Bangs in q=: prefix `!` to redirect to a target site's search — `!w` (Wikipedia), `!gh` (GitHub), `!so` (Stack Overflow), `!yt` (YouTube), `!gi` (Google Images), `!a` (Amazon). Full list at duckduckgo.com/bangs.
+      AI-assist answer (web vertical): the result page surfaces an "AI Assist" box for natural-language queries — no separate URL.
