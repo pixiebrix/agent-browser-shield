@@ -29,7 +29,7 @@ concurrency:
 jobs:
   publish:
     name: Publish agent-browser-shield to ClawHub
-    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@v1
+    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@6fc5bb7cd80f8efc020bfc787b0b2ad2de017147 # PR #2450
     with:
       skill_path: clawhub/agent-browser-shield
       owner: pixiebrix
