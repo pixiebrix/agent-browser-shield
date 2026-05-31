@@ -87,6 +87,9 @@ const RULE_ICON_PATHS: Partial<Record<RuleId, string>> = {
   "footer-hide": "M4 5h16v10H4zM4 19h16",
   "social-embed-hide": "M5 9h14M5 15h14M10 5l-2 14M16 5l-2 14",
   "irrelevant-sections-hide": "M3 4h18l-7 9v6l-4 2v-8L3 4z",
+  // Globe with one meridian + one parallel — signals "different web origin".
+  "cross-origin-frame-hide":
+    "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z",
 };
 
 function createIcon(ruleId: RuleId): SVGSVGElement {
