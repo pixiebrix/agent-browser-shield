@@ -14,7 +14,7 @@ const PHONE_PATTERN =
   /(?<![\d.])(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}(?!\d)/g;
 
 function passesLuhn(raw: string): boolean {
-  const digits = raw.replace(/\D/g, "");
+  const digits = raw.replaceAll(/\D/g, "");
   if (digits.length < 13 || digits.length > 19) return false;
   let sum = 0;
   let alt = false;
@@ -62,7 +62,7 @@ function collectMatches(text: string): InlineMatch[] {
   matches.sort((a, b) => a.start - b.start);
   const merged: InlineMatch[] = [];
   for (const match of matches) {
-    const last = merged[merged.length - 1];
+    const last = merged.at(-1);
     if (last && match.start < last.end) continue;
     merged.push(match);
   }

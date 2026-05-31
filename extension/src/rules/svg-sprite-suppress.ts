@@ -25,11 +25,11 @@ const STRUCTURAL_TAGS = new Set([
 
 function collectReferencedSymbolIds(): Set<string> {
   const refs = new Set<string>();
-  for (const use of Array.from(document.querySelectorAll("use"))) {
+  for (const use of document.querySelectorAll("use")) {
     const href = use.getAttribute("href") ?? use.getAttribute("xlink:href");
     if (!href) continue;
     const hashIdx = href.lastIndexOf("#");
-    if (hashIdx < 0) continue;
+    if (hashIdx === -1) continue;
     const id = href.slice(hashIdx + 1);
     if (id) refs.add(id);
   }
@@ -37,7 +37,7 @@ function collectReferencedSymbolIds(): Set<string> {
 }
 
 function isSpriteShaped(svg: SVGSVGElement): boolean {
-  const children = Array.from(svg.children);
+  const children = [...svg.children];
   if (children.length === 0) return false;
   let hasSymbolOrDefs = false;
   for (const child of children) {
@@ -50,7 +50,7 @@ function isSpriteShaped(svg: SVGSVGElement): boolean {
 
 function isHidden(svg: SVGSVGElement): boolean {
   if (svg.getAttribute("aria-hidden") === "true") return true;
-  const style = window.getComputedStyle(svg);
+  const style = globalThis.getComputedStyle(svg);
   if (style.display === "none") return true;
   if (style.visibility === "hidden") return true;
   if (svg.getAttribute("width") === "0" || svg.getAttribute("height") === "0") {
@@ -68,13 +68,11 @@ function isHidden(svg: SVGSVGElement): boolean {
 
 function scan(root: ParentNode): void {
   const referenced = collectReferencedSymbolIds();
-  for (const svg of Array.from(root.querySelectorAll<SVGSVGElement>("svg"))) {
+  for (const svg of root.querySelectorAll<SVGSVGElement>("svg")) {
     if (!svg.isConnected) continue;
     if (!isSpriteShaped(svg)) continue;
     if (!isHidden(svg)) continue;
-    const symbols = Array.from(
-      svg.querySelectorAll<SVGSymbolElement>("symbol[id]"),
-    );
+    const symbols = [...svg.querySelectorAll<SVGSymbolElement>("symbol[id]")];
     if (symbols.some((s) => referenced.has(s.id))) continue;
     svg.remove();
   }

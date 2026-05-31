@@ -139,7 +139,7 @@ describe("reviews-hide", () => {
     );
     placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-    const restored = document.getElementById("r1");
+    const restored = document.querySelector("#r1");
     expect(restored).not.toBeNull();
     expect(restored?.textContent).toContain("Original review");
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();

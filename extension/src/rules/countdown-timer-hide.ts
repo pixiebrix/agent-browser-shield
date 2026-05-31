@@ -47,7 +47,7 @@ export function matchesTimerPattern(text: string): boolean {
 }
 
 const UNIT_MULTIPLIERS: ReadonlyArray<readonly [RegExp, number]> = [
-  [/(\d+)\s*(?:days?|d)\b/i, 86400],
+  [/(\d+)\s*(?:days?|d)\b/i, 86_400],
   [/(\d+)\s*(?:hours?|hrs?|h)\b/i, 3600],
   [/(\d+)\s*(?:minutes?|mins?|m)\b/i, 60],
   [/(\d+)\s*(?:seconds?|secs?|s)\b/i, 1],

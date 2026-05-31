@@ -20,7 +20,7 @@ function readEnvValue(name: string): string {
   for (const candidate of [join(ROOT, ".env"), join(ROOT, "..", ".env")]) {
     let content: string;
     try {
-      content = readFileSync(candidate, "utf-8");
+      content = readFileSync(candidate, "utf8");
     } catch {
       continue;
     }

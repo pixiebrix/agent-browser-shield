@@ -66,7 +66,7 @@ const RULE_ID = "hidden-text-strip" as const;
 const OFFSCREEN_THRESHOLD_PX = -9999;
 
 function hasSrOnlyClass(element: Element): boolean {
-  for (const cls of Array.from(element.classList)) {
+  for (const cls of element.classList) {
     if (SR_ONLY_CLASS_NAMES.has(cls)) return true;
     if (/visuallyhidden/i.test(cls)) return true;
   }
@@ -165,7 +165,7 @@ function parseColor(value: string): RGBA | null {
   const r = Number.parseFloat(match[1]);
   const g = Number.parseFloat(match[2]);
   const b = Number.parseFloat(match[3]);
-  const a = match[4] !== undefined ? Number.parseFloat(match[4]) : 1;
+  const a = match[4] === undefined ? 1 : Number.parseFloat(match[4]);
   if ([r, g, b, a].some((n) => Number.isNaN(n))) return null;
   return [r, g, b, a];
 }
@@ -177,7 +177,7 @@ function parseColor(value: string): RGBA | null {
 function effectiveBackgroundColor(element: Element): RGB {
   let current: Element | null = element;
   while (current) {
-    const style = window.getComputedStyle(current);
+    const style = globalThis.getComputedStyle(current);
     const bg = parseColor(style.backgroundColor);
     if (bg && bg[3] >= 0.999) {
       return [bg[0], bg[1], bg[2]];
@@ -191,7 +191,7 @@ function colorDistance(a: RGB, b: RGB): number {
   const dr = a[0] - b[0];
   const dg = a[1] - b[1];
   const db = a[2] - b[2];
-  return Math.sqrt(dr * dr + dg * dg + db * db);
+  return Math.hypot(dr, dg, db);
 }
 
 // Foreground is the same color as the effective background, modulo a
@@ -211,14 +211,14 @@ function hasMatchingForeground(
 
 function findCandidates(root: ParentNode): HTMLElement[] {
   const matches: HTMLElement[] = [];
-  for (const element of Array.from(root.querySelectorAll<HTMLElement>("*"))) {
+  for (const element of root.querySelectorAll<HTMLElement>("*")) {
     if (isNonContentTag(element.tagName)) continue;
     if (isInsidePlaceholder(element)) continue;
     if (element.closest('[aria-hidden="true"]')) continue;
     if (hasSrOnlyClass(element)) continue;
     if (isExcludedAncestor(element)) continue;
     if (!hasNonemptyText(element)) continue;
-    const style = window.getComputedStyle(element);
+    const style = globalThis.getComputedStyle(element);
     if (hasStructuralSrOnlyPattern(style)) continue;
     if (!isHiddenByCss(style) && !hasMatchingForeground(element, style))
       continue;

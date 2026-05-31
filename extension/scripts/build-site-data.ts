@@ -47,13 +47,13 @@ interface RecipeBlock {
 function loadSites(): ParsedSiteFile[] {
   const entries = readdirSync(SITES_DIR)
     .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
-    .sort();
+    .toSorted();
   const errors: string[] = [];
   const parsed: ParsedSiteFile[] = [];
 
   for (const fileName of entries) {
     const path = join(SITES_DIR, fileName);
-    const raw = readFileSync(path, "utf-8");
+    const raw = readFileSync(path, "utf8");
     let doc: unknown;
     try {
       doc = load(raw);
@@ -155,9 +155,9 @@ function emitRecipeLiteral(recipe: string): string {
   // Recipes are multi-line by design. Use a template literal so the
   // generated file stays diff-friendly. Escape backticks and `${`.
   const escaped = recipe
-    .replace(/\\/g, "\\\\")
-    .replace(/`/g, "\\`")
-    .replace(/\$\{/g, "\\${");
+    .replaceAll("\\", "\\\\")
+    .replaceAll("`", "\\`")
+    .replaceAll("${", "\\${");
   return `\`${escaped}\``;
 }
 

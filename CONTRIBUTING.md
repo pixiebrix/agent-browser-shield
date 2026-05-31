@@ -37,7 +37,7 @@ bun install
 bun run build       # writes extension/dist/
 bun run watch       # rebuilds on change
 bun run test        # Jest unit tests
-bun run check       # Biome lint + format
+bun run check       # Biome (lint + format) + ESLint (unicorn + custom rules)
 ```
 
 Load `extension/dist/` as unpacked at `chrome://extensions`.
@@ -76,8 +76,8 @@ See [`benchmark/README.md`](./benchmark/README.md) for the full workflow.
   `skills/agent-browser-shield-diagnose/SKILL.md`.
 - **Commit messages.** Imperative mood, brief subject, body explains motivation
   when it's not obvious.
-- **Don't bypass hooks.** Pre-commit hooks run gitleaks, Biome, Ruff, and
-  markdownlint. Fix the issue rather than passing `--no-verify`.
+- **Don't bypass hooks.** Pre-commit hooks run gitleaks, Biome, ESLint, Ruff,
+  and markdownlint. Fix the issue rather than passing `--no-verify`.
 
 ## Adding a new rule
 

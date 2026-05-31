@@ -97,12 +97,12 @@ export function createSelectorHideRule(
   }
 
   function scan(root: ParentNode): void {
-    const selectors = selectorsFor(window.location.href);
+    const selectors = selectorsFor(globalThis.location.href);
     if (selectors.length === 0) return;
 
-    let candidates = Array.from(
-      root.querySelectorAll<HTMLElement>(selectors.join(",")),
-    );
+    let candidates = [
+      ...root.querySelectorAll<HTMLElement>(selectors.join(",")),
+    ];
     if (candidateFilter) candidates = candidates.filter(candidateFilter);
 
     for (const element of candidates) {

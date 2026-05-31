@@ -40,7 +40,7 @@ function uncheck(checkbox: HTMLInputElement): void {
 }
 
 function scanAndClear(root: ParentNode): void {
-  if (!isCheckoutUrl(window.location.href)) return;
+  if (!isCheckoutUrl(globalThis.location.href)) return;
 
   const checkboxes = root.querySelectorAll<HTMLInputElement>(
     `input[type="checkbox"]:checked:not(:disabled):not([${CLEARED_ATTR}])`,
@@ -56,7 +56,7 @@ function scanAndClear(root: ParentNode): void {
   if (cleared > 0) {
     log("checkout checkboxes cleared", {
       count: cleared,
-      url: window.location.href,
+      url: globalThis.location.href,
     });
   }
 }

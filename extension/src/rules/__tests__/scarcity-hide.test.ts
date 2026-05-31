@@ -76,7 +76,7 @@ describe("scarcityHideRule", () => {
     document.body.innerHTML = `<span id="t">Only 3 left in stock</span>`;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
     expect(placeholder).not.toBeNull();
     expect(placeholder?.getAttribute(RULE_ATTR)).toBe("scarcity-hide");
@@ -91,9 +91,9 @@ describe("scarcityHideRule", () => {
     `;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("oos")).not.toBeNull();
-    expect(document.getElementById("so")).not.toBeNull();
-    expect(document.getElementById("un")).not.toBeNull();
+    expect(document.querySelector("#oos")).not.toBeNull();
+    expect(document.querySelector("#so")).not.toBeNull();
+    expect(document.querySelector("#un")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -104,8 +104,8 @@ describe("scarcityHideRule", () => {
     `;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("bs")).not.toBeNull();
-    expect(document.getElementById("ts")).not.toBeNull();
+    expect(document.querySelector("#bs")).not.toBeNull();
+    expect(document.querySelector("#ts")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -116,8 +116,8 @@ describe("scarcityHideRule", () => {
     `;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("urgency")).toBeNull();
-    expect(document.getElementById("oos")).not.toBeNull();
+    expect(document.querySelector("#urgency")).toBeNull();
+    expect(document.querySelector("#oos")).not.toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -125,7 +125,7 @@ describe("scarcityHideRule", () => {
     document.body.innerHTML = `<span id="t">5 in stock</span>`;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -133,7 +133,7 @@ describe("scarcityHideRule", () => {
     document.body.innerHTML = `<span id="t">23 people are viewing this</span>`;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -146,8 +146,8 @@ describe("scarcityHideRule", () => {
     `;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("outer")).not.toBeNull();
-    expect(document.getElementById("inner")).toBeNull();
+    expect(document.querySelector("#outer")).not.toBeNull();
+    expect(document.querySelector("#inner")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -170,14 +170,14 @@ describe("scarcityHideRule", () => {
     scarcityHideRule.apply(document.body);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
   });
 
   it("skips elements whose text content is too long to be a badge", () => {
     document.body.innerHTML = `<p id="t">Lorem ipsum dolor sit amet, consectetur adipiscing elit — there are only 3 left in stock here for context too.</p>`;
     scarcityHideRule.apply(document.body);
 
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -192,7 +192,7 @@ describe("scarcityHideRule", () => {
     placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    const restored = document.getElementById("t");
+    const restored = document.querySelector("#t");
     expect(restored).not.toBeNull();
     expect(restored?.textContent).toContain("Selling fast");
   });
@@ -204,12 +204,12 @@ describe("scarcityHideRule lazy-loaded sections", () => {
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">Only 2 left in stock</span>`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -219,7 +219,7 @@ describe("scarcityHideRule lazy-loaded sections", () => {
     for (let i = 0; i < 5; i++) {
       const wrapper = document.createElement("div");
       wrapper.innerHTML = `<span class="t" data-i="${i}">Only ${i + 1} left</span>`;
-      document.body.appendChild(wrapper);
+      document.body.append(wrapper);
     }
 
     await flushMutations();
@@ -235,12 +235,12 @@ describe("scarcityHideRule lazy-loaded sections", () => {
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">Only 1 left</span>`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 

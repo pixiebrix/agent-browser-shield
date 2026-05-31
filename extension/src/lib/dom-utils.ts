@@ -101,7 +101,7 @@ export function findInnermostMatches<T>(
 ): Array<{ element: HTMLElement; match: T }> {
   const { isSkipped, maxTextLength, maxDescendants, match } = options;
   const out: Array<{ element: HTMLElement; match: T }> = [];
-  for (const element of Array.from(root.querySelectorAll<HTMLElement>("*"))) {
+  for (const element of root.querySelectorAll<HTMLElement>("*")) {
     if (isNonContentTag(element.tagName)) continue;
     if (isSkipped?.(element)) continue;
     if (element.children.length > maxDescendants) continue;

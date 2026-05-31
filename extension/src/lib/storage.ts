@@ -3,8 +3,6 @@
 
 import { RULE_IDS, RULES, type RuleId } from "../rules";
 
-export { RULE_IDS, type RuleId };
-
 export type RuleStates = Record<RuleId, boolean>;
 
 const STORAGE_KEY = "agent-browser-shield.rules";
@@ -72,3 +70,5 @@ export function subscribe(listener: RuleStatesListener): () => void {
   chrome.storage.onChanged.addListener(handler);
   return () => chrome.storage.onChanged.removeListener(handler);
 }
+
+export { RULE_IDS, type RuleId } from "../rules";

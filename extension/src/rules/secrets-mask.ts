@@ -65,7 +65,7 @@ const ENTROPY_CANDIDATE = /[A-Za-z0-9+/=_-]{32,}/g;
 const HEX_CANDIDATE = /\b[0-9a-fA-F]{32,}\b/g;
 
 const BASE64_ENTROPY_THRESHOLD = 4.5;
-const HEX_ENTROPY_THRESHOLD = 3.0;
+const HEX_ENTROPY_THRESHOLD = 3;
 
 function shannonEntropy(value: string): number {
   const counts = new Map<string, number>();
@@ -135,7 +135,7 @@ function collectMatches(text: string): InlineMatch[] {
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
   const merged: InlineMatch[] = [];
   for (const match of matches) {
-    const last = merged[merged.length - 1];
+    const last = merged.at(-1);
     if (last && match.start < last.end) continue;
     merged.push(match);
   }

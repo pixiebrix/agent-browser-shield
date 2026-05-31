@@ -102,7 +102,7 @@ function createIcon(ruleId: RuleId): SVGSVGElement {
   svg.setAttribute("focusable", "false");
   const path = document.createElementNS(SVG_NS, "path");
   path.setAttribute("d", RULE_ICON_PATHS[ruleId] ?? SHIELD_PATH);
-  svg.appendChild(path);
+  svg.append(path);
   return svg;
 }
 
@@ -118,11 +118,11 @@ function createRevealButton(ruleId: RuleId, label: string): HTMLButtonElement {
   // double-announcement.
   button.setAttribute("aria-label", label);
   button.title = label;
-  button.appendChild(createIcon(ruleId));
+  button.append(createIcon(ruleId));
   const text = document.createElement("span");
   text.className = LABEL_TEXT_CLASS;
   text.textContent = label;
-  button.appendChild(text);
+  button.append(text);
   return button;
 }
 
@@ -132,7 +132,7 @@ export function replaceWithBlockPlaceholder(
   label: string,
 ): HTMLDivElement {
   const rect = element.getBoundingClientRect();
-  const computed = window.getComputedStyle(element);
+  const computed = globalThis.getComputedStyle(element);
 
   // Outer container is a non-interactive <div> so the inner reveal button can
   // use position: sticky (which doesn't work as a child of <button>). Click
@@ -142,7 +142,7 @@ export function replaceWithBlockPlaceholder(
   placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--block`;
   placeholder.setAttribute(RULE_ATTR, ruleId);
 
-  placeholder.appendChild(createRevealButton(ruleId, label));
+  placeholder.append(createRevealButton(ruleId, label));
 
   placeholder.style.width = `${rect.width}px`;
   placeholder.style.minHeight = `${rect.height}px`;
@@ -176,9 +176,7 @@ export function replaceMatchesInTextNode(
   for (const match of matches) {
     if (match.start < cursor) continue;
     if (match.start > cursor) {
-      fragment.appendChild(
-        document.createTextNode(text.slice(cursor, match.start)),
-      );
+      fragment.append(document.createTextNode(text.slice(cursor, match.start)));
     }
     // Inline placeholders are short and have no scrollable area, so the
     // <button> serves as both the visual chip and the a11y-tree exposure.
@@ -191,7 +189,7 @@ export function replaceMatchesInTextNode(
       text.slice(match.start, match.end),
     );
     attachReveal(placeholder, restored);
-    fragment.appendChild(placeholder);
+    fragment.append(placeholder);
     log("inline placeholder created", {
       ruleId,
       label: match.label,
@@ -201,7 +199,7 @@ export function replaceMatchesInTextNode(
   }
 
   if (cursor < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(cursor)));
+    fragment.append(document.createTextNode(text.slice(cursor)));
   }
 
   textNode.parentNode?.replaceChild(fragment, textNode);

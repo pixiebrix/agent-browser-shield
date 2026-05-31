@@ -54,7 +54,7 @@ function apply(root: ParentNode): void {
     if (container) containers.add(container);
   }
 
-  for (const element of filterToOutermost(Array.from(containers))) {
+  for (const element of filterToOutermost([...containers])) {
     if (!element.isConnected) continue;
     if (isInsidePlaceholder(element)) continue;
     replaceWithBlockPlaceholder(

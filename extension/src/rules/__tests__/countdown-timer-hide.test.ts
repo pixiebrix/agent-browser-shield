@@ -78,7 +78,7 @@ describe("parseTotalSeconds", () => {
   });
 
   it("parses days alongside other units", () => {
-    expect(parseTotalSeconds("2 days 3 hours")).toBe(2 * 86400 + 3 * 3600);
+    expect(parseTotalSeconds("2 days 3 hours")).toBe(2 * 86_400 + 3 * 3600);
   });
 
   it("returns null when no time value is present", () => {
@@ -95,12 +95,12 @@ describe("countdownTimerHideRule", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
 
     // Simulate the timer ticking down before the snapshot fires.
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "12:34:55";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
     expect(placeholder).not.toBeNull();
     expect(placeholder?.getAttribute(RULE_ATTR)).toBe("countdown-timer-hide");
@@ -111,12 +111,12 @@ describe("countdownTimerHideRule", () => {
     document.body.innerHTML = `<div id="t">5m 30s</div>`;
     countdownTimerHideRule.apply(document.body);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "5m 29s";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -135,13 +135,13 @@ describe("countdownTimerHideRule", () => {
     countdownTimerHideRule.apply(document.body);
 
     // Stopwatch-style increment — should not be hidden.
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "05:31";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
   });
 
   it("skips elements whose value did not change during the window", () => {
@@ -163,13 +163,13 @@ describe("countdownTimerHideRule", () => {
     `;
     countdownTimerHideRule.apply(document.body);
 
-    const inner = document.getElementById("inner");
+    const inner = document.querySelector("#inner");
     if (inner) inner.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("outer")).not.toBeNull();
-    expect(document.getElementById("inner")).toBeNull();
+    expect(document.querySelector("#outer")).not.toBeNull();
+    expect(document.querySelector("#inner")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -177,7 +177,7 @@ describe("countdownTimerHideRule", () => {
     document.body.innerHTML = `<p id="t">Lorem ipsum dolor sit amet, consectetur adipiscing elit — countdown 10:00 here for context.</p>`;
     countdownTimerHideRule.apply(document.body);
 
-    const node = document.getElementById("t");
+    const node = document.querySelector("#t");
     if (node) {
       node.textContent =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit — countdown 09:59 here for context.";
@@ -186,7 +186,7 @@ describe("countdownTimerHideRule", () => {
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
   });
 
   it("does not process text inside SCRIPT or STYLE", () => {
@@ -205,7 +205,7 @@ describe("countdownTimerHideRule", () => {
     document.body.innerHTML = `<span id="t">10:00</span>`;
     countdownTimerHideRule.apply(document.body);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
@@ -217,7 +217,7 @@ describe("countdownTimerHideRule", () => {
     placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
   });
 
   it("does not re-process content inside an existing placeholder", () => {
@@ -228,13 +228,13 @@ describe("countdownTimerHideRule", () => {
     `;
     countdownTimerHideRule.apply(document.body);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
   });
 });
 
@@ -245,17 +245,17 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     // Simulate a lazy-loaded section appearing after first paint.
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">10:00</span>`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("t")).toBeNull();
+    expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
@@ -267,13 +267,13 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     for (let i = 0; i < 5; i++) {
       const wrapper = document.createElement("div");
       wrapper.innerHTML = `<span class="t" data-i="${i}">10:00</span>`;
-      document.body.appendChild(wrapper);
+      document.body.append(wrapper);
     }
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    for (const span of Array.from(document.querySelectorAll(".t"))) {
+    for (const span of document.querySelectorAll(".t")) {
       span.textContent = "09:59";
     }
 
@@ -289,17 +289,17 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">10:00</span>`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -307,13 +307,13 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     document.body.innerHTML = `<span id="t">10:00</span>`;
     countdownTimerHideRule.apply(document.body);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     countdownTimerHideRule.teardown?.();
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
-    expect(document.getElementById("t")).not.toBeNull();
+    expect(document.querySelector("#t")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
@@ -321,7 +321,7 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     document.body.innerHTML = `<span id="t">10:00</span>`;
     countdownTimerHideRule.apply(document.body);
 
-    const timer = document.getElementById("t");
+    const timer = document.querySelector("#t");
     if (timer) timer.textContent = "09:59";
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);

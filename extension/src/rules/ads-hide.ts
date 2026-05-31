@@ -50,7 +50,7 @@ function injectEasyListStylesheet(): void {
   style.textContent = EASYLIST_STYLESHEET_TEXT;
   // documentElement, not head — `head` doesn't exist yet on document_start
   // injection and may be missing on partial DOMs.
-  (document.head ?? document.documentElement).appendChild(style);
+  (document.head ?? document.documentElement).append(style);
   injectedStyle = style;
 }
 

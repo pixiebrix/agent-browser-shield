@@ -44,14 +44,14 @@ export function createSubtreeWatcher(
 
   function drain(): void {
     if (pending.size === 0) return;
-    const roots = Array.from(pending).filter((root) => root.isConnected);
+    const roots = [...pending].filter((root) => root.isConnected);
     pending.clear();
     if (roots.length > 0) onSubtrees(roots);
   }
 
   function enqueue(mutations: MutationRecord[]): void {
     for (const mutation of mutations) {
-      for (const added of Array.from(mutation.addedNodes)) {
+      for (const added of mutation.addedNodes) {
         if (added.nodeType !== Node.ELEMENT_NODE) continue;
         const element = added as Element;
         if (skipPlaceholderSubtrees) {

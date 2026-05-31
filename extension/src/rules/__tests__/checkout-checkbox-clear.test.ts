@@ -54,7 +54,7 @@ describe("checkoutCheckboxClearRule.apply", () => {
     document.body.innerHTML = `
       <input id="warranty" type="checkbox" checked />
     `;
-    const checkbox = document.getElementById("warranty") as HTMLInputElement;
+    const checkbox = document.querySelector("#warranty") as HTMLInputElement;
     const changeSpy = jest.fn();
     checkbox.addEventListener("change", changeSpy);
 
@@ -69,7 +69,7 @@ describe("checkoutCheckboxClearRule.apply", () => {
     document.body.innerHTML = `
       <input id="locked" type="checkbox" checked disabled />
     `;
-    const checkbox = document.getElementById("locked") as HTMLInputElement;
+    const checkbox = document.querySelector("#locked") as HTMLInputElement;
 
     checkoutCheckboxClearRule.apply(document.body);
 
@@ -81,7 +81,7 @@ describe("checkoutCheckboxClearRule.apply", () => {
     document.body.innerHTML = `
       <input id="optional" type="checkbox" />
     `;
-    const checkbox = document.getElementById("optional") as HTMLInputElement;
+    const checkbox = document.querySelector("#optional") as HTMLInputElement;
     const changeSpy = jest.fn();
     checkbox.addEventListener("change", changeSpy);
 
@@ -97,8 +97,8 @@ describe("checkoutCheckboxClearRule.apply", () => {
       <input id="r" type="radio" checked />
       <input id="t" type="text" value="hello" />
     `;
-    const radio = document.getElementById("r") as HTMLInputElement;
-    const text = document.getElementById("t") as HTMLInputElement;
+    const radio = document.querySelector("#r") as HTMLInputElement;
+    const text = document.querySelector("#t") as HTMLInputElement;
 
     checkoutCheckboxClearRule.apply(document.body);
 
@@ -113,12 +113,12 @@ describe("checkoutCheckboxClearRule lazy-loaded sections", () => {
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<input id="late" type="checkbox" checked />`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    const checkbox = document.getElementById("late") as HTMLInputElement;
+    const checkbox = document.querySelector("#late") as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
     expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
   });
@@ -127,14 +127,14 @@ describe("checkoutCheckboxClearRule lazy-loaded sections", () => {
     document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
     checkoutCheckboxClearRule.apply(document.body);
 
-    const checkbox = document.getElementById("terms") as HTMLInputElement;
+    const checkbox = document.querySelector("#terms") as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
 
     // Agent re-checks the box (e.g., after deciding to accept T&C).
     checkbox.checked = true;
 
     // Trigger a scan: append an unrelated element so the mutation observer fires.
-    document.body.appendChild(document.createElement("span"));
+    document.body.append(document.createElement("span"));
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
@@ -147,12 +147,12 @@ describe("checkoutCheckboxClearRule lazy-loaded sections", () => {
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<input id="late" type="checkbox" checked />`;
-    document.body.appendChild(lazy);
+    document.body.append(lazy);
 
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    const checkbox = document.getElementById("late") as HTMLInputElement;
+    const checkbox = document.querySelector("#late") as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
   });

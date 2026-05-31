@@ -34,7 +34,7 @@ describe("chatWidgetHideRule", () => {
 
     // Node stays in the DOM (so we don't break React's fiber) but is marked
     // hidden in-place via display:none.
-    expectHidden(document.getElementById("intercom-container"));
+    expectHidden(document.querySelector("#intercom-container"));
     // Overlays don't get an in-flow placeholder.
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     expect(document.querySelector("main")).not.toBeNull();
@@ -75,7 +75,7 @@ describe("chatWidgetHideRule", () => {
     `;
     chatWidgetHideRule.apply(document.body);
 
-    expectHidden(document.getElementById("hubspot-messages-iframe-container"));
+    expectHidden(document.querySelector("#hubspot-messages-iframe-container"));
   });
 
   it("removes Drift widget frame by id prefix", () => {
@@ -111,13 +111,13 @@ describe("chatWidgetHideRule", () => {
       container.innerHTML = `
         <iframe id="hubspot-conversations-iframe" title="Chat Widget" src="https://app.hubspot.com/conversations-visitor/..."></iframe>
       `;
-      document.body.appendChild(container);
+      document.body.append(container);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
       expectHidden(
-        document.getElementById("hubspot-messages-iframe-container"),
+        document.querySelector("#hubspot-messages-iframe-container"),
       );
       expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     });
@@ -127,7 +127,7 @@ describe("chatWidgetHideRule", () => {
 
       const iframe = document.createElement("iframe");
       iframe.name = "intercom-frame-1234";
-      document.body.appendChild(iframe);
+      document.body.append(iframe);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
@@ -141,12 +141,12 @@ describe("chatWidgetHideRule", () => {
 
       const container = document.createElement("div");
       container.id = "intercom-container";
-      document.body.appendChild(container);
+      document.body.append(container);
 
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-      const stillThere = document.getElementById("intercom-container");
+      const stillThere = document.querySelector("#intercom-container");
       expect(stillThere).not.toBeNull();
       // And it should not have been touched by the rule.
       expect(stillThere?.getAttribute(HIDDEN_ATTR)).toBeNull();

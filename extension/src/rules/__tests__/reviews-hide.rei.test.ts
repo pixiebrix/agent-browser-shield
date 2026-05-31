@@ -22,7 +22,7 @@ describe("reviews-hide on rei.com", () => {
     `;
     reviewsHideRule.apply(document.body);
 
-    expect(document.getElementById("product-reviews-accordion")).toBeNull();
+    expect(document.querySelector("#product-reviews-accordion")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -47,7 +47,7 @@ describe("reviews-hide on rei.com", () => {
     reviewsHideRule.apply(document.body);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("item-review-section")).not.toBeNull();
-    expect(document.getElementById("reviewsMedley")).not.toBeNull();
+    expect(document.querySelector("#item-review-section")).not.toBeNull();
+    expect(document.querySelector("#reviewsMedley")).not.toBeNull();
   });
 });

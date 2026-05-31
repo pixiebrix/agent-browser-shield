@@ -18,7 +18,7 @@ describe("reviews-hide on walmart.com", () => {
     `;
     reviewsHideRule.apply(document.body);
 
-    expect(document.getElementById("item-review-section")).toBeNull();
+    expect(document.querySelector("#item-review-section")).toBeNull();
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
@@ -61,6 +61,6 @@ describe("reviews-hide on walmart.com", () => {
     reviewsHideRule.apply(document.body);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.getElementById("reviewsMedley")).not.toBeNull();
+    expect(document.querySelector("#reviewsMedley")).not.toBeNull();
   });
 });
