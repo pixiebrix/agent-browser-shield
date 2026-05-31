@@ -2,7 +2,8 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { mkdir, rm, stat } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -14,6 +15,7 @@ const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
     output: { type: "string", short: "o" },
+    "strip-key": { type: "boolean" },
     help: { type: "boolean", short: "h" },
   },
   allowPositionals: true,
@@ -22,12 +24,14 @@ const { values, positionals } = parseArgs({
 if (values.help) {
   console.log(
     `Usage: bun run scripts/package-extension.ts [output]\n\n` +
-      `Zips extension/dist/ for upload to Browserbase.\n\n` +
+      `Zips extension/dist/ for upload to Browserbase or the Chrome Web Store.\n\n` +
       `Arguments:\n` +
       `  output            Output path. If it's a directory, writes extension.zip inside.\n` +
       `                    Defaults to ${relative(REPO_ROOT, DEFAULT_OUTPUT)}.\n\n` +
       `Options:\n` +
       `  -o, --output      Same as the positional argument.\n` +
+      `      --strip-key   Remove the "key" field from manifest.json before zipping.\n` +
+      `                    Required for Chrome Web Store uploads.\n` +
       `  -h, --help        Show this help.`,
   );
   process.exit(0);
@@ -62,14 +66,39 @@ const outputPath = await resolveOutput();
 await mkdir(dirname(outputPath), { recursive: true });
 await rm(outputPath, { force: true });
 
-// `zip -r` from inside DIST so manifest.json sits at the archive root, which
-// Browserbase requires. -x excludes sourcemaps to keep the upload small.
+// When --strip-key is set, stage dist/ into a temp dir and rewrite manifest.json
+// there. Mutating dist/ in place would race with concurrent builds.
+let zipRoot = DIST;
+let stagedRoot: string | undefined;
+if (values["strip-key"]) {
+  stagedRoot = await mkdtemp(join(tmpdir(), "abs-package-"));
+  await cp(DIST, stagedRoot, { recursive: true });
+  const manifestPath = join(stagedRoot, "manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  const hadKey = Object.hasOwn(manifest, "key");
+  delete manifest.key;
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(
+    hadKey
+      ? `Stripped manifest.key for Chrome Web Store compatibility`
+      : `manifest.key not present; --strip-key was a no-op`,
+  );
+  zipRoot = stagedRoot;
+}
+
+// `zip -r` from inside the source root so manifest.json sits at the archive
+// root, which Browserbase and CWS both require. -x excludes sourcemaps to keep
+// the upload small.
 const result = await Bun.spawn({
   cmd: ["zip", "-r", "-q", outputPath, ".", "-x", "*.map"],
-  cwd: DIST,
+  cwd: zipRoot,
   stdout: "inherit",
   stderr: "inherit",
 }).exited;
+
+if (stagedRoot) {
+  await rm(stagedRoot, { recursive: true, force: true });
+}
 
 if (result !== 0) {
   console.error(`zip exited with status ${result}`);
