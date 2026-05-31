@@ -22,6 +22,7 @@
     "build": "bun run build.ts",
     "watch": "bun run build.ts --watch",
     "package": "bun run ../scripts/package-extension.ts",
+    "package:cws": "bun run ../scripts/package-extension.ts --strip-key -o ../output/extension-cws.zip",
     "fetch-easylist": "uv run --directory .. scripts/fetch_easylist.py",
     "build-site-data": "bun run scripts/build-site-data.ts",
     "build-injection-patterns": "bun run scripts/build-injection-patterns.ts",

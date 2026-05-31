@@ -2,6 +2,15 @@ name: Release extension
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_s3:
+        description: "Upload to S3 (versioned + latest)"
+        type: boolean
+        default: true
+      publish_chrome_web_store:
+        description: "Submit to Chrome Web Store for publication"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -62,11 +71,13 @@ jobs:
         run: bun run package
 
       - uses: aws-actions/configure-aws-credentials@v4
+        if: ${{ inputs.publish_s3 }}
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload versioned ZIP
+        if: ${{ inputs.publish_s3 }}
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
@@ -77,12 +88,42 @@ jobs:
             --cache-control 'public, max-age=31536000, immutable'
 
       - name: Upload latest pointer
+        if: ${{ inputs.publish_s3 }}
         run: |
           aws s3 cp output/extension.zip \
             s3://agent-browser-shield/latest/extension.zip \
             --content-type application/zip \
             --content-disposition 'attachment; filename="extension.zip"' \
             --cache-control 'public, max-age=300'
+
+      # CWS rejects manifests containing a "key" field; produce a sibling zip
+      # with it stripped. The S3 zip still includes "key" if/when one is added,
+      # so consumers wanting a stable extension ID (e.g., Browserbase) aren't
+      # affected.
+      - name: Package CWS-ready zip
+        if: ${{ inputs.publish_chrome_web_store }}
+        working-directory: extension
+        run: bun run package:cws
+
+      - name: Publish to Chrome Web Store
+        if: ${{ inputs.publish_chrome_web_store }}
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3 upload \
+            --source output/extension-cws.zip \
+            --extension-id "$EXTENSION_ID" \
+            --client-id "$CLIENT_ID" \
+            --client-secret "$CLIENT_SECRET" \
+            --refresh-token "$REFRESH_TOKEN"
+          npx --yes chrome-webstore-upload-cli@3 publish \
+            --extension-id "$EXTENSION_ID" \
+            --client-id "$CLIENT_ID" \
+            --client-secret "$CLIENT_SECRET" \
+            --refresh-token "$REFRESH_TOKEN"
 
       - name: Create GitHub Release
         env:

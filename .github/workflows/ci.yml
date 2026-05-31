@@ -46,6 +46,21 @@ jobs:
           archive: false
           if-no-files-found: error
 
+      # CWS rejects manifests containing a "key" field. Emit a sibling zip with
+      # "key" stripped so the initial CWS listing (and any manual re-uploads)
+      # can use a known-good CI build instead of a one-off local build.
+      - name: Package CWS-ready zip
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: bun run package:cws
+      - name: Upload CWS-ready zip
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: extension-cws-zip
+          path: output/extension-cws.zip
+          archive: false
+          if-no-files-found: error
+
   demo-site:
     name: Demo site (build)
     runs-on: ubuntu-24.04
