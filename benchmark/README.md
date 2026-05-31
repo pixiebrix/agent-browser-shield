@@ -151,3 +151,17 @@ uv run scripts/benchmark_run.py ... --scenario 'haiku-*' --task 'hn-*'
   be backfilled with `benchmark_report.py --judge`. Re-grading every row (after
   changing model / prompt) is `--judge --rejudge` and doesn't burn Browserbase
   sessions.
+
+## Related work
+
+This harness measures the end-to-end task success delta from running the
+extension. For benchmarks focused specifically on agent susceptibility to
+manipulative UI:
+
+- [SusBench](https://arxiv.org/abs/2510.11035) (Guo et al., 2025) — 313 tasks
+  across 55 real websites measuring computer-use agent susceptibility to dark
+  patterns, with a human-participant baseline.
+- [DECEPTICON](https://arxiv.org/abs/2512.22894) (Cuvin et al., 2025) — 700
+  web-navigation tasks featuring dark patterns; finds agents fall for them at
+  roughly twice the rate of humans and that standard prompting/guardrail
+  defenses are insufficient.
