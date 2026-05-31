@@ -109,3 +109,8 @@ When changing the trace bundle layout, file names, or step schema produced by
 `scripts/build_traces.py`, update
 `skills/agent-browser-shield-diagnose/SKILL.md` so the diagnostic workflow it
 describes still matches what's on disk.
+
+When changing the site-rule schema (`SITE_DATA_RULE_IDS` in
+`extension/data/site-rules.schema.ts`) or the Playwright MCP setup
+(`.mcp.json`), update `skills/agent-browser-shield-site-rules/SKILL.md` so
+its rule-type list and workflow stay in sync.
