@@ -101,7 +101,7 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   python:
-    name: Python (ruff)
+    name: Python (ruff + bandit)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -112,3 +112,5 @@ jobs:
         run: uvx ruff check scripts/
       - name: Ruff format check
         run: uvx ruff format --check scripts/
+      - name: Bandit security scan
+        run: uvx --from "bandit[toml]" bandit -c pyproject.toml -r scripts/

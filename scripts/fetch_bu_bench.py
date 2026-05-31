@@ -48,7 +48,8 @@ def main() -> int:
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     print(f"Fetching {args.url} → {TARGET.relative_to(Path.cwd())}")
     try:
-        with urllib.request.urlopen(args.url) as response:
+        # URL comes from a CLI arg in a dev fetch script; default points to a trusted upstream.
+        with urllib.request.urlopen(args.url) as response:  # nosec B310
             data = response.read()
     except OSError as exc:
         print(f"error: download failed: {exc}", file=sys.stderr)
