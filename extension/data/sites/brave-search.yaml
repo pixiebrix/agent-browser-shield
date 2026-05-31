@@ -1,0 +1,23 @@
+# Brave Search — search-url-helper only.
+#
+# No UGC sections — no reviews-hide or comments-hide. Footer is a semantic
+# <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "search.brave.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for search.brave.com — prefer URL navigation over typing.
+      Web search: /search?q={query}
+      Verticals (separate paths, same query param): /news?q={query}, /images?q={query}, /videos?q={query}, /goggles?q={query}
+      Pagination (web): &offset={pageIndex} (0-indexed; page 2 = offset=1)
+      Country (country=): us, gb, ca, au, de, fr, jp, etc. (ISO two-letter)
+      Search language (search_lang=): en, de, fr, ja, es, etc.
+      UI language (ui_lang=): {language}-{country} e.g. en-US, de-DE
+      Safe search (safesearch=): off, moderate, strict
+      Time filter (tf=): pd (past day), pw (past week), pm (past month), py (past year), {YYYY-MM-DDtoYYYY-MM-DD} (custom)
+      Site filter / operators in q=: `site:{domain}`, `filetype:pdf`, `intitle:`, `inurl:`, prefix `-` to exclude
+      Goggles (re-rankers, no login required to use): &goggles_id={publicGoggleUrlOrId} appended to /search
+      AI Answer: anonymous users get summarizer cards inline on /search; no separate URL

@@ -1,0 +1,22 @@
+# Bing — search-url-helper only.
+#
+# Bing has no UGC sections — no reviews-hide or comments-hide. Footer is a
+# semantic <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?bing.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for bing.com — prefer URL navigation over typing.
+      Web search: /search?q={query}
+      Verticals (separate paths, same query param): /news/search?q={query}, /images/search?q={query}, /videos/search?q={query}, /maps?q={query}, /shop?q={query}
+      Pagination (web): &first={1-indexed offset, default 1; page 2 starts at 11 when count=10}; &count={resultsPerPage, default 10}
+      Market/region (mkt=): en-US, en-GB, en-CA, en-AU, de-DE, fr-FR, ja-JP, es-ES, etc. ({language}-{country})
+      Language (setlang=): en, de, fr, es, ja, zh-Hans, etc.
+      Safe search (safeSearch=): Off, Moderate, Strict
+      Time filter (qft=): +filterui:age-lt1440 (past day), +filterui:age-lt10080 (past week), +filterui:age-lt43200 (past month), +filterui:age-lt525600 (past year). URL-encode the leading `+` as `%2B`.
+      Custom date range (qft=): +filterui:age-custom_lt{YYYY-MM-DD}_gt{YYYY-MM-DD}
+      Site filter: append to q= — `q={query}+site:{domain}`
+      Direct file type / language operators in q=: `filetype:pdf`, `language:en`, `intitle:`, `inurl:`

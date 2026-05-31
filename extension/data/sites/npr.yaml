@@ -1,0 +1,21 @@
+# NPR — search-url-helper only.
+#
+# NPR removed open comments from npr.org years ago, so there is no
+# comments-hide target. The page footer is a semantic <footer> caught by
+# the generic always-on selector.
+
+hostnames:
+  - "{*.}?npr.org"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for npr.org — prefer URL navigation over typing.
+      Search: /search/?query={query}&page={page}
+      Pagination (page=): 1-indexed.
+      Sort (sort=): relevance (default), date.
+      Date filter (dateRange=): today, past+7+days, past+30+days, past+90+days, past+year, all (default). URL-encode the `+` as `%20` or `+`.
+      Program filter (programName=): "Morning Edition", "All Things Considered", "Weekend Edition Sunday", "Weekend Edition Saturday", "Fresh Air", "Talk of the Nation", etc. URL-encode spaces.
+      Section / topic landing pages (no query): /sections/news/, /sections/politics/, /sections/business/, /sections/health/, /sections/science/, /sections/world/, /sections/national/, /sections/climate/, /sections/technology/, /sections/education/, /sections/arts/, /sections/music/, /sections/books/, /sections/pop-culture/. NPR podcast pages live at /podcasts/{podcastId}/{slug}/.
+      Direct article: /{YYYY}/{MM}/{DD}/{nprStoryId}/{slug} (e.g. /2024/05/30/1198765432/ai-news).
+      Author page: /people/{personId}/{first-last}.

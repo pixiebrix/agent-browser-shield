@@ -1,0 +1,30 @@
+# Rotten Tomatoes — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?rottentomatoes.com"
+
+rules:
+  reviews-hide:
+    # `[data-qa="section:audience-reviews"]` wraps the audience UGC review feed
+    # on /m/{slug} (movies) and /tv/{slug} (series) pages. The Tomatometer score
+    # and the audience score chip live in the media scorecard at the top of the
+    # page and stay visible. Critics reviews
+    # (`[data-qa="section:critics-reviews"]`) are editorial, not UGC, and are
+    # intentionally not hidden.
+    pathnames:
+      - "/m/*"
+      - "/tv/*"
+    selectors:
+      - '[data-qa="section:audience-reviews"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for rottentomatoes.com — prefer URL navigation over typing.
+      Search: /search?search={query}
+      Direct lookup: /m/{slug} (movies), /tv/{slug} (TV series), /tv/{slug}/s{NN} (season), /tv/{slug}/s{NN}/e{NN} (episode), /celebrity/{slug} (person)
+      Slugs use lowercase letters, digits, and underscores (e.g. /m/shawshank_redemption, /tv/breaking_bad).
+      Reviews subpages: /m/{slug}/reviews (critics), /m/{slug}/reviews?type=user (audience), /m/{slug}/reviews?type=top_critics
+      Curated browse pages (no query): /browse/movies_in_theaters/, /browse/movies_at_home/, /browse/tv_series_browse/, /top/bestofrt/ (annual best lists)

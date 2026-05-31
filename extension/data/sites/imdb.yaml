@@ -1,0 +1,28 @@
+# IMDb — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?imdb.com"
+
+rules:
+  reviews-hide:
+    # `[data-testid="UserReviews"]` is the SECTION on /title/{id}/ pages that
+    # wraps the "User reviews" heading, distribution, and featured user-written
+    # review cards. The aggregate IMDb rating (`hero-rating-bar__aggregate-rating`)
+    # lives near the title — outside this section — and stays visible.
+    pathnames:
+      - "/title/*"
+    selectors:
+      - '[data-testid="UserReviews"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for imdb.com — prefer URL navigation over typing.
+      Free-text search (all categories): /find/?q={query}&s={tt|nm|co|kw|ch} (titles, names, companies, keywords, characters)
+      Direct lookup: /title/{ttId} (movie/TV), /name/{nmId} (person), /company/{coId}
+      Title detail subpages: /title/{ttId}/reviews/ (user reviews — review list is sign-in-walled for anonymous), /title/{ttId}/fullcredits/, /title/{ttId}/plotsummary/, /title/{ttId}/parentalguide/, /title/{ttId}/awards/, /title/{ttId}/news/
+      Advanced title search: /search/title/?title={query}&title_type={feature|tv_series|tv_movie|short|documentary}&release_date={YYYY-MM-DD,YYYY-MM-DD}&user_rating={low,high}&genres={action,drama,...}&countries={us,gb,...}&languages={en,...}&sort={moviemeter,asc|user_rating,desc|release_date,desc|num_votes,desc|alpha,asc|runtime,asc}&count={50|100|250}&start={1-indexed offset}
+      Advanced name search: /search/name/?name={query}&birth_date={YYYY-MM-DD,YYYY-MM-DD}&death_date={YYYY-MM-DD,YYYY-MM-DD}&gender={male|female|non_binary}&sort={starmeter,asc|birth_date,desc}
+      Charts (no query): /chart/top/ (top 250), /chart/moviemeter/, /chart/tvmeter/, /chart/boxoffice/
