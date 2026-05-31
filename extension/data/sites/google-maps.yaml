@@ -1,0 +1,31 @@
+# Google Maps — search-url-helper only.
+#
+# `hostnames` is wide (`google.com`) but rules below pin pathnames to
+# `/maps/*` so the entries only apply inside Maps, not on Search/News/etc.
+#
+# reviews-hide is deliberately omitted: Maps' SPA paints the place-panel
+# (where the reviews live) only after a geo-aware client-side render and
+# returns a near-empty document to a headless probe, so the reviews
+# container selector could not be verified against a live render. The
+# class names in the place panel are also obfuscated and rotate per
+# session — any selector here needs verification from a real session.
+
+hostnames:
+  - "{*.}?google.com"
+
+rules:
+  search-url-helper:
+    hostnames:
+      - "{*.}?google.com"
+    pathnames:
+      - "/maps/*"
+    recipe: |
+      abs URL helper for google.com/maps — prefer URL navigation over typing.
+      Search: /maps/search/{queryEncoded} or /maps/search/?api=1&query={query}
+      Search near a point: /maps/search/{query}/@{lat},{lng},{zoom}z
+      Direct place by name: /maps/place/{nameEncoded} — Maps resolves to the canonical place panel
+      Direct place by Plus Code or CID: /maps/place/?q=place_id:{placeId}
+      Directions: /maps/dir/{origin}/{destination}/ ; with mode and waypoints: /maps/dir/?api=1&origin={a}&destination={b}&travelmode={driving|walking|bicycling|transit}&waypoints={c|d|e}
+      Reviews tab on a place: append /@{lat},{lng},{zoom}z/data=!4m... (data segment is opaque — use search/place URL instead)
+      Coordinate viewport: /maps/@{lat},{lng},{zoom}z
+      Spaces in queries should be URL-encoded as `+` or `%20`.

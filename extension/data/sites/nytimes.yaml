@@ -1,0 +1,30 @@
+# NYTimes — comments-hide, search-url-helper.
+#
+# Footer is `<footer role="contentinfo">` — caught by the generic
+# always-on selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?nytimes.com"
+
+rules:
+  comments-hide:
+    # The "Read N comments" actionbar button stays visible — it conveys
+    # only the aggregate count and lets the agent reason about whether to
+    # expand. When the user/agent clicks it, NYT mounts the comments
+    # dialog into `#comments-panel` (referenced by the button's
+    # `aria-controls`). Hiding that container keeps the reader-comment
+    # UGC out of the rendered DOM while leaving the count visible.
+    selectors:
+      - "#comments-panel"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for nytimes.com — prefer URL navigation over typing.
+      Search: /search?query={query}&sort={newest|best|oldest}&startDate={YYYYMMDD}&endDate={YYYYMMDD}
+      Section filter (sections=): comma-joined section slugs (us, world, business, technology, opinion, science, health, sports, arts, books, movies, theater, food, travel, magazine, fashion)
+      Document type (types=): article (default), interactive, video, recipe, audio, multimedia
+      Pagination: page={n} (1-indexed)
+      Direct article URL: /{YYYY}/{MM}/{DD}/{section}/{slug}.html
+      Section landing: /section/{sectionSlug} ; topic landing: /topic/{topicSlug}
+      Wirecutter (reviews vertical): https://www.nytimes.com/wirecutter/search/?s={query}
+      Cooking (separate subdomain): https://cooking.nytimes.com/search?q={query}

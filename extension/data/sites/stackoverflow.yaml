@@ -1,0 +1,29 @@
+# Stack Overflow — comments-hide, search-url-helper.
+#
+# Footer is `<footer class="site-footer" role="contentinfo">` — already
+# caught by the generic always-on selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?stackoverflow.com"
+
+rules:
+  comments-hide:
+    # `.js-comments-container` wraps every per-post comments thread on
+    # question and answer cards. The class is shared by both the question's
+    # and each answer's comment container. The aggregated "X more comment(s)"
+    # link (`#comments-link-{id}`) lives outside the container and is
+    # acceptable to leave visible — it carries no UGC text.
+    selectors:
+      - ".js-comments-container"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for stackoverflow.com — prefer URL navigation over typing.
+      Search: /search?q={query}&tab={Newest|Relevance|Votes|Active}
+      Search operators (in q=): [tag] (tag filter), is:question, is:answer, user:{id}, score:{n}, answers:{n}, isaccepted:{yes|no}, hasaccepted:{yes|no}, created:YYYY-MM-DD..YYYY-MM-DD, lastactive:YYYY-MM-DD, title:{phrase}, body:{phrase}, url:{phrase}
+      Question list: /questions?tab={Newest|Active|Bountied|Frequent|Votes|Hot|Week|Month}&pagesize={15|30|50}&page={n}
+      Tag-filtered list: /questions/tagged/{tag}?tab={tab}&pagesize={n}
+      Direct question: /questions/{questionId} or /questions/{questionId}/{slug}
+      Direct answer: /a/{answerId}
+      User profile: /users/{userId} or /users/{userId}/{slug}
+      Tag page: /tags/{tagName} ; tag wiki: /tags/{tagName}/info

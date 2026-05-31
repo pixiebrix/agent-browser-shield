@@ -1,0 +1,32 @@
+# Costco — reviews-hide, search-url-helper.
+#
+# Footer is `<footer>` (semantic) — caught by the generic always-on
+# selector. The footer-hide rule's `watchSubtrees` flag already accounts
+# for Costco's Next.js Suspense re-mount, so no site entry is needed.
+
+hostnames:
+  - "{*.}?costco.com"
+
+rules:
+  reviews-hide:
+    # On PDPs (canonical path `/p/...`) the "Member Reviews" section sits
+    # inside a Material UI Accordion identified by
+    # `[data-testid="Accordion_member_reviews"]`. The accordion is
+    # collapsed by default but the review content lives inside its DOM
+    # subtree, so hiding the accordion covers the heading + cards.
+    # The aggregate rating chip near the product title (separate node)
+    # stays visible.
+    selectors:
+      - '[data-testid="Accordion_member_reviews"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for costco.com — prefer URL navigation over typing.
+      Search: /s?keyword={query} (legacy /CatalogSearch?keyword= redirects to /s)
+      Department-scoped search: /s?keyword={query}&dept={departmentSlug}
+      Pagination: /s?keyword={query}&from={offset} (offset is multiples of 24)
+      Sort (sortBy=): item_relevance (default), item_price_low_to_high, item_price_high_to_low, member_rating, item_newest
+      Common filter facets (refine= ; ampersand-joined): brand_name-{Dell}, customer_rating-{4-up}, price_range-{500-1000}, item_location-{InWarehouse}
+      Direct product (canonical): /p/-/{product-slug}/{itemId} (older `.product.{itemId}.html` URLs 301-redirect)
+      Category page: /{slug}.html (e.g. /laptops.html)
+      Warehouse locator: /warehouse-locations

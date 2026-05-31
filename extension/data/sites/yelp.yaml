@@ -1,0 +1,37 @@
+# Yelp — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+#
+# Yelp business pages can be served behind a DataDome anti-bot challenge
+# that briefly stalls navigation; the selectors below apply to the real
+# page once it renders, not to the challenge interstitial.
+
+hostnames:
+  - "{*.}?yelp.com"
+
+rules:
+  reviews-hide:
+    # `#reviews` is the "Recommended Reviews" section on /biz/ pages — it
+    # contains the heading, review filter/sort controls, and the review
+    # cards (the entire UGC review feed). The aggregate rating and review
+    # count near the business name (in the page header) live outside
+    # `#reviews` and stay visible.
+    hostnames:
+      - "{*.}?yelp.com"
+    pathnames:
+      - "/biz/*"
+    selectors:
+      - "#reviews"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for yelp.com — prefer URL navigation over typing.
+      Search: /search?find_desc={query}&find_loc={cityOrZip}&start={offset}
+      Sort (sortby=): recommended (default), rating_asc, rating_desc, review_count_desc, date_desc, distance_asc
+      Pagination: start={offset} (0-indexed by 10; page 2 = start=10)
+      Attribute filters (attrs=): comma-joined keys — RestaurantsTakeOut, RestaurantsDelivery, OpenNow, RestaurantsReservations, GoodForKids, OutdoorSeating, WheelchairAccessible, BusinessAcceptsCreditCards, BikeParking, DogsAllowed
+      Price filter: attrs=RestaurantsPriceRange2.{1|2|3|4} ($/$$/$$$/$$$$)
+      Hours filter: open_now=1 ; specific time: open_time={HHMM}
+      Direct business: /biz/{slug} (slug includes city, e.g. /biz/the-french-laundry-yountville)
+      User profile: /user_details?userid={userId}

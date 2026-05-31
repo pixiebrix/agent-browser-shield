@@ -1,0 +1,32 @@
+# Booking.com — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer role="contentinfo"> caught by the generic
+# always-on selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?booking.com"
+
+rules:
+  reviews-hide:
+    # `[data-testid="PropertyReviewsRegionBlock"]` wraps the "Guest reviews"
+    # region on /hotel/ pages — heading, AI-generated review summary, and
+    # featured review cards. The aggregate score chip (`#reviewFloater`,
+    # "Scored 8.5 / Rated very good / N reviews") sits outside the region
+    # and stays visible, as does the small "Guest reviews (N)" tab anchor.
+    hostnames:
+      - "{*.}?booking.com"
+    pathnames:
+      - "/hotel/*"
+    selectors:
+      - '[data-testid="PropertyReviewsRegionBlock"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for booking.com — prefer URL navigation over typing.
+      Search: /searchresults.html?ss={location}&checkin={YYYY-MM-DD}&checkout={YYYY-MM-DD}&group_adults={n}&no_rooms={n}&group_children={n}
+      Guest mix: group_adults=2&no_rooms=1&group_children=0 (defaults); per-child age: age={n}&age={n}
+      Sort (order=): popularity (default), price, bayesian_review_score, review_score_and_price, distance_from_search, class (star rating), class_asc
+      Pagination: offset={n} (multiples of 25)
+      Currency / language: selected_currency=USD ; lang=en-us
+      Filters (nflt= ; semicolon-joined): pri=1,2,3 (price band), class=4,5 (stars), ht_id=204 (hotels), review_score=80, hotelfacility=2 (parking), popular_activities=24 (spa)
+      Direct property: /hotel/{cc}/{slug}.html (cc = 2-letter country code; e.g. /hotel/us/the-plaza.html)
