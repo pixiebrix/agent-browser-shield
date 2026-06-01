@@ -2,7 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { isTopFrame } from "./lib/frame";
-import { injectOptionsBadge } from "./lib/options-badge";
+import { startOptionsBadge } from "./lib/options-badge";
 import { startPlaceholderCountReporter } from "./lib/placeholder-count";
 import { start } from "./lib/rule-engine";
 
@@ -21,5 +21,5 @@ start().catch((error: unknown) => {
 startPlaceholderCountReporter();
 
 if (isTopFrame()) {
-  injectOptionsBadge();
+  startOptionsBadge();
 }

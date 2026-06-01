@@ -12,13 +12,9 @@ import { createChromeStorageValue } from "./chrome-storage-value";
 export const HAS_BUILT_IN_OPENAI_KEY =
   process.env.HAS_BUILT_IN_OPENAI_KEY === "true";
 
-function normalize(raw: unknown): string {
-  return typeof raw === "string" ? raw : "";
-}
-
 export const apiKeyStorage = createChromeStorageValue<string>({
   key: "agent-browser-shield.openai-api-key",
-  normalize,
+  defaultValue: "",
 });
 
 export const getUserApiKey = apiKeyStorage.get;

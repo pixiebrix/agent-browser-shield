@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiKeyStorage, HAS_BUILT_IN_OPENAI_KEY } from "../lib/api-key-storage";
 import { availabilitySource } from "../lib/availability";
 import { HelpLinks } from "../lib/HelpLinks";
+import { optionsButtonStorage } from "../lib/options-button-toggle";
 import type { PlaceholderDisplayMode } from "../lib/placeholder-display";
 import { placeholderDisplayStorage } from "../lib/placeholder-display";
 import { RuleList } from "../lib/RuleList";
@@ -19,6 +20,7 @@ export function Options() {
   const availability = useChromeStorageValue(availabilitySource);
   const displayMode = useChromeStorageValue(placeholderDisplayStorage);
   const storedApiKey = useChromeStorageValue(apiKeyStorage);
+  const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
 
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,8 @@ export function Options() {
     !states ||
     !availability ||
     displayMode === null ||
-    apiKeyDraft === null
+    apiKeyDraft === null ||
+    optionsButtonEnabled === null
   ) {
     return <div className="loading">Loading…</div>;
   }
@@ -82,6 +85,7 @@ export function Options() {
         <a href="#apply">Apply configuration</a>
         <a href="#export">Export configuration</a>
         <a href="#display">Placeholder display</a>
+        <a href="#options-button">On-page options button</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
         <a href="#disclaimer">Disclaimer</a>
@@ -155,6 +159,34 @@ export function Options() {
             description="Shield icon plus a visible label describing what was hidden. Larger, but visually self-explanatory."
           />
         </fieldset>
+      </Section>
+
+      <Section id="options-button" title="On-page options button">
+        <p className="hint">
+          Floating shield button in the bottom-right of every page. It only
+          exists so browser-use agents driving the page via the accessibility
+          tree — which can't click browser chrome — can open this options page.
+          Turn it off to hide the button on all pages.
+        </p>
+        <label className="switch-row">
+          <span className="switch-row__text">
+            <strong>Show on-page button</strong>
+            <span className="switch-row__state">
+              {optionsButtonEnabled ? "On" : "Off"}
+            </span>
+          </span>
+          <span className="switch" role="presentation">
+            <input
+              type="checkbox"
+              checked={optionsButtonEnabled}
+              onChange={(event) => {
+                void optionsButtonStorage.set(event.target.checked);
+              }}
+              aria-label="Show on-page options button"
+            />
+            <span className="switch__track" />
+          </span>
+        </label>
       </Section>
 
       <Section id="api-key" title="OpenAI API key">

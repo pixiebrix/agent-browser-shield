@@ -10,16 +10,10 @@ export type PlaceholderDisplayMode = "icon" | "button";
 
 export const PLACEHOLDER_DISPLAY_MODE_DEFAULT: PlaceholderDisplayMode = "icon";
 
-function normalize(raw: unknown): PlaceholderDisplayMode {
-  return raw === "button" || raw === "icon"
-    ? raw
-    : PLACEHOLDER_DISPLAY_MODE_DEFAULT;
-}
-
 export const placeholderDisplayStorage =
   createChromeStorageValue<PlaceholderDisplayMode>({
     key: "agent-browser-shield.placeholder-display-mode",
-    normalize,
+    defaultValue: PLACEHOLDER_DISPLAY_MODE_DEFAULT,
   });
 
 export const getPlaceholderDisplayMode = placeholderDisplayStorage.get;

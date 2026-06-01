@@ -13,13 +13,9 @@ import { createChromeStorageValue } from "./chrome-storage-value";
 
 export const ENFORCEMENT_ENABLED_DEFAULT = true;
 
-function normalize(raw: unknown): boolean {
-  return typeof raw === "boolean" ? raw : ENFORCEMENT_ENABLED_DEFAULT;
-}
-
 export const enforcementStorage = createChromeStorageValue<boolean>({
   key: "agent-browser-shield.enforcement-enabled",
-  normalize,
+  defaultValue: ENFORCEMENT_ENABLED_DEFAULT,
 });
 
 export const getEnforcementEnabled = enforcementStorage.get;
