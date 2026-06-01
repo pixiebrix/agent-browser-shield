@@ -55,7 +55,7 @@ jobs:
             echo "::error::Generated files are out of date. Run \`bun run build-site-data && bun run build-injection-patterns && bun run build-rule-defaults\` locally and commit the result."
             exit 1
           fi
-      - name: Preflight (lint + typecheck + knip + test)
+      - name: Preflight (lint + typecheck + knip + test with coverage)
         run: bun run preflight
       - name: Build
         run: bun run build

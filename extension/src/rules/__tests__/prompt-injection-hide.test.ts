@@ -16,7 +16,7 @@ describe("prompt-injection-hide", () => {
 
     const paragraphs = document.querySelectorAll("p");
     expect(paragraphs).toHaveLength(1);
-    expect(paragraphs[0].textContent).toBe("Welcome to our product page.");
+    expect(paragraphs[0]?.textContent).toBe("Welcome to our product page.");
     expect(
       document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent,
     ).toContain("possible prompt injection hidden");

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["chrome", "bun", "jest", "node"]
+  },
+  "include": [
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
+    "src/__test-mocks__/**/*.ts",
+    "scripts/**/__tests__/**/*.ts"
+  ],
+  "exclude": ["dist", "node_modules", "src/**/*.generated.*"]
+}

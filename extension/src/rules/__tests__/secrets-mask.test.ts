@@ -135,7 +135,7 @@ describe("secrets-mask", () => {
 
     const placeholders = document.querySelectorAll(`.${PLACEHOLDER_CLASS}`);
     expect(placeholders).toHaveLength(1);
-    expect(placeholders[0].textContent).toBe("[github token hidden]");
+    expect(placeholders[0]?.textContent).toBe("[github token hidden]");
   });
 
   it("masks multiple secrets in the same text node", () => {
