@@ -2,10 +2,9 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { RULE_IDS, RULES, type RuleId } from "../rules";
+import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type RuleStates = Record<RuleId, boolean>;
-
-const STORAGE_KEY = "agent-browser-shield.rules";
 
 // Defaults derived once at module load — each rule carries its own
 // `defaultEnabled` flag. Availability is resolved separately via
@@ -31,44 +30,32 @@ function normalize(raw: unknown): RuleStates {
   return result;
 }
 
-export async function getRuleStates(): Promise<RuleStates> {
-  const stored = await chrome.storage.local.get(STORAGE_KEY);
-  return normalize(stored[STORAGE_KEY]);
-}
-
-export async function setRuleEnabled(
-  id: RuleId,
-  enabled: boolean,
-): Promise<void> {
-  const current = await getRuleStates();
-  current[id] = enabled;
-  await chrome.storage.local.set({ [STORAGE_KEY]: current });
-}
-
-export async function setAllRuleStates(
-  states: Partial<RuleStates>,
-): Promise<void> {
-  const next = normalize(states);
-  await chrome.storage.local.set({ [STORAGE_KEY]: next });
-}
+export const ruleStatesStorage = createChromeStorageValue<RuleStates>({
+  key: "agent-browser-shield.rules",
+  normalize,
+});
 
 export type RuleStatesListener = (
   next: RuleStates,
   previous: RuleStates,
 ) => void;
 
-export function subscribe(listener: RuleStatesListener): () => void {
-  const handler = (
-    changes: Record<string, chrome.storage.StorageChange>,
-    areaName: string,
-  ) => {
-    if (areaName !== "local") return;
-    const change = changes[STORAGE_KEY];
-    if (!change) return;
-    listener(normalize(change.newValue), normalize(change.oldValue));
-  };
-  chrome.storage.onChanged.addListener(handler);
-  return () => chrome.storage.onChanged.removeListener(handler);
+export const getRuleStates = ruleStatesStorage.get;
+export const subscribe = ruleStatesStorage.subscribe;
+
+export async function setRuleEnabled(
+  id: RuleId,
+  enabled: boolean,
+): Promise<void> {
+  const current = await ruleStatesStorage.get();
+  current[id] = enabled;
+  await ruleStatesStorage.set(current);
+}
+
+export async function setAllRuleStates(
+  states: Partial<RuleStates>,
+): Promise<void> {
+  await ruleStatesStorage.set(normalize(states));
 }
 
 export { RULE_IDS, type RuleId } from "../rules";
