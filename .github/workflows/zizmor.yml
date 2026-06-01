@@ -29,8 +29,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@v7
-      # Run at default persona — auditor-only findings (unpinned-uses, etc.)
-      # are intentionally accepted because Dependabot tracks the github-actions
-      # ecosystem and keeps tags moving.
+      # Default persona + the project's .github/zizmor.yml (ref-pin policy)
+      # — we track action versions via Dependabot's github-actions ecosystem
+      # rather than SHA pinning.
       - name: Run zizmor
-        run: uvx zizmor --format plain .github/workflows/
+        run: uvx zizmor@1.25.2 --format plain .github/workflows/
