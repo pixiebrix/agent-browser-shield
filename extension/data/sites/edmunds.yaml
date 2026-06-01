@@ -1,0 +1,51 @@
+# Edmunds — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?edmunds.com"
+
+rules:
+  reviews-hide:
+    # `.reviews-list` on `/{make}/{model}/{year}/consumer-reviews/`
+    # pages wraps the owner-written review entries (each entry is a
+    # `.review-item` inside the inner `.reviews-list`). The page's
+    # aggregate star-rating histogram and the rating-breakdown
+    # summary live in `.consumer-reviews-intro`, which is a sibling
+    # of `.reviews-list` and stays visible — as does the editorial
+    # "Edmunds review" rating shown on the model research page. The
+    # rule is pathname-narrowed to consumer-reviews pages so the
+    # `.reviews-list` class (which is class-only and could appear in
+    # other contexts) is scoped tightly.
+    hostnames:
+      - "{*.}?edmunds.com"
+    pathnames:
+      - "/*/*/*/consumer-reviews*"
+    selectors:
+      - ".reviews-list"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for edmunds.com — prefer URL navigation over typing.
+      Inventory search (used/new/cpo): /inventory/srp.html?make={make-slug}&model={model-slug}&zip={5-digit}&radius={miles}
+        Listing condition: &inventoryType={used|new|used-cpo} (omit for both)
+        Trim: &trim={trim-slug}
+        Year: &year={yyyy} ; range: &year[]={yyyy}&year[]={yyyy} (multi)
+        Price: &priceRange[]={min}&priceRange[]={max} ; or &maxPrice={USD}
+        Mileage: &mileage={maxMiles}
+        Body style: &bodyType={sedan|suv|coupe|hatchback|pickup|wagon|convertible|van|minivan} (repeat for multi)
+        Fuel: &fuelType={gas|hybrid|electric|diesel|flex-fuel|plug-in-hybrid}
+        Transmission: &transmission={automatic|manual|cvt}
+        Drivetrain: &drivetrain={fwd|rwd|awd|4wd}
+        Color: &color={black|white|silver|red|blue|gray|...}
+        Features: &features[]={apple-carplay|android-auto|sunroof|backup-camera|leather-seats|heated-seats|navigation|third-row-seating}
+        Seller: &sellerType={dealer|fsbo}
+      Sort (sort=): bestmatch (default), priceasc | pricedesc, mileageasc, yeardesc, distance, listdatedesc (newest first).
+      Pagination: &pagenumber={n} (1-indexed) ; &pagesize={20|50|100}.
+      Direct VDP (vehicle detail): /inventory/vin.html?vin={VIN}&radius=200 (lookup by VIN) ; from SRP cards: /{make}/{model}/{year}/vin/{17-char-VIN}/ (canonical permalink).
+      Research / specs / pricing: /{make}/{model}/{year}/ (e.g., /honda/civic/2024/). Drop year for all-years overview.
+      Editorial Edmunds review: /{make}/{model}/{year}/review/ — written by Edmunds editors (not UGC).
+      Consumer (owner) reviews: /{make}/{model}/{year}/consumer-reviews/ — UGC; the page also exposes &style={style-slug} and &aspect={performance|comfort|interior|reliability|safety|technology|value} filters.
+      True Market Value / appraisal: /appraisal/ ; new-car deals: /best-deals/.
+      Dealership pages: /dealerships/{ST}/{city-slug}/{dealer-slug}/ (informational).

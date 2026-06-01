@@ -1,0 +1,44 @@
+# Hotels.com — reviews-hide, search-url-helper.
+#
+# Hotels.com runs on the same Expedia Group property-page markup as
+# extension/data/sites/expedia.yaml: `#Reviews` wraps the "Guest
+# reviews" carousel of UGC review cards, while the aggregate score
+# panel (`[data-stid="content-hotel-reviewsummary"]`) and the small
+# score chip live OUTSIDE `#Reviews` and stay visible.
+#
+# Footer is a semantic <footer> (lazy-mounted at the bottom of the
+# property page) caught by the generic always-on selector. No
+# footer-hide entry needed.
+
+hostnames:
+  - "{*.}?hotels.com"
+
+rules:
+  reviews-hide:
+    # `#Reviews [data-stid="carousel-wrapper"]` targets the carousel
+    # of individual UGC review cards inside the Reviews region on
+    # property pages (`/ho{propertyId}/{slug}/`). The aggregate
+    # summary chip (`content-hotel-reviewsummary`) is a sibling of
+    # `#Reviews` and stays visible, as does the score chip next to
+    # the property title. `[data-stid="carousel-wrapper"]` alone
+    # would over-hide unrelated carousels (rooms, photos, amenities);
+    # the `#Reviews` scope restricts the rule to the reviews region.
+    hostnames:
+      - "{*.}?hotels.com"
+    pathnames:
+      - "/ho*"
+    selectors:
+      - '#Reviews [data-stid="carousel-wrapper"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for hotels.com — prefer URL navigation over typing.
+      Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&rooms={n}
+      Hotels.com normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse for follow-up queries to skip ambiguity.
+      Children: append &children={ages-comma-list} (e.g., &children=5,8 for two kids aged 5 and 8). Per-room legacy form `&rm1=a2:c5,c8` is also accepted.
+      Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
+      Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &reviewScore={7,8,9} (minimum guest score).
+      Pagination: &p={pageIndex} (0-indexed).
+      Direct property: /ho{propertyId}/{slug}/ (e.g., /ho170687/la-maison-favart-paris-france/). The Hotels.com propertyId is distinct from Expedia's; do not reuse Expedia ids here. `chkin`/`chkout` query params preserve pricing context (also accepted as `startDate`/`endDate`).
+      Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
+      Rewards (Hotels.com One Key): append &useRewards=true to apply rewards pricing.

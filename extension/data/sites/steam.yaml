@@ -1,0 +1,46 @@
+# Steam — search-url-helper only.
+#
+# reviews-hide is deliberately omitted: Steam store app pages
+# (`/app/{appid}/{slug}/`) don't render individual UGC user-review
+# text inline. The right-rail "User Reviews" block (`#userReviews`)
+# only shows aggregate sentiment chips ("Recent Reviews: Very
+# Positive (1,566)") and the breakdown summary — per the
+# extension's general rule, aggregate sentiment near the title
+# stays visible. The press-quotes block (`#game_area_reviews`)
+# carries editorial reviewer quotes (IGN, Eurogamer, etc.), which
+# are curated/editorial, not UGC. Individual user reviews live on
+# `steamcommunity.com/app/{appid}/reviews/` — a separate host that
+# would be a follow-up entry if it became a coverage gap.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "store.steampowered.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for store.steampowered.com — prefer URL navigation over typing.
+      Keyword search: /search/?term={query} (URL-encode spaces; Steam preserves the raw term in the URL).
+      Filters (query string, append; multi-value tag filters use & or comma — both accepted):
+        Price (USD cents): &maxprice={cents} ; presets accepted: &maxprice=free|5|10|15|20|25|30|35|40|45|50 (the integer values are the USD price tier, not cents).
+        Free to play: &maxprice=free or &category2=11
+        On sale / specials: &specials=1
+        Show DLC alongside games: &ignore_preferences=1 (otherwise excluded by default).
+        OS: &os={win|mac|linux} (repeatable). Steam Deck Verified: &deck_compatibility=3 ; Playable: &deck_compatibility=2.
+        Controller support: &category2=28 (Full Controller Support).
+        VR: &vrsupport=101 (HTC Vive) ; 102 (Oculus Rift) ; 104 (Valve Index) ; 401 (Windows MR).
+        Multiplayer / co-op: &category1=998 ; Online PvP: &category2=49 ; Co-op: &category2=9 ; LAN Co-op: &category2=48.
+        Language interface (UI): &supportedlang={english|french|spanish|german|japanese|schinese|tchinese|koreana|russian|...} (Steam's language code).
+        Tags: &tags={tagId1},{tagId2},… (tag ids are Steam's numeric ids; discover via the storesearch API or by reading a category page URL).
+        Genre: &category1={26 = Adventure | 25 = Action | 23 = Indie | 28 = Simulation | 9 = RPG | 18 = Sports | 2 = Strategy} (rough mapping; Steam blurs genre and "Type" under category1).
+        Reviews / rating: &review_score={6|7|8|9} (minimum positive %: 6=70%, 7=80%, 8=85%, 9=90%) and &review_type={positive|mixed|negative|all}.
+        Release date: &category1={998} (Coming Soon) ; &untagged_yes=1 (hide tags) ; &hidef2p=1 (hide F2P).
+      Sort (sort_by=): _ASC (default, "relevance") ; Released_DESC (newest first) ; Price_ASC | Price_DESC ; Reviews_DESC (best reviewed) ; Name_ASC.
+      Pagination: &start={offset}&count={pageSize} (offset is 0-indexed; pageSize default 25, caps near 50).
+      Direct PDP (app page): /app/{appId}/{Url_Slug}/ — e.g., /app/1145360/Hades/. The `Url_Slug` portion is informational; /app/{appId}/ alone redirects to the canonical slug. Append `?snr=` to preserve referral context (Steam adds it on outbound links).
+      Bundle: /bundle/{bundleId}/{slug}/ ; DLC list: /app/{appId}/{slug}/#app_reviews_hash (hash anchors are JS-only; treat them as scroll targets, not deep links).
+      Top sellers / new releases / specials: /search/?category1=998&filter={topsellers|newreleases|specials|comingsoon}.
+      Wishlist (requires sign-in): /wishlist/profiles/{steamId64}/
+      Curator pages (curated editorial recommendations, not UGC reviews): /curator/{curatorId}-{slug}/

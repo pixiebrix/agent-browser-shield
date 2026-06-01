@@ -1,0 +1,44 @@
+# Vrbo — reviews-hide, search-url-helper.
+#
+# Vrbo runs on the same Expedia Group property-page markup as
+# extension/data/sites/hotels.yaml and extension/data/sites/expedia.yaml:
+# `#Reviews` wraps the UGC review carousel; the aggregate score chip
+# (`[data-stid="content-hotel-reviewsummary"]`) lives outside and
+# stays visible.
+#
+# Footer is a semantic <footer> (lazy-mounted) caught by the generic
+# always-on selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?vrbo.com"
+
+rules:
+  reviews-hide:
+    # `#Reviews [data-stid="carousel-wrapper"]` hides the UGC review
+    # cards on property detail pages. The aggregate guest-score
+    # summary outside `#Reviews` is preserved. Three URL shapes share
+    # this markup: `/{propertyId}` (legacy numeric), `/{propertyId}ha`
+    # (legacy with `ha` suffix), and `/pdp/lo/{listingId}` (newer
+    # PDP). All three are covered by the host-level rule with no
+    # pathname filter because the carousel selector is already
+    # scoped to `#Reviews`.
+    hostnames:
+      - "{*.}?vrbo.com"
+    selectors:
+      - '#Reviews [data-stid="carousel-wrapper"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for vrbo.com — prefer URL navigation over typing.
+      Property search: /search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}
+      Vrbo normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse to skip ambiguity. Resolved URL also gains &destType={MARKET|CITY|NEIGHBORHOOD} and &latLong={lat}%2C{lng}.
+      Children: append &children={ages-comma-list} (e.g., &children=5,8). Pets: &petIncluded=true.
+      Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, REVIEW, DISTANCE.
+      Filters: &price={min}-{max} (per night, USD) ; &bedrooms={n} ; &bathrooms={n} ; &sleeps={n} ; &amenities={POOL,HOT_TUB,KITCHEN,WIFI,PARKING_FREE,AIR_CONDITIONING,WASHING_MACHINE,PET_FRIENDLY} ; &propertyTypes={HOUSE,APARTMENT,CONDO,VILLA,CABIN,COTTAGE,BUNGALOW,CHALET}.
+      Pagination: &p={pageIndex} (0-indexed).
+      Direct property (three equivalent shapes seen in the wild):
+        /{propertyId} (e.g., /4975035) — legacy numeric id
+        /{propertyId}ha (e.g., /3720511ha) — legacy with `ha` suffix
+        /pdp/lo/{listingId} (e.g., /pdp/lo/102228252) — newer PDP path
+      `chkin`/`chkout` (or `startDate`/`endDate`) on the URL preserve pricing context. `expediaPropertyId` may appear on resolved links — it is Vrbo's internal mapping back to the Expedia Group property id and is informational.
+      Rewards (Vrbo One Key): append &useRewards=true to apply rewards pricing.

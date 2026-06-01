@@ -1,0 +1,54 @@
+# Metacritic — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?metacritic.com"
+
+rules:
+  reviews-hide:
+    # On `/user-reviews/` subpages (games, movies, TV, music),
+    # `.c-reviews-container` wraps the list of UGC user-written
+    # reviews. The aggregate `.product-reviews-score` card —
+    # showing the overall user score (e.g., "8.9 User score
+    # Generally Favorable") and the positive/mixed/negative
+    # breakdown — is a sibling that stays visible, as do the
+    # filter controls in `.product-reviews-list__controls`.
+    #
+    # The main `/game/{slug}/`, `/movie/{slug}/`, `/tv/{slug}/`
+    # detail pages don't render individual UGC user reviews inline
+    # (only the `product-hero__user-reviews` aggregate chip), so the
+    # rule is pathname-narrowed to the `*-reviews` subpages. Critic
+    # reviews (`/critic-reviews/`) are editorial, not UGC, and are
+    # not targeted.
+    hostnames:
+      - "{*.}?metacritic.com"
+    pathnames:
+      - "/game/*/user-reviews*"
+      - "/movie/*/user-reviews*"
+      - "/tv/*/user-reviews*"
+      - "/music/*/user-reviews*"
+    selectors:
+      - ".c-reviews-container"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for metacritic.com — prefer URL navigation over typing.
+      Free-text search: /search/{query}/ (trailing slash matters; URL-encode spaces as %20).
+      Vertical search (filter by content type): /search/{query}/?category={game|movie|tv|music} (also accepts &page={n}).
+      Browse listings (preferred for ranked/filterable discovery):
+        Games: /browse/game/{platform|all}/{genre|all}/{releaseDateFilter}/{sortKey}/?platform={platform}
+          platforms: all, ps5, ps4, xbox-series-x, xbox-one, switch, nintendo-switch-2, pc, ios, android, stadia
+          releaseDateFilter: all-time, current-year, last-year, last-90-days, last-30-days, last-7-days, coming-soon
+          sortKey: new (most recent first), score (highest critic score), userscore, name-asc, name-desc, release-date
+          E.g., /browse/game/ps5/all/all-time/score/?platform=ps5
+        Movies: /browse/movie/{genre|all}/{year|all}/{sortKey}/
+        TV: /browse/tv/{genre|all}/{year|all}/{sortKey}/
+        Music: /browse/album/{genre|all}/{year|all}/{sortKey}/
+      Coming-soon games: /browse/game/?releaseType=coming-soon
+      Direct title pages: /{game|movie|tv|music}/{slug}/ (e.g., /game/the-legend-of-zelda-breath-of-the-wild/).
+      Critic reviews subpage: /{game|movie|tv|music}/{slug}/critic-reviews/ — editorial, not UGC.
+      User reviews subpage: /{game|movie|tv|music}/{slug}/user-reviews/ — UGC.
+      Platform-scoped game subpage: /game/{slug}/?platform={platform} (separates scores per platform on multi-platform games).
+      Pagination on browse/user-reviews: append ?page={n} (1-indexed). On user-reviews pages, &filterBy={positive|mixed|negative} narrows the sentiment.

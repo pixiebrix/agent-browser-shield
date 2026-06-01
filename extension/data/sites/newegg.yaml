@@ -1,0 +1,49 @@
+# Newegg — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?newegg.com"
+
+rules:
+  reviews-hide:
+    # On product detail pages (`/{slug}/p/{itemNumber}`), customer
+    # reviews mount inside a tab pane uniquely marked by the
+    # `updated_style` class modifier — `.tab-pane.updated_style` is
+    # the only tab pane on the page that carries this modifier (it
+    # wraps the AI review summary, the rating histogram, and the
+    # individual UGC review cards in `.comments-saying`). The
+    # aggregate review chip near the product title (`.product-rating`,
+    # showing the star count and total review count) is rendered
+    # outside the tab pane and stays visible. The selector matches
+    # whether the tab has been activated yet or not (the pane mounts
+    # async on first click).
+    hostnames:
+      - "{*.}?newegg.com"
+    pathnames:
+      - "/*/p/*"
+    selectors:
+      - ".tab-pane.updated_style"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for newegg.com — prefer URL navigation over typing.
+      Keyword search: /p/pl?d={query} (URL-encode spaces; Newegg's search lands on /p/pl which is the product-listing handler).
+      Combined keyword + category: /p/pl?d={query}&N={categoryId}
+      Direct category browse: /p/pl?N={categoryId} (categoryId is Newegg's numeric `N=` token; multiple categories can be combined as space-separated values, e.g. `N=100006519%204016`).
+      Filters: most filters are appended as space-separated values to the `N=` param (each facet has its own numeric id Newegg's search rewrites into the same param). For typed query refinement use:
+        Price: &LeftPriceRange={min}+{max} (note: `+` between min/max, not a hyphen) ; or use the per-category &PriceRange={min}+{max}.
+        Order (sort): &Order={3|BESTMATCH|FEATURED|REVIEWS|PRICE|PRICEDESC|RATING|LAUNCHDATE} (3 = best match default; PRICE is ascending; PRICEDESC is descending; REVIEWS sorts by review count; RATING sorts by avg rating).
+        Page size: &PageSize={36|60|96} (default 36).
+        In stock only: &Tid=12108 (Newegg uses Tid for the in-stock toggle).
+        Free shipping: &Tid=12107
+        Combo/bundle deals: &Tid=12109
+      Pagination: &page={n} (1-indexed).
+      Direct PDP (product detail): two equivalent URL shapes exist for the same item:
+        /{kebab-slug}/p/{itemNumber} — e.g., /samsung-1tb-990-pro-w-heatsink-normal-package-nvme-2-0/p/N82E16820147862 (preferred canonical form)
+        /{kebab-slug}/p/{marketplaceItemNumber} — e.g., /SAMSUNG-1TB-990-PRO-w-Heatsink/p/9SIBFJRJYT9873 (Newegg Marketplace seller listings, redirect to the canonical N82E… id where one exists)
+      itemNumber starts with `N82E…` (Newegg-fulfilled) or `9SI…` (Marketplace). Preserve the slug for SEO; the path can be hand-built from any itemNumber but Newegg will normalize.
+      Reviews-only deep link: append `#scrollFullInfo` to the PDP URL to scroll the product-detail tab into view; the reviews tab requires a JS click (no stable URL fragment for the reviews pane alone).
+      Combo deals: /Combo.aspx (deprecated public path, may redirect) ; current home is /tnt/today (Today's Best Deals).
+      Newegg Business (B2B): /BusinessSection (separate experience, similar URL contract).
