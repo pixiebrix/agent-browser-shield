@@ -37,7 +37,7 @@ extension to see the before/after difference.
 ## Repository layout
 
 | Path         | What's there                                                       |
-| ------------ |--------------------------------------------------------------------|
+| ------------ | ------------------------------------------------------------------ |
 | `extension/` | Chromium MV3 extension (Bun + TypeScript)                          |
 | `demo-site/` | Vite/React mock e-commerce site that exercises every rule          |
 | `docs/`      | Astro Starlight docs site                                          |
