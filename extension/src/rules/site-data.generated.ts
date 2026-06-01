@@ -12,6 +12,15 @@ export interface SiteRecipe {
 
 export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
   {
+    // from data/sites/airbnb.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?airbnb.com", pathname: "/rooms/*" }),
+    ],
+    selectors: [
+      "[data-section-id=\"REVIEWS_DEFAULT\"]",
+    ],
+  },
+  {
     // from data/sites/allrecipes.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?allrecipes.com" }),
@@ -40,6 +49,16 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/cars-com.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?cars.com", pathname: "/research/*/consumer-reviews/*" }),
+      new URLPattern({ hostname: "{*.}?cars.com", pathname: "/dealers/*/reviews/*" }),
+    ],
+    selectors: [
+      "#vehicle-reviews-section",
+    ],
+  },
+  {
     // from data/sites/costco.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?costco.com" }),
@@ -56,6 +75,26 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     selectors: [
       "#UserReviews",
       ".x-feedback-detail-list",
+    ],
+  },
+  {
+    // from data/sites/expedia.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?expedia.com", pathname: "/*Hotel-Information*" }),
+    ],
+    selectors: [
+      "#Reviews [data-stid=\"carousel-wrapper\"]",
+    ],
+  },
+  {
+    // from data/sites/glassdoor.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?glassdoor.com", pathname: "/Reviews/*" }),
+      new URLPattern({ hostname: "{*.}?glassdoor.com", pathname: "/Overview/*" }),
+    ],
+    selectors: [
+      "[data-test=\"review-detail\"]",
+      "[data-test=\"review-highlight-text\"]",
     ],
   },
   {
@@ -94,6 +133,16 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       "[data-testid=\"reviews-accordion\"]",
+    ],
+  },
+  {
+    // from data/sites/opentable.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?opentable.com", pathname: "/r/*" }),
+    ],
+    selectors: [
+      "#reviews",
+      "[data-test=\"reviews-list\"]",
     ],
   },
   {
@@ -203,6 +252,16 @@ export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/quora.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?quora.com" }),
+    ],
+    selectors: [
+      "[class*=\"dom_annotate_question_answer_item_\"]",
+      "[class*=\"dom_annotate_ad_promoted_answer\"]",
+    ],
+  },
+  {
     // from data/sites/reddit.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?reddit.com" }),
@@ -219,6 +278,15 @@ export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       ".js-comments-container",
+    ],
+  },
+  {
+    // from data/sites/theguardian.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?theguardian.com" }),
+    ],
+    selectors: [
+      "#comments",
     ],
   },
   {
@@ -249,6 +317,25 @@ export const FOOTER_HIDE_SITE_RULES: readonly SiteRule[] = [
 ];
 
 export const SEARCH_URL_HELPER_RECIPES: readonly SiteRecipe[] = [
+  {
+    // from data/sites/airbnb.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?airbnb.com" }),
+    ],
+    recipe: `abs URL helper for airbnb.com — prefer URL navigation over typing.
+Stay search: /s/{Location-slug}/homes?checkin={YYYY-MM-DD}&checkout={YYYY-MM-DD}&adults={n}&children={n}&infants={n}&pets={n}
+Location slug uses double-dash between location parts (e.g., /s/Paris--France/homes, /s/New-York--NY--United-States/homes, /s/Antibes--Provence-Alpes-Cote-d'Azur--France/homes). URL-encode spaces as \`-\`, commas as \`--\`.
+Map-bounded search: &ne_lat=&ne_lng=&sw_lat=&sw_lng=&zoom={n}&search_by_map=true
+Filters (query string): &price_min={USD}&price_max={USD}&min_bedrooms={n}&min_bathrooms={n}&min_beds={n}&room_types[]={Entire home/apt|Private room|Hotel room|Shared room}
+Amenities (amenities[]= can repeat): 4 (wifi), 8 (kitchen), 5 (ac), 33 (washer), 34 (dryer), 25 (heating), 16 (pool), 7 (free parking on premises), 30 (smoking allowed), 12 (pets allowed). Probe live to confirm — Airbnb periodically reshuffles ids.
+Categories (tab=): a category id (e.g., 5 = Beach, 8 = Amazing pools); also takes &category_tag={Tag:8} form.
+Sort (s_tag=): default sort is relevance; explicit price ascending via &order_by=price_ascending (subject to drift).
+Pagination: &items_offset={n} (multiples of 18, the default page size).
+Direct listing: /rooms/{numericListingId} — single most reliable shape; query params (checkin/checkout/guests) preserved for pricing.
+Experiences: /experiences/{id} ; experiences search: /s/experiences?query={location}.
+Wishlists: /wishlists/{userId}/{wishlistSlug}-{id}.
+`,
+  },
   {
     // from data/sites/allrecipes.yaml
     patterns: [
@@ -383,6 +470,36 @@ AI Answer: anonymous users get summarizer cards inline on /search; no separate U
 `,
   },
   {
+    // from data/sites/cars-com.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?cars.com" }),
+    ],
+    recipe: `abs URL helper for cars.com — prefer URL navigation over typing.
+Vehicle search (used/new/cpo): /shopping/results/?stock_type={used|new|cpo}&makes[]={make-slug}&models[]={make-model-slug}&zip={5-digit}&maximum_distance={miles|all}
+makes[]/models[] are slug-form (e.g., makes[]=honda&models[]=honda-civic). Multiple repeat the param. \`maximum_distance=all\` removes the radius cap; numeric values are miles.
+Filters (query string, append):
+  Price: &list_price_min={USD}&list_price_max={USD}
+  Year: &year_min={yyyy}&year_max={yyyy}
+  Mileage: &mileage_max={miles}
+  Body style: &body_style_slugs[]={sedan|suv|coupe|hatchback|truck|wagon|convertible|van|minivan}
+  Fuel: &fuel_slugs[]={gasoline|hybrid|electric|diesel|plug-in-hybrid|hydrogen}
+  Transmission: &transmission_slugs[]={automatic|manual|cvt}
+  Drivetrain: &drivetrain_slugs[]={fwd|rwd|awd|4wd}
+  Trim: &trim_slugs[]={trim-slug}
+  Exterior color: &exterior_color_slugs[]={black|white|silver|red|blue|gray|...}
+  Features (multi): &feature_slugs[]={apple-carplay|android-auto|sunroof-moonroof|backup-camera|leather-seats|heated-seats|navigation-system|third-row-seating}
+  Seller: &seller_type[]={dealership|private}
+  Listing freshness: &days_on_market_max={1|3|7|14|30}
+  Photos required: &photo_only=true
+Sort (sort=): best_match_desc (default), list_price (low→high) or list_price_desc, mileage (low→high), year_desc, distance, listed_at_desc (newest first).
+Pagination: &page={n} (1-indexed) ; page size via &page_size={20|50|100}.
+Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id.
+Research / specs / pricing: /research/{make-model}/ ; year-specific: /research/{make-model-{year}}/ (e.g., /research/honda-civic-2024/).
+Consumer reviews: /research/{make-model-{year}}/consumer-reviews/.
+Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/.
+`,
+  },
+  {
     // from data/sites/costco.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?costco.com" }),
@@ -443,6 +560,26 @@ Listing detail: /listing/{listingId}
 `,
   },
   {
+    // from data/sites/expedia.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?expedia.com" }),
+    ],
+    recipe: `abs URL helper for expedia.com — prefer URL navigation over typing.
+Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&children={ages|empty}&rooms={n}
+Children: &children=2:5,8 means two children aged 5 and 8 (comma-separated ages); &rooms=1 ; &rm1=a2:c5,c8 also accepted as the older per-room shape.
+Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
+Pagination: &p={pageIndex} (0-indexed). Top-N picks per page is server-controlled.
+Direct hotel: /{Slug}.h{hotelId}.Hotel-Information (e.g., /Paris-Hotels-La-Maison-Favart.h2521440.Hotel-Information). Slug is hyphenated, no diacritics. \`chkin\`/\`chkout\` query params preserve pricing context.
+Flights search: /Flights-Search?leg1=from:{origin},to:{dest},departure:{YYYY-MM-DD}TANYT&leg2=from:{dest},to:{origin},departure:{YYYY-MM-DD}TANYT&passengers=adults:{n},children:{n},seniors:{n},infantinlap:N&trip=roundtrip&mode=search
+One-way flights: same but trip=oneway and only leg1.
+Cars search: /Cars-Search?date1={M/D/YYYY}&time1={HHMM}&date2={M/D/YYYY}&time2={HHMM}&loc1={origin}&loc2={dropoff}
+Packages (Bundle and Save): /Flights-Hotel-Search?flightAttributes=…&hotelAttributes=… (best constructed via the UI; the URL state is brittle).
+Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
+Destination guides: /{Slug}.dx{destinationId}.Destination-Travel-Guides (read-only browsing).
+`,
+  },
+  {
     // from data/sites/github.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?github.com" }),
@@ -454,6 +591,26 @@ Repo PR list: /{owner}/{repo}/pulls?q={query}&sort={created|updated|popularity|l
 Issue/PR query syntax (in q=): is:open, is:closed, is:issue, is:pr, is:draft, is:merged, label:{name}, author:{login}, assignee:{login}, milestone:{title}, no:label, sort:{field}-{asc|desc} — combine with + (URL-encoded space).
 Trending: /trending or /trending/{language}?since={daily|weekly|monthly} (e.g., /trending/python?since=weekly).
 Direct repo: /{owner}/{repo} ; file at ref: /{owner}/{repo}/blob/{branch}/{path}
+`,
+  },
+  {
+    // from data/sites/glassdoor.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?glassdoor.com" }),
+    ],
+    recipe: `abs URL helper for glassdoor.com — prefer URL navigation over typing.
+Free-text search (companies/jobs/salaries blended): /Search/results.htm?keyword={query}
+Employer reviews: /Reviews/{Slug}-Reviews-E{employerId}.htm (e.g., /Reviews/Google-Reviews-E9079.htm). Slug is hyphenated company name; employerId is Glassdoor's numeric "E" id (visible in URLs after the first lookup via /Search).
+Employer overview / salaries / interviews / benefits (same E-id): /Overview/Working-at-{Slug}-EI_IE{employerId}.htm ; /Salary/{Slug}-Salaries-E{employerId}.htm ; /Interview/{Slug}-Interview-Questions-E{employerId}.htm ; /Benefits/{Slug}-Benefits-E{employerId}.htm
+Jobs search (simple form, will redirect to slug-URL):
+  /Job/jobs.htm?sc.keyword={query}&locKeyword={cityOrZip}&locT={locType}&locId={locId}
+  locT values: C (city), N (country), S (state). locId is Glassdoor's numeric id for that location.
+  Best practice: do one /Search/results.htm lookup to discover locId, then construct the canonical jobs URL.
+Review filters on /Reviews/ pages (query string, comma-joined where applicable):
+  filter.iso3Language={en|es|fr|de|...} ; filter.employmentStatus=REGULAR,PART_TIME,INTERN,CONTRACT,FREELANCE
+  filter.jobTitleFTS={title text} ; filter.defaultLocation={City, ST}
+  sort.sortType={DATE|RELEVANCE|RATING_OVERALL_HIGH_TO_LOW|RATING_OVERALL_LOW_TO_HIGH} ; sort.ascending=false
+Pagination: append _P{n}.htm before query string on slug URLs (e.g., -Reviews-E9079_P2.htm).
 `,
   },
   {
@@ -510,6 +667,24 @@ Directions: /maps/dir/{origin}/{destination}/ ; with mode and waypoints: /maps/d
 Reviews tab on a place: append /@{lat},{lng},{zoom}z/data=!4m... (data segment is opaque — use search/place URL instead)
 Coordinate viewport: /maps/@{lat},{lng},{zoom}z
 Spaces in queries should be URL-encoded as \`+\` or \`%20\`.
+`,
+  },
+  {
+    // from data/sites/google-search.yaml
+    patterns: [
+      new URLPattern({ hostname: "www.google.com", pathname: "/search" }),
+    ],
+    recipe: `abs URL helper for google.com/search — prefer URL navigation over typing.
+Web search: /search?q={query}
+Verticals (tbm=): isch (images), vid (videos), nws (news), shop (shopping), bks (books). Maps and Flights live at /maps and /travel/flights (separate entries).
+Pagination: &start={offset} (0-indexed, multiples of 10). Page 2 = start=10.
+Time filter (tbs=qdr:): qdr:h (past hour), qdr:d (24h), qdr:w (week), qdr:m (month), qdr:y (year). Custom range: tbs=cdr:1,cd_min:{M/D/YYYY},cd_max:{M/D/YYYY}.
+Sort (tbs=): li:1 (verbatim/no auto-fixes), sbd:1 (sort by date — pair with qdr: for "recent first").
+Language / region: hl={lang ISO} (UI language), lr=lang_{lang} (results language), gl={countryISO2} (country bias), cr=country{countryISO2} (restrict to country).
+Safe search (safe=): active, off (default depends on account/region).
+Result count: num={1-100}. Google often ignores num>10 on modern result pages — treat as best-effort.
+In-query operators (append to q=): \`site:{domain}\`, \`-site:{domain}\`, \`intitle:\`, \`inurl:\`, \`filetype:pdf\`, \`before:{YYYY-MM-DD}\`, \`after:{YYYY-MM-DD}\`, exact phrase in quotes, \`OR\`, \`|\`.
+Knowledge / direct lookups: q={query} alone surfaces knowledge panel, definition, calculator, weather, currency conversion — no special path needed.
 `,
   },
   {
@@ -655,6 +830,24 @@ Browser compat tables are anchored at #browser_compatibility on the method's pag
 `,
   },
   {
+    // from data/sites/medium.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?medium.com" }),
+    ],
+    recipe: `abs URL helper for medium.com — prefer URL navigation over typing.
+Free-text search: /search?q={query}
+Vertical search: /search/posts?q={query} (stories) ; /search/people?q={query} (writers) ; /search/publications?q={query} ; /search/tags?q={query} ; /search/lists?q={query}
+Tag feed: /tag/{slug} (e.g., /tag/programming, /tag/machine-learning) — slug is lowercased, hyphenated.
+Tag verticals: /tag/{slug}/recommended ; /tag/{slug}/archive/{YYYY}/{MM}/{DD}
+User profile / story index: /@{username} ; /@{username}/about ; /@{username}/lists ; /@{username}/followers
+User-subdomain profile (newer scheme, equivalent to /@{username}): https://{username}.medium.com/
+Direct story: /@{username}/{slug}-{12-hex-id} or https://{username}.medium.com/{slug}-{12-hex-id} ; trailing hex id alone resolves: medium.com/p/{12-hex-id}
+Publication: /{publication-slug} (top-level path with no @) ; archive: /{publication-slug}/archive/{YYYY}/{MM}/{DD}
+Reading list: /@{username}/list/{listSlug}-{8-hex-id}
+Friend link (bypass member paywall for one read): append ?sk={token} to a story URL — only works if the author or a member shared it; do not fabricate tokens.
+`,
+  },
+  {
     // from data/sites/npm.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?npmjs.com" }),
@@ -715,6 +908,24 @@ Tiles (separate host): https://tile.openstreetmap.org/{z}/{x}/{y}.png.
 `,
   },
   {
+    // from data/sites/opentable.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?opentable.com" }),
+    ],
+    recipe: `abs URL helper for opentable.com — prefer URL navigation over typing.
+Search: /s?term={query}&dateTime={YYYY-MM-DDTHH:MM}&covers={n}&metroId={metroId}
+Free-text geo search (no metroId): /s?term={query}&covers={n}&dateTime={YYYY-MM-DDTHH:MM}&prices=2&latitude={lat}&longitude={lng}
+metroId discovery: hit /s?term={cityName} once and read \`metroId\` from the resolved URL — OpenTable assigns numeric ids per metro (e.g., 8 = New York metro).
+Pagination: &page={n} (1-indexed); page size is server-controlled.
+Sort (sortBy=): web_conversion (default mixed-relevance), distance, rating, price_low_to_high, price_high_to_low, name, recommended, newest.
+Filters: &cuisineIds={id}[,{id}…] ; &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &neighborhoodIds={id} ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+Map mode: &showMap=true&boundsLat1=&boundsLng1=&boundsLat2=&boundsLng2= (NE/SW corners).
+Direct restaurant: /r/{slug} (slug includes city, e.g., /r/nobu-downtown-new-york). Reviews anchor: /r/{slug}#reviews. Menu: /r/{slug}/menu. Photos: /r/{slug}/photos. Private dining: /r/{slug}/private-dining.
+Reservation flow (numeric rid): /restref/client/?rid={restaurantId}&restref={ref}&datetime={YYYY-MM-DDTHH:MM}&covers={n} — restaurantId is OpenTable's internal numeric id, surfaced on the /r/ page's booking widget.
+Cities / metros browse: /cities/{city-slug} ; /neighborhoods/{slug} ; /cuisine/{slug} (e.g., /cuisine/japanese).
+`,
+  },
+  {
     // from data/sites/pubmed.yaml
     patterns: [
       new URLPattern({ hostname: "pubmed.ncbi.nlm.nih.gov" }),
@@ -771,6 +982,31 @@ Search: /3/search.html?q={query} (replace \`3\` with another series like \`3.12\
 Direct library page: /3/library/{module}.html (e.g., /3/library/functions.html for builtins, /3/library/os.path.html)
 Symbol anchor: append #{symbol} to the library URL (e.g., /3/library/functions.html#len, /3/library/os.path.html#os.path.join)
 Genindex: /3/genindex-all.html ; tutorial: /3/tutorial/
+`,
+  },
+  {
+    // from data/sites/redfin.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?redfin.com" }),
+    ],
+    recipe: `abs URL helper for redfin.com — prefer URL navigation over typing.
+City listings (for sale): /city/{cityId}/{ST}/{City-Name}
+ZIP listings: /zipcode/{zip}
+Neighborhood listings: /neighborhood/{neighborhoodId}/{ST}/{City-Name}/{Neighborhood-Name}
+County listings: /county/{countyId}/{ST}/{County-Name}-County
+School-zone listings: /school/{schoolId}/{ST}/{City-Name}/{School-Name}
+cityId / neighborhoodId / countyId / schoolId discovery: hit /stingray/do/location-autocomplete?location={query}&v=2 (returns JSON with each candidate's \`id\` and \`url_path\`). Or do one /city URL guess and read the canonical id from the redirected URL.
+Rentals: /city/{cityId}/{ST}/{City-Name}/apartments-for-rent ; /zipcode/{zip}/apartments-for-rent
+Recently sold: /city/{cityId}/{ST}/{City-Name}/recently-sold
+Open houses: /city/{cityId}/{ST}/{City-Name}/open-houses
+In-path filters (comma-joined under /filter/): /filter/min-price={value},max-price={value},min-beds={n},max-beds={n},min-baths={n},property-type={house|condo|townhouse|multifamily|land|other},status={active|coming-soon|under-contract},min-sqft={n},max-sqft={n},min-year-built={yyyy},max-year-built={yyyy},min-lot-size={n},max-lot-size={n},has-3d-tour,has-view,fireplace,pool,is-furnished,hoa={max-USD-monthly},days-on-market={1|3|7|14|30}
+  Price/lot/sqft suffixes: k (thousands), M (millions). E.g., min-price=500k,max-price=1M.
+  Sort: /filter/...,sort={lo-days|hi-days|lo-price|hi-price|hi-sale-date|lo-dollarsqft|hi-dollarsqft}
+Pagination: append \`/page-{n}\` after the /filter/… segment (e.g., /city/30794/TX/Dallas/filter/min-price=500k/page-2). 1-indexed.
+Map-bound search (alternative to /city): /map-search?north={lat}&south={lat}&east={lng}&west={lng}&min-price=…
+Direct property: /{ST}/{City-Name}/{Street-Addr}-{zip}/home/{propertyId} (e.g., /TX/Dallas/3624-Normandy-Ave-75205/home/32091629). propertyId is Redfin's numeric id.
+Agent profile: /real-estate-agents/{agent-slug}-{agentId}
+Mortgage / payment helper: append \`?mortgage-rate={pct}&down-payment={USD}\` to any property URL to seed the payment calculator.
 `,
   },
   {

@@ -1,0 +1,37 @@
+# Airbnb — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?airbnb.com"
+
+rules:
+  reviews-hide:
+    # `[data-section-id="REVIEWS_DEFAULT"]` wraps the entire reviews
+    # region on /rooms/ pages — section heading, category-rating
+    # breakdown, "How reviews work" disclosure, and the review cards.
+    # The aggregate rating chip ("Rated X out of 5 stars · N reviews")
+    # at the top of the page lives inside `OVERVIEW_DEFAULT_V2` and
+    # stays visible, as does the "Reviews" tab anchor in `NAV_DEFAULT`.
+    hostnames:
+      - "{*.}?airbnb.com"
+    pathnames:
+      - "/rooms/*"
+    selectors:
+      - '[data-section-id="REVIEWS_DEFAULT"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for airbnb.com — prefer URL navigation over typing.
+      Stay search: /s/{Location-slug}/homes?checkin={YYYY-MM-DD}&checkout={YYYY-MM-DD}&adults={n}&children={n}&infants={n}&pets={n}
+      Location slug uses double-dash between location parts (e.g., /s/Paris--France/homes, /s/New-York--NY--United-States/homes, /s/Antibes--Provence-Alpes-Cote-d'Azur--France/homes). URL-encode spaces as `-`, commas as `--`.
+      Map-bounded search: &ne_lat=&ne_lng=&sw_lat=&sw_lng=&zoom={n}&search_by_map=true
+      Filters (query string): &price_min={USD}&price_max={USD}&min_bedrooms={n}&min_bathrooms={n}&min_beds={n}&room_types[]={Entire home/apt|Private room|Hotel room|Shared room}
+      Amenities (amenities[]= can repeat): 4 (wifi), 8 (kitchen), 5 (ac), 33 (washer), 34 (dryer), 25 (heating), 16 (pool), 7 (free parking on premises), 30 (smoking allowed), 12 (pets allowed). Probe live to confirm — Airbnb periodically reshuffles ids.
+      Categories (tab=): a category id (e.g., 5 = Beach, 8 = Amazing pools); also takes &category_tag={Tag:8} form.
+      Sort (s_tag=): default sort is relevance; explicit price ascending via &order_by=price_ascending (subject to drift).
+      Pagination: &items_offset={n} (multiples of 18, the default page size).
+      Direct listing: /rooms/{numericListingId} — single most reliable shape; query params (checkin/checkout/guests) preserved for pricing.
+      Experiences: /experiences/{id} ; experiences search: /s/experiences?query={location}.
+      Wishlists: /wishlists/{userId}/{wishlistSlug}-{id}.

@@ -1,0 +1,23 @@
+# The Guardian — comments-hide.
+#
+# Footer is a semantic <footer role="contentinfo"> caught by the
+# generic always-on selector. No footer-hide entry needed.
+#
+# search-url-helper deliberately omitted: theguardian.com's search
+# routes (/uk/search, /us/search, /au/search, /international/search)
+# vary by edition and several common shapes 404 anonymously without a
+# warmed-up edition cookie. Add this rule once a portable canonical
+# search URL is confirmed.
+
+hostnames:
+  - "{*.}?theguardian.com"
+
+rules:
+  comments-hide:
+    # `#comments` is the discussion section at the foot of opinion and
+    # comment-enabled news articles — "Comments (N)" heading,
+    # sign-in/sort controls, and the threaded reader comment list. The
+    # smaller "N Comments" count pill in the article header is a
+    # sibling of `#comments` and stays visible.
+    selectors:
+      - "#comments"

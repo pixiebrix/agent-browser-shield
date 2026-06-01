@@ -1,0 +1,26 @@
+# Quora — comments-hide.
+#
+# Quora's answers are the page's primary content but also user-written
+# long-form text, which makes them a prompt-injection vector when an
+# agent fetches a question page. The question title, topic chips, and
+# "N Answers" counter sit outside any answer card and stay visible.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed. No search-url-helper: Quora's
+# /search?q= path is reachable, but most answer discovery happens via
+# topic feeds and personalization, so URL helpers add little value.
+
+hostnames:
+  - "{*.}?quora.com"
+
+rules:
+  comments-hide:
+    # `dom_annotate_question_answer_item_*` is Quora's own stable hook
+    # (the `dom_annotate_` and `puppeteer_test_` prefixes are kept
+    # un-hashed across deploys for their automation). Each match wraps
+    # one full answer card — author byline, vote/share controls, and
+    # the prose body. `dom_annotate_ad_promoted_answer` covers promoted
+    # answer ads, which are also long-form user copy.
+    selectors:
+      - '[class*="dom_annotate_question_answer_item_"]'
+      - '[class*="dom_annotate_ad_promoted_answer"]'

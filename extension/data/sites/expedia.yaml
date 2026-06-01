@@ -1,0 +1,41 @@
+# Expedia — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?expedia.com"
+
+rules:
+  reviews-hide:
+    # `#Reviews [data-stid="carousel-wrapper"]` targets the "Guest
+    # reviews" carousel of individual UGC review cards on hotel
+    # information pages. The aggregate score panel above the carousel
+    # (overall guest score, score categories — cleanliness/location/
+    # service — and "N verified reviews" count) is a sibling of the
+    # carousel-wrapper and stays visible, as does the small score chip
+    # next to the hotel name. `[data-stid="carousel-wrapper"]` alone
+    # would over-hide unrelated carousels (rooms, photos); the
+    # `#Reviews` scope restricts the rule to the reviews region.
+    hostnames:
+      - "{*.}?expedia.com"
+    pathnames:
+      - "/*Hotel-Information*"
+    selectors:
+      - '#Reviews [data-stid="carousel-wrapper"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for expedia.com — prefer URL navigation over typing.
+      Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&children={ages|empty}&rooms={n}
+      Children: &children=2:5,8 means two children aged 5 and 8 (comma-separated ages); &rooms=1 ; &rm1=a2:c5,c8 also accepted as the older per-room shape.
+      Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+      Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
+      Pagination: &p={pageIndex} (0-indexed). Top-N picks per page is server-controlled.
+      Direct hotel: /{Slug}.h{hotelId}.Hotel-Information (e.g., /Paris-Hotels-La-Maison-Favart.h2521440.Hotel-Information). Slug is hyphenated, no diacritics. `chkin`/`chkout` query params preserve pricing context.
+      Flights search: /Flights-Search?leg1=from:{origin},to:{dest},departure:{YYYY-MM-DD}TANYT&leg2=from:{dest},to:{origin},departure:{YYYY-MM-DD}TANYT&passengers=adults:{n},children:{n},seniors:{n},infantinlap:N&trip=roundtrip&mode=search
+      One-way flights: same but trip=oneway and only leg1.
+      Cars search: /Cars-Search?date1={M/D/YYYY}&time1={HHMM}&date2={M/D/YYYY}&time2={HHMM}&loc1={origin}&loc2={dropoff}
+      Packages (Bundle and Save): /Flights-Hotel-Search?flightAttributes=…&hotelAttributes=… (best constructed via the UI; the URL state is brittle).
+      Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
+      Destination guides: /{Slug}.dx{destinationId}.Destination-Travel-Guides (read-only browsing).

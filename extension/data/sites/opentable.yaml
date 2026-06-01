@@ -1,0 +1,45 @@
+# OpenTable — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+#
+# OpenTable serves an interstitial ("Well, this is embarrassing.") to
+# cold direct loads of /r/{slug} restaurant pages. Selectors below
+# match the real profile once it renders; routing through the
+# homepage or /s search first usually unblocks subsequent navigations
+# within the session.
+
+hostnames:
+  - "{*.}?opentable.com"
+
+rules:
+  reviews-hide:
+    # `#reviews` is the "What N people are saying" section on /r/
+    # restaurant profiles — section header, aggregate ratings panel
+    # (overall, food/service/ambience/value, 1-to-5 histogram), sort
+    # control, and the diner review cards. The compact rating chip
+    # next to the restaurant name in the page header lives outside
+    # `#reviews` and stays visible. `[data-test="reviews-list"]` is a
+    # tighter belt-and-braces backstop in case the section id ever
+    # drifts.
+    hostnames:
+      - "{*.}?opentable.com"
+    pathnames:
+      - "/r/*"
+    selectors:
+      - "#reviews"
+      - '[data-test="reviews-list"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for opentable.com — prefer URL navigation over typing.
+      Search: /s?term={query}&dateTime={YYYY-MM-DDTHH:MM}&covers={n}&metroId={metroId}
+      Free-text geo search (no metroId): /s?term={query}&covers={n}&dateTime={YYYY-MM-DDTHH:MM}&prices=2&latitude={lat}&longitude={lng}
+      metroId discovery: hit /s?term={cityName} once and read `metroId` from the resolved URL — OpenTable assigns numeric ids per metro (e.g., 8 = New York metro).
+      Pagination: &page={n} (1-indexed); page size is server-controlled.
+      Sort (sortBy=): web_conversion (default mixed-relevance), distance, rating, price_low_to_high, price_high_to_low, name, recommended, newest.
+      Filters: &cuisineIds={id}[,{id}…] ; &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &neighborhoodIds={id} ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+      Map mode: &showMap=true&boundsLat1=&boundsLng1=&boundsLat2=&boundsLng2= (NE/SW corners).
+      Direct restaurant: /r/{slug} (slug includes city, e.g., /r/nobu-downtown-new-york). Reviews anchor: /r/{slug}#reviews. Menu: /r/{slug}/menu. Photos: /r/{slug}/photos. Private dining: /r/{slug}/private-dining.
+      Reservation flow (numeric rid): /restref/client/?rid={restaurantId}&restref={ref}&datetime={YYYY-MM-DDTHH:MM}&covers={n} — restaurantId is OpenTable's internal numeric id, surfaced on the /r/ page's booking widget.
+      Cities / metros browse: /cities/{city-slug} ; /neighborhoods/{slug} ; /cuisine/{slug} (e.g., /cuisine/japanese).
