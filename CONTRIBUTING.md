@@ -41,8 +41,8 @@ bun run check       # Biome (lint + format) + ESLint (unicorn + custom rules)
 bun run preflight   # everything CI gates on: codegen + lint + typecheck + knip + test
 ```
 
-Run `bun run preflight` before opening a PR — it runs the same checks CI does
-in the same order, so green locally means green in CI.
+Run `bun run preflight` before opening a PR — it runs the same checks CI does in
+the same order, so green locally means green in CI.
 
 Load `extension/dist/` as unpacked at `chrome://extensions`.
 
