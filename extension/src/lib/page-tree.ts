@@ -236,7 +236,7 @@ function getElementTree(element: HTMLElement): Node | undefined {
           compressedElement.append(childElement);
         }
       } else if (node instanceof Text) {
-        const normalized = normalizeTextContent(node.textContent ?? "");
+        const normalized = normalizeTextContent(node.textContent);
         if (normalized) {
           compressedElement.append(document.createTextNode(normalized));
         }
@@ -285,11 +285,11 @@ export function getPageTree(): HTMLBodyElement {
         compressedBody.append(elementTree);
       }
     } else if (child instanceof Text) {
-      const normalized = normalizeTextContent(child.textContent ?? "");
+      const normalized = normalizeTextContent(child.textContent);
       if (normalized) {
         compressedBody.append(document.createTextNode(normalized));
       }
     }
   }
-  return compressedBody as HTMLBodyElement;
+  return compressedBody;
 }

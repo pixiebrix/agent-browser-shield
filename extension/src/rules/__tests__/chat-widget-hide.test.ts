@@ -146,7 +146,9 @@ describe("chatWidgetHideRule", () => {
       await flushMutations();
       jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-      const stillThere = document.querySelector("#intercom-container");
+      const stillThere = document.querySelector<HTMLElement>(
+        "#intercom-container",
+      );
       expect(stillThere).not.toBeNull();
       // And it should not have been touched by the rule.
       expect(stillThere?.getAttribute(HIDDEN_ATTR)).toBeNull();

@@ -162,7 +162,9 @@ export function createSelectorHideRule(
   const watcher = watchSubtrees
     ? createSubtreeWatcher({
         skipPlaceholderSubtrees: true,
-        onSubtrees: () => scan(document.body),
+        onSubtrees: () => {
+          scan(document.body);
+        },
       })
     : null;
 
@@ -179,7 +181,9 @@ export function createSelectorHideRule(
         defaultEnabled,
         topFrameOnly,
         apply,
-        teardown: () => watcher.stop(),
+        teardown: () => {
+          watcher.stop();
+        },
       }
     : { id, label, description, defaultEnabled, topFrameOnly, apply };
 

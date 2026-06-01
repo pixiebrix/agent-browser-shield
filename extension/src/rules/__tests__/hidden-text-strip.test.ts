@@ -7,7 +7,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  hiddenTextStripRule.teardown?.();
+  hiddenTextStripRule.teardown();
 });
 
 describe("hiddenTextStripRule", () => {

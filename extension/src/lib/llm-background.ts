@@ -130,7 +130,9 @@ export function startClassifyPortListener(): void {
     // aborts the in-flight fetch via the signal forwarded into handleClassify.
     // Calling abort after handleClassify has resolved is a no-op, so this is
     // safe regardless of who wins the race.
-    port.onDisconnect.addListener(() => controller.abort());
+    port.onDisconnect.addListener(() => {
+      controller.abort();
+    });
 
     const send = (message: ClassifyPortMessage) => {
       try {

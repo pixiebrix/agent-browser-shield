@@ -87,11 +87,14 @@ export function createSubtreeWatcher(
       });
       observer = new MutationObserver(enqueue);
       // rule-engine always passes document.body, but accept Document for
-      // robustness and resolve to its body.
+      // robustness and resolve to its body. `Document.body` is typed as
+      // non-null, but iframe edge cases at document_idle can leave it
+      // missing — guard rather than trust the type.
       const target =
         (root as Node).nodeType === Node.DOCUMENT_NODE
           ? (root as Document).body
           : (root as Node);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (target) {
         observer.observe(target, { childList: true, subtree: true });
       }

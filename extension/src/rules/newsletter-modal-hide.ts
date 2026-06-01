@@ -43,8 +43,7 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
     return false;
   }
 
-  const text = element.textContent ?? "";
-  if (!NEWSLETTER_TEXT.test(text)) {
+  if (!NEWSLETTER_TEXT.test(element.textContent)) {
     return false;
   }
 

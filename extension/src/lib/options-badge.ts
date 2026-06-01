@@ -8,10 +8,7 @@ export function injectOptionsBadge(): void {
   if (document.querySelector(`[${BADGE_SELECTOR}="${BADGE_VALUE}"]`)) {
     return;
   }
-  const host = document.body ?? document.documentElement;
-  if (!host) {
-    return;
-  }
+  const host = document.body;
 
   const badge = document.createElement("button");
   badge.type = "button";
@@ -50,9 +47,11 @@ export function injectOptionsBadge(): void {
     badge.style.opacity = "0.65";
   });
   badge.addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "open-options" }).catch((error) => {
-      console.error("[abs] failed to open options page", error);
-    });
+    chrome.runtime
+      .sendMessage({ type: "open-options" })
+      .catch((error: unknown) => {
+        console.error("[abs] failed to open options page", error);
+      });
   });
 
   host.append(badge);

@@ -105,7 +105,9 @@ function scan(root: ParentNode): void {
 }
 
 const watcher = createSubtreeWatcher({
-  onSubtrees: () => scan(document.body),
+  onSubtrees: () => {
+    scan(document.body);
+  },
 });
 
 function apply(root: ParentNode): void {
@@ -120,5 +122,7 @@ export const svgSpriteSuppressRule = {
     "Remove hidden SVG sprite containers whose symbols aren't referenced on the page.",
   defaultEnabled: true,
   apply,
-  teardown: () => watcher.stop(),
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

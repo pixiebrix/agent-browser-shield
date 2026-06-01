@@ -27,6 +27,9 @@ const CLEARED_ATTR = "data-abs-cleared";
 // their value-tracker, so onChange handlers never fire and totals don't
 // recompute. Going through the prototype's native setter lets the framework
 // observe the change.
+// `set` is unbound here by design — we invoke it via `.call(checkbox, …)`
+// below so `this` is the input element, not the descriptor.
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const nativeCheckedSetter = Object.getOwnPropertyDescriptor(
   HTMLInputElement.prototype,
   "checked",
@@ -89,5 +92,7 @@ export const checkoutCheckboxClearRule = {
     "On checkout pages, uncheck pre-checked checkboxes so the agent doesn't silently inherit add-ons or marketing opt-ins.",
   defaultEnabled: true,
   apply,
-  teardown: () => watcher.stop(),
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

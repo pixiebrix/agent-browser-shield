@@ -38,9 +38,6 @@ function collectMatches(text: string): InlineMatch[] {
   const matches: InlineMatch[] = [];
 
   for (const m of text.matchAll(CC_PATTERN)) {
-    if (m.index === undefined) {
-      continue;
-    }
     if (!passesLuhn(m[0])) {
       continue;
     }
@@ -51,9 +48,6 @@ function collectMatches(text: string): InlineMatch[] {
     });
   }
   for (const m of text.matchAll(SSN_PATTERN)) {
-    if (m.index === undefined) {
-      continue;
-    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -61,9 +55,6 @@ function collectMatches(text: string): InlineMatch[] {
     });
   }
   for (const m of text.matchAll(PHONE_PATTERN)) {
-    if (m.index === undefined) {
-      continue;
-    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,

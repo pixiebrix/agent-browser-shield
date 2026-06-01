@@ -101,6 +101,9 @@ function isClippedToZero(style: CSSStyleDeclaration): boolean {
   if (clipPath === "inset(100%)") {
     return true;
   }
+  // `clip` is deprecated in favor of `clip-path`, but legacy
+  // visually-hidden CSS in the wild still uses it — keep detecting it.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const clip = style.clip;
   if (clip === "rect(0px, 0px, 0px, 0px)") {
     return true;
@@ -176,7 +179,7 @@ function isHiddenByCss(style: CSSStyleDeclaration): boolean {
 }
 
 function hasNonemptyText(element: Element): boolean {
-  return (element.textContent ?? "").trim().length > 0;
+  return element.textContent.trim().length > 0;
 }
 
 // sRGB Euclidean distance under which two colors are perceptually
@@ -292,7 +295,7 @@ function scanAndStrip(root: ParentNode): void {
       tag: element.tagName,
       id: element.id || undefined,
       classes: element.className || undefined,
-      textLength: (element.textContent ?? "").length,
+      textLength: element.textContent.length,
     });
     element.remove();
   }
@@ -319,5 +322,7 @@ export const hiddenTextStripRule = {
     'Remove text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
   defaultEnabled: true,
   apply,
-  teardown: () => watcher.stop(),
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

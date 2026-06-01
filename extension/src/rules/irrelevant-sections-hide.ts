@@ -62,7 +62,7 @@ function placeholderLabel(summary: string): string {
 
 function describeElement(element: Element): Record<string, unknown> {
   const rect = element.getBoundingClientRect();
-  const text = (element.textContent ?? "").replaceAll(/\s+/g, " ").trim();
+  const text = element.textContent.replaceAll(/\s+/g, " ").trim();
   return {
     tag: element.tagName,
     id: element.id || undefined,
@@ -304,7 +304,7 @@ function apply(_root: ParentNode): void {
   log("irrelevant-sections-hide apply", { url: location.href });
   const signal = lifecycleController.signal;
 
-  waitForSettle({
+  void waitForSettle({
     timeout: SETTLE_TIMEOUT_MS,
     quietMs: SETTLE_QUIET_MS,
     signal,

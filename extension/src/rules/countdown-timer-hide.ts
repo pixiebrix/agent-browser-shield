@@ -54,7 +54,7 @@ const UNIT_MULTIPLIERS: ReadonlyArray<readonly [RegExp, number]> = [
 ];
 
 export function parseTotalSeconds(text: string): number | null {
-  const colon = text.match(/(?<!\d)(\d{1,3}):([0-5]\d)(?::([0-5]\d))?(?!\d)/);
+  const colon = /(?<!\d)(\d{1,3}):([0-5]\d)(?::([0-5]\d))?(?!\d)/.exec(text);
   if (colon) {
     const a = Number.parseInt(colon[1] ?? "0", 10);
     const b = Number.parseInt(colon[2] ?? "0", 10);
@@ -116,7 +116,7 @@ function reconcileCandidates(candidates: Candidate[]): void {
     if (isInsidePlaceholder(element)) {
       continue;
     }
-    const currentText = (element.textContent ?? "").trim();
+    const currentText = element.textContent.trim();
     if (currentText === initialText) {
       continue;
     }

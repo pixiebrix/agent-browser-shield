@@ -21,17 +21,14 @@ const RULE_ID = "html-comment-strip" as const;
 const EXCLUDED_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]);
 
 function isExcludedParent(parent: Node | null): boolean {
-  if (!parent || parent.nodeType !== Node.ELEMENT_NODE) {
+  if (parent?.nodeType !== Node.ELEMENT_NODE) {
     return false;
   }
   return EXCLUDED_PARENT_TAGS.has((parent as Element).tagName);
 }
 
 function stripComments(root: ParentNode): void {
-  const walker = document.createTreeWalker(
-    root as Node,
-    NodeFilter.SHOW_COMMENT,
-  );
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
   const toRemove: Comment[] = [];
   let current = walker.nextNode();
   while (current) {
@@ -65,5 +62,7 @@ export const htmlCommentStripRule = {
     "Remove HTML comments. Invisible to humans but readable by agents and can carry prompt-injection payloads.",
   defaultEnabled: true,
   apply,
-  teardown: () => watcher.stop(),
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

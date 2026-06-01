@@ -145,6 +145,8 @@ function applyEnabled(
   // at document_idle if the parent injects the frame without children. Skip
   // rule application entirely in that case — there's nothing to scan, and
   // attempting to pass a null body would TypeError every rule.
+  // TS lib types `document.body` as non-null; reality disagrees in iframes.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!document.body) {
     log("rule engine skipping — no document.body", {
       url: globalThis.location.href,
@@ -192,6 +194,8 @@ function reconcile(
   nextAvailability: RuleAvailabilityStates,
   previousAvailability: RuleAvailabilityStates,
 ): void {
+  // See note in applyAll — same iframe edge case.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!document.body) {
     return;
   }
@@ -228,7 +232,7 @@ function applyDisplayMode(mode: PlaceholderDisplayMode): void {
 
 const ALL_DISABLED: RuleStates = Object.fromEntries(
   RULES.map((rule) => [rule.id, false]),
-) as RuleStates;
+);
 
 function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
   return enforcementEnabled ? states : ALL_DISABLED;

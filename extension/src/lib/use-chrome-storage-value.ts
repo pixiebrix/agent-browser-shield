@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 // Async-readable source with a change subscription. `ChromeStorageValue<T>`
 // structurally satisfies this, as does the composite `availability` source.
 export interface AsyncReadableSource<T> {
-  get(): Promise<T>;
-  subscribe(listener: (next: T) => void): () => void;
+  get: () => Promise<T>;
+  subscribe: (listener: (next: T) => void) => () => void;
 }
 
 // Reads an `AsyncReadableSource` into component state and keeps it in sync.
@@ -19,7 +19,7 @@ export function useChromeStorageValue<T>(
   const [value, setValue] = useState<T | null>(null);
   useEffect(() => {
     let cancelled = false;
-    source.get().then((initial) => {
+    void source.get().then((initial) => {
       if (!cancelled) {
         setValue(initial);
       }

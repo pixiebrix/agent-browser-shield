@@ -12,8 +12,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  searchUrlHelperRule.teardown?.();
-  hiddenTextStripRule.teardown?.();
+  searchUrlHelperRule.teardown();
+  hiddenTextStripRule.teardown();
 });
 
 describe("findRecipe", () => {
@@ -108,7 +108,7 @@ describe("searchUrlHelperRule.apply (on amazon.com)", () => {
     searchUrlHelperRule.apply(document.body);
     expect(document.querySelector(LANDMARK_SELECTOR)).not.toBeNull();
 
-    searchUrlHelperRule.teardown?.();
+    searchUrlHelperRule.teardown();
     expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
   });
 

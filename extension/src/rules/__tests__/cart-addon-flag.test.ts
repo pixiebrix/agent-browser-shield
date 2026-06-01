@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  cartAddonFlagRule.teardown?.();
+  cartAddonFlagRule.teardown();
   jest.useRealTimers();
 });
 

@@ -55,9 +55,6 @@ describe("site data YAML files", () => {
 
     const hostnames = new Set<string>(parsed.hostnames);
     for (const entry of Object.values(parsed.rules)) {
-      if (!entry) {
-        continue;
-      }
       for (const item of toEntries(entry)) {
         if (item.hostnames) {
           for (const h of item.hostnames) {
@@ -76,7 +73,7 @@ describe("site data YAML files", () => {
     for (const fileName of files) {
       const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
       const parsed = load(raw) as { rules?: Record<string, unknown> };
-      for (const key of Object.keys(parsed?.rules ?? {})) {
+      for (const key of Object.keys(parsed.rules ?? {})) {
         expect({
           file: fileName,
           ruleId: key,

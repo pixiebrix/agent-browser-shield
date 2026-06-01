@@ -59,25 +59,31 @@ export async function classifyIrrelevantSections(
     // so it auto-detaches when either the input signal fires or we dispose —
     // no manual removeEventListener needed on either path.
     const cleanup = onAbort(signal, () => {
-      finish(() => reject(new DOMException("aborted", "AbortError")));
+      finish(() => {
+        reject(new DOMException("aborted", "AbortError"));
+      });
     });
 
     port.onMessage.addListener((raw: unknown) => {
       const message = raw as ClassifyPortMessage;
       if (message.kind === "response") {
-        finish(() => resolve(message.response));
+        finish(() => {
+          resolve(message.response);
+        });
       } else {
-        finish(() => reject(new Error(message.error)));
+        finish(() => {
+          reject(new Error(message.error));
+        });
       }
     });
 
     port.onDisconnect.addListener(() => {
       const lastError = chrome.runtime.lastError?.message;
-      finish(() =>
+      finish(() => {
         reject(
           new Error(lastError ?? "Background disconnected before responding"),
-        ),
-      );
+        );
+      });
     });
 
     port.postMessage(request);

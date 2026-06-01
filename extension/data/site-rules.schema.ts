@@ -91,12 +91,9 @@ export const SiteFileSchema = z
         "search-url-helper": RecipeRule.optional(),
       })
       .strict()
-      .refine(
-        (value) => Object.values(value).some((entry) => entry !== undefined),
-        {
-          message: "must declare at least one rule",
-        },
-      ),
+      .refine((value) => Object.keys(value).length > 0, {
+        message: "must declare at least one rule",
+      }),
   })
   .strict();
 
