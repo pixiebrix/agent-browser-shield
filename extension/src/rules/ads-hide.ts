@@ -44,7 +44,9 @@ const EASYLIST_STYLESHEET_TEXT = EASYLIST_GENERIC_SELECTORS.map(
 let injectedStyle: HTMLStyleElement | null = null;
 
 function injectEasyListStylesheet(): void {
-  if (injectedStyle?.isConnected) return;
+  if (injectedStyle?.isConnected) {
+    return;
+  }
   const style = document.createElement("style");
   style.id = EASYLIST_STYLE_ID;
   style.textContent = EASYLIST_STYLESHEET_TEXT;

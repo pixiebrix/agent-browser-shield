@@ -24,7 +24,9 @@ export function isNonContentTag(tagName: string): boolean {
 // common "don't re-process my own replacement" check that every hide rule
 // performs before considering a candidate.
 export function isInsidePlaceholder(element: Element): boolean {
-  if (element.classList.contains(PLACEHOLDER_CLASS)) return true;
+  if (element.classList.contains(PLACEHOLDER_CLASS)) {
+    return true;
+  }
   return element.closest(`.${PLACEHOLDER_CLASS}`) !== null;
 }
 
@@ -102,13 +104,23 @@ export function findInnermostMatches<T>(
   const { isSkipped, maxTextLength, maxDescendants, match } = options;
   const out: Array<{ element: HTMLElement; match: T }> = [];
   for (const element of root.querySelectorAll<HTMLElement>("*")) {
-    if (isNonContentTag(element.tagName)) continue;
-    if (isSkipped?.(element)) continue;
-    if (element.children.length > maxDescendants) continue;
+    if (isNonContentTag(element.tagName)) {
+      continue;
+    }
+    if (isSkipped?.(element)) {
+      continue;
+    }
+    if (element.children.length > maxDescendants) {
+      continue;
+    }
     const text = (element.textContent ?? "").trim();
-    if (text.length === 0 || text.length > maxTextLength) continue;
+    if (text.length === 0 || text.length > maxTextLength) {
+      continue;
+    }
     const matched = match(text, element);
-    if (matched === null) continue;
+    if (matched === null) {
+      continue;
+    }
     out.push({ element, match: matched });
   }
   return filterToInnermost(out, (item) => item.element);
@@ -135,12 +147,22 @@ export function walkTextNodes(
   const walker = document.createTreeWalker(root as Node, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
-      if (!parent) return NodeFilter.FILTER_REJECT;
-      if (isNonContentTag(parent.tagName)) return NodeFilter.FILTER_REJECT;
-      if (isInsidePlaceholder(parent)) return NodeFilter.FILTER_REJECT;
-      if (shouldSkipParent?.(parent)) return NodeFilter.FILTER_REJECT;
+      if (!parent) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (isNonContentTag(parent.tagName)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (isInsidePlaceholder(parent)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      if (shouldSkipParent?.(parent)) {
+        return NodeFilter.FILTER_REJECT;
+      }
       const value = node.nodeValue;
-      if (!value || value.length < minLength) return NodeFilter.FILTER_REJECT;
+      if (!value || value.length < minLength) {
+        return NodeFilter.FILTER_REJECT;
+      }
       return NodeFilter.FILTER_ACCEPT;
     },
   });

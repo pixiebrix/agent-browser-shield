@@ -40,7 +40,9 @@ function uncheck(checkbox: HTMLInputElement): void {
 }
 
 function scanAndClear(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) return;
+  if (!isCheckoutUrl(globalThis.location.href)) {
+    return;
+  }
 
   const checkboxes = root.querySelectorAll<HTMLInputElement>(
     `input[type="checkbox"]:checked:not(:disabled):not([${CLEARED_ATTR}])`,
@@ -48,7 +50,9 @@ function scanAndClear(root: ParentNode): void {
 
   let cleared = 0;
   for (const checkbox of checkboxes) {
-    if (!checkbox.isConnected) continue;
+    if (!checkbox.isConnected) {
+      continue;
+    }
     uncheck(checkbox);
     cleared++;
   }
@@ -67,7 +71,9 @@ function scanAndClear(root: ParentNode): void {
 // we want.
 const watcher = createSubtreeWatcher({
   onSubtrees: (roots) => {
-    for (const root of roots) scanAndClear(root);
+    for (const root of roots) {
+      scanAndClear(root);
+    }
   },
 });
 

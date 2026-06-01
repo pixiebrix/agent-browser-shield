@@ -78,8 +78,12 @@ const MAX_TEXT_NODE_CHARS = 160;
 // whitespace so callers can skip emitting an empty text node.
 function normalizeTextContent(raw: string): string | null {
   const collapsed = raw.replaceAll(/\s+/g, " ").trim();
-  if (collapsed.length === 0) return null;
-  if (collapsed.length <= MAX_TEXT_NODE_CHARS) return collapsed;
+  if (collapsed.length === 0) {
+    return null;
+  }
+  if (collapsed.length <= MAX_TEXT_NODE_CHARS) {
+    return collapsed;
+  }
   return `${collapsed.slice(0, MAX_TEXT_NODE_CHARS).trimEnd()}…`;
 }
 
@@ -123,11 +127,15 @@ function isElementVisible(element: HTMLElement): boolean {
     return false;
   }
 
-  if (zeroDimensionAllowlist.has(element.tagName)) return true;
+  if (zeroDimensionAllowlist.has(element.tagName)) {
+    return true;
+  }
 
   // Catch zero-dimension elements (e.g. height:0 + overflow:hidden) that
   // checkVisibility considered visible.
-  if (element.offsetHeight === 0 && element.offsetWidth === 0) return false;
+  if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+    return false;
+  }
 
   return true;
 }
@@ -152,9 +160,15 @@ function isInteractiveElement(element: HTMLElement): boolean {
 // block with a heading child also qualifies because that's the common shape of
 // a recommendation rail ("You might also like" + grid of cards).
 function isStampableContainer(element: HTMLElement): boolean {
-  if (containerTagAllowlist.has(element.tagName)) return true;
-  if (element.querySelector(DIRECT_HEADING_SELECTOR)) return true;
-  if (element.querySelector(NESTED_HEADING_SELECTOR)) return true;
+  if (containerTagAllowlist.has(element.tagName)) {
+    return true;
+  }
+  if (element.querySelector(DIRECT_HEADING_SELECTOR)) {
+    return true;
+  }
+  if (element.querySelector(NESTED_HEADING_SELECTOR)) {
+    return true;
+  }
   return false;
 }
 
@@ -189,10 +203,14 @@ function setValueAttributesInPlace({
 }
 
 function getElementTree(element: HTMLElement): Node | undefined {
-  if (tagDenyList.has(element.tagName)) return;
+  if (tagDenyList.has(element.tagName)) {
+    return;
+  }
 
   // Visibility must be measured on the live element, before any cloning.
-  if (!isElementVisible(element)) return;
+  if (!isElementVisible(element)) {
+    return;
+  }
 
   const compressedElement = document.createElement(element.tagName);
   const attributes = [...element.attributes].filter((attribute) =>
@@ -214,7 +232,9 @@ function getElementTree(element: HTMLElement): Node | undefined {
     const visitChildNode = (node: Node): void => {
       if (node instanceof HTMLElement) {
         const childElement = getElementTree(node);
-        if (childElement) compressedElement.append(childElement);
+        if (childElement) {
+          compressedElement.append(childElement);
+        }
       } else if (node instanceof Text) {
         const normalized = normalizeTextContent(node.textContent ?? "");
         if (normalized) {
@@ -223,18 +243,24 @@ function getElementTree(element: HTMLElement): Node | undefined {
       }
     };
 
-    for (const node of element.childNodes) visitChildNode(node);
+    for (const node of element.childNodes) {
+      visitChildNode(node);
+    }
 
     // Open shadow roots only — closed roots are opaque by design.
     if (element.shadowRoot) {
-      for (const node of element.shadowRoot.childNodes) visitChildNode(node);
+      for (const node of element.shadowRoot.childNodes) {
+        visitChildNode(node);
+      }
     }
   }
 
   // Strip styling-only wrappers that survived attribute filtering. Lift a
   // single non-text child up to its grandparent so the tree stays shallow.
   if (nonSemanticTags.has(element.tagName) && attributes.length === 0) {
-    if (compressedElement.childNodes.length === 0) return;
+    if (compressedElement.childNodes.length === 0) {
+      return;
+    }
     if (
       compressedElement.childNodes.length === 1 &&
       compressedElement.childNodes[0]?.nodeType !== Node.TEXT_NODE
@@ -255,7 +281,9 @@ export function getPageTree(): HTMLBodyElement {
   for (const child of document.body.childNodes) {
     if (child instanceof HTMLElement) {
       const elementTree = getElementTree(child);
-      if (elementTree) compressedBody.append(elementTree);
+      if (elementTree) {
+        compressedBody.append(elementTree);
+      }
     } else if (child instanceof Text) {
       const normalized = normalizeTextContent(child.textContent ?? "");
       if (normalized) {

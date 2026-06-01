@@ -78,16 +78,30 @@ function describeElement(element: Element): Record<string, unknown> {
 // machine-readable reason string when it isn't. Two parallel predicates used
 // to drift; one function eliminates the risk.
 function checkHideable(element: Element): string | null {
-  if (!(element instanceof HTMLElement)) return "not-an-htmlelement";
-  if (!element.isConnected) return "detached-from-dom";
-  if (processedElements.has(element)) return "already-processed";
-  if (isInsidePlaceholder(element)) return "inside-placeholder";
+  if (!(element instanceof HTMLElement)) {
+    return "not-an-htmlelement";
+  }
+  if (!element.isConnected) {
+    return "detached-from-dom";
+  }
+  if (processedElements.has(element)) {
+    return "already-processed";
+  }
+  if (isInsidePlaceholder(element)) {
+    return "inside-placeholder";
+  }
 
   // Protect the same categories the prompt is instructed to skip, in case the
   // LLM ignores the instruction.
-  if (element.closest("article")) return "inside-article";
-  if (element.closest("header")) return "inside-header";
-  if (element.closest('[role="banner"]')) return "inside-banner";
+  if (element.closest("article")) {
+    return "inside-article";
+  }
+  if (element.closest("header")) {
+    return "inside-header";
+  }
+  if (element.closest('[role="banner"]')) {
+    return "inside-banner";
+  }
 
   // Sticky / fixed elements leave a layout hole behind if replaced.
   const position = globalThis.getComputedStyle(element).position;
@@ -127,7 +141,9 @@ function serializePageTree(): string {
 }
 
 function runClassification(): void {
-  if (classifyInFlight) return;
+  if (classifyInFlight) {
+    return;
+  }
 
   pruneReferences();
   const pageTree = serializePageTree();
@@ -146,7 +162,9 @@ function runClassification(): void {
 
   classifyIrrelevantSections({ url: location.href, pageTree }, signal)
     .then((response) => {
-      if (signal.aborted) return;
+      if (signal.aborted) {
+        return;
+      }
 
       log("irrelevant-sections-hide classify response", {
         count: response.irrelevant.length,
@@ -247,7 +265,9 @@ function runClassification(): void {
       });
     })
     .catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       const message = error instanceof Error ? error.message : String(error);
       log("irrelevant-sections-hide classify failed", { error: message });
     })
@@ -258,7 +278,9 @@ function runClassification(): void {
 
 function startScrollWatcher(): void {
   scrollHandler = () => {
-    if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+    if (scrollDebounceTimer) {
+      clearTimeout(scrollDebounceTimer);
+    }
     scrollDebounceTimer = setTimeout(() => {
       scrollDebounceTimer = null;
       runClassification();

@@ -21,7 +21,9 @@ const RULE_ID = "html-comment-strip" as const;
 const EXCLUDED_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]);
 
 function isExcludedParent(parent: Node | null): boolean {
-  if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return false;
+  if (!parent || parent.nodeType !== Node.ELEMENT_NODE) {
+    return false;
+  }
   return EXCLUDED_PARENT_TAGS.has((parent as Element).tagName);
 }
 
@@ -45,7 +47,9 @@ function stripComments(root: ParentNode): void {
 
 const watcher = createSubtreeWatcher({
   onSubtrees: (roots) => {
-    for (const root of roots) stripComments(root);
+    for (const root of roots) {
+      stripComments(root);
+    }
   },
 });
 

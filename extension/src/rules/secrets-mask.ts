@@ -86,7 +86,9 @@ function collectPattern(
   matches: InlineMatch[],
 ): void {
   for (const m of text.matchAll(pattern.regex)) {
-    if (m.index === undefined) continue;
+    if (m.index === undefined) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -97,8 +99,12 @@ function collectPattern(
 
 function collectEntropy(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(ENTROPY_CANDIDATE)) {
-    if (m.index === undefined) continue;
-    if (shannonEntropy(m[0]) < BASE64_ENTROPY_THRESHOLD) continue;
+    if (m.index === undefined) {
+      continue;
+    }
+    if (shannonEntropy(m[0]) < BASE64_ENTROPY_THRESHOLD) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -106,8 +112,12 @@ function collectEntropy(text: string, matches: InlineMatch[]): void {
     });
   }
   for (const m of text.matchAll(HEX_CANDIDATE)) {
-    if (m.index === undefined) continue;
-    if (shannonEntropy(m[0]) < HEX_ENTROPY_THRESHOLD) continue;
+    if (m.index === undefined) {
+      continue;
+    }
+    if (shannonEntropy(m[0]) < HEX_ENTROPY_THRESHOLD) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -136,7 +146,9 @@ function collectMatches(text: string): InlineMatch[] {
   const merged: InlineMatch[] = [];
   for (const match of matches) {
     const last = merged.at(-1);
-    if (last && match.start < last.end) continue;
+    if (last && match.start < last.end) {
+      continue;
+    }
     merged.push(match);
   }
   return merged;

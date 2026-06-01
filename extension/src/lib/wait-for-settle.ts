@@ -36,8 +36,12 @@ export function waitForSettle(
 
     const finish = () => {
       observer.disconnect();
-      if (pollTimer) clearTimeout(pollTimer);
-      if (maxTimer) clearTimeout(maxTimer);
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+      }
+      if (maxTimer) {
+        clearTimeout(maxTimer);
+      }
       signal?.removeEventListener("abort", finish);
       resolve();
     };

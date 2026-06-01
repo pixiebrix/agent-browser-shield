@@ -13,15 +13,23 @@ const BADGE_COLOR = "#2563eb";
 
 function totalForTab(tabId: number): number {
   const frames = tabCounts.get(tabId);
-  if (!frames) return 0;
+  if (!frames) {
+    return 0;
+  }
   let sum = 0;
-  for (const value of frames.values()) sum += value;
+  for (const value of frames.values()) {
+    sum += value;
+  }
   return sum;
 }
 
 function formatBadge(total: number): string {
-  if (total <= 0) return "";
-  if (total > 999) return "999+";
+  if (total <= 0) {
+    return "";
+  }
+  if (total > 999) {
+    return "999+";
+  }
   return String(total);
 }
 
@@ -43,7 +51,9 @@ function recordFrameCount(tabId: number, frameId: number, count: number): void {
   }
   if (count <= 0) {
     frames.delete(frameId);
-    if (frames.size === 0) tabCounts.delete(tabId);
+    if (frames.size === 0) {
+      tabCounts.delete(tabId);
+    }
   } else {
     frames.set(frameId, count);
   }
@@ -72,14 +82,18 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 // zero counts back — but doing this synchronously keeps the badge from
 // looking stale for the duration of those mutation observer cycles.
 subscribeEnforcementEnabled((enabled) => {
-  if (enabled) return;
+  if (enabled) {
+    return;
+  }
   for (const tabId of tabCounts.keys()) {
     clearTab(tabId);
   }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || typeof message !== "object") return undefined;
+  if (!message || typeof message !== "object") {
+    return undefined;
+  }
 
   if (message.type === "open-options") {
     chrome.runtime.openOptionsPage(() => {

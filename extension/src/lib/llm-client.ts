@@ -46,7 +46,9 @@ export async function classifyIrrelevantSections(
   return new Promise<ClassifyResponse>((resolve, reject) => {
     let settled = false;
     const finish = (action: () => void) => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup?.[Symbol.dispose]();
       port.disconnect();

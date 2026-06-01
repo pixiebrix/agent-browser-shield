@@ -96,7 +96,9 @@ describe("countdownTimerHideRule", () => {
 
     // Simulate the timer ticking down before the snapshot fires.
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "12:34:55";
+    if (timer) {
+      timer.textContent = "12:34:55";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -112,7 +114,9 @@ describe("countdownTimerHideRule", () => {
     countdownTimerHideRule.apply(document.body);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "5m 29s";
+    if (timer) {
+      timer.textContent = "5m 29s";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -136,7 +140,9 @@ describe("countdownTimerHideRule", () => {
 
     // Stopwatch-style increment — should not be hidden.
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "05:31";
+    if (timer) {
+      timer.textContent = "05:31";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -164,7 +170,9 @@ describe("countdownTimerHideRule", () => {
     countdownTimerHideRule.apply(document.body);
 
     const inner = document.querySelector("#inner");
-    if (inner) inner.textContent = "09:59";
+    if (inner) {
+      inner.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -206,7 +214,9 @@ describe("countdownTimerHideRule", () => {
     countdownTimerHideRule.apply(document.body);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -229,7 +239,9 @@ describe("countdownTimerHideRule", () => {
     countdownTimerHideRule.apply(document.body);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -251,7 +263,9 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -295,7 +309,9 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
@@ -308,7 +324,9 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     countdownTimerHideRule.apply(document.body);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     countdownTimerHideRule.teardown?.();
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
@@ -322,7 +340,9 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
     countdownTimerHideRule.apply(document.body);
 
     const timer = document.querySelector("#t");
-    if (timer) timer.textContent = "09:59";
+    if (timer) {
+      timer.textContent = "09:59";
+    }
 
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 

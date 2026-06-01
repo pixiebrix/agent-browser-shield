@@ -98,9 +98,13 @@ export async function handleClassify(
   const parsed = JSON.parse(content) as { irrelevant?: unknown };
   const irrelevant = Array.isArray(parsed.irrelevant)
     ? parsed.irrelevant.flatMap((entry): { ref: string; summary: string }[] => {
-        if (!entry || typeof entry !== "object") return [];
+        if (!entry || typeof entry !== "object") {
+          return [];
+        }
         const { ref, summary } = entry as Record<string, unknown>;
-        if (typeof ref !== "string") return [];
+        if (typeof ref !== "string") {
+          return [];
+        }
         return [
           {
             ref,
@@ -118,7 +122,9 @@ export async function handleClassify(
 // for a response no one is listening for.
 export function startClassifyPortListener(): void {
   chrome.runtime.onConnect.addListener((port) => {
-    if (port.name !== CLASSIFY_PORT_NAME) return;
+    if (port.name !== CLASSIFY_PORT_NAME) {
+      return;
+    }
     const controller = new AbortController();
     // Content-side disconnect (rule torn down, page navigated, frame gone)
     // aborts the in-flight fetch via the signal forwarded into handleClassify.
@@ -142,7 +148,9 @@ export function startClassifyPortListener(): void {
           port.disconnect();
         })
         .catch((error: unknown) => {
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted) {
+            return;
+          }
           const message =
             error instanceof Error ? error.message : String(error);
           send({ kind: "error", error: message });

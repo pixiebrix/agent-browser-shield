@@ -14,7 +14,9 @@ export function useTransientStatus(
 
   useEffect(
     () => () => {
-      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
     },
     [],
   );
@@ -22,7 +24,9 @@ export function useTransientStatus(
   const show = useCallback(
     (message: string) => {
       setValue(message);
-      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
       timeoutRef.current = setTimeout(() => {
         setValue(null);
         timeoutRef.current = null;

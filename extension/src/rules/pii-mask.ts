@@ -15,14 +15,18 @@ const PHONE_PATTERN =
 
 function passesLuhn(raw: string): boolean {
   const digits = raw.replaceAll(/\D/g, "");
-  if (digits.length < 13 || digits.length > 19) return false;
+  if (digits.length < 13 || digits.length > 19) {
+    return false;
+  }
   let sum = 0;
   let alt = false;
   for (let i = digits.length - 1; i >= 0; i--) {
     let n = Number(digits[i]);
     if (alt) {
       n *= 2;
-      if (n > 9) n -= 9;
+      if (n > 9) {
+        n -= 9;
+      }
     }
     sum += n;
     alt = !alt;
@@ -34,8 +38,12 @@ function collectMatches(text: string): InlineMatch[] {
   const matches: InlineMatch[] = [];
 
   for (const m of text.matchAll(CC_PATTERN)) {
-    if (m.index === undefined) continue;
-    if (!passesLuhn(m[0])) continue;
+    if (m.index === undefined) {
+      continue;
+    }
+    if (!passesLuhn(m[0])) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -43,7 +51,9 @@ function collectMatches(text: string): InlineMatch[] {
     });
   }
   for (const m of text.matchAll(SSN_PATTERN)) {
-    if (m.index === undefined) continue;
+    if (m.index === undefined) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -51,7 +61,9 @@ function collectMatches(text: string): InlineMatch[] {
     });
   }
   for (const m of text.matchAll(PHONE_PATTERN)) {
-    if (m.index === undefined) continue;
+    if (m.index === undefined) {
+      continue;
+    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -63,7 +75,9 @@ function collectMatches(text: string): InlineMatch[] {
   const merged: InlineMatch[] = [];
   for (const match of matches) {
     const last = merged.at(-1);
-    if (last && match.start < last.end) continue;
+    if (last && match.start < last.end) {
+      continue;
+    }
     merged.push(match);
   }
   return merged;

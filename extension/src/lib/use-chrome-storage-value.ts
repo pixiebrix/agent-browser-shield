@@ -20,7 +20,9 @@ export function useChromeStorageValue<T>(
   useEffect(() => {
     let cancelled = false;
     source.get().then((initial) => {
-      if (!cancelled) setValue(initial);
+      if (!cancelled) {
+        setValue(initial);
+      }
     });
     const unsubscribe = source.subscribe((next) => {
       setValue(next);

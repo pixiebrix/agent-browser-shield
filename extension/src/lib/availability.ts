@@ -31,7 +31,9 @@ export async function resolveAvailability(
   rule: Rule,
 ): Promise<AvailabilitySnapshot> {
   const accessor = rule.available;
-  if (isReactive(accessor)) return accessor.get();
+  if (isReactive(accessor)) {
+    return accessor.get();
+  }
   if (accessor === false) {
     return { available: false, reason: rule.unavailableReason };
   }
@@ -58,11 +60,15 @@ export function subscribeRuleAvailability(
     void getRuleAvailabilityStates().then(listener);
   };
   for (const rule of RULES) {
-    if (!isReactive(rule.available)) continue;
+    if (!isReactive(rule.available)) {
+      continue;
+    }
     unsubs.push(rule.available.subscribe(refresh));
   }
   return () => {
-    for (const unsub of unsubs) unsub();
+    for (const unsub of unsubs) {
+      unsub();
+    }
   };
 }
 
@@ -80,7 +86,9 @@ export const availabilitySource = Object.freeze({
 export function createApiKeyAvailability(reason: string): RuleAvailability {
   return {
     async get() {
-      if (HAS_BUILT_IN_OPENAI_KEY) return { available: true };
+      if (HAS_BUILT_IN_OPENAI_KEY) {
+        return { available: true };
+      }
       const userKey = await getUserApiKey();
       return userKey ? { available: true } : { available: false, reason };
     },

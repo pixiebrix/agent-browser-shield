@@ -27,7 +27,9 @@ const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
 function findRecipe(url: string): string | null {
   for (const { patterns, recipe } of SEARCH_URL_HELPER_RECIPES) {
-    if (patterns.some((pattern) => pattern.test(url))) return recipe;
+    if (patterns.some((pattern) => pattern.test(url))) {
+      return recipe;
+    }
   }
   return null;
 }
@@ -48,11 +50,15 @@ function buildLandmark(recipe: string): HTMLElement {
 
 function apply(_root: ParentNode): void {
   const recipe = findRecipe(globalThis.location.href);
-  if (recipe === null) return;
+  if (recipe === null) {
+    return;
+  }
   // Idempotent: a previous apply (initial pass, re-enable from the
   // options page, or rule-engine re-fire on history navigation) may
   // already have inserted the landmark.
-  if (document.querySelector(LANDMARK_SELECTOR)) return;
+  if (document.querySelector(LANDMARK_SELECTOR)) {
+    return;
+  }
   // The engine passes document.body, but we always inject at body level
   // (regardless of which subtree root was handed in) so the landmark is
   // the first element of <body> at the top of the a11y tree.

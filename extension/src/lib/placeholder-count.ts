@@ -22,7 +22,9 @@ export interface PlaceholderCountMessage {
 }
 
 function currentCount(): number {
-  if (!document.body) return 0;
+  if (!document.body) {
+    return 0;
+  }
   return document.body.querySelectorAll(COUNT_SELECTOR).length;
 }
 
@@ -41,7 +43,9 @@ export function startPlaceholderCountReporter(): void {
   let lastReported = -1;
   const reportIfChanged = () => {
     const count = currentCount();
-    if (count === lastReported) return;
+    if (count === lastReported) {
+      return;
+    }
     lastReported = count;
     send(count);
   };
@@ -60,7 +64,9 @@ export function startPlaceholderCountReporter(): void {
   });
 
   const startObserving = () => {
-    if (!document.body) return;
+    if (!document.body) {
+      return;
+    }
     observer.observe(document.body, {
       childList: true,
       subtree: true,

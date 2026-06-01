@@ -43,30 +43,44 @@ export function createSubtreeWatcher(
   const pending = new Set<Element>();
 
   function drain(): void {
-    if (pending.size === 0) return;
+    if (pending.size === 0) {
+      return;
+    }
     const roots = [...pending].filter((root) => root.isConnected);
     pending.clear();
-    if (roots.length > 0) onSubtrees(roots);
+    if (roots.length > 0) {
+      onSubtrees(roots);
+    }
   }
 
   function enqueue(mutations: MutationRecord[]): void {
     for (const mutation of mutations) {
       for (const added of mutation.addedNodes) {
-        if (added.nodeType !== Node.ELEMENT_NODE) continue;
+        if (added.nodeType !== Node.ELEMENT_NODE) {
+          continue;
+        }
         const element = added as Element;
         if (skipPlaceholderSubtrees) {
-          if (element.classList.contains(PLACEHOLDER_CLASS)) continue;
-          if (element.closest(`.${PLACEHOLDER_CLASS}`)) continue;
+          if (element.classList.contains(PLACEHOLDER_CLASS)) {
+            continue;
+          }
+          if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+            continue;
+          }
         }
         pending.add(element);
       }
     }
-    if (pending.size > 0) throttledScan?.();
+    if (pending.size > 0) {
+      throttledScan?.();
+    }
   }
 
   return {
     start(root: ParentNode): void {
-      if (observer) return;
+      if (observer) {
+        return;
+      }
       throttledScan = throttle(drain, throttleMs, {
         leading: true,
         trailing: true,
