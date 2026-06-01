@@ -117,6 +117,11 @@ function isClippedToZero(style: CSSStyleDeclaration): boolean {
   return false;
 }
 
+interface MatchDetail {
+  readonly reason: string;
+  readonly details: Readonly<Record<string, string>>;
+}
+
 // Detect a screen-reader-only pattern by computed style. Frameworks that
 // emit auto-generated class names (MUI's `visuallyHidden`, emotion-styled
 // sr-only equivalents, Amazon's `a-offscreen` when stylesheets compute
@@ -148,12 +153,18 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
   return true;
 }
 
-function isHiddenByCss(element: Element, style: CSSStyleDeclaration): boolean {
+function detectHiddenByCss(
+  element: Element,
+  style: CSSStyleDeclaration,
+): MatchDetail | null {
   if (style.visibility === "hidden" || style.visibility === "collapse") {
-    return true;
+    return {
+      reason: `visibility-${style.visibility}`,
+      details: { visibility: style.visibility },
+    };
   }
   if (Number.parseFloat(style.opacity) === 0) {
-    return true;
+    return { reason: "opacity-0", details: { opacity: style.opacity } };
   }
   // `font-size: 0` on a wrapper is the legacy layout trick to collapse
   // whitespace between inline-block children — children override with their
@@ -162,26 +173,39 @@ function isHiddenByCss(element: Element, style: CSSStyleDeclaration): boolean {
   // top nav). Only treat font-size:0 as hiding text when the element itself
   // owns direct text nodes that would actually be invisible.
   if (style.fontSize === "0px" && hasOwnDirectText(element)) {
-    return true;
+    return { reason: "font-size-0", details: { fontSize: style.fontSize } };
   }
   if (style.position === "absolute" || style.position === "fixed") {
     const left = parsePixelLength(style.left);
+    if (left !== null && left <= OFFSCREEN_THRESHOLD_PX) {
+      return {
+        reason: "offscreen-left",
+        details: { position: style.position, left: style.left },
+      };
+    }
     const top = parsePixelLength(style.top);
-    if (
-      (left !== null && left <= OFFSCREEN_THRESHOLD_PX) ||
-      (top !== null && top <= OFFSCREEN_THRESHOLD_PX)
-    ) {
-      return true;
+    if (top !== null && top <= OFFSCREEN_THRESHOLD_PX) {
+      return {
+        reason: "offscreen-top",
+        details: { position: style.position, top: style.top },
+      };
     }
   }
   const textIndent = parsePixelLength(style.textIndent);
   if (textIndent !== null && textIndent <= OFFSCREEN_THRESHOLD_PX) {
-    return true;
+    return { reason: "text-indent", details: { textIndent: style.textIndent } };
   }
   if (isClippedToZero(style)) {
-    return true;
+    return {
+      reason: "clip-to-zero",
+      details: {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        clip: style.clip,
+        clipPath: style.clipPath,
+      },
+    };
   }
-  return false;
+  return null;
 }
 
 function hasNonemptyText(element: Element): boolean {
@@ -258,24 +282,39 @@ function colorDistance(a: RGB, b: RGB): number {
 // Foreground is the same color as the effective background, modulo a
 // perceptual tolerance — the classic "white text on white background"
 // LLM-trick. Element's own alpha is folded in so `opacity:0`-style cases
-// don't double-count (those are already caught by isHiddenByCss).
-function hasMatchingForeground(
+// don't double-count (those are already caught by detectHiddenByCss).
+function detectColorMatch(
   element: Element,
   style: CSSStyleDeclaration,
-): boolean {
+): MatchDetail | null {
   const fg = parseColor(style.color);
   if (!fg) {
-    return false;
+    return null;
   }
   if (fg[3] === 0) {
-    return false;
+    return null;
   }
   const bg = effectiveBackgroundColor(element);
-  return colorDistance([fg[0], fg[1], fg[2]], bg) <= COLOR_MATCH_DISTANCE;
+  const distance = colorDistance([fg[0], fg[1], fg[2]], bg);
+  if (distance > COLOR_MATCH_DISTANCE) {
+    return null;
+  }
+  return {
+    reason: "color-match",
+    details: {
+      color: style.color,
+      effectiveBg: `rgb(${bg[0]}, ${bg[1]}, ${bg[2]})`,
+      distance: distance.toFixed(1),
+    },
+  };
 }
 
-function findCandidates(root: ParentNode): HTMLElement[] {
-  const matches: HTMLElement[] = [];
+interface Candidate extends MatchDetail {
+  readonly element: HTMLElement;
+}
+
+function findCandidates(root: ParentNode): Candidate[] {
+  const matches: Candidate[] = [];
   for (const element of root.querySelectorAll<HTMLElement>("*")) {
     if (isNonContentTag(element.tagName)) {
       continue;
@@ -299,28 +338,40 @@ function findCandidates(root: ParentNode): HTMLElement[] {
     if (hasStructuralSrOnlyPattern(style)) {
       continue;
     }
-    if (
-      !isHiddenByCss(element, style) &&
-      !hasMatchingForeground(element, style)
-    ) {
+    const match =
+      detectHiddenByCss(element, style) ?? detectColorMatch(element, style);
+    if (!match) {
       continue;
     }
-    matches.push(element);
+    matches.push({ element, ...match });
   }
-  return filterToOutermost(matches);
+  return filterToOutermost(matches, (c) => c.element);
+}
+
+const TEXT_PREVIEW_MAX = 80;
+
+function textPreview(element: Element): string {
+  const text = element.textContent.trim().replaceAll(/\s+/g, " ");
+  return text.length > TEXT_PREVIEW_MAX
+    ? `${text.slice(0, TEXT_PREVIEW_MAX)}…`
+    : text;
 }
 
 function scanAndStrip(root: ParentNode): void {
-  for (const element of findCandidates(root)) {
+  for (const candidate of findCandidates(root)) {
+    const { element, reason, details } = candidate;
     if (!element.isConnected) {
       continue;
     }
     log("hidden text removed", {
       ruleId: RULE_ID,
+      reason,
+      details,
       tag: element.tagName,
       id: element.id || undefined,
       classes: element.className || undefined,
       textLength: element.textContent.length,
+      textPreview: textPreview(element),
     });
     element.remove();
   }
