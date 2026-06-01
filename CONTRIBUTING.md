@@ -95,14 +95,14 @@ registration step.
 Walkthrough:
 
 1. Copy a small existing rule (`scarcity-hide.ts` is a good starter).
-2. Implement the `Rule` interface from `extension/src/rules/types.ts` —
-   `id`, `label`, `description`, `defaultEnabled`, `apply()`. The custom
-   ESLint rule `agent-browser-shield/rule-id-matches-filename` enforces that
-   `id` matches the filename.
+2. Implement the `Rule` interface from `extension/src/rules/types.ts` — `id`,
+   `label`, `description`, `defaultEnabled`, `apply()`. The custom ESLint rule
+   `agent-browser-shield/rule-id-matches-filename` enforces that `id` matches
+   the filename.
 3. Add tests in `extension/src/rules/__tests__/<your-rule>.test.ts` using jsdom
    fixtures.
-4. Append the rule's import to `RULES_TUPLE` in
-   `extension/src/rules/index.ts`. That's the only registration needed.
+4. Append the rule's import to `RULES_TUPLE` in `extension/src/rules/index.ts`.
+   That's the only registration needed.
 5. Update `skills/agent-browser-shield-config/SKILL.md` so the rule appears in
    the list there.
 
