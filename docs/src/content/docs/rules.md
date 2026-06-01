@@ -105,9 +105,8 @@ readable by agents and can carry prompt-injection payloads. Comments inside
 `<script>`/`<style>`/`<noscript>` are preserved. Removal is not reversible
 within the current page load.
 
-Prior art: HTML comments are explicitly enumerated as a non-rendered carrier
-for indirect prompt injection in Greshake et al. (cited in the section
-preamble).
+Prior art: HTML comments are explicitly enumerated as a non-rendered carrier for
+indirect prompt injection in Greshake et al. (cited in the section preamble).
 
 ### Hide Comments
 
@@ -130,10 +129,10 @@ Hide user-generated review text so agents aren't exposed to potential prompt
 injection from reviewers. Covers schema.org microdata and supported sites
 (Amazon, Walmart); aggregate star ratings are kept visible.
 
-Detection relies on the
-[schema.org `Review`](https://schema.org/Review) microdata vocabulary where
-sites expose it; user-generated reviews as an indirect-prompt-injection vector
-are covered by the same WIPI threat model referenced above.
+Detection relies on the [schema.org `Review`](https://schema.org/Review)
+microdata vocabulary where sites expose it; user-generated reviews as an
+indirect-prompt-injection vector are covered by the same WIPI threat model
+referenced above.
 
 ### Hide Social Embeds
 
@@ -181,8 +180,8 @@ The pattern taxonomy itself traces to Harry Brignull's 2010
 darkpatterns.org) and the empirical study by Mathur et al.,
 [*Dark Patterns at Scale: Findings from a Crawl of 11K Shopping Websites*](https://webtransparency.cs.princeton.edu/dark-patterns/)
 (CSCW 2019), which enumerates *Scarcity*, *Sneaking* (sneak-into-basket),
-*Preselection*, and *Urgency* (countdown timers) — the four categories the
-rules below target. Bösch et al.,
+*Preselection*, and *Urgency* (countdown timers) — the four categories the rules
+below target. Bösch et al.,
 [*Tales from the Dark Side: Privacy Dark Strategies and Privacy Dark Patterns*](https://petsymposium.org/popets/2016/popets-2016-0038.php)
 (PoPETs 2016), gives the parallel privacy-side taxonomy.
 
@@ -242,8 +241,8 @@ donation/round-up, gift wrap, carbon offset, shipping/package protection, Route,
 Seel, Navidium, driver tips). The line item is **not** removed — the agent reads
 the annotation and decides whether to click the line's remove control.
 
-Prior art: Brignull's original 2010 *Sneak into Basket* pattern, generalized
-to the *Sneaking* family in Mathur et al. 2019 (both cited in the section
+Prior art: Brignull's original 2010 *Sneak into Basket* pattern, generalized to
+the *Sneaking* family in Mathur et al. 2019 (both cited in the section
 preamble).
 
 ## Token-saving cleanup
@@ -268,8 +267,8 @@ generic article extractor.
 Hide the page footer (legal links, sitemap, social icons, marketing copy) to
 save tokens. Per-section footers inside articles or asides are left visible.
 
-Prior art: Footers are a canonical boilerplate region in Kohlschütter et al.
-and are stripped by Readability.js (cited in the section preamble).
+Prior art: Footers are a canonical boilerplate region in Kohlschütter et al. and
+are stripped by Readability.js (cited in the section preamble).
 
 ### Remove Cookie Banners
 
@@ -311,9 +310,9 @@ Remove interstitial newsletter signup modals that cover the page. Detects
 fixed-position dialogs containing signup language and an email input. Standard
 login modals, paywalls, and small toasts are kept visible.
 
-Prior art: Interstitial signup modals are categorized as *Nagging* in Mathur
-et al. 2019 (cited in the Dark-pattern section preamble); reader-mode tools
-like Readability.js routinely strip them as non-article chrome.
+Prior art: Interstitial signup modals are categorized as *Nagging* in Mathur et
+al. 2019 (cited in the Dark-pattern section preamble); reader-mode tools like
+Readability.js routinely strip them as non-article chrome.
 
 ### Hide Ads & Sponsored Results
 
@@ -327,10 +326,9 @@ from EasyList are injected as a `display:none` stylesheet for broader coverage
 of third-party ad networks.
 
 Prior art: Selectors come directly from [EasyList](https://easylist.to/), the
-filter list that powers
-[uBlock Origin](https://github.com/gorhill/uBlock), Adblock Plus, and most
-other consumer ad blockers — over a decade of community-maintained ad and
-tracker selector patterns.
+filter list that powers [uBlock Origin](https://github.com/gorhill/uBlock),
+Adblock Plus, and most other consumer ad blockers — over a decade of
+community-maintained ad and tracker selector patterns.
 
 ### Remove Unused SVG Sprites
 
@@ -342,8 +340,8 @@ definitions) when none of their symbols are referenced by any `<use>` element on
 the page. Referenced sprites are preserved so icons keep working.
 
 Prior art: Dead-code elimination — the bundler optimization of dropping
-references that no live code reaches — applied to SVG `<symbol>` definitions
-at runtime. No direct academic prior art known.
+references that no live code reaches — applied to SVG `<symbol>` definitions at
+runtime. No direct academic prior art known.
 
 ### Hide Irrelevant Sections (AI)
 
@@ -386,9 +384,9 @@ URL instead of typing into search boxes and clicking facets. No visible
 affordance — the landmark is preserved by `hidden-text-strip` via the `sr-only`
 class allowlist.
 
-Prior art: Same goal as the [llms.txt](https://llmstxt.org/) proposal
-(Howard, Answer.AI, 2024) — give LLMs a compact, machine-readable hint about
-how to use a site — but injected client-side as a hidden landmark instead of
-relying on the site to publish a top-level file. The hidden-but-readable
-delivery mechanism reuses the long-established `sr-only` / `visually-hidden`
-convention from screen-reader accessibility practice.
+Prior art: Same goal as the [llms.txt](https://llmstxt.org/) proposal (Howard,
+Answer.AI, 2024) — give LLMs a compact, machine-readable hint about how to use a
+site — but injected client-side as a hidden landmark instead of relying on the
+site to publish a top-level file. The hidden-but-readable delivery mechanism
+reuses the long-established `sr-only` / `visually-hidden` convention from
+screen-reader accessibility practice.
