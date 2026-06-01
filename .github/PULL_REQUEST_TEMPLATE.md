@@ -12,11 +12,9 @@
 
 ## Testing
 
-<!-- How was this verified? -->
+<!-- How was this verified? CI runs lint, typecheck, knip, and the full test
+suite — list here only what CI can't catch. -->
 
-- [ ] `bun run test` passes (extension)
-- [ ] `bun run check` passes (lint + format)
-- [ ] `bunx tsc --noEmit` passes (typecheck)
 - [ ] Manually loaded the extension and exercised the affected rule(s)
 - [ ] Updated relevant skill docs in `skills/` if rules or trace layout changed
   (see [CLAUDE.md](../CLAUDE.md))
