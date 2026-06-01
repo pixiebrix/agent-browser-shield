@@ -5,10 +5,6 @@ description: Install and operate the agent-browser-shield Chromium extension —
 
 # agent-browser-shield
 
-<!-- Canonical maintainer-facing skills live in pixiebrix/agent-browser-shield
-     under skills/agent-browser-shield/ and skills/agent-browser-shield-install/.
-     This file is the curated public surface — keep it short. -->
-
 A Chromium MV3 extension that runs in the browser session **before the agent
 sees the page**: masks PII and secrets, neutralizes cart sneak-ins and
 pre-checked checkout boxes, strips prompt-injection surfaces, and hides
@@ -112,3 +108,10 @@ Use when OpenClaw is connecting to a Chromium you launch yourself.
 
 Open the options page (shield icon in the Chromium toolbar) to toggle individual
 rules. Per-site rule overrides are also available there.
+
+## Reporting issues
+
+Bug reports and feature requests:
+<https://github.com/pixiebrix/agent-browser-shield/issues>. Include the rule ID
+(from `data-abs-rule`) and the page URL when reporting a false positive or
+missed detection.
