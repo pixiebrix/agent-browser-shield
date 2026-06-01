@@ -2,121 +2,47 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { useEffect, useState } from "react";
-import {
-  getUserApiKey,
-  HAS_BUILT_IN_OPENAI_KEY,
-  setUserApiKey,
-} from "../lib/api-key-storage";
-import {
-  getRuleAvailabilityStates,
-  type RuleAvailabilityStates,
-  subscribeRuleAvailability,
-} from "../lib/availability";
+import { apiKeyStorage, HAS_BUILT_IN_OPENAI_KEY } from "../lib/api-key-storage";
+import { availabilitySource } from "../lib/availability";
 import { HelpLinks } from "../lib/HelpLinks";
 import {
-  getPlaceholderDisplayMode,
   type PlaceholderDisplayMode,
-  setPlaceholderDisplayMode,
-  subscribePlaceholderDisplayMode,
+  placeholderDisplayStorage,
 } from "../lib/placeholder-display";
-import {
-  getRuleStates,
-  RULE_IDS,
-  type RuleId,
-  type RuleStates,
-  setAllRuleStates,
-  setRuleEnabled,
-  subscribe,
-} from "../lib/storage";
-import { RULES } from "../rules";
-
-const RULE_ID_SET = new Set<string>(RULE_IDS);
-
-type ParseResult =
-  | { ok: true; value: Partial<RuleStates> }
-  | { ok: false; error: string };
-
-function parseConfig(input: string): ParseResult {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(input);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `Invalid JSON: ${message}` };
-  }
-
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return {
-      ok: false,
-      error: "Expected a JSON object mapping rule IDs to booleans.",
-    };
-  }
-
-  const errors: string[] = [];
-  const result: Partial<RuleStates> = {};
-  for (const [key, value] of Object.entries(parsed)) {
-    if (!RULE_ID_SET.has(key)) {
-      errors.push(`Unknown rule: ${key}`);
-      continue;
-    }
-    if (typeof value !== "boolean") {
-      errors.push(`Non-boolean value for ${key}: ${typeof value}`);
-      continue;
-    }
-    result[key as RuleId] = value;
-  }
-
-  if (errors.length > 0) {
-    return { ok: false, error: errors.join("\n") };
-  }
-  return { ok: true, value: result };
-}
+import { RuleList } from "../lib/RuleList";
+import { ruleStatesStorage, setAllRuleStates } from "../lib/storage";
+import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
+import { useTransientStatus } from "../lib/use-transient-status";
+import { parseConfig } from "./parse-config";
+import { Section } from "./Section";
 
 export function Options() {
-  const [states, setStates] = useState<RuleStates | null>(null);
+  const states = useChromeStorageValue(ruleStatesStorage);
+  const availability = useChromeStorageValue(availabilitySource);
+  const displayMode = useChromeStorageValue(placeholderDisplayStorage);
+  const storedApiKey = useChromeStorageValue(apiKeyStorage);
+
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [apiKeyDraft, setApiKeyDraft] = useState("");
-  const [apiKeyStatus, setApiKeyStatus] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<PlaceholderDisplayMode | null>(
-    null,
-  );
-  const [availability, setAvailability] =
-    useState<RuleAvailabilityStates | null>(null);
+  const [status, showStatus] = useTransientStatus();
+  const [apiKeyDraft, setApiKeyDraft] = useState<string | null>(null);
+  const [apiKeyStatus, showApiKeyStatus] = useTransientStatus();
 
+  // Initialize the editable API-key field from storage on first load only.
+  // Further storage changes (e.g. another tab) keep `storedApiKey` in sync via
+  // the hook; we don't blow away the user's in-progress edits.
   useEffect(() => {
-    let cancelled = false;
-    getRuleStates().then((initial) => {
-      if (!cancelled) setStates(initial);
-    });
-    getUserApiKey().then((key) => {
-      if (!cancelled) setApiKeyDraft(key);
-    });
-    getPlaceholderDisplayMode().then((mode) => {
-      if (!cancelled) setDisplayMode(mode);
-    });
-    getRuleAvailabilityStates().then((initial) => {
-      if (!cancelled) setAvailability(initial);
-    });
-    const unsubscribe = subscribe((next) => {
-      setStates(next);
-    });
-    const unsubscribeMode = subscribePlaceholderDisplayMode((mode) => {
-      setDisplayMode(mode);
-    });
-    const unsubscribeAvailability = subscribeRuleAvailability((next) => {
-      setAvailability(next);
-    });
-    return () => {
-      cancelled = true;
-      unsubscribe();
-      unsubscribeMode();
-      unsubscribeAvailability();
-    };
-  }, []);
+    if (storedApiKey !== null && apiKeyDraft === null) {
+      setApiKeyDraft(storedApiKey);
+    }
+  }, [storedApiKey, apiKeyDraft]);
 
-  if (!states || !availability) {
+  if (
+    !states ||
+    !availability ||
+    displayMode === null ||
+    apiKeyDraft === null
+  ) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -138,24 +64,16 @@ export function Options() {
     const result = parseConfig(draft);
     if (!result.ok) {
       setError(result.error);
-      setStatus(null);
       return;
     }
     setError(null);
     await setAllRuleStates(result.value);
-    setStatus("Applied");
-    setTimeout(() => setStatus(null), 1500);
+    showStatus("Applied");
   };
 
   const handleSaveApiKey = async () => {
-    await setUserApiKey(apiKeyDraft.trim());
-    setApiKeyStatus("Saved");
-    setTimeout(() => setApiKeyStatus(null), 1500);
-  };
-
-  const handleDisplayModeChange = (mode: PlaceholderDisplayMode) => {
-    setDisplayMode(mode);
-    void setPlaceholderDisplayMode(mode);
+    await apiKeyStorage.set(apiKeyDraft.trim());
+    showApiKeyStatus("Saved");
   };
 
   return (
@@ -170,17 +88,7 @@ export function Options() {
         <a href="#rules">Rules</a>
       </nav>
 
-      <section id="apply" className="section">
-        <h2>
-          <a
-            href="#apply"
-            className="anchor"
-            aria-label="Link to Apply configuration"
-          >
-            #
-          </a>
-          Apply configuration
-        </h2>
+      <Section id="apply" title="Apply configuration">
         <p className="hint">
           Paste a JSON object mapping rule IDs to booleans, then click Apply.
           Replaces the full configuration: any rule not listed resets to its
@@ -209,38 +117,18 @@ export function Options() {
             </span>
           )}
         </div>
-      </section>
+      </Section>
 
-      <section id="export" className="section">
-        <h2>
-          <a
-            href="#export"
-            className="anchor"
-            aria-label="Link to Export configuration"
-          >
-            #
-          </a>
-          Export configuration
-        </h2>
+      <Section id="export" title="Export configuration">
         <p className="hint">Download the current rule state as a JSON file.</p>
         <div className="button-row">
           <button type="button" className="secondary" onClick={handleExport}>
             Export JSON
           </button>
         </div>
-      </section>
+      </Section>
 
-      <section id="display" className="section">
-        <h2>
-          <a
-            href="#display"
-            className="anchor"
-            aria-label="Link to Placeholder display"
-          >
-            #
-          </a>
-          Placeholder display
-        </h2>
+      <Section id="display" title="Placeholder display">
         <p className="hint">
           How the reveal control on each placeholder is rendered. The
           descriptive label (e.g., what kind of content was hidden) is always
@@ -248,54 +136,22 @@ export function Options() {
         </p>
         <fieldset className="radio-group">
           <legend className="visually-hidden">Reveal control style</legend>
-          <label className="radio">
-            <input
-              type="radio"
-              name="placeholder-display-mode"
-              value="icon"
-              checked={displayMode === "icon"}
-              disabled={displayMode === null}
-              onChange={() => handleDisplayModeChange("icon")}
-            />
-            <div>
-              <strong>Icon only</strong>
-              <p>
-                Compact shield icon. Best when placeholders would otherwise grow
-                larger than the content they replace.
-              </p>
-            </div>
-          </label>
-          <label className="radio">
-            <input
-              type="radio"
-              name="placeholder-display-mode"
-              value="button"
-              checked={displayMode === "button"}
-              disabled={displayMode === null}
-              onChange={() => handleDisplayModeChange("button")}
-            />
-            <div>
-              <strong>Button with label</strong>
-              <p>
-                Shield icon plus a visible label describing what was hidden.
-                Larger, but visually self-explanatory.
-              </p>
-            </div>
-          </label>
+          <DisplayModeOption
+            mode="icon"
+            current={displayMode}
+            title="Icon only"
+            description="Compact shield icon. Best when placeholders would otherwise grow larger than the content they replace."
+          />
+          <DisplayModeOption
+            mode="button"
+            current={displayMode}
+            title="Button with label"
+            description="Shield icon plus a visible label describing what was hidden. Larger, but visually self-explanatory."
+          />
         </fieldset>
-      </section>
+      </Section>
 
-      <section id="api-key" className="section">
-        <h2>
-          <a
-            href="#api-key"
-            className="anchor"
-            aria-label="Link to OpenAI API key"
-          >
-            #
-          </a>
-          OpenAI API key
-        </h2>
+      <Section id="api-key" title="OpenAI API key">
         <p className="hint">
           Used by the <code>irrelevant-sections-hide</code> rule.{" "}
           {HAS_BUILT_IN_OPENAI_KEY
@@ -323,60 +179,46 @@ export function Options() {
             </span>
           )}
         </div>
-      </section>
+      </Section>
 
-      <section id="rules" className="section">
-        <h2>
-          <a href="#rules" className="anchor" aria-label="Link to Rules">
-            #
-          </a>
-          Rules
-        </h2>
-        <ul className="rules">
-          {RULES.map((rule) => {
-            const snapshot = availability[rule.id];
-            const unavailable = !snapshot?.available;
-            return (
-              <li
-                key={rule.id}
-                className={unavailable ? "rule rule--unavailable" : "rule"}
-              >
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={unavailable ? false : states[rule.id]}
-                    disabled={unavailable}
-                    onChange={(event) => {
-                      const enabled = event.target.checked;
-                      setStates((prev) =>
-                        prev ? { ...prev, [rule.id]: enabled } : prev,
-                      );
-                      void setRuleEnabled(rule.id, enabled);
-                    }}
-                  />
-                  <div>
-                    <strong>
-                      {rule.label}
-                      {unavailable && (
-                        <span className="badge">Unavailable</span>
-                      )}
-                    </strong>
-                    {unavailable && snapshot?.reason && (
-                      <p className="unavailable-reason">{snapshot.reason}</p>
-                    )}
-                    <p>{rule.description}</p>
-                  </div>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <Section id="rules" title="Rules">
+        <RuleList states={states} availability={availability} />
+      </Section>
 
       <footer className="footer">
         <HelpLinks className="footer__links" />
         <div className="footer__copyright">© PixieBrix 2026</div>
       </footer>
     </div>
+  );
+}
+
+function DisplayModeOption({
+  mode,
+  current,
+  title,
+  description,
+}: {
+  mode: PlaceholderDisplayMode;
+  current: PlaceholderDisplayMode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label className="radio">
+      <input
+        type="radio"
+        name="placeholder-display-mode"
+        value={mode}
+        checked={current === mode}
+        onChange={() => {
+          void placeholderDisplayStorage.set(mode);
+        }}
+      />
+      <div>
+        <strong>{title}</strong>
+        <p>{description}</p>
+      </div>
+    </label>
   );
 }

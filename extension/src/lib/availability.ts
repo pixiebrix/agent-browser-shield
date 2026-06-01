@@ -66,6 +66,13 @@ export function subscribeRuleAvailability(
   };
 }
 
+// Stable source bundle for use with `useChromeStorageValue`. Frozen so the
+// hook's effect dep stays referentially stable across renders.
+export const availabilitySource = Object.freeze({
+  get: getRuleAvailabilityStates,
+  subscribe: subscribeRuleAvailability,
+});
+
 // Factory for rules that depend on the OpenAI API key being available — either
 // bundled at build time or supplied by the user via the options page. The
 // snapshot recomputes when the stored user key changes so the popup/options

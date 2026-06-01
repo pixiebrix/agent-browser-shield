@@ -4,7 +4,7 @@
 // Stored separately from rule states so changing the cosmetic display mode
 // doesn't churn the rule-state listener path used by the engine and UIs.
 
-const STORAGE_KEY = "agent-browser-shield.placeholder-display-mode";
+import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type PlaceholderDisplayMode = "icon" | "button";
 
@@ -16,29 +16,13 @@ function normalize(raw: unknown): PlaceholderDisplayMode {
     : PLACEHOLDER_DISPLAY_MODE_DEFAULT;
 }
 
-export async function getPlaceholderDisplayMode(): Promise<PlaceholderDisplayMode> {
-  const stored = await chrome.storage.local.get(STORAGE_KEY);
-  return normalize(stored[STORAGE_KEY]);
-}
+export const placeholderDisplayStorage =
+  createChromeStorageValue<PlaceholderDisplayMode>({
+    key: "agent-browser-shield.placeholder-display-mode",
+    normalize,
+  });
 
-export async function setPlaceholderDisplayMode(
-  mode: PlaceholderDisplayMode,
-): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: mode });
-}
-
-export function subscribePlaceholderDisplayMode(
-  listener: (mode: PlaceholderDisplayMode) => void,
-): () => void {
-  const handler = (
-    changes: Record<string, chrome.storage.StorageChange>,
-    areaName: string,
-  ) => {
-    if (areaName !== "local") return;
-    const change = changes[STORAGE_KEY];
-    if (!change) return;
-    listener(normalize(change.newValue));
-  };
-  chrome.storage.onChanged.addListener(handler);
-  return () => chrome.storage.onChanged.removeListener(handler);
-}
+export const getPlaceholderDisplayMode = placeholderDisplayStorage.get;
+export const setPlaceholderDisplayMode = placeholderDisplayStorage.set;
+export const subscribePlaceholderDisplayMode =
+  placeholderDisplayStorage.subscribe;
