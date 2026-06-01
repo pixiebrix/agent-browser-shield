@@ -70,6 +70,14 @@ jobs:
         working-directory: extension
         run: bun run package
 
+      - name: Upload extension zip as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: extension-zip-${{ steps.version.outputs.tag }}
+          path: output/extension.zip
+          archive: false
+          if-no-files-found: error
+
       - uses: aws-actions/configure-aws-credentials@v4
         if: ${{ inputs.publish_s3 }}
         with:
