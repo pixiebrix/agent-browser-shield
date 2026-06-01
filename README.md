@@ -208,3 +208,10 @@ commercial license if you need one.
 Please report vulnerabilities privately via GitHub's
 ["Report a vulnerability"](https://github.com/pixiebrix/agent-browser-shield/security/advisories/new)
 form. Do **not** open a public issue for security problems.
+
+## Disclaimer
+
+`agent-browser-shield` reduces the threats a browser-use agent faces on a page,
+but it can't catch everything. Take precautions when using AI agents for browser
+use. The extension is provided **as-is, without warranty of any kind** — see
+[LICENSE](./LICENSE) for the full terms.
