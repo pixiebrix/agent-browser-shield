@@ -3,8 +3,8 @@
 [![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
 [![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
 
-| Before                                  | After                                 |
-| --------------------------------------- | ------------------------------------- |
+| Before                                              | After                                             |
+| --------------------------------------------------- | ------------------------------------------------- |
 | ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
 
 **[Live demo site](https://shield-dark-pattern-demo.vercel.app/)** — RiverMart,
