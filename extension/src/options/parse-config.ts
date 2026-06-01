@@ -1,7 +1,8 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { RULE_IDS, type RuleStates } from "../lib/storage";
+import type { RuleStates } from "../lib/storage";
+import { RULE_IDS } from "../lib/storage";
 
 const RULE_ID_SET = new Set<string>(RULE_IDS);
 

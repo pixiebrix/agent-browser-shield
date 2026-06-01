@@ -7,7 +7,8 @@
 // split behind a snapshot map so the engine, popup, and options page don't
 // each duplicate the resolution.
 
-import { RULES, type RuleId } from "../rules";
+import type { RuleId } from "../rules";
+import { RULES } from "../rules";
 import type {
   AvailabilitySnapshot,
   Rule,

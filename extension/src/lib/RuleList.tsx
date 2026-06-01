@@ -3,7 +3,8 @@
 
 import { RULES } from "../rules";
 import type { RuleAvailabilityStates } from "./availability";
-import { type RuleStates, setRuleEnabled } from "./storage";
+import type { RuleStates } from "./storage";
+import { setRuleEnabled } from "./storage";
 
 // Shared per-rule checkbox list rendered by both the popup and options page.
 // Pass `disabledByEnforcement` when the surface should grey out every rule

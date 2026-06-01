@@ -1,10 +1,11 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { RULES, type Rule } from "../rules";
+import type { Rule } from "../rules";
+import { RULES } from "../rules";
+import type { RuleAvailabilityStates } from "./availability";
 import {
   getRuleAvailabilityStates,
-  type RuleAvailabilityStates,
   subscribeRuleAvailability,
 } from "./availability";
 import {
@@ -20,13 +21,14 @@ import {
   PLACEHOLDER_CLASS,
   revealAll,
 } from "./placeholder";
+import type { PlaceholderDisplayMode } from "./placeholder-display";
 import {
   getPlaceholderDisplayMode,
   PLACEHOLDER_DISPLAY_MODE_DEFAULT,
-  type PlaceholderDisplayMode,
   subscribePlaceholderDisplayMode,
 } from "./placeholder-display";
-import { getRuleStates, type RuleStates, subscribe } from "./storage";
+import type { RuleStates } from "./storage";
+import { getRuleStates, subscribe } from "./storage";
 
 const PLACEHOLDER_MODE_ATTR = "data-abs-placeholder-mode";
 

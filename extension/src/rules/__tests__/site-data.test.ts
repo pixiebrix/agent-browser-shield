@@ -37,15 +37,14 @@ describe("site data YAML files", () => {
     const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
     const parsedYaml = load(raw);
     const result = SiteFileSchema.safeParse(parsedYaml);
-    if (!result.success) {
-      throw new Error(
-        `${fileName}: ${result.error.issues
+    const errorSummary = result.success
+      ? null
+      : `${fileName}: ${result.error.issues
           .map(
             (issue) => `${issue.path.join(".") || "(root)"} — ${issue.message}`,
           )
-          .join("; ")}`,
-      );
-    }
+          .join("; ")}`;
+    expect(errorSummary).toBeNull();
   });
 
   it.each(files)("%s hostnames construct as URLPattern", (fileName) => {
