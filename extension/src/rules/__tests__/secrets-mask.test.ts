@@ -144,7 +144,7 @@ describe("secrets-mask", () => {
 
     const labels = Array.from(
       document.querySelectorAll(`.${PLACEHOLDER_CLASS}`),
-      (el) => el.textContent,
+      (element) => element.textContent,
     );
     expect(labels).toContain("[aws key hidden]");
     expect(labels).toContain("[jwt hidden]");

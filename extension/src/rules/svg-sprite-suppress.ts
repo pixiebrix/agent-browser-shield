@@ -30,11 +30,11 @@ function collectReferencedSymbolIds(): Set<string> {
     if (!href) {
       continue;
     }
-    const hashIdx = href.lastIndexOf("#");
-    if (hashIdx === -1) {
+    const hashIndex = href.lastIndexOf("#");
+    if (hashIndex === -1) {
       continue;
     }
-    const id = href.slice(hashIdx + 1);
+    const id = href.slice(hashIndex + 1);
     if (id) {
       refs.add(id);
     }

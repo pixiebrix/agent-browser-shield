@@ -61,8 +61,8 @@ function removeEasyListStylesheet(): void {
   injectedStyle = null;
   // Defensive: also drop any orphaned stylesheet from a prior apply that
   // wasn't cleaned up (e.g., page navigated without teardown firing).
-  for (const el of document.querySelectorAll(`#${EASYLIST_STYLE_ID}`)) {
-    el.remove();
+  for (const element of document.querySelectorAll(`#${EASYLIST_STYLE_ID}`)) {
+    element.remove();
   }
 }
 

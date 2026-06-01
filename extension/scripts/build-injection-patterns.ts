@@ -66,16 +66,16 @@ function buildOutput(
 
 export function generateInjectionPatterns(): void {
   const raw = readFileSync(INPUT, "utf8");
-  let doc: unknown;
+  let parsed: unknown;
   try {
-    doc = load(raw);
+    parsed = load(raw);
   } catch (error) {
     throw new Error(
       `${relative(ROOT, INPUT)}: YAML parse error — ${(error as Error).message}`,
       { cause: error },
     );
   }
-  const result = PatternFile.safeParse(doc);
+  const result = PatternFile.safeParse(parsed);
   if (!result.success) {
     const issues = result.error.issues
       .map((issue) => `${issue.path.join(".") || "(root)"} — ${issue.message}`)

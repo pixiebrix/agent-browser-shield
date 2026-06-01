@@ -35,8 +35,8 @@ describe("site data YAML files", () => {
 
   it.each(files)("%s parses + validates against the schema", (fileName) => {
     const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
-    const doc = load(raw);
-    const result = SiteFileSchema.safeParse(doc);
+    const parsedYaml = load(raw);
+    const result = SiteFileSchema.safeParse(parsedYaml);
     if (!result.success) {
       throw new Error(
         `${fileName}: ${result.error.issues
@@ -50,8 +50,8 @@ describe("site data YAML files", () => {
 
   it.each(files)("%s hostnames construct as URLPattern", (fileName) => {
     const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
-    const doc = load(raw);
-    const parsed = SiteFileSchema.parse(doc);
+    const parsedYaml = load(raw);
+    const parsed = SiteFileSchema.parse(parsedYaml);
 
     const hostnames = new Set<string>(parsed.hostnames);
     for (const entry of Object.values(parsed.rules)) {
@@ -75,8 +75,8 @@ describe("site data YAML files", () => {
     const allowedIds = new Set<string>(SITE_DATA_RULE_IDS);
     for (const fileName of files) {
       const raw = readFileSync(join(SITES_DIR, fileName), "utf8");
-      const doc = load(raw) as { rules?: Record<string, unknown> };
-      for (const key of Object.keys(doc?.rules ?? {})) {
+      const parsed = load(raw) as { rules?: Record<string, unknown> };
+      for (const key of Object.keys(parsed?.rules ?? {})) {
         expect({
           file: fileName,
           ruleId: key,
