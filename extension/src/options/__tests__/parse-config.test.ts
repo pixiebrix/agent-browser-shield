@@ -5,10 +5,7 @@
 // (irrelevant-sections-hide → automation-element-reference → nanoid, whose ESM
 // build trips ts-jest's CJS transform).
 jest.mock("../../rules", () => ({
-  RULES: [
-    { id: "rule-a", defaultEnabled: true },
-    { id: "rule-b", defaultEnabled: true },
-  ],
+  RULES: [{ id: "rule-a" }, { id: "rule-b" }],
   RULE_IDS: ["rule-a", "rule-b"],
 }));
 

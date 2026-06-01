@@ -61,7 +61,6 @@ const { rule } = createSelectorHideRule({
   label: "Remove Newsletter Modals",
   description:
     "Remove interstitial newsletter signup modals. Login modals and paywalls stay visible.",
-  defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [
     // Sumo

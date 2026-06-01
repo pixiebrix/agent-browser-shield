@@ -29,7 +29,6 @@ const { rule } = createSelectorHideRule({
   id: "cookie-banner-hide",
   label: "Remove Cookie Banners",
   description: "Remove GDPR/CCPA cookie consent banners.",
-  defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [
     // OneTrust

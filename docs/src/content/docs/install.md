@@ -47,6 +47,42 @@ Build output is written to `extension/dist/`.
 
 The extension is now active. Reload any open tabs to pick up the content script.
 
+## Customizing defaults at build time
+
+Which rules ship on by default is enumerated in
+[`extension/data/rule-defaults.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/rule-defaults.json).
+For one-off changes, edit that file and rebuild.
+
+For infrastructure deployments where the same custom set of defaults should ship
+in every build (so an agent doesn't have to flip toggles in the Options page on
+each fresh session), pass a JSON override file to `bun run build`:
+
+```sh
+cat > my-defaults.json <<'EOF'
+{
+  "reviews-hide": false,
+  "ads-hide": false
+}
+EOF
+
+bun run build --defaults ./my-defaults.json
+# or, equivalent:
+EXTENSION_DEFAULTS_FILE=./my-defaults.json bun run build
+```
+
+The override file is a flat `{ "<rule-id>": <boolean> }` map — the same shape
+the Options page exports and imports, so a JSON file exported from a tuned
+extension instance can be fed straight into the next build. The file may be
+partial; rules not listed keep the committed default. Unknown rule ids fail the
+build with a message naming them.
+
+Build-time overrides only affect **fresh** `chrome.storage` — users who already
+toggled rules in the Options UI keep their preferences. The typical target is
+short-lived browser instances (e.g. browserbase containers) where storage starts
+empty each session.
+
+See [Rules](/rules/) for the full list of rule ids and what each does.
+
 ## Iterating
 
 `bun run watch` rebuilds `extension/dist/` whenever a file in `extension/src/`

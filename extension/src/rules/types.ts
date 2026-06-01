@@ -22,9 +22,6 @@ export interface Rule {
   id: string;
   label: string;
   description: string;
-  // Initial state on a fresh install. Overridden by anything the user has
-  // toggled in the popup/options page.
-  defaultEnabled: boolean;
   // - omitted / `true` — always available
   // - `false` — statically unavailable (e.g. backing capability turned off at
   //   build time); pair with `unavailableReason` for the UI

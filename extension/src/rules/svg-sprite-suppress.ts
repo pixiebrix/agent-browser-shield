@@ -120,7 +120,6 @@ export const svgSpriteSuppressRule = {
   label: "Remove Unused SVG Sprites",
   description:
     "Remove hidden SVG sprite containers whose symbols aren't referenced on the page.",
-  defaultEnabled: true,
   apply,
   teardown: () => {
     watcher.stop();

@@ -84,6 +84,5 @@ export const promptInjectionHideRule = {
   label: "Hide Prompt Injection",
   description:
     "Hide page sections containing phrases common in prompt-injection attacks.",
-  defaultEnabled: true,
   apply,
 } satisfies Rule;

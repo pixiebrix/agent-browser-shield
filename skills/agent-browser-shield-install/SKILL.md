@@ -154,6 +154,42 @@ After the browser is up and you've navigated to any non-trivial page:
   cart-addon-flag, a page with an email address for pii-mask) and recheck. If
   still nothing, the extension is not installed.
 
+## Customizing default-enabled rules at build time
+
+For infra deployments where the same custom defaults should ship every session
+(so the agent doesn't have to flip toggles at runtime), build from source with a
+JSON override file instead of using the hosted ZIP.
+
+1. Write a JSON file using the same shape the Options page exports — a flat map
+   of `<rule-id>` to boolean. Partial is fine; rules not listed keep their
+   committed default from `extension/data/rule-defaults.json`:
+
+   ```json
+   {
+     "reviews-hide": false,
+     "ads-hide": false
+   }
+   ```
+
+2. Pass the path via CLI flag or env var to `bun run build`:
+
+   ```sh
+   cd extension
+   bun run build --defaults /abs/path/to/defaults.json
+   # or:
+   EXTENSION_DEFAULTS_FILE=/abs/path/to/defaults.json bun run build
+   ```
+
+3. Unknown rule ids fail the build with a clear error — catch typos before
+   shipping.
+
+4. Package and deploy as usual (`bun run package` then upload via Path A / B / C
+   above). The overrides are baked into the bundle.
+
+Build-time overrides apply only when `chrome.storage` is empty (fresh session).
+Users with previously toggled state keep their preferences. The right fit is
+short-lived browser instances (e.g. fresh Browserbase containers per session).
+
 ## After install
 
 Load the companion skills if your runtime supports it:

@@ -114,7 +114,6 @@ export const scarcityHideRule = {
   label: "Hide Scarcity Warnings",
   description:
     'Hide scarcity messages like "Only 3 left" or "12 viewing now". Out-of-stock indicators and bestseller badges stay visible.',
-  defaultEnabled: true,
   apply,
   teardown: () => {
     watcher.stop();

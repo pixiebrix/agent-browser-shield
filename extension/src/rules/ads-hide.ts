@@ -69,7 +69,6 @@ const { rule: baseRule } = createSelectorHideRule({
   label: "Hide Ads & Sponsored Results",
   description:
     "Remove display ads and paid/sponsored search results. Uses EasyList for broad coverage.",
-  defaultEnabled: true,
   removeEntirely: true,
   alwaysOnSelectors: [
     // Google AdSense

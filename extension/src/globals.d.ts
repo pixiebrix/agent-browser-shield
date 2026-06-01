@@ -7,5 +7,8 @@ declare namespace NodeJS {
   interface ProcessEnv {
     OPENAI_API_KEY: string;
     HAS_BUILT_IN_OPENAI_KEY: string;
+    // JSON-stringified Partial<Record<RuleId, boolean>>. Empty `"{}"` when no
+    // build-time defaults override file is supplied.
+    EXTENSION_DEFAULT_OVERRIDES: string;
   }
 }

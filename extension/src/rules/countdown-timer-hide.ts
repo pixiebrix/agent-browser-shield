@@ -190,7 +190,6 @@ export const countdownTimerHideRule = {
   label: "Hide Countdown Timers",
   description:
     "Hide running countdown timers (artificial-urgency dark pattern).",
-  defaultEnabled: true,
   apply,
   teardown,
 } satisfies Rule;

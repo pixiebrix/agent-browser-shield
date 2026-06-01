@@ -80,7 +80,6 @@ export const searchUrlHelperRule = {
   label: "Embed Search URL Recipes",
   description:
     "On covered hosts, embed a screen-reader-only landmark describing how to run searches and filters by URL, so agents can navigate by URL instead of clicking through search UI.",
-  defaultEnabled: true,
   // Recipes are URL navigation hints for the page the agent is viewing —
   // the top-level URL — not for whatever third-party content happens to be
   // iframed in. Injecting a landmark into every same-origin iframe would

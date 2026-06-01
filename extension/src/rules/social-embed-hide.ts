@@ -24,7 +24,6 @@ const { rule } = createSelectorHideRule({
   label: "Hide Social Embeds",
   description:
     "Hide embedded social-media widgets (Twitter/X, YouTube, Facebook, Instagram, TikTok, etc.). Replaced with a placeholder.",
-  defaultEnabled: true,
   hideLabel: "[social embed hidden — click to reveal]",
   alwaysOnSelectors: [
     // Twitter / X

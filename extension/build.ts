@@ -3,9 +3,11 @@
 
 import { readFileSync } from "node:fs";
 import { cp, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { generateInjectionPatterns } from "./scripts/build-injection-patterns";
+import { generateRuleDefaults } from "./scripts/build-rule-defaults";
 import { generateSiteData } from "./scripts/build-site-data";
+import { loadDefaultOverrides } from "./scripts/load-default-overrides";
 
 const ROOT = import.meta.dir;
 const SRC = join(ROOT, "src");
@@ -15,6 +17,26 @@ const DIST = join(ROOT, "dist");
 
 const watch = process.argv.includes("--watch");
 const minify = process.env.NODE_ENV === "production";
+
+// Accept `--defaults <path>` or `--defaults=<path>`. CLI flag wins over the
+// EXTENSION_DEFAULTS_FILE env var if both are set; behaviour mirrors the
+// readEnvValue helper's .env file fallback.
+function parseDefaultsFlag(argv: readonly string[]): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const argument = argv[i];
+    if (argument === "--defaults") {
+      const next = argv[i + 1];
+      if (!next || next.startsWith("--")) {
+        throw new Error("--defaults requires a path argument");
+      }
+      return next;
+    }
+    if (argument?.startsWith("--defaults=")) {
+      return argument.slice("--defaults=".length);
+    }
+  }
+  return undefined;
+}
 
 function readEnvValue(name: string): string {
   if (process.env[name]) {
@@ -55,12 +77,39 @@ function readEnvValue(name: string): string {
 const OPENAI_API_KEY =
   readEnvValue("OPENAI_API_KEY") || readEnvValue("MODEL_API_KEY");
 
+const defaultsFlagPath = parseDefaultsFlag(process.argv);
+const defaultsEnvPath = readEnvValue("EXTENSION_DEFAULTS_FILE");
+const defaultsPath = defaultsFlagPath ?? (defaultsEnvPath || undefined);
+
 async function build(): Promise<void> {
-  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml and
-  // src/rules/injection-patterns.generated.ts from data/injection-patterns.yaml.
+  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml,
+  // src/rules/injection-patterns.generated.ts from data/injection-patterns.yaml,
+  // and src/rules/rule-defaults.generated.ts from data/rule-defaults.json.
   // Cheap and idempotent; ensures dev never forgets to rerun codegen.
   generateSiteData();
   generateInjectionPatterns();
+  await generateRuleDefaults();
+
+  // Resolve the optional --defaults / EXTENSION_DEFAULTS_FILE override
+  // against the codegen output's RULE_DEFAULTS so the validator knows the
+  // current rule registry. Importing the generated file after codegen above
+  // means the rule id set is always fresh.
+  const { RULE_DEFAULTS } = await import("./src/rules/rule-defaults.generated");
+  const knownRuleIds = Object.keys(RULE_DEFAULTS);
+  const overrides = defaultsPath
+    ? loadDefaultOverrides({
+        path: isAbsolute(defaultsPath)
+          ? defaultsPath
+          : resolve(process.cwd(), defaultsPath),
+        knownRuleIds,
+      })
+    : {};
+  if (defaultsPath) {
+    const changed = Object.keys(overrides).length;
+    console.log(
+      `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
+    );
+  }
 
   await rm(DIST, { recursive: true, force: true });
   await mkdir(DIST, { recursive: true });
@@ -84,6 +133,9 @@ async function build(): Promise<void> {
       "process.env.OPENAI_API_KEY": JSON.stringify(OPENAI_API_KEY),
       "process.env.HAS_BUILT_IN_OPENAI_KEY": JSON.stringify(
         Boolean(OPENAI_API_KEY),
+      ),
+      "process.env.EXTENSION_DEFAULT_OVERRIDES": JSON.stringify(
+        JSON.stringify(overrides),
       ),
     },
   });

@@ -320,7 +320,6 @@ export const hiddenTextStripRule = {
   label: "Strip Hidden Text",
   description:
     'Remove text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
-  defaultEnabled: true,
   apply,
   teardown: () => {
     watcher.stop();

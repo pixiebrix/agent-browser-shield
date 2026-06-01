@@ -90,7 +90,6 @@ export const checkoutCheckboxClearRule = {
   label: "Clear Checkout Checkboxes",
   description:
     "On checkout pages, uncheck pre-checked checkboxes so the agent doesn't silently inherit add-ons or marketing opt-ins.",
-  defaultEnabled: true,
   apply,
   teardown: () => {
     watcher.stop();

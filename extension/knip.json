@@ -9,8 +9,6 @@
     "eslint-rules/index.js"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "eslint-rules/**/*.js"],
-  "ignore": ["src/**/*.generated.ts"],
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["uv"],
-  "ignoreDependencies": ["jsdom", "@types/jsdom"]
+  "ignoreBinaries": ["uv"]
 }
