@@ -1,0 +1,13 @@
+# zizmor configuration — see https://docs.zizmor.sh/configuration/
+
+rules:
+  unpinned-uses:
+    config:
+      # zizmor >=1.20 defaults to requiring SHA hash-pins on every `uses:`.
+      # We deliberately track action versions via Dependabot's
+      # `github-actions` ecosystem (see .github/dependabot.yml) and accept
+      # tag refs like @v6, so downgrade the requirement to ref-pin: any
+      # symbolic ref (tag/branch) or SHA is accepted, but completely
+      # unpinned refs are still flagged.
+      policies:
+        "*": ref-pin

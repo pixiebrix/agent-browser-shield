@@ -1,0 +1,36 @@
+name: Zizmor (GitHub Actions audit)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/zizmor.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/zizmor.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zizmor:
+    name: Audit workflows
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+      # Default persona + the project's .github/zizmor.yml (ref-pin policy)
+      # — we track action versions via Dependabot's github-actions ecosystem
+      # rather than SHA pinning.
+      - name: Run zizmor
+        run: uvx zizmor@1.25.2 --format plain .github/workflows/

@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -26,6 +24,8 @@ jobs:
         working-directory: docs
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.x
@@ -45,6 +45,10 @@ jobs:
     name: Deploy
     needs: build
     runs-on: ubuntu-24.04
+    # Scoped to this job only — build/ above does not need either.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
