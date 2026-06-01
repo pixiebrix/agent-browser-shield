@@ -1,0 +1,31 @@
+# Medium — search-url-helper only.
+#
+# comments-hide is deliberately omitted. Medium's "Responses" are
+# click-mounted into a `<div role="dialog">` whose wrapper and each
+# response card use only hashed/obfuscated class names, with no
+# `data-testid` or stable id. Selectors derived from the current build
+# would not survive Medium's frequent CSS reshuffles, and the dialog
+# itself has no aria-label that disambiguates it from sign-in / share
+# modals. Add this rule once Medium ships stable hooks (e.g., a
+# `pw-responses-*` wrapper) or a distinctly-labelled dialog.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?medium.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for medium.com — prefer URL navigation over typing.
+      Free-text search: /search?q={query}
+      Vertical search: /search/posts?q={query} (stories) ; /search/people?q={query} (writers) ; /search/publications?q={query} ; /search/tags?q={query} ; /search/lists?q={query}
+      Tag feed: /tag/{slug} (e.g., /tag/programming, /tag/machine-learning) — slug is lowercased, hyphenated.
+      Tag verticals: /tag/{slug}/recommended ; /tag/{slug}/archive/{YYYY}/{MM}/{DD}
+      User profile / story index: /@{username} ; /@{username}/about ; /@{username}/lists ; /@{username}/followers
+      User-subdomain profile (newer scheme, equivalent to /@{username}): https://{username}.medium.com/
+      Direct story: /@{username}/{slug}-{12-hex-id} or https://{username}.medium.com/{slug}-{12-hex-id} ; trailing hex id alone resolves: medium.com/p/{12-hex-id}
+      Publication: /{publication-slug} (top-level path with no @) ; archive: /{publication-slug}/archive/{YYYY}/{MM}/{DD}
+      Reading list: /@{username}/list/{listSlug}-{8-hex-id}
+      Friend link (bypass member paywall for one read): append ?sk={token} to a story URL — only works if the author or a member shared it; do not fabricate tokens.

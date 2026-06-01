@@ -1,0 +1,49 @@
+# Cars.com — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?cars.com"
+
+rules:
+  reviews-hide:
+    # `#vehicle-reviews-section` wraps the consumer-review list on
+    # /research/{make-model}/consumer-reviews/ and the dealer review
+    # list on /dealers/.../reviews/ pages — sort controls and the
+    # owner-written review cards. The aggregate ratings strip and
+    # starting-MSRP chip in `.ratings-section` at the top of the page
+    # sit outside this section and stay visible.
+    hostnames:
+      - "{*.}?cars.com"
+    pathnames:
+      - "/research/*/consumer-reviews/*"
+      - "/dealers/*/reviews/*"
+    selectors:
+      - "#vehicle-reviews-section"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for cars.com — prefer URL navigation over typing.
+      Vehicle search (used/new/cpo): /shopping/results/?stock_type={used|new|cpo}&makes[]={make-slug}&models[]={make-model-slug}&zip={5-digit}&maximum_distance={miles|all}
+      makes[]/models[] are slug-form (e.g., makes[]=honda&models[]=honda-civic). Multiple repeat the param. `maximum_distance=all` removes the radius cap; numeric values are miles.
+      Filters (query string, append):
+        Price: &list_price_min={USD}&list_price_max={USD}
+        Year: &year_min={yyyy}&year_max={yyyy}
+        Mileage: &mileage_max={miles}
+        Body style: &body_style_slugs[]={sedan|suv|coupe|hatchback|truck|wagon|convertible|van|minivan}
+        Fuel: &fuel_slugs[]={gasoline|hybrid|electric|diesel|plug-in-hybrid|hydrogen}
+        Transmission: &transmission_slugs[]={automatic|manual|cvt}
+        Drivetrain: &drivetrain_slugs[]={fwd|rwd|awd|4wd}
+        Trim: &trim_slugs[]={trim-slug}
+        Exterior color: &exterior_color_slugs[]={black|white|silver|red|blue|gray|...}
+        Features (multi): &feature_slugs[]={apple-carplay|android-auto|sunroof-moonroof|backup-camera|leather-seats|heated-seats|navigation-system|third-row-seating}
+        Seller: &seller_type[]={dealership|private}
+        Listing freshness: &days_on_market_max={1|3|7|14|30}
+        Photos required: &photo_only=true
+      Sort (sort=): best_match_desc (default), list_price (low→high) or list_price_desc, mileage (low→high), year_desc, distance, listed_at_desc (newest first).
+      Pagination: &page={n} (1-indexed) ; page size via &page_size={20|50|100}.
+      Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id.
+      Research / specs / pricing: /research/{make-model}/ ; year-specific: /research/{make-model-{year}}/ (e.g., /research/honda-civic-2024/).
+      Consumer reviews: /research/{make-model-{year}}/consumer-reviews/.
+      Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/.

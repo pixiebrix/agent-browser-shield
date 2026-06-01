@@ -1,0 +1,46 @@
+# Glassdoor — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on selector.
+# No footer-hide entry needed.
+#
+# Glassdoor sits behind Cloudflare; cold direct loads of /Reviews/* can
+# stall on a "Just a moment..." interstitial. Selectors below match the
+# real page once it renders. Routing through the homepage first usually
+# unblocks subsequent navigations within the session.
+
+hostnames:
+  - "{*.}?glassdoor.com"
+
+rules:
+  reviews-hide:
+    # `[data-test="review-detail"]` is each individual review card on
+    # /Reviews/ employer pages — pros/cons/advice prose, demographic
+    # claims, free-form ratings copy. The aggregate rating header at the
+    # top of the page (Overall, Recommend, CEO Approval, category-level
+    # ratings) lives outside any review-detail node and stays visible.
+    # `[data-test="review-highlight-text"]` covers the AI-/editor-pulled
+    # review quotes that surface in summary modules above the feed.
+    hostnames:
+      - "{*.}?glassdoor.com"
+    pathnames:
+      - "/Reviews/*"
+      - "/Overview/*"
+    selectors:
+      - '[data-test="review-detail"]'
+      - '[data-test="review-highlight-text"]'
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for glassdoor.com — prefer URL navigation over typing.
+      Free-text search (companies/jobs/salaries blended): /Search/results.htm?keyword={query}
+      Employer reviews: /Reviews/{Slug}-Reviews-E{employerId}.htm (e.g., /Reviews/Google-Reviews-E9079.htm). Slug is hyphenated company name; employerId is Glassdoor's numeric "E" id (visible in URLs after the first lookup via /Search).
+      Employer overview / salaries / interviews / benefits (same E-id): /Overview/Working-at-{Slug}-EI_IE{employerId}.htm ; /Salary/{Slug}-Salaries-E{employerId}.htm ; /Interview/{Slug}-Interview-Questions-E{employerId}.htm ; /Benefits/{Slug}-Benefits-E{employerId}.htm
+      Jobs search (simple form, will redirect to slug-URL):
+        /Job/jobs.htm?sc.keyword={query}&locKeyword={cityOrZip}&locT={locType}&locId={locId}
+        locT values: C (city), N (country), S (state). locId is Glassdoor's numeric id for that location.
+        Best practice: do one /Search/results.htm lookup to discover locId, then construct the canonical jobs URL.
+      Review filters on /Reviews/ pages (query string, comma-joined where applicable):
+        filter.iso3Language={en|es|fr|de|...} ; filter.employmentStatus=REGULAR,PART_TIME,INTERN,CONTRACT,FREELANCE
+        filter.jobTitleFTS={title text} ; filter.defaultLocation={City, ST}
+        sort.sortType={DATE|RELEVANCE|RATING_OVERALL_HIGH_TO_LOW|RATING_OVERALL_LOW_TO_HIGH} ; sort.ascending=false
+      Pagination: append _P{n}.htm before query string on slug URLs (e.g., -Reviews-E9079_P2.htm).

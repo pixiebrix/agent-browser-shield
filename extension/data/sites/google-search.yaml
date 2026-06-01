@@ -1,0 +1,28 @@
+# Google Search — search-url-helper only.
+#
+# Scoped to /search so this entry does not affect /travel/flights,
+# /maps, or other google.com subpaths covered by their own YAMLs. No
+# UGC review/comment surfaces on /search itself; footer is a semantic
+# <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "www.google.com"
+
+rules:
+  search-url-helper:
+    hostnames:
+      - "www.google.com"
+    pathnames:
+      - "/search"
+    recipe: |
+      abs URL helper for google.com/search — prefer URL navigation over typing.
+      Web search: /search?q={query}
+      Verticals (tbm=): isch (images), vid (videos), nws (news), shop (shopping), bks (books). Maps and Flights live at /maps and /travel/flights (separate entries).
+      Pagination: &start={offset} (0-indexed, multiples of 10). Page 2 = start=10.
+      Time filter (tbs=qdr:): qdr:h (past hour), qdr:d (24h), qdr:w (week), qdr:m (month), qdr:y (year). Custom range: tbs=cdr:1,cd_min:{M/D/YYYY},cd_max:{M/D/YYYY}.
+      Sort (tbs=): li:1 (verbatim/no auto-fixes), sbd:1 (sort by date — pair with qdr: for "recent first").
+      Language / region: hl={lang ISO} (UI language), lr=lang_{lang} (results language), gl={countryISO2} (country bias), cr=country{countryISO2} (restrict to country).
+      Safe search (safe=): active, off (default depends on account/region).
+      Result count: num={1-100}. Google often ignores num>10 on modern result pages — treat as best-effort.
+      In-query operators (append to q=): `site:{domain}`, `-site:{domain}`, `intitle:`, `inurl:`, `filetype:pdf`, `before:{YYYY-MM-DD}`, `after:{YYYY-MM-DD}`, exact phrase in quotes, `OR`, `|`.
+      Knowledge / direct lookups: q={query} alone surfaces knowledge panel, definition, calculator, weather, currency conversion — no special path needed.

@@ -1,0 +1,34 @@
+# Redfin — search-url-helper only.
+#
+# reviews-hide is deliberately omitted: Redfin property pages don't
+# carry buyer-written UGC reviews (the page sections are agent-
+# authored facts, public records, climate data, and Redfin's own
+# market insights). Agent profile pages do show client reviews, but
+# the agent-page URL shape is structurally separate and would be a
+# follow-up entry if it became a coverage gap. Footer is a semantic
+# <footer> caught by the generic always-on selector.
+
+hostnames:
+  - "{*.}?redfin.com"
+
+rules:
+  search-url-helper:
+    recipe: |
+      abs URL helper for redfin.com — prefer URL navigation over typing.
+      City listings (for sale): /city/{cityId}/{ST}/{City-Name}
+      ZIP listings: /zipcode/{zip}
+      Neighborhood listings: /neighborhood/{neighborhoodId}/{ST}/{City-Name}/{Neighborhood-Name}
+      County listings: /county/{countyId}/{ST}/{County-Name}-County
+      School-zone listings: /school/{schoolId}/{ST}/{City-Name}/{School-Name}
+      cityId / neighborhoodId / countyId / schoolId discovery: hit /stingray/do/location-autocomplete?location={query}&v=2 (returns JSON with each candidate's `id` and `url_path`). Or do one /city URL guess and read the canonical id from the redirected URL.
+      Rentals: /city/{cityId}/{ST}/{City-Name}/apartments-for-rent ; /zipcode/{zip}/apartments-for-rent
+      Recently sold: /city/{cityId}/{ST}/{City-Name}/recently-sold
+      Open houses: /city/{cityId}/{ST}/{City-Name}/open-houses
+      In-path filters (comma-joined under /filter/): /filter/min-price={value},max-price={value},min-beds={n},max-beds={n},min-baths={n},property-type={house|condo|townhouse|multifamily|land|other},status={active|coming-soon|under-contract},min-sqft={n},max-sqft={n},min-year-built={yyyy},max-year-built={yyyy},min-lot-size={n},max-lot-size={n},has-3d-tour,has-view,fireplace,pool,is-furnished,hoa={max-USD-monthly},days-on-market={1|3|7|14|30}
+        Price/lot/sqft suffixes: k (thousands), M (millions). E.g., min-price=500k,max-price=1M.
+        Sort: /filter/...,sort={lo-days|hi-days|lo-price|hi-price|hi-sale-date|lo-dollarsqft|hi-dollarsqft}
+      Pagination: append `/page-{n}` after the /filter/… segment (e.g., /city/30794/TX/Dallas/filter/min-price=500k/page-2). 1-indexed.
+      Map-bound search (alternative to /city): /map-search?north={lat}&south={lat}&east={lng}&west={lng}&min-price=…
+      Direct property: /{ST}/{City-Name}/{Street-Addr}-{zip}/home/{propertyId} (e.g., /TX/Dallas/3624-Normandy-Ave-75205/home/32091629). propertyId is Redfin's numeric id.
+      Agent profile: /real-estate-agents/{agent-slug}-{agentId}
+      Mortgage / payment helper: append `?mortgage-rate={pct}&down-payment={USD}` to any property URL to seed the payment calculator.
