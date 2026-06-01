@@ -63,8 +63,8 @@ bun run build
 
 Which rules ship on by default is enumerated in
 [`extension/data/rule-defaults.json`](./extension/data/rule-defaults.json). To
-ship a build with a custom set without forking the repo, pass a partial
-override file (same JSON shape as the Options-page export) to `bun run build`:
+ship a build with a custom set without forking the repo, pass a partial override
+file (same JSON shape as the Options-page export) to `bun run build`:
 
 ```sh
 bun run build --defaults ./my-defaults.json

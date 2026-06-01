@@ -157,11 +157,11 @@ After the browser is up and you've navigated to any non-trivial page:
 ## Customizing default-enabled rules at build time
 
 For infra deployments where the same custom defaults should ship every session
-(so the agent doesn't have to flip toggles at runtime), build from source with
-a JSON override file instead of using the hosted ZIP.
+(so the agent doesn't have to flip toggles at runtime), build from source with a
+JSON override file instead of using the hosted ZIP.
 
-1. Write a JSON file using the same shape the Options page exports — a flat
-   map of `<rule-id>` to boolean. Partial is fine; rules not listed keep their
+1. Write a JSON file using the same shape the Options page exports — a flat map
+   of `<rule-id>` to boolean. Partial is fine; rules not listed keep their
    committed default from `extension/data/rule-defaults.json`:
 
    ```json
@@ -183,8 +183,8 @@ a JSON override file instead of using the hosted ZIP.
 3. Unknown rule ids fail the build with a clear error — catch typos before
    shipping.
 
-4. Package and deploy as usual (`bun run package` then upload via Path A / B /
-   C above). The overrides are baked into the bundle.
+4. Package and deploy as usual (`bun run package` then upload via Path A / B / C
+   above). The overrides are baked into the bundle.
 
 Build-time overrides apply only when `chrome.storage` is empty (fresh session).
 Users with previously toggled state keep their preferences. The right fit is

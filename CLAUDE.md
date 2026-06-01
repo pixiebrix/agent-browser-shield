@@ -61,14 +61,14 @@ The initial enabled/disabled state for each rule lives in
 `extension/data/rule-defaults.json`, not on the rule modules themselves. The
 codegen in `extension/scripts/build-rule-defaults.ts` validates that every
 registered rule id has a default (and that no unknown ids appear) and emits
-`extension/src/rules/rule-defaults.generated.ts`, which `extension/src/lib/storage.ts`
-imports. Adding a rule without picking a default fails the build; do not edit
-the generated file.
+`extension/src/rules/rule-defaults.generated.ts`, which
+`extension/src/lib/storage.ts` imports. Adding a rule without picking a default
+fails the build; do not edit the generated file.
 
 `extension/build.ts` accepts a `--defaults <path>` CLI flag (or
-`EXTENSION_DEFAULTS_FILE` env var) pointing at a JSON file in the same shape
-as the Options-page export. Validated overrides are injected into the bundle
-via `process.env.EXTENSION_DEFAULT_OVERRIDES`. Override only affects fresh
+`EXTENSION_DEFAULTS_FILE` env var) pointing at a JSON file in the same shape as
+the Options-page export. Validated overrides are injected into the bundle via
+`process.env.EXTENSION_DEFAULT_OVERRIDES`. Override only affects fresh
 `chrome.storage`; existing user toggles persist.
 
 ## Site-specific rule data

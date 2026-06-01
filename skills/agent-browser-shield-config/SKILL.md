@@ -41,8 +41,8 @@ non-boolean values are rejected with an error.
 
 The same JSON shape can also be passed at build time via
 `bun run build --defaults <path>` or `EXTENSION_DEFAULTS_FILE=<path>`. That's
-the right tool for infrastructure deployments that need a custom default set
-in every fresh session without the agent flipping toggles each time — see the
+the right tool for infrastructure deployments that need a custom default set in
+every fresh session without the agent flipping toggles each time — see the
 `agent-browser-shield-install` skill for the build-time workflow.
 
 ## Rule IDs
