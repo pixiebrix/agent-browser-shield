@@ -40,6 +40,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/autotrader.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?autotrader.com", pathname: "/car-dealers/*/*/*" }),
+    ],
+    selectors: [
+      "#kbb_reviews",
+    ],
+  },
+  {
     // from data/sites/booking.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?booking.com", pathname: "/hotel/*" }),
@@ -78,6 +87,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/edmunds.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?edmunds.com", pathname: "/*/*/*/consumer-reviews*" }),
+    ],
+    selectors: [
+      ".reviews-list",
+    ],
+  },
+  {
     // from data/sites/expedia.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?expedia.com", pathname: "/*Hotel-Information*" }),
@@ -108,6 +126,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/hotels.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?hotels.com", pathname: "/ho*" }),
+    ],
+    selectors: [
+      "#Reviews [data-stid=\"carousel-wrapper\"]",
+    ],
+  },
+  {
     // from data/sites/imdb.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?imdb.com", pathname: "/title/*" }),
@@ -133,6 +160,27 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       "[data-testid=\"reviews-accordion\"]",
+    ],
+  },
+  {
+    // from data/sites/metacritic.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?metacritic.com", pathname: "/game/*/user-reviews*" }),
+      new URLPattern({ hostname: "{*.}?metacritic.com", pathname: "/movie/*/user-reviews*" }),
+      new URLPattern({ hostname: "{*.}?metacritic.com", pathname: "/tv/*/user-reviews*" }),
+      new URLPattern({ hostname: "{*.}?metacritic.com", pathname: "/music/*/user-reviews*" }),
+    ],
+    selectors: [
+      ".c-reviews-container",
+    ],
+  },
+  {
+    // from data/sites/newegg.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?newegg.com", pathname: "/*/p/*" }),
+    ],
+    selectors: [
+      ".tab-pane.updated_style",
     ],
   },
   {
@@ -165,6 +213,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
   },
   {
+    // from data/sites/sephora.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?sephora.com", pathname: "/product/*" }),
+    ],
+    selectors: [
+      "#ratings-reviews-container",
+    ],
+  },
+  {
     // from data/sites/target.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?target.com" }),
@@ -181,6 +238,15 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
     selectors: [
       "[data-reviews-overview-section]",
       "article[data-service-review-card-paper]",
+    ],
+  },
+  {
+    // from data/sites/vrbo.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?vrbo.com" }),
+    ],
+    selectors: [
+      "#Reviews [data-stid=\"carousel-wrapper\"]",
     ],
   },
   {
@@ -278,6 +344,15 @@ export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
     ],
     selectors: [
       ".js-comments-container",
+    ],
+  },
+  {
+    // from data/sites/substack.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?substack.com", pathname: "/p/*" }),
+    ],
+    selectors: [
+      ".comments-section",
     ],
   },
   {
@@ -391,6 +466,39 @@ Recent submissions in an archive: /list/{archive}/recent (e.g., /list/cs.AI/rece
 Search: /search/?searchtype=all&query={query}&start={offset} ; searchtype values: all, title, author, abstract, comments, journal_ref, acm_class, msc_class, report_num, paper_id, doi, orcid, license
 Direct paper: /abs/{paperId} (HTML abstract) ; PDF: /pdf/{paperId}
 Paper IDs use the YYMM.NNNNN form (e.g., 2401.12345).
+`,
+  },
+  {
+    // from data/sites/autotrader.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?autotrader.com" }),
+    ],
+    recipe: `abs URL helper for autotrader.com — prefer URL navigation over typing.
+Vehicle search (path form, preferred — server canonicalizes query-only forms onto this shape):
+  /cars-for-sale/all-cars/{make-slug}/{model-slug}/{city-slug}-{ST}?zip={5-digit}
+  E.g., /cars-for-sale/all-cars/honda/civic/austin-tx?zip=78701
+  Drop /{model-slug} for make-wide search ; drop both for any-make in city.
+  Listing type: /cars-for-sale/used-cars/... ; /cars-for-sale/new-cars/... ; /cars-for-sale/certified-cars/... (replaces /all-cars/).
+Equivalent query form (legacy, accepted on input — Autotrader rewrites to the path form on redirect): /cars-for-sale/all-cars?makeCodeList={UPPERCASE-MAKE}&modelCodeList={UPPERCASE-MODEL}&zip={zip}&searchRadius={miles}
+Filters (query string, append):
+  Listing type (when not in path): &listingType=USED|NEW|CERTIFIED
+  Price: &priceMin={USD}&priceMax={USD}
+  Year: &startYear={yyyy}&endYear={yyyy}
+  Mileage: &mileage={maxMiles}
+  Body style: &vehicleStyleCodes={SEDAN|SUV|COUPE|HATCHBACK|PICKUP|WAGON|CONVERT|VAN|MINIVAN} (repeat for multi)
+  Fuel: &fuelTypeGroup={G|H|E|D|F} (Gas/Hybrid/Electric/Diesel/Flex)
+  Transmission: &transmissionCode={AUT|MAN|CVT}
+  Drive type: &driveGroup={FWD|RWD|AWD4WD}
+  Trim: &trimCodeList={MAKE|MODEL|TRIM} (e.g., HONDA|CIVIC|EX)
+  Exterior color: &extColorSimple={BK|WH|SIL|RED|BLU|GRY|...}
+  Seller: &dealType={PRIV|DEAL}
+  Search radius: &searchRadius={miles|0} (0 = nationwide)
+Sort (sortBy=): relevance (default), derivedpriceASC | derivedpriceDESC (price low/high), mileageASC, yearDESC, distanceASC, datelistedDESC (newest first).
+Pagination: &firstRecord={offset}&numRecords={25|50|100} (offset is 0-indexed; pageSize default 25).
+Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id.
+Dealer directory by city: /car-dealers/{city-slug}-{ST} (e.g., /car-dealers/austin-tx).
+Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} (e.g., /car-dealers/austin-tx/72359/leif-johnson-ford).
+Research pages: /research/{make-slug}/{model-slug}/{year}/ (e.g., /research/honda/civic/2024/).
 `,
   },
   {
@@ -544,6 +652,35 @@ Category: _sacat={categoryId} (0 = all)
 Direct listing: /itm/{itemId}
 Seller's store: /str/{sellerName}
 Catalog product page: /p/{epid} (epid from the listing's URL query)
+`,
+  },
+  {
+    // from data/sites/edmunds.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?edmunds.com" }),
+    ],
+    recipe: `abs URL helper for edmunds.com — prefer URL navigation over typing.
+Inventory search (used/new/cpo): /inventory/srp.html?make={make-slug}&model={model-slug}&zip={5-digit}&radius={miles}
+  Listing condition: &inventoryType={used|new|used-cpo} (omit for both)
+  Trim: &trim={trim-slug}
+  Year: &year={yyyy} ; range: &year[]={yyyy}&year[]={yyyy} (multi)
+  Price: &priceRange[]={min}&priceRange[]={max} ; or &maxPrice={USD}
+  Mileage: &mileage={maxMiles}
+  Body style: &bodyType={sedan|suv|coupe|hatchback|pickup|wagon|convertible|van|minivan} (repeat for multi)
+  Fuel: &fuelType={gas|hybrid|electric|diesel|flex-fuel|plug-in-hybrid}
+  Transmission: &transmission={automatic|manual|cvt}
+  Drivetrain: &drivetrain={fwd|rwd|awd|4wd}
+  Color: &color={black|white|silver|red|blue|gray|...}
+  Features: &features[]={apple-carplay|android-auto|sunroof|backup-camera|leather-seats|heated-seats|navigation|third-row-seating}
+  Seller: &sellerType={dealer|fsbo}
+Sort (sort=): bestmatch (default), priceasc | pricedesc, mileageasc, yeardesc, distance, listdatedesc (newest first).
+Pagination: &pagenumber={n} (1-indexed) ; &pagesize={20|50|100}.
+Direct VDP (vehicle detail): /inventory/vin.html?vin={VIN}&radius=200 (lookup by VIN) ; from SRP cards: /{make}/{model}/{year}/vin/{17-char-VIN}/ (canonical permalink).
+Research / specs / pricing: /{make}/{model}/{year}/ (e.g., /honda/civic/2024/). Drop year for all-years overview.
+Editorial Edmunds review: /{make}/{model}/{year}/review/ — written by Edmunds editors (not UGC).
+Consumer (owner) reviews: /{make}/{model}/{year}/consumer-reviews/ — UGC; the page also exposes &style={style-slug} and &aspect={performance|comfort|interior|reliability|safety|technology|value} filters.
+True Market Value / appraisal: /appraisal/ ; new-car deals: /best-deals/.
+Dealership pages: /dealerships/{ST}/{city-slug}/{dealer-slug}/ (informational).
 `,
   },
   {
@@ -726,6 +863,23 @@ Direct product: /p/{slug-or-dash}/{omsId} (omsId is the 9-10 digit Internet numb
 `,
   },
   {
+    // from data/sites/hotels.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?hotels.com" }),
+    ],
+    recipe: `abs URL helper for hotels.com — prefer URL navigation over typing.
+Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&rooms={n}
+Hotels.com normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse for follow-up queries to skip ambiguity.
+Children: append &children={ages-comma-list} (e.g., &children=5,8 for two kids aged 5 and 8). Per-room legacy form \`&rm1=a2:c5,c8\` is also accepted.
+Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
+Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &reviewScore={7,8,9} (minimum guest score).
+Pagination: &p={pageIndex} (0-indexed).
+Direct property: /ho{propertyId}/{slug}/ (e.g., /ho170687/la-maison-favart-paris-france/). The Hotels.com propertyId is distinct from Expedia's; do not reuse Expedia ids here. \`chkin\`/\`chkout\` query params preserve pricing context (also accepted as \`startDate\`/\`endDate\`).
+Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
+Rewards (Hotels.com One Key): append &useRewards=true to apply rewards pricing.
+`,
+  },
+  {
     // from data/sites/ikea.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?ikea.com" }),
@@ -845,6 +999,57 @@ Direct story: /@{username}/{slug}-{12-hex-id} or https://{username}.medium.com/{
 Publication: /{publication-slug} (top-level path with no @) ; archive: /{publication-slug}/archive/{YYYY}/{MM}/{DD}
 Reading list: /@{username}/list/{listSlug}-{8-hex-id}
 Friend link (bypass member paywall for one read): append ?sk={token} to a story URL — only works if the author or a member shared it; do not fabricate tokens.
+`,
+  },
+  {
+    // from data/sites/metacritic.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?metacritic.com" }),
+    ],
+    recipe: `abs URL helper for metacritic.com — prefer URL navigation over typing.
+Free-text search: /search/{query}/ (trailing slash matters; URL-encode spaces as %20).
+Vertical search (filter by content type): /search/{query}/?category={game|movie|tv|music} (also accepts &page={n}).
+Browse listings (preferred for ranked/filterable discovery):
+  Games: /browse/game/{platform|all}/{genre|all}/{releaseDateFilter}/{sortKey}/?platform={platform}
+    platforms: all, ps5, ps4, xbox-series-x, xbox-one, switch, nintendo-switch-2, pc, ios, android, stadia
+    releaseDateFilter: all-time, current-year, last-year, last-90-days, last-30-days, last-7-days, coming-soon
+    sortKey: new (most recent first), score (highest critic score), userscore, name-asc, name-desc, release-date
+    E.g., /browse/game/ps5/all/all-time/score/?platform=ps5
+  Movies: /browse/movie/{genre|all}/{year|all}/{sortKey}/
+  TV: /browse/tv/{genre|all}/{year|all}/{sortKey}/
+  Music: /browse/album/{genre|all}/{year|all}/{sortKey}/
+Coming-soon games: /browse/game/?releaseType=coming-soon
+Direct title pages: /{game|movie|tv|music}/{slug}/ (e.g., /game/the-legend-of-zelda-breath-of-the-wild/).
+Critic reviews subpage: /{game|movie|tv|music}/{slug}/critic-reviews/ — editorial, not UGC.
+User reviews subpage: /{game|movie|tv|music}/{slug}/user-reviews/ — UGC.
+Platform-scoped game subpage: /game/{slug}/?platform={platform} (separates scores per platform on multi-platform games).
+Pagination on browse/user-reviews: append ?page={n} (1-indexed). On user-reviews pages, &filterBy={positive|mixed|negative} narrows the sentiment.
+`,
+  },
+  {
+    // from data/sites/newegg.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?newegg.com" }),
+    ],
+    recipe: `abs URL helper for newegg.com — prefer URL navigation over typing.
+Keyword search: /p/pl?d={query} (URL-encode spaces; Newegg's search lands on /p/pl which is the product-listing handler).
+Combined keyword + category: /p/pl?d={query}&N={categoryId}
+Direct category browse: /p/pl?N={categoryId} (categoryId is Newegg's numeric \`N=\` token; multiple categories can be combined as space-separated values, e.g. \`N=100006519%204016\`).
+Filters: most filters are appended as space-separated values to the \`N=\` param (each facet has its own numeric id Newegg's search rewrites into the same param). For typed query refinement use:
+  Price: &LeftPriceRange={min}+{max} (note: \`+\` between min/max, not a hyphen) ; or use the per-category &PriceRange={min}+{max}.
+  Order (sort): &Order={3|BESTMATCH|FEATURED|REVIEWS|PRICE|PRICEDESC|RATING|LAUNCHDATE} (3 = best match default; PRICE is ascending; PRICEDESC is descending; REVIEWS sorts by review count; RATING sorts by avg rating).
+  Page size: &PageSize={36|60|96} (default 36).
+  In stock only: &Tid=12108 (Newegg uses Tid for the in-stock toggle).
+  Free shipping: &Tid=12107
+  Combo/bundle deals: &Tid=12109
+Pagination: &page={n} (1-indexed).
+Direct PDP (product detail): two equivalent URL shapes exist for the same item:
+  /{kebab-slug}/p/{itemNumber} — e.g., /samsung-1tb-990-pro-w-heatsink-normal-package-nvme-2-0/p/N82E16820147862 (preferred canonical form)
+  /{kebab-slug}/p/{marketplaceItemNumber} — e.g., /SAMSUNG-1TB-990-PRO-w-Heatsink/p/9SIBFJRJYT9873 (Newegg Marketplace seller listings, redirect to the canonical N82E… id where one exists)
+itemNumber starts with \`N82E…\` (Newegg-fulfilled) or \`9SI…\` (Marketplace). Preserve the slug for SEO; the path can be hand-built from any itemNumber but Newegg will normalize.
+Reviews-only deep link: append \`#scrollFullInfo\` to the PDP URL to scroll the product-detail tab into view; the reviews tab requires a JS click (no stable URL fragment for the reviews pane alone).
+Combo deals: /Combo.aspx (deprecated public path, may redirect) ; current home is /tnt/today (Today's Best Deals).
+Newegg Business (B2B): /BusinessSection (separate experience, similar URL contract).
 `,
   },
   {
@@ -985,6 +1190,37 @@ Genindex: /3/genindex-all.html ; tutorial: /3/tutorial/
 `,
   },
   {
+    // from data/sites/realtor.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?realtor.com" }),
+    ],
+    recipe: `abs URL helper for realtor.com — prefer URL navigation over typing.
+City listings (for sale): /realestateandhomes-search/{City-Name}_{ST} (e.g., /realestateandhomes-search/Austin_TX)
+ZIP listings: /realestateandhomes-search/{zip} (e.g., /realestateandhomes-search/78701)
+County listings: /realestateandhomes-search/{County-Name}-County_{ST}
+Neighborhood listings: /realestateandhomes-search/{Neighborhood-Name}_{City-Name}_{ST}
+In-path filters (comma- or slash-joined under the area path; multi-value filters take precedence over query params):
+  Price: /price-na-{max} ; /price-{min}-{max} ; /price-{min}-na ; suffixes: k (thousands), M (millions). Use \`na\` for unbounded.
+  Beds/baths: /beds-{n} (n+ minimum) ; /baths-{n}
+  Property type: /type-single-family-home ; /type-condo-townhome-row-home-co-op ; /type-multi-family-home-farm ; /type-mfd-mobile-home ; /type-land
+  Sqft: /sqft-{min}-{max}
+  Lot size: /lot-{min}-{max}-acres
+  Year built: /built-{min}-{max}
+  Days on market: /dom-{1|3|7|14|30}
+  New construction: /new-construction
+  Open houses: /show-open-house-only
+  Price reduced: /show-recently-reduced
+  Pending/contingent: /show-hide-pending-contingent (hides pending) ; /show-pending-only
+  Sort: /sort-newest ; /sort-price-high ; /sort-price-low ; /sort-largest-sqft ; /sort-price-reduced-date ; /sort-sqft (largest first)
+Pagination: /pg-{n} (1-indexed) appended after filter segments.
+Rentals (for rent): /apartments/{City-Name}_{ST} (e.g., /apartments/Austin_TX) — filter syntax mirrors for-sale (price-/beds-/baths-/type-/sort-).
+Recently sold: /realestateandhomes-detail/.../sold (per property) ; market view: /realestateandhomes-search/{City-Name}_{ST}/show-recently-sold
+Direct property: /realestateandhomes-detail/{Street-Address}_{City-Name}_{ST}_{zip}_{propertyId} (e.g., /realestateandhomes-detail/5321-Del-Dios-Way_Austin_TX_78738_M81608-96049). propertyId is Realtor.com's \`M{prefix}-{suffix}\` id; do not invent ids — discover via the city search SRP.
+Agent profile / reviews: /realestateagents/{agent-slug}_{agentId} (city directory: /realestateagents/{city-st})
+School pages (read-only neighborhood research): /local/schools/{ST}/{City-Name}/{School-Name}_{schoolId}
+`,
+  },
+  {
     // from data/sites/redfin.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?redfin.com" }),
@@ -1072,6 +1308,33 @@ Advanced search form: /scholar?as_q={all}&as_epq={phrase}&as_oq={any}&as_eq={non
 `,
   },
   {
+    // from data/sites/sephora.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?sephora.com" }),
+    ],
+    recipe: `abs URL helper for sephora.com — prefer URL navigation over typing.
+Keyword search: /search?keyword={query} (Sephora canonicalizes some queries to category pages on redirect — capture the resolved URL).
+Category browse (preferred when applicable, has richer filters): /shop/{category-slug} (e.g., /shop/lipstick, /shop/moisturizers, /shop/foundation, /shop/perfume, /shop/shampoo, /shop/mens, /shop/tools-brushes-makeup, /shop/mini-size, /shop/sephora-collection-makeup).
+Filters (query string, append; multi-value filters repeat the param):
+  Brand: &brand={Brand+Name} (URL-encode spaces as +) or &brand_facet={brandSlug}
+  Price tier: &price={under-25|25-50|50-100|over-100} (semantic buckets) or &priceRange={min}-{max}
+  Rating: &rating={4-and-up|3-and-up}
+  Skin/Hair: &skinType={normal|dry|oily|combination|sensitive} ; &skinConcerns={acne|aging|darkSpots|dullness|pores|redness|dryness} ; &hairType={straight|wavy|curly|coily} ; &hairConcerns={frizz|damage|dandruff|thinning|colorTreated}
+  Formulation: &formulation={cream|gel|liquid|powder|stick|spray|oil}
+  Coverage: &coverage={sheer|light|medium|full}
+  Finish: &finish={matte|satin|dewy|natural|shimmer}
+  Free of: &freeOf={parabens|sulfates|phthalates|fragrance|silicones|mineralOil}
+  Best for: &bestFor={anti-aging|brightening|hydration|sensitive-skin}
+  New arrivals: &isNew=true ; Exclusive: &exclusive=true ; Online only: &onlineOnly=true ; Limited Edition: &limitedEdition=true
+Sort (sortBy=): BEST_SELLING (default), TRENDING, NEW_PRODUCTS, TOP_RATED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, NAME_AZ.
+Pagination: &currentPage={n} (1-indexed) ; &pageSize={60|120|180} (caps around 300).
+Direct product (PDP): /product/{kebab-slug}-P{productId} (e.g., /product/mac-cosmetics-m-a-cximal-silky-matte-lipstick-P510799). productId is the \`P{6-digit}\` token; preserve it. SKU-specific deep link: append ?skuId={skuId} to land on a particular shade/size.
+Brand page: /brand/{brand-slug} (e.g., /brand/fenty-beauty).
+Reviews-only deep link is not supported as a separate URL — reviews mount inside the PDP.
+Store locator (read-only): /happening/stores ; specific store: /happening/stores/{slug}.
+`,
+  },
+  {
     // from data/sites/stackoverflow.yaml
     patterns: [
       new URLPattern({ hostname: "{*.}?stackoverflow.com" }),
@@ -1085,6 +1348,55 @@ Direct question: /questions/{questionId} or /questions/{questionId}/{slug}
 Direct answer: /a/{answerId}
 User profile: /users/{userId} or /users/{userId}/{slug}
 Tag page: /tags/{tagName} ; tag wiki: /tags/{tagName}/info
+`,
+  },
+  {
+    // from data/sites/steam.yaml
+    patterns: [
+      new URLPattern({ hostname: "store.steampowered.com" }),
+    ],
+    recipe: `abs URL helper for store.steampowered.com — prefer URL navigation over typing.
+Keyword search: /search/?term={query} (URL-encode spaces; Steam preserves the raw term in the URL).
+Filters (query string, append; multi-value tag filters use & or comma — both accepted):
+  Price (USD cents): &maxprice={cents} ; presets accepted: &maxprice=free|5|10|15|20|25|30|35|40|45|50 (the integer values are the USD price tier, not cents).
+  Free to play: &maxprice=free or &category2=11
+  On sale / specials: &specials=1
+  Show DLC alongside games: &ignore_preferences=1 (otherwise excluded by default).
+  OS: &os={win|mac|linux} (repeatable). Steam Deck Verified: &deck_compatibility=3 ; Playable: &deck_compatibility=2.
+  Controller support: &category2=28 (Full Controller Support).
+  VR: &vrsupport=101 (HTC Vive) ; 102 (Oculus Rift) ; 104 (Valve Index) ; 401 (Windows MR).
+  Multiplayer / co-op: &category1=998 ; Online PvP: &category2=49 ; Co-op: &category2=9 ; LAN Co-op: &category2=48.
+  Language interface (UI): &supportedlang={english|french|spanish|german|japanese|schinese|tchinese|koreana|russian|...} (Steam's language code).
+  Tags: &tags={tagId1},{tagId2},… (tag ids are Steam's numeric ids; discover via the storesearch API or by reading a category page URL).
+  Genre: &category1={26 = Adventure | 25 = Action | 23 = Indie | 28 = Simulation | 9 = RPG | 18 = Sports | 2 = Strategy} (rough mapping; Steam blurs genre and "Type" under category1).
+  Reviews / rating: &review_score={6|7|8|9} (minimum positive %: 6=70%, 7=80%, 8=85%, 9=90%) and &review_type={positive|mixed|negative|all}.
+  Release date: &category1={998} (Coming Soon) ; &untagged_yes=1 (hide tags) ; &hidef2p=1 (hide F2P).
+Sort (sort_by=): _ASC (default, "relevance") ; Released_DESC (newest first) ; Price_ASC | Price_DESC ; Reviews_DESC (best reviewed) ; Name_ASC.
+Pagination: &start={offset}&count={pageSize} (offset is 0-indexed; pageSize default 25, caps near 50).
+Direct PDP (app page): /app/{appId}/{Url_Slug}/ — e.g., /app/1145360/Hades/. The \`Url_Slug\` portion is informational; /app/{appId}/ alone redirects to the canonical slug. Append \`?snr=\` to preserve referral context (Steam adds it on outbound links).
+Bundle: /bundle/{bundleId}/{slug}/ ; DLC list: /app/{appId}/{slug}/#app_reviews_hash (hash anchors are JS-only; treat them as scroll targets, not deep links).
+Top sellers / new releases / specials: /search/?category1=998&filter={topsellers|newreleases|specials|comingsoon}.
+Wishlist (requires sign-in): /wishlist/profiles/{steamId64}/
+Curator pages (curated editorial recommendations, not UGC reviews): /curator/{curatorId}-{slug}/
+`,
+  },
+  {
+    // from data/sites/substack.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?substack.com" }),
+    ],
+    recipe: `abs URL helper for substack.com — prefer URL navigation over typing.
+Free-text search (central index): /search/{query} (URL-encode spaces; trailing slash optional).
+Search within a publication: https://{publication-slug}.substack.com/search?query={query} (per-publication; vanity-domain publications use https://{custom-domain}/search?query={query}).
+Discover / Notes feed: /discover ; /notes ; /home (signed-in feed).
+Direct post (canonical): /p/{post-slug} on the publication host (e.g., https://noahpinion.substack.com/p/the-way-we-treat-pigs-is-a-sin or https://www.noahpinion.blog/p/the-way-we-treat-pigs-is-a-sin). Substack accepts the same \`/p/{slug}\` path on the central host as well, but redirects to the publication's host.
+Comments subpage for a post: /p/{post-slug}/comments (UGC; the same DOM contract as the post page).
+Cross-post / restack: /p/{post-slug}?utm_source=publication-search&utm_medium=email — utm tags are informational and may appear on resolved URLs.
+Publication home: https://{publication-slug}.substack.com/ (also: subdirectories /archive, /podcast, /people, /about).
+Author profile (on central host): /@{username}
+Section archive: https://{publication-slug}.substack.com/s/{section-slug} (sub-feed within a publication, e.g., interviews, audio).
+Podcast RSS: https://{publication-slug}.substack.com/feed (Atom/JSON variants also exposed at /feed.json and /feed.rss).
+Paywall: posts marked "paid" return a truncated body to anonymous fetches. A friend link (\`?token={uuid}\`) sometimes unlocks one read — only works if the author shared it; do not fabricate tokens.
 `,
   },
   {
@@ -1126,6 +1438,26 @@ Direct business reviews: /review/{domain} (host without scheme; e.g. /review/www
 Direct individual review: /reviews/{reviewId} (24-char hex id from a review card link)
 Business profile JSON-ish surface (use only as a sanity check; not a stable API):
   /api/businessunit-search/v1/profile-name/{domain}
+`,
+  },
+  {
+    // from data/sites/vrbo.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?vrbo.com" }),
+    ],
+    recipe: `abs URL helper for vrbo.com — prefer URL navigation over typing.
+Property search: /search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}
+Vrbo normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse to skip ambiguity. Resolved URL also gains &destType={MARKET|CITY|NEIGHBORHOOD} and &latLong={lat}%2C{lng}.
+Children: append &children={ages-comma-list} (e.g., &children=5,8). Pets: &petIncluded=true.
+Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, REVIEW, DISTANCE.
+Filters: &price={min}-{max} (per night, USD) ; &bedrooms={n} ; &bathrooms={n} ; &sleeps={n} ; &amenities={POOL,HOT_TUB,KITCHEN,WIFI,PARKING_FREE,AIR_CONDITIONING,WASHING_MACHINE,PET_FRIENDLY} ; &propertyTypes={HOUSE,APARTMENT,CONDO,VILLA,CABIN,COTTAGE,BUNGALOW,CHALET}.
+Pagination: &p={pageIndex} (0-indexed).
+Direct property (three equivalent shapes seen in the wild):
+  /{propertyId} (e.g., /4975035) — legacy numeric id
+  /{propertyId}ha (e.g., /3720511ha) — legacy with \`ha\` suffix
+  /pdp/lo/{listingId} (e.g., /pdp/lo/102228252) — newer PDP path
+\`chkin\`/\`chkout\` (or \`startDate\`/\`endDate\`) on the URL preserve pricing context. \`expediaPropertyId\` may appear on resolved links — it is Vrbo's internal mapping back to the Expedia Group property id and is informational.
+Rewards (Vrbo One Key): append &useRewards=true to apply rewards pricing.
 `,
   },
   {

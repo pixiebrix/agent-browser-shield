@@ -1,0 +1,49 @@
+# Sephora — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?sephora.com"
+
+rules:
+  reviews-hide:
+    # `#ratings-reviews-container` wraps the full "Ratings & Reviews"
+    # section on product pages (`/product/{slug}-P{productId}`) —
+    # the star-distribution histogram, sort/filter controls, and
+    # individual UGC review cards. The aggregate chip next to the
+    # product title (`#StarRating`, `#review_count`,
+    # `#number_of_reviews`) is rendered above the gallery and stays
+    # visible, so the customer can still see the overall score and
+    # review count without seeing UGC text. The container is
+    # lazy-loaded on scroll; the selector matches whether it's
+    # currently empty or populated.
+    hostnames:
+      - "{*.}?sephora.com"
+    pathnames:
+      - "/product/*"
+    selectors:
+      - "#ratings-reviews-container"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for sephora.com — prefer URL navigation over typing.
+      Keyword search: /search?keyword={query} (Sephora canonicalizes some queries to category pages on redirect — capture the resolved URL).
+      Category browse (preferred when applicable, has richer filters): /shop/{category-slug} (e.g., /shop/lipstick, /shop/moisturizers, /shop/foundation, /shop/perfume, /shop/shampoo, /shop/mens, /shop/tools-brushes-makeup, /shop/mini-size, /shop/sephora-collection-makeup).
+      Filters (query string, append; multi-value filters repeat the param):
+        Brand: &brand={Brand+Name} (URL-encode spaces as +) or &brand_facet={brandSlug}
+        Price tier: &price={under-25|25-50|50-100|over-100} (semantic buckets) or &priceRange={min}-{max}
+        Rating: &rating={4-and-up|3-and-up}
+        Skin/Hair: &skinType={normal|dry|oily|combination|sensitive} ; &skinConcerns={acne|aging|darkSpots|dullness|pores|redness|dryness} ; &hairType={straight|wavy|curly|coily} ; &hairConcerns={frizz|damage|dandruff|thinning|colorTreated}
+        Formulation: &formulation={cream|gel|liquid|powder|stick|spray|oil}
+        Coverage: &coverage={sheer|light|medium|full}
+        Finish: &finish={matte|satin|dewy|natural|shimmer}
+        Free of: &freeOf={parabens|sulfates|phthalates|fragrance|silicones|mineralOil}
+        Best for: &bestFor={anti-aging|brightening|hydration|sensitive-skin}
+        New arrivals: &isNew=true ; Exclusive: &exclusive=true ; Online only: &onlineOnly=true ; Limited Edition: &limitedEdition=true
+      Sort (sortBy=): BEST_SELLING (default), TRENDING, NEW_PRODUCTS, TOP_RATED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, NAME_AZ.
+      Pagination: &currentPage={n} (1-indexed) ; &pageSize={60|120|180} (caps around 300).
+      Direct product (PDP): /product/{kebab-slug}-P{productId} (e.g., /product/mac-cosmetics-m-a-cximal-silky-matte-lipstick-P510799). productId is the `P{6-digit}` token; preserve it. SKU-specific deep link: append ?skuId={skuId} to land on a particular shade/size.
+      Brand page: /brand/{brand-slug} (e.g., /brand/fenty-beauty).
+      Reviews-only deep link is not supported as a separate URL — reviews mount inside the PDP.
+      Store locator (read-only): /happening/stores ; specific store: /happening/stores/{slug}.

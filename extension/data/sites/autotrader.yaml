@@ -1,0 +1,55 @@
+# Autotrader — reviews-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+
+hostnames:
+  - "{*.}?autotrader.com"
+
+rules:
+  reviews-hide:
+    # `#kbb_reviews` wraps the in-page "Ratings & Reviews" section on
+    # dealer pages (`/car-dealers/{state}/{dealerId}/{dealer-slug}`),
+    # including the heading and the embedded KBB-powered iframe of
+    # customer-written dealer reviews. The aggregate dealer star
+    # rating and review count shown at the top of the dealer page
+    # (in `#dealerRatingContainer` / `#header-kbbDealerRating`, which
+    # are siblings outside `#kbb_reviews`) stay visible. Vehicle
+    # detail pages (`/cars-for-sale/vehicle/{listingId}`) don't carry
+    # buyer-written UGC, so the rule is pathname-narrowed to dealer
+    # profile pages.
+    hostnames:
+      - "{*.}?autotrader.com"
+    pathnames:
+      - "/car-dealers/*/*/*"
+    selectors:
+      - "#kbb_reviews"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for autotrader.com — prefer URL navigation over typing.
+      Vehicle search (path form, preferred — server canonicalizes query-only forms onto this shape):
+        /cars-for-sale/all-cars/{make-slug}/{model-slug}/{city-slug}-{ST}?zip={5-digit}
+        E.g., /cars-for-sale/all-cars/honda/civic/austin-tx?zip=78701
+        Drop /{model-slug} for make-wide search ; drop both for any-make in city.
+        Listing type: /cars-for-sale/used-cars/... ; /cars-for-sale/new-cars/... ; /cars-for-sale/certified-cars/... (replaces /all-cars/).
+      Equivalent query form (legacy, accepted on input — Autotrader rewrites to the path form on redirect): /cars-for-sale/all-cars?makeCodeList={UPPERCASE-MAKE}&modelCodeList={UPPERCASE-MODEL}&zip={zip}&searchRadius={miles}
+      Filters (query string, append):
+        Listing type (when not in path): &listingType=USED|NEW|CERTIFIED
+        Price: &priceMin={USD}&priceMax={USD}
+        Year: &startYear={yyyy}&endYear={yyyy}
+        Mileage: &mileage={maxMiles}
+        Body style: &vehicleStyleCodes={SEDAN|SUV|COUPE|HATCHBACK|PICKUP|WAGON|CONVERT|VAN|MINIVAN} (repeat for multi)
+        Fuel: &fuelTypeGroup={G|H|E|D|F} (Gas/Hybrid/Electric/Diesel/Flex)
+        Transmission: &transmissionCode={AUT|MAN|CVT}
+        Drive type: &driveGroup={FWD|RWD|AWD4WD}
+        Trim: &trimCodeList={MAKE|MODEL|TRIM} (e.g., HONDA|CIVIC|EX)
+        Exterior color: &extColorSimple={BK|WH|SIL|RED|BLU|GRY|...}
+        Seller: &dealType={PRIV|DEAL}
+        Search radius: &searchRadius={miles|0} (0 = nationwide)
+      Sort (sortBy=): relevance (default), derivedpriceASC | derivedpriceDESC (price low/high), mileageASC, yearDESC, distanceASC, datelistedDESC (newest first).
+      Pagination: &firstRecord={offset}&numRecords={25|50|100} (offset is 0-indexed; pageSize default 25).
+      Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id.
+      Dealer directory by city: /car-dealers/{city-slug}-{ST} (e.g., /car-dealers/austin-tx).
+      Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} (e.g., /car-dealers/austin-tx/72359/leif-johnson-ford).
+      Research pages: /research/{make-slug}/{model-slug}/{year}/ (e.g., /research/honda/civic/2024/).

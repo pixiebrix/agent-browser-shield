@@ -1,0 +1,55 @@
+# Substack — comments-hide, search-url-helper.
+#
+# Footer is a semantic <footer> caught by the generic always-on
+# selector. No footer-hide entry needed.
+#
+# Substack publications live across many hosts: the central
+# `substack.com` and per-publication subdomains (`{slug}.substack.com`)
+# as well as custom domains (e.g., `www.noahpinion.blog`). The
+# central host pattern below covers Substack-hosted subdomains; the
+# custom-domain case isn't addressed here because the host varies
+# arbitrarily — operators with named custom-domain publications can
+# add them in their own deployment via EXTENSION_DEFAULT_OVERRIDES,
+# or this entry can be split per known custom domain in a follow-up.
+
+hostnames:
+  - "{*.}?substack.com"
+
+rules:
+  comments-hide:
+    # `.comments-section` wraps the comment list and the inline
+    # comment-composer below a post body. The discussion heading
+    # ("Discussion about this post / Comments | Restacks" tab toggle)
+    # lives in the surrounding `#discussion` ancestor and stays
+    # visible, as does the post-header comment count chip
+    # (`#post-ufi-comment-button`) which is rendered outside
+    # `#discussion`. Restacks, which share `#discussion` but are
+    # mounted in a sibling tab pane, are not hidden by this rule —
+    # they're a separate UGC stream and would warrant their own
+    # selector if observed in the wild.
+    #
+    # Post URLs land on `/p/{post-slug}`; Substack also serves
+    # comment pages at `/p/{post-slug}/comments`. The selector
+    # applies on both because `.comments-section` is identical in
+    # markup across the two URL shapes.
+    hostnames:
+      - "{*.}?substack.com"
+    pathnames:
+      - "/p/*"
+    selectors:
+      - ".comments-section"
+
+  search-url-helper:
+    recipe: |
+      abs URL helper for substack.com — prefer URL navigation over typing.
+      Free-text search (central index): /search/{query} (URL-encode spaces; trailing slash optional).
+      Search within a publication: https://{publication-slug}.substack.com/search?query={query} (per-publication; vanity-domain publications use https://{custom-domain}/search?query={query}).
+      Discover / Notes feed: /discover ; /notes ; /home (signed-in feed).
+      Direct post (canonical): /p/{post-slug} on the publication host (e.g., https://noahpinion.substack.com/p/the-way-we-treat-pigs-is-a-sin or https://www.noahpinion.blog/p/the-way-we-treat-pigs-is-a-sin). Substack accepts the same `/p/{slug}` path on the central host as well, but redirects to the publication's host.
+      Comments subpage for a post: /p/{post-slug}/comments (UGC; the same DOM contract as the post page).
+      Cross-post / restack: /p/{post-slug}?utm_source=publication-search&utm_medium=email — utm tags are informational and may appear on resolved URLs.
+      Publication home: https://{publication-slug}.substack.com/ (also: subdirectories /archive, /podcast, /people, /about).
+      Author profile (on central host): /@{username}
+      Section archive: https://{publication-slug}.substack.com/s/{section-slug} (sub-feed within a publication, e.g., interviews, audio).
+      Podcast RSS: https://{publication-slug}.substack.com/feed (Atom/JSON variants also exposed at /feed.json and /feed.rss).
+      Paywall: posts marked "paid" return a truncated body to anonymous fetches. A friend link (`?token={uuid}`) sometimes unlocks one read — only works if the author shared it; do not fabricate tokens.
