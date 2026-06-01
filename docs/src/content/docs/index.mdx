@@ -4,6 +4,9 @@ description: Browser extension prototypes for improving browser-use agent perfor
 ---
 
 import { Aside, Card, CardGrid, LinkButton } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import beforeImage from "../../assets/before.png";
+import afterImage from "../../assets/after.png";
 
 Prototype browser extension capabilities that make browser-use agents faster,
 safer, and more accurate.
@@ -11,6 +14,10 @@ safer, and more accurate.
 <LinkButton href="/agent-browser-shield/install/" icon="right-arrow" variant="primary">Install</LinkButton>
 <LinkButton href="/agent-browser-shield/rules/" icon="open-book">Browse the rules</LinkButton>
 <LinkButton href="https://github.com/pixiebrix/agent-browser-shield" icon="external">View on GitHub</LinkButton>
+
+| Before                                            | After                                           |
+| ------------------------------------------------- | ----------------------------------------------- |
+| <Image src={beforeImage} alt="Before agent-browser-shield" /> | <Image src={afterImage} alt="After agent-browser-shield" /> |
 
 ## Benefits
 

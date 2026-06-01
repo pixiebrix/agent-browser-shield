@@ -3,6 +3,10 @@
 [![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
 [![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
 
+| Before                                  | After                                 |
+| --------------------------------------- | ------------------------------------- |
+| ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
+
 > **Status:** alpha prototype. APIs, rule contracts, and trace formats may
 > change without notice. Pin a commit if you need stability.
 
