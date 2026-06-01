@@ -36,7 +36,9 @@ export async function resolveAvailability(
     return accessor.get();
   }
   if (accessor === false) {
-    return { available: false, reason: rule.unavailableReason };
+    return rule.unavailableReason === undefined
+      ? { available: false }
+      : { available: false, reason: rule.unavailableReason };
   }
   return ALWAYS_AVAILABLE;
 }
