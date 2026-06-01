@@ -196,6 +196,82 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).not.toBeNull();
   });
 
+  // Amazon's `<nav id="shortcut-menu">` lives at `position: fixed; left:
+  // -10000px` and slides in when the user hits a keyboard shortcut. It's
+  // prose (1,100+ chars of help text), so the 1×1 SR-only envelope doesn't
+  // apply. The semantic landmark tag is the signal: agents and a11y tools
+  // treat NAV as navigation regardless of where it's positioned.
+  it("preserves an off-screen NAV landmark (keyboard-shortcut help pattern)", () => {
+    document.body.innerHTML = `
+      <nav id="shortcuts" style="position: fixed; left: -10000px">
+        Skip to main content. Keyboard shortcuts: opt+/, shift+opt+C…
+      </nav>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#shortcuts")).not.toBeNull();
+  });
+
+  it("preserves an off-screen element with role=navigation", () => {
+    document.body.innerHTML = `
+      <div id="shortcuts" role="navigation" style="position: absolute; left: -10000px">
+        Keyboard shortcut help menu
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#shortcuts")).not.toBeNull();
+  });
+
+  // Landmark preservation is per-element, not per-subtree — an injection
+  // shaped descendant inside a NAV is still strippable.
+  it("still strips an injection-shaped descendant inside a landmark", () => {
+    document.body.innerHTML = `
+      <nav id="nav">
+        <a href="/home">Home</a>
+        <div id="payload" style="position: absolute; left: -10000px; width: 600px; height: 200px">
+          ${FIXTURES.HIDDEN_LARGE_OFFSCREEN}
+        </div>
+      </nav>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#nav")).not.toBeNull();
+    expect(document.querySelector("#payload")).toBeNull();
+  });
+
+  // Amazon's #navbar wrapper has `color: rgb(15,17,17)` against the dark nav
+  // background — a color-match by perceptual distance — but the wrapper has
+  // no direct text of its own. The visible nav text lives in `<a>`
+  // descendants with their own white color that overrides inheritance.
+  // Stripping the wrapper would wipe out the top nav.
+  it("preserves a color-matched wrapper whose text comes from descendants", () => {
+    document.body.innerHTML = `
+      <div id="nav" style="color: rgb(15, 17, 17); background-color: rgb(19, 25, 33)">
+        <a href="/home" style="color: rgb(255, 255, 255)">Home</a>
+        <a href="/account" style="color: rgb(255, 255, 255)">Account</a>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#nav")).not.toBeNull();
+    expect(document.querySelector("a[href='/home']")).not.toBeNull();
+  });
+
+  // `Node.textContent` includes inline script source, which historically led
+  // us to scan wrappers whose only "text" was a JSON blob or telemetry
+  // bootstrap inside <script>. The wrapper should look text-less to the rule.
+  it("ignores text inside <script> when deciding whether a wrapper has content", () => {
+    document.body.innerHTML = `
+      <div id="nav" style="color: rgb(15, 17, 17); background-color: rgb(19, 25, 33)">
+        <script>window.navmet.push({key:'Logo',end:+new Date()});</script>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#nav")).not.toBeNull();
+  });
+
   // An offscreen element that's large enough to carry prose is not an
   // SR-only label — it's the injection shape we exist to strip.
   it("still removes large off-left blocks (no 1×1 envelope = not SR-only)", () => {
