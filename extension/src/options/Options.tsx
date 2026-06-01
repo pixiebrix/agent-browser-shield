@@ -86,6 +86,7 @@ export function Options() {
         <a href="#display">Placeholder display</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
+        <a href="#disclaimer">Disclaimer</a>
       </nav>
 
       <Section id="apply" title="Apply configuration">
@@ -183,6 +184,15 @@ export function Options() {
 
       <Section id="rules" title="Rules">
         <RuleList states={states} availability={availability} />
+      </Section>
+
+      <Section id="disclaimer" title="Disclaimer">
+        <p className="hint">
+          Agent Browser Shield reduces the threats a browser-use agent faces on
+          a page, but it can't catch everything. Take precautions when using AI
+          agents for browser use. The extension is provided as-is, without
+          warranty of any kind.
+        </p>
       </Section>
 
       <footer className="footer">
