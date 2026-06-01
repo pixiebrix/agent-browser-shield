@@ -145,8 +145,8 @@ sections.
 
 The snapshot-and-confirm approach follows Mathur et al.,
 [*Dark Patterns at Scale: Findings from a Crawl of 11K Shopping Websites*](https://webtransparency.cs.princeton.edu/dark-patterns/)
-(CSCW 2019), who detected countdown timers by capturing DOM mutations over
-time and comparing successive snapshots to confirm a ticking value.
+(CSCW 2019), who detected countdown timers by capturing DOM mutations over time
+and comparing successive snapshots to confirm a ticking value.
 
 ### Hide Scarcity Warnings
 
