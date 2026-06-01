@@ -148,14 +148,20 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
   return true;
 }
 
-function isHiddenByCss(style: CSSStyleDeclaration): boolean {
+function isHiddenByCss(element: Element, style: CSSStyleDeclaration): boolean {
   if (style.visibility === "hidden" || style.visibility === "collapse") {
     return true;
   }
   if (Number.parseFloat(style.opacity) === 0) {
     return true;
   }
-  if (style.fontSize === "0px") {
+  // `font-size: 0` on a wrapper is the legacy layout trick to collapse
+  // whitespace between inline-block children — children override with their
+  // own font-size and render normally (Amazon's #nav-belt, #nav-search, and
+  // similar use this idiom; matching the wrapper would wipe out the whole
+  // top nav). Only treat font-size:0 as hiding text when the element itself
+  // owns direct text nodes that would actually be invisible.
+  if (style.fontSize === "0px" && hasOwnDirectText(element)) {
     return true;
   }
   if (style.position === "absolute" || style.position === "fixed") {
@@ -180,6 +186,22 @@ function isHiddenByCss(style: CSSStyleDeclaration): boolean {
 
 function hasNonemptyText(element: Element): boolean {
   return element.textContent.trim().length > 0;
+}
+
+// True if the element itself owns nonempty text node children (not just text
+// inside descendants). Used to distinguish a leaf that hides its own text
+// from a wrapper whose descendants override the hiding property.
+function hasOwnDirectText(element: Element): boolean {
+  for (const node of element.childNodes) {
+    if (
+      node.nodeType === Node.TEXT_NODE &&
+      node.textContent !== null &&
+      node.textContent.trim().length > 0
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // sRGB Euclidean distance under which two colors are perceptually
@@ -277,7 +299,10 @@ function findCandidates(root: ParentNode): HTMLElement[] {
     if (hasStructuralSrOnlyPattern(style)) {
       continue;
     }
-    if (!isHiddenByCss(style) && !hasMatchingForeground(element, style)) {
+    if (
+      !isHiddenByCss(element, style) &&
+      !hasMatchingForeground(element, style)
+    ) {
       continue;
     }
     matches.push(element);
