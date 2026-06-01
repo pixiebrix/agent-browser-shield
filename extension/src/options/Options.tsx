@@ -12,6 +12,7 @@ import {
   type RuleAvailabilityStates,
   subscribeRuleAvailability,
 } from "../lib/availability";
+import { HelpLinks } from "../lib/HelpLinks";
 import {
   getPlaceholderDisplayMode,
   type PlaceholderDisplayMode,
@@ -372,7 +373,10 @@ export function Options() {
         </ul>
       </section>
 
-      <footer className="footer">© PixieBrix 2026</footer>
+      <footer className="footer">
+        <HelpLinks className="footer__links" />
+        <div className="footer__copyright">© PixieBrix 2026</div>
+      </footer>
     </div>
   );
 }

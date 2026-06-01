@@ -12,6 +12,7 @@ import {
   setEnforcementEnabled,
   subscribeEnforcementEnabled,
 } from "../lib/enforcement";
+import { HelpLinks } from "../lib/HelpLinks";
 import {
   getRuleStates,
   type RuleStates,
@@ -147,6 +148,7 @@ export function Popup() {
           );
         })}
       </ul>
+      <HelpLinks className="popup__footer" />
     </div>
   );
 }
