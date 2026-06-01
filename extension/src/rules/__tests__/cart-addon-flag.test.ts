@@ -145,7 +145,7 @@ describe("cartAddonFlagRule on checkout URLs", () => {
     // guarded by the contains-flagged-descendant check.
     const flagged = document.querySelectorAll(`[${FLAGGED_ATTR}]`);
     expect(flagged.length).toBe(1);
-    expect(flagged[0].tagName).toBe("SPAN");
+    expect(flagged[0]?.tagName).toBe("SPAN");
   });
 
   it("skips elements with too many descendants (cart-wide container)", () => {

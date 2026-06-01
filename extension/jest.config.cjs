@@ -37,4 +37,53 @@ module.exports = {
     "^webext-storage$": "<rootDir>/src/__test-mocks__/webext-storage.ts",
   },
   clearMocks: true,
+  collectCoverageFrom: [
+    "src/lib/**/*.ts",
+    "src/rules/**/*.ts",
+    "src/options/parse-config.ts",
+    "scripts/**/*.ts",
+    "data/site-rules.schema.ts",
+    "!**/*.generated.*",
+    "!**/__tests__/**",
+    "!src/__test-mocks__/**",
+    // UI/React glue and runtime entry points aren't unit-tested via jest —
+    // exercising them requires the loaded extension. Counting them here would
+    // make the threshold meaningless. If we add component tests for them
+    // later, include them then.
+    "!src/lib/*.tsx",
+    "!src/lib/options-badge.ts",
+    "!src/lib/options-button-toggle.ts",
+    "!src/lib/use-chrome-storage-value.ts",
+    "!src/lib/use-transient-status.ts",
+    "!src/lib/placeholder-count.ts",
+    "!src/lib/placeholder-display.ts",
+    "!src/lib/llm-background.ts",
+    "!src/lib/llm-client.ts",
+    "!src/lib/page-tree.ts",
+    "!src/lib/wait-for-settle.ts",
+    "!src/lib/automation-element-reference.ts",
+    "!src/lib/enforcement.ts",
+    "!src/lib/frame.ts",
+  ],
+  // Ratchet, not aspiration: thresholds sit just under the current baseline so
+  // CI fails on a regression but doesn't block today's PR. Per Jest's rules,
+  // path-specific thresholds (./src/rules/) are evaluated against those files
+  // only; "global" applies to the rest (lib/, options/parse-config, scripts/,
+  // data/). The two ranges differ because src/rules/ is the security surface
+  // and held to a higher bar. Ratchet up as untested rules
+  // (cross-origin-frame-hide, irrelevant-sections-hide) get tests.
+  coverageThreshold: {
+    global: {
+      statements: 60,
+      branches: 50,
+      functions: 55,
+      lines: 60,
+    },
+    "./src/rules/": {
+      statements: 75,
+      branches: 58,
+      functions: 75,
+      lines: 75,
+    },
+  },
 };
