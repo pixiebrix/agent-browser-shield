@@ -88,6 +88,5 @@ export const piiMaskRule = {
   id: RULE_ID,
   label: "Mask PII",
   description: "Hide credit card numbers, phone numbers, and SSNs.",
-  defaultEnabled: true,
   apply,
 } satisfies Rule;

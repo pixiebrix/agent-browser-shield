@@ -60,7 +60,6 @@ export const htmlCommentStripRule = {
   label: "Strip HTML Comments",
   description:
     "Remove HTML comments. Invisible to humans but readable by agents and can carry prompt-injection payloads.",
-  defaultEnabled: true,
   apply,
   teardown: () => {
     watcher.stop();

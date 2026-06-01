@@ -100,7 +100,6 @@ export const crossOriginFrameHideRule = {
   label: "Hide Cross-Origin Frames (Experimental)",
   description:
     "Remove cross-origin iframes from the page and replace them with a click-to-reveal placeholder, so browser-use agents don't ingest embedded-origin content unless the user opts in.",
-  defaultEnabled: false,
   apply,
   teardown,
 } satisfies Rule;

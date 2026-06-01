@@ -59,6 +59,24 @@ bun install
 bun run build
 ```
 
+### Customize default-enabled rules
+
+Which rules ship on by default is enumerated in
+[`extension/data/rule-defaults.json`](./extension/data/rule-defaults.json). To
+ship a build with a custom set without forking the repo, pass a partial
+override file (same JSON shape as the Options-page export) to `bun run build`:
+
+```sh
+bun run build --defaults ./my-defaults.json
+# or:
+EXTENSION_DEFAULTS_FILE=./my-defaults.json bun run build
+```
+
+Overrides only apply to fresh `chrome.storage`; users with toggled state keep
+their preferences. See
+[the install guide](https://agent-browser-shield.pixiebrix.com/install/#customizing-defaults-at-build-time)
+for details.
+
 ### Watch for changes
 
 `bun run watch` rebuilds `extension/dist/` whenever a file in `extension/src/`

@@ -16,7 +16,6 @@ const { rule, selectorsFor } = createSelectorHideRule({
   label: "Hide Reviews",
   description:
     "Hide user-generated review text. Aggregate star ratings stay visible.",
-  defaultEnabled: true,
   hideLabel: "[review section hidden — click to reveal]",
   // schema.org/Review marks UGC. schema.org/AggregateRating is the summary
   // node (count + average) and is left visible — sites like Costco render the

@@ -55,6 +55,22 @@ duplicate a rule between them.
 - `bun run check` runs Biome then ESLint; `bun run check:fix` runs both with
   `--fix`/`--write`.
 
+## Rule defaults
+
+The initial enabled/disabled state for each rule lives in
+`extension/data/rule-defaults.json`, not on the rule modules themselves. The
+codegen in `extension/scripts/build-rule-defaults.ts` validates that every
+registered rule id has a default (and that no unknown ids appear) and emits
+`extension/src/rules/rule-defaults.generated.ts`, which `extension/src/lib/storage.ts`
+imports. Adding a rule without picking a default fails the build; do not edit
+the generated file.
+
+`extension/build.ts` accepts a `--defaults <path>` CLI flag (or
+`EXTENSION_DEFAULTS_FILE` env var) pointing at a JSON file in the same shape
+as the Options-page export. Validated overrides are injected into the bundle
+via `process.env.EXTENSION_DEFAULT_OVERRIDES`. Override only affects fresh
+`chrome.storage`; existing user toggles persist.
+
 ## Site-specific rule data
 
 Selectors and URL recipes for individual sites live in
@@ -114,3 +130,10 @@ When changing the site-rule schema (`SITE_DATA_RULE_IDS` in
 `extension/data/site-rules.schema.ts`) or the Playwright MCP setup
 (`.mcp.json`), update `skills/agent-browser-shield-site-rules/SKILL.md` so its
 rule-type list and workflow stay in sync.
+
+When changing build-time inputs in `extension/build.ts` (CLI flags, env vars,
+`define:` substitutions) — especially anything that affects how operators
+configure a deployed build — update
+`skills/agent-browser-shield-install/SKILL.md` and
+`docs/src/content/docs/install.md` so the build-time customization workflow
+stays accurate.

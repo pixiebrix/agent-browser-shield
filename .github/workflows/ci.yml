@@ -44,12 +44,13 @@ jobs:
       # Codegen freshness is its own step because preflight regenerates the
       # files internally — the diff has to be captured against pristine git
       # state before preflight runs.
-      - name: Codegen freshness (site data + injection patterns)
+      - name: Codegen freshness (site data + injection patterns + rule defaults)
         run: |
           bun run build-site-data
           bun run build-injection-patterns
-          if ! git diff --exit-code -- src/rules/site-data.generated.ts src/rules/injection-patterns.generated.ts; then
-            echo "::error::Generated files are out of date. Run \`bun run build-site-data && bun run build-injection-patterns\` locally and commit the result."
+          bun run build-rule-defaults
+          if ! git diff --exit-code -- src/rules/site-data.generated.ts src/rules/injection-patterns.generated.ts src/rules/rule-defaults.generated.ts; then
+            echo "::error::Generated files are out of date. Run \`bun run build-site-data && bun run build-injection-patterns && bun run build-rule-defaults\` locally and commit the result."
             exit 1
           fi
       - name: Preflight (lint + typecheck + knip + test)

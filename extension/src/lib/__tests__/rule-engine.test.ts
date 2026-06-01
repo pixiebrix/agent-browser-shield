@@ -12,7 +12,6 @@ const buildRule = (id: string, overrides: Partial<Rule> = {}): Rule => ({
   id,
   label: id,
   description: id,
-  defaultEnabled: true,
   apply: jest.fn(),
   teardown: jest.fn(),
   ...overrides,

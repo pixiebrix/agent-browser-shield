@@ -160,6 +160,5 @@ export const secretsMaskRule = {
   label: "Mask Secrets",
   description:
     "Hide API keys, tokens, JWTs, private keys, and other high-entropy credentials.",
-  defaultEnabled: true,
   apply,
 } satisfies Rule;

@@ -25,6 +25,7 @@ jest.mock("abort-utils", () => ({
 }));
 
 import { RULE_IDS, RULES } from "..";
+import { RULE_DEFAULTS } from "../rule-defaults.generated";
 
 describe("rule catalog invariants", () => {
   it("ships at least one rule", () => {
@@ -50,8 +51,23 @@ describe("rule catalog invariants", () => {
     expect(rule.label.length).toBeGreaterThan(0);
     expect(typeof rule.description).toBe("string");
     expect(rule.description.length).toBeGreaterThan(0);
-    expect(typeof rule.defaultEnabled).toBe("boolean");
     expect(typeof rule.apply).toBe("function");
+  });
+
+  // Defaults live in extension/data/rule-defaults.json and flow through
+  // codegen into RULE_DEFAULTS. Codegen rejects mismatches at build time;
+  // this test is a belt-and-suspenders so adding a rule without picking a
+  // default fails fast in `bun run test` too.
+  it("declares a default for every rule and no extras", () => {
+    const defaultsKeys = Object.keys(RULE_DEFAULTS).toSorted();
+    expect(defaultsKeys).toEqual([...RULE_IDS].toSorted());
+  });
+
+  it("every default is a boolean", () => {
+    const offenders = Object.entries(RULE_DEFAULTS).filter(
+      ([, value]) => typeof value !== "boolean",
+    );
+    expect(offenders).toEqual([]);
   });
 
   // `available: false` rules turn into a disabled toggle in the UI and need a

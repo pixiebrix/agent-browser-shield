@@ -33,7 +33,6 @@ interface SelectorHideRuleOptions {
   id: RuleId;
   label: string;
   description: string;
-  defaultEnabled: boolean;
   // Text shown on the placeholder's reveal button. Required unless
   // `removeEntirely` is true.
   hideLabel?: string;
@@ -70,7 +69,6 @@ export function createSelectorHideRule(
     id,
     label,
     description,
-    defaultEnabled,
     hideLabel,
     alwaysOnSelectors,
     siteRules = [],
@@ -178,14 +176,13 @@ export function createSelectorHideRule(
         id,
         label,
         description,
-        defaultEnabled,
         topFrameOnly,
         apply,
         teardown: () => {
           watcher.stop();
         },
       }
-    : { id, label, description, defaultEnabled, topFrameOnly, apply };
+    : { id, label, description, topFrameOnly, apply };
 
   return { rule, selectorsFor };
 }
