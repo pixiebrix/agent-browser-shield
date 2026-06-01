@@ -64,7 +64,7 @@ function removeEasyListStylesheet(): void {
   }
 }
 
-const { rule: baseRule, selectorsFor } = createSelectorHideRule({
+const { rule: baseRule } = createSelectorHideRule({
   id: "ads-hide",
   label: "Hide Ads & Sponsored Results",
   description:
@@ -143,5 +143,3 @@ export const adsHideRule: Rule = {
     removeEasyListStylesheet();
   },
 };
-
-export { selectorsFor };

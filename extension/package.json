@@ -34,7 +34,8 @@
     "format": "biome format --write .",
     "lint": "biome lint . && eslint .",
     "lint:eslint": "eslint .",
-    "lint:eslint:fix": "eslint . --fix"
+    "lint:eslint:fix": "eslint . --fix",
+    "knip": "knip"
   },
   "dependencies": {
     "abort-utils": "^3.0.0",
@@ -63,6 +64,7 @@
     "jest-environment-jsdom": "^30",
     "js-yaml": "^4.1.0",
     "jsdom": "29.1.1",
+    "knip": "^6.15.0",
     "ts-jest": "^29",
     "typescript": "^6.0.3",
     "typescript-eslint": "8.59.4",

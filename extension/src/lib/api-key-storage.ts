@@ -22,5 +22,4 @@ export const apiKeyStorage = createChromeStorageValue<string>({
 });
 
 export const getUserApiKey = apiKeyStorage.get;
-export const setUserApiKey = apiKeyStorage.set;
 export const subscribeUserApiKey = apiKeyStorage.subscribe;

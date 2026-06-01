@@ -1,0 +1,53 @@
+name: Manifest permission diff
+
+on:
+  pull_request:
+    paths:
+      - 'extension/src/manifest.json'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: manifest-permission-diff-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  diff:
+    name: Diff MV3 permissions vs base
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+      - name: Build diff
+        id: build
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git show "${BASE_SHA}:extension/src/manifest.json" > base-manifest.json 2>/dev/null; then
+            bun run extension/scripts/manifest-permission-diff.ts \
+              base-manifest.json extension/src/manifest.json > diff.md
+          else
+            # Manifest is new in this PR — flag the whole permission surface.
+            {
+              echo "## Manifest permission diff"
+              echo
+              echo "\`extension/src/manifest.json\` is new in this PR. Reviewer: confirm the full \`permissions\`, \`host_permissions\`, and \`content_scripts\` surface is intentional."
+            } > diff.md
+          fi
+          if [ -s diff.md ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upsert sticky PR comment
+        if: steps.build.outputs.changed == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: manifest-permission-diff
+          path: diff.md

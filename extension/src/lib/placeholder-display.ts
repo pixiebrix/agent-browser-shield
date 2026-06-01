@@ -23,6 +23,5 @@ export const placeholderDisplayStorage =
   });
 
 export const getPlaceholderDisplayMode = placeholderDisplayStorage.get;
-export const setPlaceholderDisplayMode = placeholderDisplayStorage.set;
 export const subscribePlaceholderDisplayMode =
   placeholderDisplayStorage.subscribe;
