@@ -86,16 +86,23 @@ See [`benchmark/README.md`](./benchmark/README.md) for the full workflow.
 ## Adding a new rule
 
 A "rule" is a small TypeScript module under `extension/src/rules/` that inspects
-the page and mutates the DOM in a targeted way. Each rule is registered in
-`extension/src/rules/index.ts` and `extension/src/lib/storage.ts`.
+the page and mutates the DOM in a targeted way. `extension/src/rules/index.ts`
+is the single source of truth — adding the rule's import there derives
+`RULE_IDS`, the `RuleId` union, the default rule-state map in
+`extension/src/lib/storage.ts`, and the UI surfaces automatically. No separate
+registration step.
 
 Walkthrough:
 
 1. Copy a small existing rule (`scarcity-hide.ts` is a good starter).
-2. Implement the `Rule` interface — `id`, `enabledByDefault`, `apply()`.
+2. Implement the `Rule` interface from `extension/src/rules/types.ts` — `id`,
+   `label`, `description`, `defaultEnabled`, `apply()`. The custom ESLint rule
+   `agent-browser-shield/rule-id-matches-filename` enforces that `id` matches
+   the filename.
 3. Add tests in `extension/src/rules/__tests__/<your-rule>.test.ts` using jsdom
    fixtures.
-4. Register the rule in both `index.ts` and `storage.ts`.
+4. Append the rule's import to `RULES_TUPLE` in `extension/src/rules/index.ts`.
+   That's the only registration needed.
 5. Update `skills/agent-browser-shield-config/SKILL.md` so the rule appears in
    the list there.
 

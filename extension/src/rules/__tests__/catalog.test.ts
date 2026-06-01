@@ -1,0 +1,85 @@
+// Invariant checks on the rule catalog in `extension/src/rules/index.ts`.
+// Each invariant captures a guarantee that other parts of the codebase rely on
+// but TypeScript can't enforce on its own (uniqueness, paired fields, agreement
+// between the rule's `id` and the variable name exported from its module).
+
+// `nanoid` and `abort-utils` are pure-ESM. ts-jest with `useESM: false`
+// (jest.config.cjs) can't transform them. Mock both before the catalog
+// import transitively pulls them in (via automation-element-reference,
+// llm-client, irrelevant-sections-hide). The catalog invariants don't
+// exercise the runtime behavior these provide; they only inspect the
+// catalog's static shape.
+jest.mock("nanoid", () => ({ nanoid: () => "test-ref" }));
+jest.mock("abort-utils", () => ({
+  ReusableAbortController: class {
+    abort(): void {
+      // noop
+    }
+    get signal(): AbortSignal {
+      return new AbortController().signal;
+    }
+  },
+  onAbort: (): (() => void) => () => {
+    // noop
+  },
+}));
+
+import { RULE_IDS, RULES } from "..";
+
+describe("rule catalog invariants", () => {
+  it("ships at least one rule", () => {
+    expect(RULES.length).toBeGreaterThan(0);
+  });
+
+  it("has a unique id for every rule", () => {
+    const ids = RULES.map((rule) => rule.id);
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+    expect(duplicates).toEqual([]);
+  });
+
+  it("exposes the same id set via RULE_IDS as RULES", () => {
+    expect([...RULE_IDS].toSorted()).toEqual(
+      RULES.map((rule) => rule.id).toSorted(),
+    );
+  });
+
+  it.each(
+    RULES.map((rule) => [rule.id, rule] as const),
+  )("%s declares the required Rule fields", (_id, rule) => {
+    expect(typeof rule.label).toBe("string");
+    expect(rule.label.length).toBeGreaterThan(0);
+    expect(typeof rule.description).toBe("string");
+    expect(rule.description.length).toBeGreaterThan(0);
+    expect(typeof rule.defaultEnabled).toBe("boolean");
+    expect(typeof rule.apply).toBe("function");
+  });
+
+  // `available: false` rules turn into a disabled toggle in the UI and need a
+  // user-facing explanation. `Rule.unavailableReason` is documented as paired
+  // (rules/types.ts), but the type system can't require it.
+  it("pairs `available: false` with `unavailableReason`", () => {
+    const offenders = RULES.filter(
+      (rule) =>
+        rule.available === false &&
+        (typeof rule.unavailableReason !== "string" ||
+          rule.unavailableReason.length === 0),
+    ).map((rule) => rule.id);
+    expect(offenders).toEqual([]);
+  });
+
+  // Reactive availability accessors must expose both `get` and `subscribe`
+  // — the rule engine and the UI both depend on the pair.
+  it("reactive `available` accessors expose get + subscribe", () => {
+    const offenders = RULES.filter((rule) => {
+      const accessor = rule.available;
+      if (accessor === undefined || typeof accessor === "boolean") {
+        return false;
+      }
+      return (
+        typeof accessor.get !== "function" ||
+        typeof accessor.subscribe !== "function"
+      );
+    }).map((rule) => rule.id);
+    expect(offenders).toEqual([]);
+  });
+});
