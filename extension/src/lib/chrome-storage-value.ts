@@ -20,7 +20,14 @@ export interface ChromeStorageValue<T> {
   subscribe: (listener: (next: T) => void) => () => void;
 }
 
-export function createChromeStorageValue<T>(options: {
+// `T extends NonNullable<unknown>` rules out `undefined` (and `null`), which
+// `StorageItem.set` / `onChanged` also forbid — passing `undefined` to
+// `StorageItem.set` is overloaded to remove the key, so it has to be excluded
+// from the value type. The constraint lets us forward `T` to those methods
+// without per-call casts.
+export function createChromeStorageValue<
+  T extends NonNullable<unknown>,
+>(options: {
   key: string;
   defaultValue: T;
   // `normalize` is only needed for stored shapes that can drift from `T` across

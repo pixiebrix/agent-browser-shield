@@ -23,7 +23,9 @@ export class StorageItem<Base, Return = Base | undefined> {
 
   constructor(key: string, options: StorageItemOptions<Return> = {}) {
     this.key = key;
-    this.defaultValue = options.defaultValue;
+    if (options.defaultValue !== undefined) {
+      this.defaultValue = options.defaultValue;
+    }
   }
 
   get(): Promise<Return> {
