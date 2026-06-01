@@ -7,6 +7,13 @@
 | --------------------------------------- | ------------------------------------- |
 | ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
 
+**[Live demo site](https://shield-dark-pattern-demo.vercel.app/)** — RiverMart,
+a mock e-commerce SPA that exercises every rule. Load it with and without the
+extension to see the before/after difference.
+
+**[Documentation](https://pixiebrix.github.io/agent-browser-shield/)** — install
+guide, rule reference, and configuration.
+
 > **Status:** alpha prototype. APIs, rule contracts, and trace formats may
 > change without notice. Pin a commit if you need stability.
 
