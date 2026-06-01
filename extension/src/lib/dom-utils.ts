@@ -20,6 +20,39 @@ export function isNonContentTag(tagName: string): boolean {
   return NON_CONTENT_TAGS.has(tagName);
 }
 
+// Text that a sighted user could perceive — like `Node.textContent` but with
+// `NON_CONTENT_TAGS` subtrees (SCRIPT/STYLE/NOSCRIPT/TEMPLATE) excluded.
+// `Node.textContent` happily serializes inline script source as if it were
+// prose, which is misleading for any check keyed on "does this element show
+// text" (e.g., color-match on a wrapper whose only `textContent` is a JSON
+// blob inside a <script>).
+export function visibleTextContent(element: Element): string {
+  const walker = globalThis.document.createTreeWalker(
+    element,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        let parent: Node | null = node.parentNode;
+        while (parent && parent !== element) {
+          if (
+            parent.nodeType === Node.ELEMENT_NODE &&
+            NON_CONTENT_TAGS.has((parent as Element).tagName)
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          parent = parent.parentNode;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    },
+  );
+  let out = "";
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    out += node.textContent ?? "";
+  }
+  return out;
+}
+
 // True for placeholder elements themselves and anything inside one — the
 // common "don't re-process my own replacement" check that every hide rule
 // performs before considering a candidate.

@@ -55,6 +55,7 @@ import {
   isInsidePlaceholder,
   isNonContentTag,
   NON_CONTENT_TAGS,
+  visibleTextContent,
 } from "../lib/dom-utils";
 import { log } from "../lib/log";
 import { SR_ONLY_CLASS_NAMES, SR_ONLY_MAX_SIZE_PX } from "../lib/sr-only";
@@ -86,6 +87,38 @@ function isExcludedAncestor(element: Element): boolean {
     current = current.parentElement;
   }
   return false;
+}
+
+// HTML5 landmarks + ARIA landmark roles. These elements are load-bearing for
+// page structure and accessibility, and sites routinely position them
+// off-screen as "skip to content" affordances or keyboard-shortcut help
+// menus (e.g., Amazon's `<nav id="shortcut-menu">` at `left: -10000px`).
+// Stripping a landmark wipes out a chunk of the a11y tree, and the prose
+// inside is almost never injection — agents reading the a11y tree treat the
+// content as navigation anyway. We allowlist the element itself, not the
+// subtree: an injection-shaped descendant inside a landmark is still
+// strippable.
+const LANDMARK_TAGS: ReadonlySet<string> = new Set([
+  "NAV",
+  "MAIN",
+  "HEADER",
+  "FOOTER",
+  "ASIDE",
+]);
+const LANDMARK_ROLES: ReadonlySet<string> = new Set([
+  "navigation",
+  "main",
+  "banner",
+  "contentinfo",
+  "complementary",
+]);
+
+function isLandmark(element: Element): boolean {
+  if (LANDMARK_TAGS.has(element.tagName)) {
+    return true;
+  }
+  const role = element.getAttribute("role");
+  return role !== null && LANDMARK_ROLES.has(role);
 }
 
 function parsePixelLength(value: string): number | null {
@@ -209,7 +242,7 @@ function detectHiddenByCss(
 }
 
 function hasNonemptyText(element: Element): boolean {
-  return element.textContent.trim().length > 0;
+  return visibleTextContent(element).trim().length > 0;
 }
 
 // True if the element itself owns nonempty text node children (not just text
@@ -283,10 +316,20 @@ function colorDistance(a: RGB, b: RGB): number {
 // perceptual tolerance — the classic "white text on white background"
 // LLM-trick. Element's own alpha is folded in so `opacity:0`-style cases
 // don't double-count (those are already caught by detectHiddenByCss).
+//
+// Gated on direct text nodes for the same reason font-size:0 is: `color`
+// inherits and descendants routinely override. A wrapper whose only text
+// comes from descendants doesn't render any pixel in the wrapper's own
+// color (Amazon's #navbar has color near-black against a dark bg, but the
+// visible nav text lives in `<a>` descendants with their own white color
+// — matching the wrapper would wipe out the whole top nav).
 function detectColorMatch(
   element: Element,
   style: CSSStyleDeclaration,
 ): MatchDetail | null {
+  if (!hasOwnDirectText(element)) {
+    return null;
+  }
   const fg = parseColor(style.color);
   if (!fg) {
     return null;
@@ -328,6 +371,9 @@ function findCandidates(root: ParentNode): Candidate[] {
     if (hasSrOnlyClass(element)) {
       continue;
     }
+    if (isLandmark(element)) {
+      continue;
+    }
     if (isExcludedAncestor(element)) {
       continue;
     }
@@ -350,11 +396,11 @@ function findCandidates(root: ParentNode): Candidate[] {
 
 const TEXT_PREVIEW_MAX = 80;
 
-function textPreview(element: Element): string {
-  const text = element.textContent.trim().replaceAll(/\s+/g, " ");
-  return text.length > TEXT_PREVIEW_MAX
-    ? `${text.slice(0, TEXT_PREVIEW_MAX)}…`
-    : text;
+function textPreview(text: string): string {
+  const normalized = text.trim().replaceAll(/\s+/g, " ");
+  return normalized.length > TEXT_PREVIEW_MAX
+    ? `${normalized.slice(0, TEXT_PREVIEW_MAX)}…`
+    : normalized;
 }
 
 function scanAndStrip(root: ParentNode): void {
@@ -363,6 +409,7 @@ function scanAndStrip(root: ParentNode): void {
     if (!element.isConnected) {
       continue;
     }
+    const visible = visibleTextContent(element);
     log("hidden text removed", {
       ruleId: RULE_ID,
       reason,
@@ -370,8 +417,8 @@ function scanAndStrip(root: ParentNode): void {
       tag: element.tagName,
       id: element.id || undefined,
       classes: element.className || undefined,
-      textLength: element.textContent.length,
-      textPreview: textPreview(element),
+      textLength: visible.length,
+      textPreview: textPreview(visible),
     });
     element.remove();
   }
