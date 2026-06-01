@@ -61,6 +61,22 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).toBeNull();
   });
 
+  // Amazon's #nav-belt / #nav-search and many legacy layouts set `font-size:
+  // 0` on a wrapper to collapse whitespace between inline-block children, then
+  // restore a real font-size on the children themselves. The wrapper has no
+  // direct text of its own — stripping it would wipe out the entire top nav.
+  it("preserves a font-size:0 wrapper whose children restore a real font-size", () => {
+    document.body.innerHTML = `
+      <div id="wrapper" style="font-size: 0">
+        <span id="child" style="font-size: 14px">visible nav link</span>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#wrapper")).not.toBeNull();
+    expect(document.querySelector("#child")).not.toBeNull();
+  });
+
   it("preserves .sr-only text", () => {
     document.body.innerHTML = `
       <span id="x" class="sr-only" style="position: absolute; left: -10000px">screen reader hint</span>
