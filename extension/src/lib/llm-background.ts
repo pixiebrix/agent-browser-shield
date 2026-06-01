@@ -81,7 +81,7 @@ export async function handleClassify(
         { role: "user", content: JSON.stringify(payload) },
       ],
     }),
-    signal,
+    ...(signal === undefined ? {} : { signal }),
   });
 
   if (!response.ok) {

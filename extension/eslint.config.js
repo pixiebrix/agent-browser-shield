@@ -6,6 +6,7 @@
 // modern-API hints) plus this project's custom rules in `eslint-rules/`.
 
 import js from "@eslint/js";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import importX from "eslint-plugin-import-x";
 import jest from "eslint-plugin-jest";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -45,6 +46,7 @@ export default tseslint.config(
     },
     plugins: {
       "agent-browser-shield": localPlugin,
+      "@eslint-community/eslint-comments": eslintComments,
       "import-x": importX,
     },
     settings: {
@@ -56,6 +58,37 @@ export default tseslint.config(
     },
     rules: {
       "agent-browser-shield/rule-id-matches-filename": "error",
+
+      // Discourage silencing the linter. `no-unused-disable` removes stale
+      // disable comments so they don't accumulate as code changes around
+      // them; `no-restricted-disable` blocks suppression of the high-value
+      // type-safety and hooks rules outright — the right fix is the code,
+      // not a `// eslint-disable-next-line`.
+      "@eslint-community/eslint-comments/no-unused-disable": "error",
+      "@eslint-community/eslint-comments/no-restricted-disable": [
+        "error",
+        "@typescript-eslint/no-explicit-any",
+        "@typescript-eslint/no-floating-promises",
+        "@typescript-eslint/no-misused-promises",
+        "@typescript-eslint/no-non-null-assertion",
+        "@typescript-eslint/no-unsafe-argument",
+        "@typescript-eslint/no-unsafe-assignment",
+        "@typescript-eslint/no-unsafe-call",
+        "@typescript-eslint/no-unsafe-member-access",
+        "@typescript-eslint/no-unsafe-return",
+        "@typescript-eslint/switch-exhaustiveness-check",
+        "react-hooks/rules-of-hooks",
+        "react-hooks/exhaustive-deps",
+      ],
+
+      // Already on via `strictTypeChecked`, but pinned explicitly so the
+      // intent is visible: every `switch` over a union (RuleId, message
+      // discriminants, etc.) must handle every case. Agents extending those
+      // unions get a compile-time nudge to update the switches.
+      "@typescript-eslint/switch-exhaustiveness-check": [
+        "error",
+        { considerDefaultExhaustiveForUnions: true },
+      ],
 
       // Import hygiene — TS handles existence/named-export checking, so
       // import-x here only owns structural issues TS can't see: cycles,

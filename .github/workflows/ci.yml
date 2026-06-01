@@ -29,6 +29,16 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      # Belt-and-suspenders alongside --frozen-lockfile: if the install
+      # somehow mutated either file, the commit is incomplete. Agents bumping
+      # a dep in package.json without committing the resulting bun.lock
+      # update (or vice versa) is the failure mode this guards against.
+      - name: Lockfile drift gate
+        run: |
+          if ! git diff --exit-code -- bun.lock package.json; then
+            echo "::error::package.json or bun.lock was modified by \`bun install --frozen-lockfile\` — your lockfile is out of sync. Run \`bun install\` locally and commit both files."
+            exit 1
+          fi
       # Single delegation point: preflight is what contributors run locally
       # (see CONTRIBUTING.md). Adding a check there picks it up here for free.
       # Codegen freshness is its own step because preflight regenerates the
@@ -86,6 +96,12 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Lockfile drift gate
+        run: |
+          if ! git diff --exit-code -- bun.lock package.json; then
+            echo "::error::package.json or bun.lock was modified by \`bun install --frozen-lockfile\` — your lockfile is out of sync. Run \`bun install\` locally and commit both files."
+            exit 1
+          fi
       - name: Build
         run: bun run build
 
@@ -105,6 +121,12 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Lockfile drift gate
+        run: |
+          if ! git diff --exit-code -- bun.lock package.json; then
+            echo "::error::package.json or bun.lock was modified by \`bun install --frozen-lockfile\` — your lockfile is out of sync. Run \`bun install\` locally and commit both files."
+            exit 1
+          fi
       - name: Build
         run: bun run build
 
