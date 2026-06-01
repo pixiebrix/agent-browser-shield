@@ -45,7 +45,8 @@
     "nanoid": "^5.1.11",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "urlpattern-polyfill": "10.1.0"
+    "urlpattern-polyfill": "10.1.0",
+    "webext-storage": "^3.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",

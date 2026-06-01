@@ -1,15 +1,19 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { optionsButtonStorage } from "./options-button-toggle";
+
 const BADGE_SELECTOR = "data-abs";
 const BADGE_VALUE = "open-options";
 
-export function injectOptionsBadge(): void {
-  if (document.querySelector(`[${BADGE_SELECTOR}="${BADGE_VALUE}"]`)) {
+function findBadge(): HTMLElement | null {
+  return document.querySelector(`[${BADGE_SELECTOR}="${BADGE_VALUE}"]`);
+}
+
+function injectBadge(): void {
+  if (findBadge()) {
     return;
   }
-  const host = document.body;
-
   const badge = document.createElement("button");
   badge.type = "button";
   badge.setAttribute(BADGE_SELECTOR, BADGE_VALUE);
@@ -54,5 +58,29 @@ export function injectOptionsBadge(): void {
       });
   });
 
-  host.append(badge);
+  document.body.append(badge);
+}
+
+function removeBadge(): void {
+  findBadge()?.remove();
+}
+
+// Wire the badge to the user's toggle: inject on enable, remove on disable.
+// The initial read is async; the subscription handles every later change.
+// Callers receive an unsubscribe so tests can tear down between cases.
+export function startOptionsBadge(): () => void {
+  void optionsButtonStorage.get().then((enabled) => {
+    if (enabled) {
+      injectBadge();
+    } else {
+      removeBadge();
+    }
+  });
+  return optionsButtonStorage.subscribe((enabled) => {
+    if (enabled) {
+      injectBadge();
+    } else {
+      removeBadge();
+    }
+  });
 }

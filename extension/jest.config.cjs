@@ -26,5 +26,12 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
+  // `webext-storage` is published as ESM-only and our ts-jest config emits
+  // CommonJS, so importing it directly trips a `SyntaxError: Unexpected token
+  // 'export'`. None of our tests exercise the real storage flow (they mock the
+  // storage modules wholesale), so route the import to a small CJS stub.
+  moduleNameMapper: {
+    "^webext-storage$": "<rootDir>/src/__test-mocks__/webext-storage.ts",
+  },
   clearMocks: true,
 };

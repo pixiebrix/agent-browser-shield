@@ -4,6 +4,7 @@
 import { availabilitySource } from "../lib/availability";
 import { enforcementStorage } from "../lib/enforcement";
 import { HelpLinks } from "../lib/HelpLinks";
+import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { RuleList } from "../lib/RuleList";
 import { ruleStatesStorage } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
@@ -12,8 +13,14 @@ export function Popup() {
   const states = useChromeStorageValue(ruleStatesStorage);
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
   const availability = useChromeStorageValue(availabilitySource);
+  const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
 
-  if (!states || enforcementEnabled === null || !availability) {
+  if (
+    !states ||
+    enforcementEnabled === null ||
+    !availability ||
+    optionsButtonEnabled === null
+  ) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -58,6 +65,26 @@ export function Popup() {
         availability={availability}
         disabledByEnforcement={!enforcementEnabled}
       />
+      <label className="options-button-toggle">
+        <span className="options-button-toggle__text">
+          <strong>On-page options button</strong>
+          <span className="options-button-toggle__hint">
+            Floating shield button that lets browser-use agents open this
+            options page from the page itself.
+          </span>
+        </span>
+        <span className="switch" role="presentation">
+          <input
+            type="checkbox"
+            checked={optionsButtonEnabled}
+            onChange={(event) => {
+              void optionsButtonStorage.set(event.target.checked);
+            }}
+            aria-label="Show on-page options button"
+          />
+          <span className="switch__track" />
+        </span>
+      </label>
       <HelpLinks className="popup__footer" />
     </div>
   );

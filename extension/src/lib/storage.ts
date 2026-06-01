@@ -33,6 +33,7 @@ function normalize(raw: unknown): RuleStates {
 
 export const ruleStatesStorage = createChromeStorageValue<RuleStates>({
   key: "agent-browser-shield.rules",
+  defaultValue: DEFAULT_STATES,
   normalize,
 });
 
