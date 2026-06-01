@@ -2,7 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
-import { handleClassify } from "./lib/llm-background";
+import { startClassifyPortListener } from "./lib/llm-background";
 
 // Per-tab, per-frame placeholder counts. Each content script reports its own
 // frame's tally; the badge shows the sum across frames for that tab.
@@ -103,16 +103,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return undefined;
   }
 
-  if (message.type === "classify-irrelevant-sections") {
-    handleClassify(message.payload)
-      .then((response) => sendResponse(response))
-      .catch((error: unknown) => {
-        const errMessage =
-          error instanceof Error ? error.message : String(error);
-        sendResponse({ error: errMessage });
-      });
-    return true;
-  }
-
   return undefined;
 });
+
+// Classify requests use a long-lived port instead of sendMessage so the
+// content-side abort can propagate to the background's fetch. See
+// `lib/llm-background.ts` for the per-port AbortController wiring.
+startClassifyPortListener();

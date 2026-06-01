@@ -13,6 +13,7 @@
 // search/cart/checkout/account UI. The container-level refs let the LLM pick
 // the right granularity instead of being forced into outermost-only choices.
 
+import { ReusableAbortController } from "abort-utils";
 import {
   pruneReferences,
   resolveReference,
@@ -39,7 +40,12 @@ const MAX_VIEWPORT_HEIGHT_FRACTION = 0.7;
 // the page off-screen.
 const MAX_PLACEHOLDER_HEIGHT_PX = 200;
 
-let abortController: AbortController | null = null;
+// Single controller covers both the settle phase and every classify call
+// (initial + scroll-triggered). Teardown calls abortAndReset, which aborts the
+// shared signal and produces a fresh one for the next apply — so the previous
+// settle's waiter, the pending fetch, and any debounced scroll classification
+// all unwind together.
+const lifecycleController = new ReusableAbortController();
 let scrollHandler: (() => void) | null = null;
 let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let classifyInFlight = false;
@@ -130,8 +136,7 @@ function runClassification(): void {
     return;
   }
 
-  const controller = new AbortController();
-  abortController = controller;
+  const signal = lifecycleController.signal;
   classifyInFlight = true;
 
   log("irrelevant-sections-hide classify start", {
@@ -139,12 +144,9 @@ function runClassification(): void {
     pageTreeBytes: pageTree.length,
   });
 
-  classifyIrrelevantSections(
-    { url: location.href, pageTree },
-    controller.signal,
-  )
+  classifyIrrelevantSections({ url: location.href, pageTree }, signal)
     .then((response) => {
-      if (controller.signal.aborted) return;
+      if (signal.aborted) return;
 
       log("irrelevant-sections-hide classify response", {
         count: response.irrelevant.length,
@@ -250,7 +252,6 @@ function runClassification(): void {
       log("irrelevant-sections-hide classify failed", { error: message });
     })
     .finally(() => {
-      if (abortController === controller) abortController = null;
       classifyInFlight = false;
     });
 }
@@ -279,15 +280,14 @@ function stopScrollWatcher(): void {
 
 function apply(_root: ParentNode): void {
   log("irrelevant-sections-hide apply", { url: location.href });
-  const settleController = new AbortController();
-  abortController = settleController;
+  const signal = lifecycleController.signal;
 
   waitForSettle({
     timeout: SETTLE_TIMEOUT_MS,
     quietMs: SETTLE_QUIET_MS,
-    signal: settleController.signal,
+    signal,
   }).then(() => {
-    if (settleController.signal.aborted) {
+    if (signal.aborted) {
       log("irrelevant-sections-hide aborted before classify");
       return;
     }
@@ -298,10 +298,7 @@ function apply(_root: ParentNode): void {
 }
 
 function teardown(): void {
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
+  lifecycleController.abortAndReset();
   stopScrollWatcher();
   classifyInFlight = false;
   processedElements = new WeakSet();

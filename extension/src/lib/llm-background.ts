@@ -2,7 +2,12 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { getUserApiKey } from "./api-key-storage";
-import type { ClassifyRequest, ClassifyResponse } from "./llm-client";
+import {
+  CLASSIFY_PORT_NAME,
+  type ClassifyPortMessage,
+  type ClassifyRequest,
+  type ClassifyResponse,
+} from "./llm-client";
 
 // Injected at build time via Bun `define` (see `src/globals.d.ts`). Empty
 // string when unset so the extension still loads; classification calls then
@@ -52,6 +57,7 @@ interface ChatResponse {
 
 export async function handleClassify(
   payload: ClassifyRequest,
+  signal?: AbortSignal,
 ): Promise<ClassifyResponse> {
   const userKey = await getUserApiKey();
   const apiKey = userKey || BUILT_IN_API_KEY;
@@ -75,6 +81,7 @@ export async function handleClassify(
         { role: "user", content: JSON.stringify(payload) },
       ],
     }),
+    signal,
   });
 
   if (!response.ok) {
@@ -103,4 +110,44 @@ export async function handleClassify(
       })
     : [];
   return { irrelevant };
+}
+
+// Wire up the port handler for content-script classify requests. Each port
+// owns one AbortController: the content side disconnecting before fetch
+// completes aborts the in-flight HTTP request so we don't keep burning tokens
+// for a response no one is listening for.
+export function startClassifyPortListener(): void {
+  chrome.runtime.onConnect.addListener((port) => {
+    if (port.name !== CLASSIFY_PORT_NAME) return;
+    const controller = new AbortController();
+    // Content-side disconnect (rule torn down, page navigated, frame gone)
+    // aborts the in-flight fetch via the signal forwarded into handleClassify.
+    // Calling abort after handleClassify has resolved is a no-op, so this is
+    // safe regardless of who wins the race.
+    port.onDisconnect.addListener(() => controller.abort());
+
+    const send = (message: ClassifyPortMessage) => {
+      try {
+        port.postMessage(message);
+      } catch {
+        // Port already disconnected — caller has gone away. Nothing to do.
+      }
+    };
+
+    port.onMessage.addListener((raw: unknown) => {
+      const payload = raw as ClassifyRequest;
+      handleClassify(payload, controller.signal)
+        .then((response) => {
+          send({ kind: "response", response });
+          port.disconnect();
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted) return;
+          const message =
+            error instanceof Error ? error.message : String(error);
+          send({ kind: "error", error: message });
+          port.disconnect();
+        });
+    });
+  });
 }
