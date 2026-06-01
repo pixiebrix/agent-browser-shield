@@ -55,10 +55,14 @@ describe("site data YAML files", () => {
 
     const hostnames = new Set<string>(parsed.hostnames);
     for (const entry of Object.values(parsed.rules)) {
-      if (!entry) continue;
+      if (!entry) {
+        continue;
+      }
       for (const item of toEntries(entry)) {
         if (item.hostnames) {
-          for (const h of item.hostnames) hostnames.add(h);
+          for (const h of item.hostnames) {
+            hostnames.add(h);
+          }
         }
       }
     }

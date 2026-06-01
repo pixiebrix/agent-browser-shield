@@ -108,7 +108,9 @@ const PLACEHOLDER_STYLES = `
 let stylesInjected = false;
 
 function injectStyles(): void {
-  if (stylesInjected) return;
+  if (stylesInjected) {
+    return;
+  }
   stylesInjected = true;
   const style = document.createElement("style");
   style.dataset.absStyles = "";
@@ -121,12 +123,16 @@ function isApplicableHere(
   topFrame: boolean,
   availability: RuleAvailabilityStates,
 ): boolean {
-  if (!availability[rule.id]?.available) return false;
+  if (!availability[rule.id]?.available) {
+    return false;
+  }
   // topFrameOnly rules target page-wide concepts (site footer, cookie/newsletter
   // overlays, per-host URL recipes). Running them in subframes would either
   // be a no-op (selectors don't match) or actively harmful (duplicate
   // landmark injection into every iframe's body).
-  if (rule.topFrameOnly && !topFrame) return false;
+  if (rule.topFrameOnly && !topFrame) {
+    return false;
+  }
   return true;
 }
 
@@ -154,7 +160,9 @@ function applyEnabled(
     topFrame,
   });
   for (const rule of RULES) {
-    if (!isApplicableHere(rule, topFrame, availability)) continue;
+    if (!isApplicableHere(rule, topFrame, availability)) {
+      continue;
+    }
     if (states[rule.id]) {
       log("applying rule", { ruleId: rule.id });
       rule.apply(document.body);
@@ -184,7 +192,9 @@ function reconcile(
   nextAvailability: RuleAvailabilityStates,
   previousAvailability: RuleAvailabilityStates,
 ): void {
-  if (!document.body) return;
+  if (!document.body) {
+    return;
+  }
   for (const rule of RULES) {
     const wasApplied = effectivelyApplied(
       rule,
@@ -198,7 +208,9 @@ function reconcile(
       topFrame,
       nextAvailability,
     );
-    if (isApplied === wasApplied) continue;
+    if (isApplied === wasApplied) {
+      continue;
+    }
     if (isApplied) {
       log("rule enabled — applying", { ruleId: rule.id });
       rule.apply(document.body);

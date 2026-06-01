@@ -67,8 +67,12 @@ const OFFSCREEN_THRESHOLD_PX = -9999;
 
 function hasSrOnlyClass(element: Element): boolean {
   for (const cls of element.classList) {
-    if (SR_ONLY_CLASS_NAMES.has(cls)) return true;
-    if (/visuallyhidden/i.test(cls)) return true;
+    if (SR_ONLY_CLASS_NAMES.has(cls)) {
+      return true;
+    }
+    if (/visuallyhidden/i.test(cls)) {
+      return true;
+    }
   }
   return false;
 }
@@ -76,7 +80,9 @@ function hasSrOnlyClass(element: Element): boolean {
 function isExcludedAncestor(element: Element): boolean {
   let current: Element | null = element;
   while (current) {
-    if (NON_CONTENT_TAGS.has(current.tagName)) return true;
+    if (NON_CONTENT_TAGS.has(current.tagName)) {
+      return true;
+    }
     current = current.parentElement;
   }
   return false;
@@ -84,17 +90,27 @@ function isExcludedAncestor(element: Element): boolean {
 
 function parsePixelLength(value: string): number | null {
   const match = /^(-?\d+(?:\.\d+)?)px$/.exec(value);
-  if (!match?.[1]) return null;
+  if (!match?.[1]) {
+    return null;
+  }
   return Number.parseFloat(match[1]);
 }
 
 function isClippedToZero(style: CSSStyleDeclaration): boolean {
   const clipPath = style.clipPath;
-  if (clipPath === "inset(100%)") return true;
+  if (clipPath === "inset(100%)") {
+    return true;
+  }
   const clip = style.clip;
-  if (clip === "rect(0px, 0px, 0px, 0px)") return true;
-  if (clip === "rect(0px 0px 0px 0px)") return true;
-  if (clip === "rect(0, 0, 0, 0)") return true;
+  if (clip === "rect(0px, 0px, 0px, 0px)") {
+    return true;
+  }
+  if (clip === "rect(0px 0px 0px 0px)") {
+    return true;
+  }
+  if (clip === "rect(0, 0, 0, 0)") {
+    return true;
+  }
   return false;
 }
 
@@ -112,12 +128,20 @@ function isClippedToZero(style: CSSStyleDeclaration): boolean {
 // enumerate, and false-stripping a single SR-only label can wipe out
 // whole a11y trees (e.g., every Amazon SERP price disappears at once).
 function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
-  if (style.position !== "absolute" && style.position !== "fixed") return false;
-  if (style.overflow !== "hidden") return false;
+  if (style.position !== "absolute" && style.position !== "fixed") {
+    return false;
+  }
+  if (style.overflow !== "hidden") {
+    return false;
+  }
   const width = parsePixelLength(style.width);
   const height = parsePixelLength(style.height);
-  if (width === null || width > SR_ONLY_MAX_SIZE_PX) return false;
-  if (height === null || height > SR_ONLY_MAX_SIZE_PX) return false;
+  if (width === null || width > SR_ONLY_MAX_SIZE_PX) {
+    return false;
+  }
+  if (height === null || height > SR_ONLY_MAX_SIZE_PX) {
+    return false;
+  }
   return true;
 }
 
@@ -125,8 +149,12 @@ function isHiddenByCss(style: CSSStyleDeclaration): boolean {
   if (style.visibility === "hidden" || style.visibility === "collapse") {
     return true;
   }
-  if (Number.parseFloat(style.opacity) === 0) return true;
-  if (style.fontSize === "0px") return true;
+  if (Number.parseFloat(style.opacity) === 0) {
+    return true;
+  }
+  if (style.fontSize === "0px") {
+    return true;
+  }
   if (style.position === "absolute" || style.position === "fixed") {
     const left = parsePixelLength(style.left);
     const top = parsePixelLength(style.top);
@@ -138,8 +166,12 @@ function isHiddenByCss(style: CSSStyleDeclaration): boolean {
     }
   }
   const textIndent = parsePixelLength(style.textIndent);
-  if (textIndent !== null && textIndent <= OFFSCREEN_THRESHOLD_PX) return true;
-  if (isClippedToZero(style)) return true;
+  if (textIndent !== null && textIndent <= OFFSCREEN_THRESHOLD_PX) {
+    return true;
+  }
+  if (isClippedToZero(style)) {
+    return true;
+  }
   return false;
 }
 
@@ -161,12 +193,16 @@ function parseColor(value: string): RGBA | null {
     /^rgba?\(\s*(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i.exec(
       value,
     );
-  if (!match?.[1] || !match[2] || !match[3]) return null;
+  if (!match?.[1] || !match[2] || !match[3]) {
+    return null;
+  }
   const r = Number.parseFloat(match[1]);
   const g = Number.parseFloat(match[2]);
   const b = Number.parseFloat(match[3]);
   const a = match[4] === undefined ? 1 : Number.parseFloat(match[4]);
-  if ([r, g, b, a].some((n) => Number.isNaN(n))) return null;
+  if ([r, g, b, a].some((n) => Number.isNaN(n))) {
+    return null;
+  }
   return [r, g, b, a];
 }
 
@@ -203,8 +239,12 @@ function hasMatchingForeground(
   style: CSSStyleDeclaration,
 ): boolean {
   const fg = parseColor(style.color);
-  if (!fg) return false;
-  if (fg[3] === 0) return false;
+  if (!fg) {
+    return false;
+  }
+  if (fg[3] === 0) {
+    return false;
+  }
   const bg = effectiveBackgroundColor(element);
   return colorDistance([fg[0], fg[1], fg[2]], bg) <= COLOR_MATCH_DISTANCE;
 }
@@ -212,16 +252,31 @@ function hasMatchingForeground(
 function findCandidates(root: ParentNode): HTMLElement[] {
   const matches: HTMLElement[] = [];
   for (const element of root.querySelectorAll<HTMLElement>("*")) {
-    if (isNonContentTag(element.tagName)) continue;
-    if (isInsidePlaceholder(element)) continue;
-    if (element.closest('[aria-hidden="true"]')) continue;
-    if (hasSrOnlyClass(element)) continue;
-    if (isExcludedAncestor(element)) continue;
-    if (!hasNonemptyText(element)) continue;
-    const style = globalThis.getComputedStyle(element);
-    if (hasStructuralSrOnlyPattern(style)) continue;
-    if (!isHiddenByCss(style) && !hasMatchingForeground(element, style))
+    if (isNonContentTag(element.tagName)) {
       continue;
+    }
+    if (isInsidePlaceholder(element)) {
+      continue;
+    }
+    if (element.closest('[aria-hidden="true"]')) {
+      continue;
+    }
+    if (hasSrOnlyClass(element)) {
+      continue;
+    }
+    if (isExcludedAncestor(element)) {
+      continue;
+    }
+    if (!hasNonemptyText(element)) {
+      continue;
+    }
+    const style = globalThis.getComputedStyle(element);
+    if (hasStructuralSrOnlyPattern(style)) {
+      continue;
+    }
+    if (!isHiddenByCss(style) && !hasMatchingForeground(element, style)) {
+      continue;
+    }
     matches.push(element);
   }
   return filterToOutermost(matches);
@@ -229,7 +284,9 @@ function findCandidates(root: ParentNode): HTMLElement[] {
 
 function scanAndStrip(root: ParentNode): void {
   for (const element of findCandidates(root)) {
-    if (!element.isConnected) continue;
+    if (!element.isConnected) {
+      continue;
+    }
     log("hidden text removed", {
       ruleId: RULE_ID,
       tag: element.tagName,
@@ -244,7 +301,9 @@ function scanAndStrip(root: ParentNode): void {
 const watcher = createSubtreeWatcher({
   skipPlaceholderSubtrees: true,
   onSubtrees: (roots) => {
-    for (const root of roots) scanAndStrip(root);
+    for (const root of roots) {
+      scanAndStrip(root);
+    }
   },
 });
 

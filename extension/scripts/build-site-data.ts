@@ -90,7 +90,9 @@ function collectSelectorBlocks(
   const blocks: SelectorBlock[] = [];
   for (const { fileName, data } of parsed) {
     const rule = data.rules[ruleId];
-    if (!rule) continue;
+    if (!rule) {
+      continue;
+    }
     for (const entry of toEntries<SelectorRuleEntryInput>(rule)) {
       blocks.push({
         fileName,
@@ -107,7 +109,9 @@ function collectRecipeBlocks(parsed: ParsedSiteFile[]): RecipeBlock[] {
   const blocks: RecipeBlock[] = [];
   for (const { fileName, data } of parsed) {
     const rule = data.rules["search-url-helper"];
-    if (!rule) continue;
+    if (!rule) {
+      continue;
+    }
     for (const entry of toEntries<RecipeRuleEntryInput>(rule)) {
       blocks.push({
         fileName,

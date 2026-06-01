@@ -37,26 +37,40 @@ function containsInjection(text: string): boolean {
 
 function findContainer(textNode: Text): HTMLElement | null {
   const parent = textNode.parentElement;
-  if (!parent) return null;
+  if (!parent) {
+    return null;
+  }
   const block = parent.closest<HTMLElement>(BLOCK_CONTAINER_SELECTOR);
-  if (block) return block;
+  if (block) {
+    return block;
+  }
   // No block-level ancestor — fall back to the text node's direct parent,
   // but never escalate to BODY/HTML (would hide the whole page).
-  if (parent.tagName === "BODY" || parent.tagName === "HTML") return null;
+  if (parent.tagName === "BODY" || parent.tagName === "HTML") {
+    return null;
+  }
   return parent;
 }
 
 function apply(root: ParentNode): void {
   const containers = new Set<HTMLElement>();
   for (const node of walkTextNodes(root, { minLength: MIN_TEXT_LENGTH })) {
-    if (!containsInjection(node.nodeValue ?? "")) continue;
+    if (!containsInjection(node.nodeValue ?? "")) {
+      continue;
+    }
     const container = findContainer(node);
-    if (container) containers.add(container);
+    if (container) {
+      containers.add(container);
+    }
   }
 
   for (const element of filterToOutermost([...containers])) {
-    if (!element.isConnected) continue;
-    if (isInsidePlaceholder(element)) continue;
+    if (!element.isConnected) {
+      continue;
+    }
+    if (isInsidePlaceholder(element)) {
+      continue;
+    }
     replaceWithBlockPlaceholder(
       element,
       RULE_ID,

@@ -22,7 +22,9 @@ const elementsByRef = new Map<string, WeakRef<Element>>();
 
 export function getReferenceForElement(element: Element): string {
   const existing = refsByElement.get(element);
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
   const ref = nanoid(REF_LENGTH);
   refsByElement.set(element, ref);
   elementsByRef.set(ref, new WeakRef(element));
@@ -31,7 +33,9 @@ export function getReferenceForElement(element: Element): string {
 
 export function resolveReference(ref: string): Element | undefined {
   const element = elementsByRef.get(ref)?.deref();
-  if (!element?.isConnected) return undefined;
+  if (!element?.isConnected) {
+    return undefined;
+  }
   return element;
 }
 
@@ -39,6 +43,8 @@ export function resolveReference(ref: string): Element | undefined {
 // keeps the reverse map from growing unbounded over long-lived tabs.
 export function pruneReferences(): void {
   for (const [ref, weakRef] of elementsByRef) {
-    if (!weakRef.deref()) elementsByRef.delete(ref);
+    if (!weakRef.deref()) {
+      elementsByRef.delete(ref);
+    }
   }
 }

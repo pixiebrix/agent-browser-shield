@@ -27,9 +27,13 @@ const RULE_ID = "cross-origin-frame-hide" as const;
 
 function resolveOrigin(iframe: HTMLIFrameElement): string | null {
   // srcdoc iframes inherit the embedding origin — not a cross-origin threat.
-  if (iframe.hasAttribute("srcdoc")) return null;
+  if (iframe.hasAttribute("srcdoc")) {
+    return null;
+  }
   const raw = iframe.getAttribute("src");
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   let url: URL;
   try {
     url = new URL(raw, document.baseURI);
@@ -39,16 +43,22 @@ function resolveOrigin(iframe: HTMLIFrameElement): string | null {
   // Only http(s) iframes carry a distinct web origin. about:, javascript:,
   // data:, blob: all either inherit the parent origin or are inert for our
   // purposes; skip them.
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return null;
+  }
   return url.origin;
 }
 
 function hideIfCrossOrigin(iframe: HTMLIFrameElement): void {
   // Skip iframes the user has already revealed for this rule, so the subtree
   // observer doesn't immediately re-hide the just-restored content.
-  if (iframe.getAttribute(REVEALED_ATTR) === RULE_ID) return;
+  if (iframe.getAttribute(REVEALED_ATTR) === RULE_ID) {
+    return;
+  }
   const origin = resolveOrigin(iframe);
-  if (!origin || origin === globalThis.location.origin) return;
+  if (!origin || origin === globalThis.location.origin) {
+    return;
+  }
   replaceWithBlockPlaceholder(
     iframe,
     RULE_ID,
@@ -58,14 +68,18 @@ function hideIfCrossOrigin(iframe: HTMLIFrameElement): void {
 
 function scan(root: ParentNode): void {
   for (const iframe of root.querySelectorAll<HTMLIFrameElement>("iframe")) {
-    if (!iframe.isConnected) continue;
+    if (!iframe.isConnected) {
+      continue;
+    }
     hideIfCrossOrigin(iframe);
   }
 }
 
 const watcher = createSubtreeWatcher({
   onSubtrees: (roots) => {
-    for (const root of roots) scan(root);
+    for (const root of roots) {
+      scan(root);
+    }
   },
   skipPlaceholderSubtrees: true,
 });

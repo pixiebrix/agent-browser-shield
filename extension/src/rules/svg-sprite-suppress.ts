@@ -27,32 +27,50 @@ function collectReferencedSymbolIds(): Set<string> {
   const refs = new Set<string>();
   for (const use of document.querySelectorAll("use")) {
     const href = use.getAttribute("href") ?? use.getAttribute("xlink:href");
-    if (!href) continue;
+    if (!href) {
+      continue;
+    }
     const hashIdx = href.lastIndexOf("#");
-    if (hashIdx === -1) continue;
+    if (hashIdx === -1) {
+      continue;
+    }
     const id = href.slice(hashIdx + 1);
-    if (id) refs.add(id);
+    if (id) {
+      refs.add(id);
+    }
   }
   return refs;
 }
 
 function isSpriteShaped(svg: SVGSVGElement): boolean {
   const children = [...svg.children];
-  if (children.length === 0) return false;
+  if (children.length === 0) {
+    return false;
+  }
   let hasSymbolOrDefs = false;
   for (const child of children) {
     const tag = child.tagName.toLowerCase();
-    if (!STRUCTURAL_TAGS.has(tag)) return false;
-    if (tag === "symbol" || tag === "defs") hasSymbolOrDefs = true;
+    if (!STRUCTURAL_TAGS.has(tag)) {
+      return false;
+    }
+    if (tag === "symbol" || tag === "defs") {
+      hasSymbolOrDefs = true;
+    }
   }
   return hasSymbolOrDefs;
 }
 
 function isHidden(svg: SVGSVGElement): boolean {
-  if (svg.getAttribute("aria-hidden") === "true") return true;
+  if (svg.getAttribute("aria-hidden") === "true") {
+    return true;
+  }
   const style = globalThis.getComputedStyle(svg);
-  if (style.display === "none") return true;
-  if (style.visibility === "hidden") return true;
+  if (style.display === "none") {
+    return true;
+  }
+  if (style.visibility === "hidden") {
+    return true;
+  }
   if (svg.getAttribute("width") === "0" || svg.getAttribute("height") === "0") {
     return true;
   }
@@ -69,11 +87,19 @@ function isHidden(svg: SVGSVGElement): boolean {
 function scan(root: ParentNode): void {
   const referenced = collectReferencedSymbolIds();
   for (const svg of root.querySelectorAll<SVGSVGElement>("svg")) {
-    if (!svg.isConnected) continue;
-    if (!isSpriteShaped(svg)) continue;
-    if (!isHidden(svg)) continue;
+    if (!svg.isConnected) {
+      continue;
+    }
+    if (!isSpriteShaped(svg)) {
+      continue;
+    }
+    if (!isHidden(svg)) {
+      continue;
+    }
     const symbols = [...svg.querySelectorAll<SVGSymbolElement>("symbol[id]")];
-    if (symbols.some((s) => referenced.has(s.id))) continue;
+    if (symbols.some((s) => referenced.has(s.id))) {
+      continue;
+    }
     svg.remove();
   }
 }

@@ -6,9 +6,13 @@ import path from "node:path";
 const RULE_FILE_REGEX = /[/\\]src[/\\]rules[/\\][^/\\]+\.tsx?$/;
 
 function isRuleFile(filename) {
-  if (!RULE_FILE_REGEX.test(filename)) return false;
+  if (!RULE_FILE_REGEX.test(filename)) {
+    return false;
+  }
   const base = path.basename(filename);
-  if (base === "index.ts" || base === "types.ts") return false;
+  if (base === "index.ts" || base === "types.ts") {
+    return false;
+  }
   if (base.endsWith(".generated.ts") || base.endsWith(".generated.tsx")) {
     return false;
   }
@@ -35,11 +39,15 @@ const rule = {
   },
   create(context) {
     const filename = context.filename ?? context.getFilename();
-    if (!isRuleFile(filename)) return {};
+    if (!isRuleFile(filename)) {
+      return {};
+    }
     const expected = expectedId(filename);
 
     function check(node, value) {
-      if (typeof value !== "string") return;
+      if (typeof value !== "string") {
+        return;
+      }
       if (value !== expected) {
         context.report({
           node,

@@ -5,9 +5,13 @@ const BADGE_SELECTOR = "data-abs";
 const BADGE_VALUE = "open-options";
 
 export function injectOptionsBadge(): void {
-  if (document.querySelector(`[${BADGE_SELECTOR}="${BADGE_VALUE}"]`)) return;
+  if (document.querySelector(`[${BADGE_SELECTOR}="${BADGE_VALUE}"]`)) {
+    return;
+  }
   const host = document.body ?? document.documentElement;
-  if (!host) return;
+  if (!host) {
+    return;
+  }
 
   const badge = document.createElement("button");
   badge.type = "button";

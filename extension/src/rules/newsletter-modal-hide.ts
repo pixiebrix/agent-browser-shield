@@ -25,7 +25,9 @@ const MIN_VIEWPORT_AREA_RATIO = 0.25;
 
 function looksLikeNewsletterModal(element: HTMLElement): boolean {
   const style = globalThis.getComputedStyle(element);
-  if (style.position !== "fixed" && style.position !== "sticky") return false;
+  if (style.position !== "fixed" && style.position !== "sticky") {
+    return false;
+  }
 
   // In real browsers, getBoundingClientRect returns layout dimensions; in
   // jsdom it returns 0. Skip the area gate when the rect is zero so unit
@@ -42,7 +44,9 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
   }
 
   const text = element.textContent ?? "";
-  if (!NEWSLETTER_TEXT.test(text)) return false;
+  if (!NEWSLETTER_TEXT.test(text)) {
+    return false;
+  }
 
   if (
     !element.querySelector('input[type="email"]') &&

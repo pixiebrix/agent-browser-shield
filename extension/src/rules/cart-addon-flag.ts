@@ -95,7 +95,9 @@ export interface AddonMatch {
 export function matchAddon(text: string): AddonMatch | null {
   for (const { label, pattern } of ADDON_PATTERNS) {
     const match = pattern.exec(text);
-    if (match) return { label, matched: match[0] };
+    if (match) {
+      return { label, matched: match[0] };
+    }
   }
   return null;
 }
@@ -107,15 +109,23 @@ interface Candidate {
 }
 
 function isSkipped(element: HTMLElement): boolean {
-  if (element.hasAttribute(FLAGGED_ATTR)) return true;
+  if (element.hasAttribute(FLAGGED_ATTR)) {
+    return true;
+  }
   // Skip the chip itself and anything nested inside it so the chip's own
   // text doesn't drive a recursive re-annotation on the next scan.
-  if (element.classList.contains(FLAG_CLASS)) return true;
-  if (element.closest(`.${FLAG_CLASS}`)) return true;
+  if (element.classList.contains(FLAG_CLASS)) {
+    return true;
+  }
+  if (element.closest(`.${FLAG_CLASS}`)) {
+    return true;
+  }
   // If a descendant is already flagged, the matching text lives in that
   // descendant — annotating the enclosing container as well would be
   // redundant and noisy.
-  if (element.querySelector(`[${FLAGGED_ATTR}]`)) return true;
+  if (element.querySelector(`[${FLAGGED_ATTR}]`)) {
+    return true;
+  }
   return false;
 }
 
@@ -136,8 +146,12 @@ function findCandidates(root: ParentNode): Candidate[] {
 
 function flag(candidate: Candidate): void {
   const { element, label, matched } = candidate;
-  if (!element.isConnected) return;
-  if (element.hasAttribute(FLAGGED_ATTR)) return;
+  if (!element.isConnected) {
+    return;
+  }
+  if (element.hasAttribute(FLAGGED_ATTR)) {
+    return;
+  }
   element.setAttribute(FLAGGED_ATTR, "");
 
   const chip = document.createElement("span");
@@ -160,10 +174,16 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) return;
+  if (!isCheckoutUrl(globalThis.location.href)) {
+    return;
+  }
   const candidates = findCandidates(root);
-  if (candidates.length === 0) return;
-  for (const candidate of candidates) flag(candidate);
+  if (candidates.length === 0) {
+    return;
+  }
+  for (const candidate of candidates) {
+    flag(candidate);
+  }
   log("cart add-ons flagged", {
     count: candidates.length,
     labels: candidates.map((c) => c.label),
@@ -173,7 +193,9 @@ function scanAndFlag(root: ParentNode): void {
 
 const watcher = createSubtreeWatcher({
   onSubtrees: (roots) => {
-    for (const root of roots) scanAndFlag(root);
+    for (const root of roots) {
+      scanAndFlag(root);
+    }
   },
 });
 

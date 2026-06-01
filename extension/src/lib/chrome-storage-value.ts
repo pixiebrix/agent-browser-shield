@@ -34,9 +34,13 @@ export function createChromeStorageValue<T>(options: {
         changes: Record<string, chrome.storage.StorageChange>,
         areaName: string,
       ) => {
-        if (areaName !== "local") return;
+        if (areaName !== "local") {
+          return;
+        }
         const change = changes[key];
-        if (!change) return;
+        if (!change) {
+          return;
+        }
         listener(normalize(change.newValue), normalize(change.oldValue));
       };
       chrome.storage.onChanged.addListener(handler);

@@ -91,9 +91,13 @@ function findCandidates(root: ParentNode): Candidate[] {
     maxTextLength: MAX_CANDIDATE_LENGTH,
     maxDescendants: MAX_CANDIDATE_DESCENDANTS,
     match: (text) => {
-      if (!matchesTimerPattern(text)) return null;
+      if (!matchesTimerPattern(text)) {
+        return null;
+      }
       const seconds = parseTotalSeconds(text);
-      if (seconds == null) return null;
+      if (seconds == null) {
+        return null;
+      }
       return { initialText: text, initialSeconds: seconds };
     },
   });
@@ -106,13 +110,23 @@ function findCandidates(root: ParentNode): Candidate[] {
 
 function reconcileCandidates(candidates: Candidate[]): void {
   for (const { element, initialText, initialSeconds } of candidates) {
-    if (!element.isConnected) continue;
-    if (isInsidePlaceholder(element)) continue;
+    if (!element.isConnected) {
+      continue;
+    }
+    if (isInsidePlaceholder(element)) {
+      continue;
+    }
     const currentText = (element.textContent ?? "").trim();
-    if (currentText === initialText) continue;
+    if (currentText === initialText) {
+      continue;
+    }
     const currentSeconds = parseTotalSeconds(currentText);
-    if (currentSeconds == null) continue;
-    if (currentSeconds >= initialSeconds) continue;
+    if (currentSeconds == null) {
+      continue;
+    }
+    if (currentSeconds >= initialSeconds) {
+      continue;
+    }
     replaceWithBlockPlaceholder(
       element,
       RULE_ID,
@@ -129,8 +143,12 @@ const pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
 const trackedElements = new WeakSet<Element>();
 
 function scheduleReconcile(candidates: Candidate[]): void {
-  if (candidates.length === 0) return;
-  for (const { element } of candidates) trackedElements.add(element);
+  if (candidates.length === 0) {
+    return;
+  }
+  for (const { element } of candidates) {
+    trackedElements.add(element);
+  }
   const timeoutId = setTimeout(() => {
     pendingTimeouts.delete(timeoutId);
     reconcileCandidates(candidates);
@@ -144,7 +162,9 @@ const watcher = createSubtreeWatcher({
     const candidates: Candidate[] = [];
     for (const root of roots) {
       for (const candidate of findCandidates(root)) {
-        if (trackedElements.has(candidate.element)) continue;
+        if (trackedElements.has(candidate.element)) {
+          continue;
+        }
         candidates.push(candidate);
       }
     }
@@ -159,7 +179,9 @@ function apply(root: ParentNode): void {
 
 function teardown(): void {
   watcher.stop();
-  for (const id of pendingTimeouts) clearTimeout(id);
+  for (const id of pendingTimeouts) {
+    clearTimeout(id);
+  }
   pendingTimeouts.clear();
 }
 

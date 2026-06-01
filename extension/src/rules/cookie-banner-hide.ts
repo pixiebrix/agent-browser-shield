@@ -18,7 +18,9 @@ const OVERLAY_ROLES = new Set(["dialog", "alertdialog"]);
 
 function isOverlay(element: HTMLElement): boolean {
   const role = element.getAttribute("role");
-  if (role && OVERLAY_ROLES.has(role)) return true;
+  if (role && OVERLAY_ROLES.has(role)) {
+    return true;
+  }
   const position = globalThis.getComputedStyle(element).position;
   return OVERLAY_POSITIONS.has(position);
 }

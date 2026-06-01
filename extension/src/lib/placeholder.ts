@@ -49,7 +49,9 @@ function attachReveal(container: HTMLElement, original: Node): void {
       targetIsButton: target?.tagName === "BUTTON",
       alreadyRevealed: revealed,
     });
-    if (revealed) return;
+    if (revealed) {
+      return;
+    }
     revealed = true;
     event.preventDefault();
     event.stopPropagation();
@@ -171,13 +173,17 @@ export function replaceMatchesInTextNode(
   matches: InlineMatch[],
   ruleId: RuleId,
 ): void {
-  if (matches.length === 0) return;
+  if (matches.length === 0) {
+    return;
+  }
   const text = textNode.nodeValue ?? "";
   const fragment = document.createDocumentFragment();
   let cursor = 0;
 
   for (const match of matches) {
-    if (match.start < cursor) continue;
+    if (match.start < cursor) {
+      continue;
+    }
     if (match.start > cursor) {
       fragment.append(document.createTextNode(text.slice(cursor, match.start)));
     }

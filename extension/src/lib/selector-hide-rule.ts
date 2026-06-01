@@ -98,20 +98,36 @@ export function createSelectorHideRule(
 
   function scan(root: ParentNode): void {
     const selectors = selectorsFor(globalThis.location.href);
-    if (selectors.length === 0) return;
+    if (selectors.length === 0) {
+      return;
+    }
 
     let candidates = [
       ...root.querySelectorAll<HTMLElement>(selectors.join(",")),
     ];
-    if (candidateFilter) candidates = candidates.filter(candidateFilter);
+    if (candidateFilter) {
+      candidates = candidates.filter(candidateFilter);
+    }
 
     for (const element of candidates) {
-      if (!element.isConnected) continue;
-      if (element.classList.contains(PLACEHOLDER_CLASS)) continue;
-      if (element.closest(`.${PLACEHOLDER_CLASS}`)) continue;
-      if (element.getAttribute(REVEALED_ATTR) === id) continue;
-      if (element.closest(`[${REVEALED_ATTR}="${id}"]`)) continue;
-      if (element.getAttribute(HIDDEN_ATTR) === id) continue;
+      if (!element.isConnected) {
+        continue;
+      }
+      if (element.classList.contains(PLACEHOLDER_CLASS)) {
+        continue;
+      }
+      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+        continue;
+      }
+      if (element.getAttribute(REVEALED_ATTR) === id) {
+        continue;
+      }
+      if (element.closest(`[${REVEALED_ATTR}="${id}"]`)) {
+        continue;
+      }
+      if (element.getAttribute(HIDDEN_ATTR) === id) {
+        continue;
+      }
       // Outermost-match only — if a parent is also a candidate, skip this
       // nested one so we don't double-hide.
       if (

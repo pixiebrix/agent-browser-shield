@@ -17,7 +17,9 @@ const watch = process.argv.includes("--watch");
 const minify = process.env.NODE_ENV === "production";
 
 function readEnvValue(name: string): string {
-  if (process.env[name]) return process.env[name] ?? "";
+  if (process.env[name]) {
+    return process.env[name] ?? "";
+  }
   for (const candidate of [join(ROOT, ".env"), join(ROOT, "..", ".env")]) {
     let content: string;
     try {
@@ -27,10 +29,16 @@ function readEnvValue(name: string): string {
     }
     for (const rawLine of content.split("\n")) {
       const line = rawLine.trim();
-      if (!line || line.startsWith("#")) continue;
+      if (!line || line.startsWith("#")) {
+        continue;
+      }
       const eq = line.indexOf("=");
-      if (eq === -1) continue;
-      if (line.slice(0, eq).trim() !== name) continue;
+      if (eq === -1) {
+        continue;
+      }
+      if (line.slice(0, eq).trim() !== name) {
+        continue;
+      }
       let value = line.slice(eq + 1).trim();
       if (
         (value.startsWith('"') && value.endsWith('"')) ||
@@ -104,7 +112,9 @@ if (watch) {
   console.log(`Watching ${SRC} and ${DATA} for changes…`);
   let pending = false;
   const trigger = () => {
-    if (pending) return;
+    if (pending) {
+      return;
+    }
     pending = true;
     setTimeout(async () => {
       pending = false;

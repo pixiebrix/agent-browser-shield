@@ -58,9 +58,15 @@ export function matchesScarcityPattern(text: string): boolean {
 }
 
 function isSkipped(element: HTMLElement): boolean {
-  if (isInsidePlaceholder(element)) return true;
-  if (element.getAttribute(REVEALED_ATTR) === RULE_ID) return true;
-  if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) return true;
+  if (isInsidePlaceholder(element)) {
+    return true;
+  }
+  if (element.getAttribute(REVEALED_ATTR) === RULE_ID) {
+    return true;
+  }
+  if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) {
+    return true;
+  }
   return false;
 }
 
@@ -75,8 +81,12 @@ function scanAndHide(root: ParentNode): void {
     match: (text) => (matchesScarcityPattern(text) ? true : null),
   });
   for (const { element } of matches) {
-    if (!element.isConnected) continue;
-    if (isInsidePlaceholder(element)) continue;
+    if (!element.isConnected) {
+      continue;
+    }
+    if (isInsidePlaceholder(element)) {
+      continue;
+    }
     replaceWithBlockPlaceholder(
       element,
       RULE_ID,
@@ -88,7 +98,9 @@ function scanAndHide(root: ParentNode): void {
 const watcher = createSubtreeWatcher({
   skipPlaceholderSubtrees: true,
   onSubtrees: (roots) => {
-    for (const root of roots) scanAndHide(root);
+    for (const root of roots) {
+      scanAndHide(root);
+    }
   },
 });
 
