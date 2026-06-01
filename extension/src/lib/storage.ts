@@ -1,7 +1,8 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { RULE_IDS, RULES, type RuleId } from "../rules";
+import type { RuleId } from "../rules";
+import { RULE_IDS, RULES } from "../rules";
 import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type RuleStates = Record<RuleId, boolean>;

@@ -12,11 +12,13 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { load } from "js-yaml";
+import type {
+  RecipeRuleEntryInput,
+  SelectorRuleEntryInput,
+  SiteFile,
+} from "../data/site-rules.schema";
 import {
-  type RecipeRuleEntryInput,
-  type SelectorRuleEntryInput,
   SITE_DATA_RULE_IDS,
-  type SiteFile,
   SiteFileSchema,
   toEntries,
 } from "../data/site-rules.schema";

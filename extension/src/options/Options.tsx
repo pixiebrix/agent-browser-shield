@@ -5,10 +5,8 @@ import { useEffect, useState } from "react";
 import { apiKeyStorage, HAS_BUILT_IN_OPENAI_KEY } from "../lib/api-key-storage";
 import { availabilitySource } from "../lib/availability";
 import { HelpLinks } from "../lib/HelpLinks";
-import {
-  type PlaceholderDisplayMode,
-  placeholderDisplayStorage,
-} from "../lib/placeholder-display";
+import type { PlaceholderDisplayMode } from "../lib/placeholder-display";
+import { placeholderDisplayStorage } from "../lib/placeholder-display";
 import { RuleList } from "../lib/RuleList";
 import { ruleStatesStorage, setAllRuleStates } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";

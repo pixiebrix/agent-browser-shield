@@ -2,12 +2,12 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { getUserApiKey } from "./api-key-storage";
-import {
-  CLASSIFY_PORT_NAME,
-  type ClassifyPortMessage,
-  type ClassifyRequest,
-  type ClassifyResponse,
+import type {
+  ClassifyPortMessage,
+  ClassifyRequest,
+  ClassifyResponse,
 } from "./llm-client";
+import { CLASSIFY_PORT_NAME } from "./llm-client";
 
 // Injected at build time via Bun `define` (see `src/globals.d.ts`). Empty
 // string when unset so the extension still loads; classification calls then

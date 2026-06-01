@@ -2,7 +2,8 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { walkTextNodes } from "../lib/dom-utils";
-import { type InlineMatch, replaceMatchesInTextNode } from "../lib/placeholder";
+import type { InlineMatch } from "../lib/placeholder";
+import { replaceMatchesInTextNode } from "../lib/placeholder";
 import type { Rule } from "./types";
 
 const RULE_ID = "pii-mask" as const;
