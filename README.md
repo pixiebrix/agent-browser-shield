@@ -3,34 +3,29 @@
 [![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
 [![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
 
-| Before                                              | After                                             |
-| --------------------------------------------------- | ------------------------------------------------- |
-| ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
+> **Alpha prototype:** rulesets may change without notice
+
+Agent Browser Shield is a Chromium extension for making agentic browser-use more
+effective and secure:
+
+- **Token efficiency:** strip page chrome (footers, cookie banners, chat
+  widgets, sponsored content) so agents spend tokens on the user's task.
+- **Security & compliance:** mask PII and credentials before they reach the
+  model, and suppress hidden text, HTML comments, and user-generated content
+  that could carry prompt-injection payloads.
+- **Accuracy:** block manipulative dark patterns and hide engagement rails and
+  other content that could distract the model from the user's task.
+
+**[Documentation](https://pixiebrix.github.io/agent-browser-shield/)** — install
+guide, rule reference, and configuration.
 
 **[Live demo site](https://shield-dark-pattern-demo.vercel.app/)** — RiverMart,
 a mock e-commerce SPA that exercises every rule. Load it with and without the
 extension to see the before/after difference.
 
-**[Documentation](https://pixiebrix.github.io/agent-browser-shield/)** — install
-guide, rule reference, and configuration.
-
-> **Status:** alpha prototype. APIs, rule contracts, and trace formats may
-> change without notice. Pin a commit if you need stability.
-
-## Repository Purpose
-
-Prototyping browser extension capabilities for improving browser-use agent
-performance.
-
-Benefits:
-
-- **Token efficiency** — strip page chrome (footers, cookie banners, chat
-  widgets, sponsored content) so agents spend tokens on the user's task.
-- **Security & compliance** — mask PII and credentials before they reach the
-  model, and suppress hidden text, HTML comments, and user-generated content
-  that could carry prompt-injection payloads.
-- **Accuracy** — block manipulative dark patterns and hide engagement rails and
-  other content that could distract the model from the user's task.
+| Before                                              | After                                             |
+| --------------------------------------------------- | ------------------------------------------------- |
+| ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
 
 ## Prerequisites
 
@@ -41,14 +36,14 @@ Benefits:
 
 ## Repository layout
 
-| Path         | What's there                                                                    |
-| ------------ | ------------------------------------------------------------------------------- |
-| `extension/` | Chromium MV3 extension (Bun + TypeScript)                                       |
-| `demo-site/` | Vite/React mock e-commerce site that exercises every rule                       |
-| `docs/`      | Astro Starlight docs site — <https://pixiebrix.github.io/agent-browser-shield/> |
-| `benchmark/` | Tasks, scenarios, and pricing for the agent benchmark harness                   |
-| `scripts/`   | PEP 723 scripts: agent task runner, benchmark harness, trace tools              |
-| `skills/`    | Claude Code skills for installing, configuring, and diagnosing                  |
+| Path         | What's there                                                       |
+| ------------ | ------------------------------------------------------------------ |
+| `extension/` | Chromium MV3 extension (Bun + TypeScript)                          |
+| `demo-site/` | Vite/React mock e-commerce site that exercises every rule          |
+| `docs/`      | Astro Starlight docs site                                          |
+| `benchmark/` | Tasks, scenarios, and pricing for the agent benchmark harness      |
+| `scripts/`   | PEP 723 scripts: agent task runner, benchmark harness, trace tools |
+| `skills/`    | Claude Code skills for installing, configuring, and diagnosing     |
 
 ## Extension
 
