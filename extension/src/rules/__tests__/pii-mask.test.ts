@@ -51,7 +51,7 @@ describe("pii-mask", () => {
 
     const placeholders = document.querySelectorAll(`.${PLACEHOLDER_CLASS}`);
     expect(placeholders).toHaveLength(2);
-    const labels = Array.from(placeholders, (el) => el.textContent);
+    const labels = Array.from(placeholders, (element) => element.textContent);
     expect(labels).toContain("[phone hidden]");
     expect(labels).toContain("[ssn hidden]");
   });

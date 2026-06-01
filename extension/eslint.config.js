@@ -44,8 +44,37 @@ export default tseslint.config(
       "unicorn/no-array-callback-reference": "off",
       "unicorn/no-nested-ternary": "off",
 
+      "unicorn/prevent-abbreviations": [
+        "error",
+        {
+          replacements: {
+            // Idiomatic in JS/TS — kept as-is.
+            props: false,
+            params: false,
+            param: false,
+            ref: false,
+            refs: false,
+            args: false,
+            db: false,
+            // Node/build conventions. `env` is required by `NodeJS.ProcessEnv`;
+            // `src` is the standard `fs.cp` filter callback parameter name.
+            env: false,
+            src: false,
+            // Common file/module naming convention (`dom-utils.ts`, etc.).
+            utils: false,
+            util: false,
+            // Loop counters and map/filter callback params. The rule is
+            // not scope-aware, so these are allowed globally.
+            i: false,
+            j: false,
+            k: false,
+            x: false,
+            y: false,
+          },
+        },
+      ],
+
       // Disabled — too opinionated for this codebase.
-      "unicorn/prevent-abbreviations": "off",
       "unicorn/no-null": "off",
       "unicorn/no-array-reduce": "off",
       "unicorn/no-array-for-each": "off",

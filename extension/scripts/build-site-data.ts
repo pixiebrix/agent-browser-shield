@@ -54,16 +54,16 @@ function loadSites(): ParsedSiteFile[] {
   for (const fileName of entries) {
     const path = join(SITES_DIR, fileName);
     const raw = readFileSync(path, "utf8");
-    let doc: unknown;
+    let parsedYaml: unknown;
     try {
-      doc = load(raw);
+      parsedYaml = load(raw);
     } catch (error) {
       errors.push(
         `${relative(ROOT, path)}: YAML parse error — ${(error as Error).message}`,
       );
       continue;
     }
-    const result = SiteFileSchema.safeParse(doc);
+    const result = SiteFileSchema.safeParse(parsedYaml);
     if (!result.success) {
       for (const issue of result.error.issues) {
         errors.push(

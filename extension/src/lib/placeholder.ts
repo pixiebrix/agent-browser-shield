@@ -26,11 +26,11 @@ export interface InlineMatch {
 
 function describeNode(node: Node): Record<string, unknown> {
   if (node.nodeType === Node.ELEMENT_NODE) {
-    const el = node as Element;
+    const element = node as Element;
     return {
-      tag: el.tagName,
-      id: el.id || undefined,
-      classes: el.className || undefined,
+      tag: element.tagName,
+      id: element.id || undefined,
+      classes: element.className || undefined,
     };
   }
   return { nodeType: node.nodeType };
