@@ -24,7 +24,7 @@ export type RuleAvailabilityStates = Record<RuleId, AvailabilitySnapshot>;
 const ALWAYS_AVAILABLE: AvailabilitySnapshot = { available: true };
 
 function isReactive(value: Rule["available"]): value is RuleAvailability {
-  return typeof value === "object" && value !== null;
+  return typeof value === "object";
 }
 
 export async function resolveAvailability(
@@ -46,7 +46,7 @@ export async function getRuleAvailabilityStates(): Promise<RuleAvailabilityState
       async (rule) => [rule.id, await resolveAvailability(rule)] as const,
     ),
   );
-  return Object.fromEntries(entries) as RuleAvailabilityStates;
+  return Object.fromEntries(entries);
 }
 
 // Subscribe to changes in any rule's reactive availability. The listener is

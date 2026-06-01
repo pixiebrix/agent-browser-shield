@@ -5,7 +5,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  svgSpriteSuppressRule.teardown?.();
+  svgSpriteSuppressRule.teardown();
 });
 
 describe("svgSpriteSuppressRule", () => {

@@ -116,13 +116,11 @@ if (watch) {
       return;
     }
     pending = true;
-    setTimeout(async () => {
+    setTimeout(() => {
       pending = false;
-      try {
-        await build();
-      } catch (error) {
+      build().catch((error: unknown) => {
         console.error(error);
-      }
+      });
     }, 50);
   };
   fsWatch(SRC, { recursive: true }, trigger);

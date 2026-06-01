@@ -19,7 +19,7 @@ describe("cookieBannerHideRule", () => {
     `;
     cookieBannerHideRule.apply(document.body);
 
-    const banner = document.querySelector("#onetrust-banner-sdk");
+    const banner = document.querySelector<HTMLElement>("#onetrust-banner-sdk");
     // Node stays in the DOM (so we don't break React's fiber) but is marked
     // hidden in-place via display:none.
     expect(banner?.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
@@ -35,7 +35,7 @@ describe("cookieBannerHideRule", () => {
     `;
     cookieBannerHideRule.apply(document.body);
 
-    const dialog = document.querySelector("#CybotCookiebotDialog");
+    const dialog = document.querySelector<HTMLElement>("#CybotCookiebotDialog");
     expect(dialog?.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
     expect(dialog?.style.display).toBe("none");
   });
@@ -57,9 +57,9 @@ describe("cookieBannerHideRule", () => {
     `;
     cookieBannerHideRule.apply(document.body);
 
-    const container = document.querySelector(
+    const container = document.querySelector<HTMLElement>(
       '[id^="sp_message_container_"]',
-    ) as HTMLElement | null;
+    );
     expect(container?.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
     expect(container?.style.display).toBe("none");
   });

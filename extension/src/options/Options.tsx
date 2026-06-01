@@ -101,7 +101,9 @@ export function Options() {
           spellCheck={false}
           placeholder='{"ads-hide": false, "pii-mask": true}'
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value);
+          }}
         />
         {error && (
           <div className="error" role="alert">
@@ -109,7 +111,12 @@ export function Options() {
           </div>
         )}
         <div className="button-row">
-          <button type="button" onClick={handleApply}>
+          <button
+            type="button"
+            onClick={() => {
+              void handleApply();
+            }}
+          >
             Apply
           </button>
           {status && (
@@ -168,10 +175,17 @@ export function Options() {
             HAS_BUILT_IN_OPENAI_KEY ? "(blank — using built-in key)" : "sk-..."
           }
           value={apiKeyDraft}
-          onChange={(event) => setApiKeyDraft(event.target.value)}
+          onChange={(event) => {
+            setApiKeyDraft(event.target.value);
+          }}
         />
         <div className="button-row">
-          <button type="button" onClick={handleSaveApiKey}>
+          <button
+            type="button"
+            onClick={() => {
+              void handleSaveApiKey();
+            }}
+          >
             Save key
           </button>
           {apiKeyStatus && (

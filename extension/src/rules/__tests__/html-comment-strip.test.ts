@@ -6,7 +6,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  htmlCommentStripRule.teardown?.();
+  htmlCommentStripRule.teardown();
 });
 
 function commentNodesIn(root: Node): Comment[] {

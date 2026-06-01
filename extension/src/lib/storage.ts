@@ -15,7 +15,7 @@ export type RuleStates = Record<RuleId, boolean>;
 // preserved so it takes effect the moment the rule becomes available.
 const DEFAULT_STATES: RuleStates = Object.fromEntries(
   RULES.map((rule) => [rule.id, rule.defaultEnabled]),
-) as RuleStates;
+);
 
 function normalize(raw: unknown): RuleStates {
   const result: RuleStates = { ...DEFAULT_STATES };

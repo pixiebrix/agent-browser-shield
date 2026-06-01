@@ -11,9 +11,9 @@
 // parameter (TypeScript silently allows narrower listeners).
 
 export interface ChromeStorageValue<T> {
-  get(): Promise<T>;
-  set(value: T): Promise<void>;
-  subscribe(listener: (next: T, previous: T) => void): () => void;
+  get: () => Promise<T>;
+  set: (value: T) => Promise<void>;
+  subscribe: (listener: (next: T, previous: T) => void) => () => void;
 }
 
 export function createChromeStorageValue<T>(options: {
@@ -44,7 +44,9 @@ export function createChromeStorageValue<T>(options: {
         listener(normalize(change.newValue), normalize(change.oldValue));
       };
       chrome.storage.onChanged.addListener(handler);
-      return () => chrome.storage.onChanged.removeListener(handler);
+      return () => {
+        chrome.storage.onChanged.removeListener(handler);
+      };
     },
   };
 }

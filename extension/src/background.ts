@@ -35,11 +35,15 @@ function formatBadge(total: number): string {
 
 function setBadge(tabId: number, total: number): void {
   const text = formatBadge(total);
-  chrome.action.setBadgeText({ tabId, text }).catch(() => {});
+  chrome.action.setBadgeText({ tabId, text }).catch(() => {
+    // noop
+  });
   if (text) {
     chrome.action
       .setBadgeBackgroundColor({ tabId, color: BADGE_COLOR })
-      .catch(() => {});
+      .catch(() => {
+        // noop
+      });
   }
 }
 
@@ -90,35 +94,38 @@ subscribeEnforcementEnabled((enabled) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || typeof message !== "object") {
-    return undefined;
-  }
-
-  if (message.type === "open-options") {
-    chrome.runtime.openOptionsPage(() => {
-      sendResponse({ ok: true });
-    });
-    return true;
-  }
-
-  if (message.type === "placeholder-count") {
-    const tabId = sender.tab?.id;
-    const frameId = sender.frameId;
-    const raw = (message as { count?: unknown }).count;
-    if (
-      typeof tabId === "number" &&
-      typeof frameId === "number" &&
-      typeof raw === "number" &&
-      Number.isFinite(raw)
-    ) {
-      recordFrameCount(tabId, frameId, Math.max(0, Math.floor(raw)));
+chrome.runtime.onMessage.addListener(
+  (rawMessage: unknown, sender, sendResponse) => {
+    if (!rawMessage || typeof rawMessage !== "object") {
+      return undefined;
     }
-    return undefined;
-  }
+    const message = rawMessage as { type?: unknown; count?: unknown };
 
-  return undefined;
-});
+    if (message.type === "open-options") {
+      chrome.runtime.openOptionsPage(() => {
+        sendResponse({ ok: true });
+      });
+      return true;
+    }
+
+    if (message.type === "placeholder-count") {
+      const tabId = sender.tab?.id;
+      const frameId = sender.frameId;
+      const raw = message.count;
+      if (
+        typeof tabId === "number" &&
+        typeof frameId === "number" &&
+        typeof raw === "number" &&
+        Number.isFinite(raw)
+      ) {
+        recordFrameCount(tabId, frameId, Math.max(0, Math.floor(raw)));
+      }
+      return undefined;
+    }
+
+    return undefined;
+  },
+);
 
 // Classify requests use a long-lived port instead of sendMessage so the
 // content-side abort can propagate to the background's fetch. See

@@ -22,9 +22,6 @@ export interface PlaceholderCountMessage {
 }
 
 function currentCount(): number {
-  if (!document.body) {
-    return 0;
-  }
   return document.body.querySelectorAll(COUNT_SELECTOR).length;
 }
 
@@ -36,7 +33,9 @@ function send(count: number): void {
   // Service worker may be asleep / receiver not yet ready — swallow the
   // resulting "Receiving end does not exist" rejection so it doesn't surface
   // as an unhandled promise warning on every page load.
-  chrome.runtime.sendMessage(message).catch(() => {});
+  chrome.runtime.sendMessage(message).catch(() => {
+    // noop
+  });
 }
 
 export function startPlaceholderCountReporter(): void {
@@ -63,25 +62,14 @@ export function startPlaceholderCountReporter(): void {
     throttled();
   });
 
-  const startObserving = () => {
-    if (!document.body) {
-      return;
-    }
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: [HIDDEN_ATTR],
-    });
-  };
-
-  if (document.body) {
-    startObserving();
-  } else {
-    document.addEventListener("DOMContentLoaded", startObserving, {
-      once: true,
-    });
-  }
+  // Content script runs at `document_idle`, so `document.body` is always
+  // present here.
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: [HIDDEN_ATTR],
+  });
 
   // Flush a final zero on unload so the background can decrement this frame's
   // contribution before the new document's content script registers itself.

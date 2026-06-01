@@ -86,9 +86,6 @@ function collectPattern(
   matches: InlineMatch[],
 ): void {
   for (const m of text.matchAll(pattern.regex)) {
-    if (m.index === undefined) {
-      continue;
-    }
     matches.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -99,9 +96,6 @@ function collectPattern(
 
 function collectEntropy(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(ENTROPY_CANDIDATE)) {
-    if (m.index === undefined) {
-      continue;
-    }
     if (shannonEntropy(m[0]) < BASE64_ENTROPY_THRESHOLD) {
       continue;
     }
@@ -112,9 +106,6 @@ function collectEntropy(text: string, matches: InlineMatch[]): void {
     });
   }
   for (const m of text.matchAll(HEX_CANDIDATE)) {
-    if (m.index === undefined) {
-      continue;
-    }
     if (shannonEntropy(m[0]) < HEX_ENTROPY_THRESHOLD) {
       continue;
     }

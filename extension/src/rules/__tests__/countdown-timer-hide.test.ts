@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  countdownTimerHideRule.teardown?.();
+  countdownTimerHideRule.teardown();
   jest.useRealTimers();
 });
 
@@ -299,7 +299,7 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
 
   it("teardown stops the observer so later additions are ignored", async () => {
     countdownTimerHideRule.apply(document.body);
-    countdownTimerHideRule.teardown?.();
+    countdownTimerHideRule.teardown();
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">10:00</span>`;
@@ -328,7 +328,7 @@ describe("countdownTimerHideRule lazy-loaded sections", () => {
       timer.textContent = "09:59";
     }
 
-    countdownTimerHideRule.teardown?.();
+    countdownTimerHideRule.teardown();
     jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
 
     expect(document.querySelector("#t")).not.toBeNull();

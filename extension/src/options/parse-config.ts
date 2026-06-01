@@ -1,7 +1,7 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { RULE_IDS, type RuleId, type RuleStates } from "../lib/storage";
+import { RULE_IDS, type RuleStates } from "../lib/storage";
 
 const RULE_ID_SET = new Set<string>(RULE_IDS);
 
@@ -39,7 +39,7 @@ export function parseConfig(input: string): ParseResult {
       errors.push(`Non-boolean value for ${key}: ${typeof value}`);
       continue;
     }
-    result[key as RuleId] = value;
+    result[key] = value;
   }
 
   if (errors.length > 0) {

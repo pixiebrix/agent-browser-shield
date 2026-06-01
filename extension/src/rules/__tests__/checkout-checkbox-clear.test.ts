@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  checkoutCheckboxClearRule.teardown?.();
+  checkoutCheckboxClearRule.teardown();
   jest.useRealTimers();
 });
 
@@ -143,7 +143,7 @@ describe("checkoutCheckboxClearRule lazy-loaded sections", () => {
 
   it("teardown stops the observer so later additions are ignored", async () => {
     checkoutCheckboxClearRule.apply(document.body);
-    checkoutCheckboxClearRule.teardown?.();
+    checkoutCheckboxClearRule.teardown();
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<input id="late" type="checkbox" checked />`;

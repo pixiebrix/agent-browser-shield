@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  scarcityHideRule.teardown?.();
+  scarcityHideRule.teardown();
   jest.useRealTimers();
 });
 
@@ -231,7 +231,7 @@ describe("scarcityHideRule lazy-loaded sections", () => {
 
   it("teardown stops the observer so later additions are ignored", async () => {
     scarcityHideRule.apply(document.body);
-    scarcityHideRule.teardown?.();
+    scarcityHideRule.teardown();
 
     const lazy = document.createElement("div");
     lazy.innerHTML = `<span id="t">Only 1 left</span>`;

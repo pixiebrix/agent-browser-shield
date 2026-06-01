@@ -211,5 +211,7 @@ export const cartAddonFlagRule = {
     "On checkout pages, flag likely sneak-into-basket line items (protection plans, warranties, insurance, donations, gift wrap, etc.) with a visible annotation. Items are not removed.",
   defaultEnabled: true,
   apply,
-  teardown: () => watcher.stop(),
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

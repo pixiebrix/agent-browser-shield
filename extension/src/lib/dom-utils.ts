@@ -113,7 +113,7 @@ export function findInnermostMatches<T>(
     if (element.children.length > maxDescendants) {
       continue;
     }
-    const text = (element.textContent ?? "").trim();
+    const text = element.textContent.trim();
     if (text.length === 0 || text.length > maxTextLength) {
       continue;
     }
@@ -144,7 +144,7 @@ export function walkTextNodes(
   options: WalkTextNodesOptions = {},
 ): Text[] {
   const { minLength = 0, shouldSkipParent } = options;
-  const walker = document.createTreeWalker(root as Node, NodeFilter.SHOW_TEXT, {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
       if (!parent) {

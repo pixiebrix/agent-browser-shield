@@ -14,8 +14,8 @@ export interface AvailabilitySnapshot {
 // the current snapshot and `subscribe()` to refresh when the underlying state
 // changes.
 export interface RuleAvailability {
-  get(): Promise<AvailabilitySnapshot>;
-  subscribe(listener: () => void): () => void;
+  get: () => Promise<AvailabilitySnapshot>;
+  subscribe: (listener: () => void) => () => void;
 }
 
 export interface Rule {
@@ -38,9 +38,9 @@ export interface Rule {
   // pointlessly — or, worse, inject duplicate UI — in every same-origin or
   // covered cross-origin iframe.
   topFrameOnly?: boolean;
-  apply(root: ParentNode): void;
+  apply: (root: ParentNode) => void;
   // Release any long-lived resources (mutation observers, throttled callbacks,
   // pending timeouts) that `apply` set up. Called by the engine when the rule
   // is disabled.
-  teardown?(): void;
+  teardown?: () => void;
 }

@@ -18,10 +18,13 @@ export default tseslint.config(
       "node_modules/**",
       "src/**/*.generated.*",
       "eslint-rules/**",
+      "eslint.config.js",
+      "jest.config.cjs",
     ],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   unicorn.configs["flat/recommended"],
   {
     languageOptions: {
@@ -31,6 +34,10 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.node,
         ...globals.webextensions,
+      },
+      parserOptions: {
+        project: "./tsconfig.eslint.json",
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
@@ -104,6 +111,18 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+
+      // Pure style — Biome's formatter and the codebase don't care about
+      // `T[]` vs `Array<T>` or the syntax used for non-null assertions.
+      "@typescript-eslint/array-type": "off",
+      "@typescript-eslint/non-nullable-type-assertion-style": "off",
+
+      // Allow `${number}` in template literals — common for debug strings
+      // and codegen output, and TS already guarantees the operand is a number.
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
     },
   },
   {
@@ -112,6 +131,8 @@ export default tseslint.config(
       // Tests legitimately use literal nulls and many small `for` loops.
       "unicorn/no-useless-undefined": "off",
       "unicorn/consistent-function-scoping": "off",
+      // Jest matchers and mock patterns routinely pass methods by reference.
+      "@typescript-eslint/unbound-method": "off",
     },
   },
   {

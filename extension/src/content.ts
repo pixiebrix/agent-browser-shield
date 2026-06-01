@@ -12,7 +12,7 @@ import { start } from "./lib/rule-engine";
 // Top-level await is unavailable — the bundler emits a classic script for the
 // content-script entry, so a promise chain is required.
 // eslint-disable-next-line unicorn/prefer-top-level-await
-start().catch((error) => {
+start().catch((error: unknown) => {
   console.error("[abs] failed to start rule engine", error);
 });
 
