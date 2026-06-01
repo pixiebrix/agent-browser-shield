@@ -23,5 +23,4 @@ export const enforcementStorage = createChromeStorageValue<boolean>({
 });
 
 export const getEnforcementEnabled = enforcementStorage.get;
-export const setEnforcementEnabled = enforcementStorage.set;
 export const subscribeEnforcementEnabled = enforcementStorage.subscribe;

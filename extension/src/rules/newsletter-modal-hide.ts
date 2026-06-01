@@ -56,7 +56,7 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
   return true;
 }
 
-const { rule, selectorsFor } = createSelectorHideRule({
+const { rule } = createSelectorHideRule({
   id: "newsletter-modal-hide",
   label: "Remove Newsletter Modals",
   description:
@@ -94,5 +94,4 @@ const { rule, selectorsFor } = createSelectorHideRule({
   topFrameOnly: true,
 });
 
-export { selectorsFor };
 export const newsletterModalHideRule = rule;

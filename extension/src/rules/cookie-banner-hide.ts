@@ -25,7 +25,7 @@ function isOverlay(element: HTMLElement): boolean {
   return OVERLAY_POSITIONS.has(position);
 }
 
-const { rule, selectorsFor } = createSelectorHideRule({
+const { rule } = createSelectorHideRule({
   id: "cookie-banner-hide",
   label: "Remove Cookie Banners",
   description: "Remove GDPR/CCPA cookie consent banners.",
@@ -75,5 +75,4 @@ const { rule, selectorsFor } = createSelectorHideRule({
   topFrameOnly: true,
 });
 
-export { selectorsFor };
 export const cookieBannerHideRule = rule;

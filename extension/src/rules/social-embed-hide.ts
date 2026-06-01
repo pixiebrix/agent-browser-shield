@@ -19,7 +19,7 @@ function notOnEmbedOwnerSite(_element: HTMLElement): boolean {
   return !EMBED_OWNER_HOSTS.test(globalThis.location.hostname);
 }
 
-const { rule, selectorsFor } = createSelectorHideRule({
+const { rule } = createSelectorHideRule({
   id: "social-embed-hide",
   label: "Hide Social Embeds",
   description:
@@ -68,5 +68,4 @@ const { rule, selectorsFor } = createSelectorHideRule({
   watchSubtrees: true,
 });
 
-export { selectorsFor };
 export const socialEmbedHideRule = rule;

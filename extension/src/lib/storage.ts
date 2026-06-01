@@ -35,11 +35,6 @@ export const ruleStatesStorage = createChromeStorageValue<RuleStates>({
   normalize,
 });
 
-export type RuleStatesListener = (
-  next: RuleStates,
-  previous: RuleStates,
-) => void;
-
 export const getRuleStates = ruleStatesStorage.get;
 export const subscribe = ruleStatesStorage.subscribe;
 
