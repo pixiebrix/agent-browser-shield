@@ -65,9 +65,9 @@ Which rules ship on by default is enumerated in
 [`extension/data/rule-defaults.json`](./extension/data/rule-defaults.json). To
 ship a build with a custom set without forking the repo, pass an override file
 to `bun run build`. The file is a flat JSON object whose keys are rule ids (same
-keys the Options-page export uses) plus a small set of reserved non-rule keys
-— currently `optionsButton` (boolean, default off) to enable the floating
-on-page button that opens the options page:
+keys the Options-page export uses) plus a small set of reserved non-rule keys —
+currently `optionsButton` (boolean, default off) to enable the floating on-page
+button that opens the options page:
 
 ```sh
 bun run build --defaults ./my-defaults.json

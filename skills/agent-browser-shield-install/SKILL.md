@@ -179,13 +179,12 @@ JSON override file instead of using the hosted ZIP.
    Reserved non-rule keys:
 
    - `optionsButton` (boolean, default **off**) — show the floating shield
-     button in the bottom-right corner of every page that opens this
-     extension's options page. The button is visible to humans and to
-     browser-use agents reading the accessibility tree. Off by default
-     because on sparse pages (JSON viewers, error screens, interstitials) it
-     can dominate the a11y tree and become a misleading "click me to make
-     progress" target. Enable for human-facing deployments where on-page
-     access to options is useful.
+     button in the bottom-right corner of every page that opens this extension's
+     options page. The button is visible to humans and to browser-use agents
+     reading the accessibility tree. Off by default because on sparse pages
+     (JSON viewers, error screens, interstitials) it can dominate the a11y tree
+     and become a misleading "click me to make progress" target. Enable for
+     human-facing deployments where on-page access to options is useful.
 
 2. Pass the path via CLI flag or env var to `bun run build`:
 
