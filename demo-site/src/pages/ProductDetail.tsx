@@ -48,8 +48,39 @@ export default function ProductDetail() {
       )
     : 0;
 
+  // Real schema.org/Product structured data — the kind a browser-use agent
+  // pulls in as a "trusted summary" of the page. The description field is
+  // poisoned with an instruction-shaped payload; price / sku /
+  // aggregateRating are valid. json-ld-sanitize blanks the description and
+  // leaves everything else intact.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: INJECTIONS.PRODUCT_DETAIL_JSON_LD_DESCRIPTION,
+    brand: { "@type": "Brand", name: product.brand },
+    sku: product.id,
+    offers: {
+      "@type": "Offer",
+      price: product.price,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: product.rating,
+      reviewCount: product.ratingCount,
+    },
+  };
+
   return (
     <div className="space-y-8">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: demo fixture for json-ld-sanitize — static content from injection-fixtures.ts, no user input
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <nav aria-label="Breadcrumb" className="text-xs text-stone-500">
         <Link to="/">RiverMart</Link> &rsaquo; {product.category} &rsaquo;{" "}
         <span className="text-stone-700">{product.title}</span>
