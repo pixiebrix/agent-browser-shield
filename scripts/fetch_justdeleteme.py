@@ -40,9 +40,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-SOURCE_URL = (
-    "https://raw.githubusercontent.com/justdeleteme/justdelete.me/master/sites.json"
-)
+SOURCE_URL = "https://raw.githubusercontent.com/justdeleteme/justdelete.me/master/sites.json"
 
 # The grades we keep. `easy` and `medium` aren't roach motels — easy means
 # a one-click delete button, medium means a confirmation step or two.
@@ -182,9 +180,7 @@ def main() -> int:
     OUTPUT_PATH.write_text(output, encoding="utf-8")
     by_difficulty: dict[str, int] = {}
     for entry in entries:
-        by_difficulty[entry["difficulty"]] = (
-            by_difficulty.get(entry["difficulty"], 0) + 1
-        )
+        by_difficulty[entry["difficulty"]] = by_difficulty.get(entry["difficulty"], 0) + 1
     print(
         f"wrote {OUTPUT_PATH.relative_to(Path.cwd())} "
         f"({len(entries):,} entries: {by_difficulty}, {len(output):,} bytes)",
