@@ -39,11 +39,14 @@ to its default. To disable only one rule while preserving others, first click
 *Export JSON*, edit the downloaded file, then paste it back. Unknown keys and
 non-boolean values are rejected with an error.
 
-The same JSON shape can also be passed at build time via
-`bun run build --defaults <path>` or `EXTENSION_DEFAULTS_FILE=<path>`. That's
-the right tool for infrastructure deployments that need a custom default set in
-every fresh session without the agent flipping toggles each time — see the
-`agent-browser-shield-install` skill for the build-time workflow.
+A superset of this JSON shape can also be passed at build time via
+`bun run build --defaults <path>` or `EXTENSION_DEFAULTS_FILE=<path>`. The
+build-time file accepts the same rule-id keys plus a small set of reserved
+non-rule keys (currently `optionsButton`) for build-time toggles that aren't
+exposed in the Options page export. That's the right tool for infrastructure
+deployments that need a custom default set in every fresh session without the
+agent flipping toggles each time — see the `agent-browser-shield-install` skill
+for the build-time workflow.
 
 ## Rule IDs
 
