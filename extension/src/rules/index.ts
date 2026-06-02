@@ -15,6 +15,7 @@ import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
 import { irrelevantSectionsHideRule } from "./irrelevant-sections-hide";
 import { newsletterModalHideRule } from "./newsletter-modal-hide";
+import { noscriptStripRule } from "./noscript-strip";
 import { piiMaskRule } from "./pii-mask";
 import { promptInjectionHideRule } from "./prompt-injection-hide";
 import { reviewsHideRule } from "./reviews-hide";
@@ -50,6 +51,7 @@ const RULES_TUPLE = [
   htmlCommentStripRule,
   hiddenTextStripRule,
   unicodeInvisiblesStripRule,
+  noscriptStripRule,
   newsletterModalHideRule,
   svgSpriteSuppressRule,
   socialEmbedHideRule,
