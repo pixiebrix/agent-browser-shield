@@ -58,6 +58,16 @@ export default function ProductDetail() {
       <HtmlCommentInjection />
 
       {/*
+        Fallback markup rendered only when JavaScript is disabled — never
+        seen by a sighted user of this SPA. Still present in the DOM and
+        readable by an agent walking textContent / the a11y tree. The
+        payload nudges the agent to opt into the cart add-ons that
+        cart-addon-flag annotates on the next page. The noscript-strip
+        rule removes the wrapper element outright.
+      */}
+      <noscript>{INJECTIONS.PRODUCT_DETAIL_NOSCRIPT}</noscript>
+
+      {/*
         Zero-contrast comparison-shopping nudge. Invisible to humans (white
         text on white background + 1px font), but reads as plain text from
         the DOM / a11y tree that an agent traverses. Disparages on-site

@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 24 rules grouped into five rough categories. Each rule is
+The extension ships 25 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -137,6 +137,34 @@ within the current page load.
 
 Prior art: HTML comments are explicitly enumerated as a non-rendered carrier for
 indirect prompt injection in Greshake et al. (cited in the section preamble).
+
+### Strip Noscript
+
+- **ID:** `noscript-strip`
+- **Default:** on
+
+Remove every `<noscript>` element from the page. A browser-use agent runs in a
+browser at all precisely because the site requires JavaScript — an operator who
+could read the same data from the server directly would do that and skip the
+browser entirely. With JS enabled, `<noscript>` content is, by definition, never
+rendered to a human, but the markup still sits in the DOM and is still walked by
+accessibility-tree and `innerText` consumers. That makes it a clean carrier for
+prompt-injection payloads, fabricated authority claims, or fallback chrome the
+agent may treat as load-bearing. `html-comment-strip` previously preserved
+Comment nodes inside `<noscript>` so that SSR hydration markers and
+conditional-CSS fragments survived; with this rule on, the surrounding noscript
+element is removed outright, taking those comments with it.
+
+Prior art: Greshake et al. (cited in the section preamble) enumerates
+non-rendered DOM regions — HTML comments, hidden text, alt and metadata
+attributes — as standard carriers for indirect prompt injection; `<noscript>` is
+the same class of carrier for the JS-on case. The general "renderer-and-reader
+disagree on what's visible" asymmetry is the same one Boucher et al.,
+[*Bad Characters: Imperceptible NLP Attacks*](https://arxiv.org/abs/2106.09898)
+(IEEE S&P 2022), and Liao et al.,
+[*EIA: Environmental Injection Attack on Generalist Web Agents*](https://arxiv.org/abs/2409.11295)
+(ICLR 2025), formalize for zero-width characters and CSS-hidden DOM
+respectively.
 
 ### Hide Comments
 
