@@ -29,6 +29,8 @@ skill-aware [OpenClaw](https://openclaw.ai) agents, install with
 `clawhub install agent-browser-shield` to load the install paths and runtime
 behavior contract.
 
+![Agent task with and without agent-browser-shield](./images/demo.webp)
+
 | Before                                              | After                                             |
 | --------------------------------------------------- | ------------------------------------------------- |
 | ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
