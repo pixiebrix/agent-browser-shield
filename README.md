@@ -1,6 +1,7 @@
 # agent-browser-shield
 
 [![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/pixiebrix/agent-browser-shield)](https://github.com/pixiebrix/agent-browser-shield/releases/latest)
 [![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
 
 > **Alpha prototype:** rulesets may change without notice
