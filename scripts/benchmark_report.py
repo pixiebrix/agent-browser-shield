@@ -1774,7 +1774,11 @@ def render_html(run_id: str, manifest: dict[str, Any], rows: list[dict[str, Any]
         (s, t): [] for s in scenario_ids for t in task_ids
     }
     for r in rows:
-        key = (r.get("scenario_id"), r.get("task_id"))
+        scenario_id = r.get("scenario_id")
+        task_id = r.get("task_id")
+        if not isinstance(scenario_id, str) or not isinstance(task_id, str):
+            continue
+        key = (scenario_id, task_id)
         if key in cell_rows:
             cell_rows[key].append(r)
     summary_by_key: dict[tuple[str, str], dict[str, Any]] = {

@@ -33,3 +33,20 @@ exclude_dirs = [".venv", "output", "benchmark", "node_modules"]
 # (e.g. `sips`, `git`). These scripts are dev tooling, not user-facing
 # services; the argv lists are static and `shell=True` is never used.
 skips = ["B404", "B603", "B607"]
+
+[tool.pyright]
+include = ["scripts"]
+exclude = [".venv", "output", "benchmark", "node_modules", "extension", "demo-site", "docs"]
+pythonVersion = "3.12"
+# Basic mode is the starting ratchet — strict typing on the entire ~7.6k-LOC
+# scripts tree at once would be a multi-week migration. Promote individual
+# files (or directories) to `strict` via per-file `# pyright: strict` markers
+# as they get cleaned up; tighten the global mode here once the long tail is
+# done.
+typeCheckingMode = "basic"
+# PEP 723 inline-deps (`# /// script` headers) are not installed into a
+# shared venv, so pyright cannot resolve `import browserbase`, `import httpx`,
+# etc. Silencing the import categories preserves real type-checking on
+# our own code without trying to materialize 20+ ephemeral environments.
+reportMissingImports = "none"
+reportMissingModuleSource = "none"
