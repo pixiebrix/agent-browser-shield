@@ -23,6 +23,11 @@ guide, rule reference, and configuration.
 a mock e-commerce SPA that exercises every rule. Load it with and without the
 extension to see the before/after difference.
 
+**[ClawHub skill](https://clawhub.ai/pixiebrix/agent-browser-shield)** — for
+skill-aware [OpenClaw](https://openclaw.ai) agents, install with
+`clawhub install agent-browser-shield` to load the install paths and runtime
+behavior contract.
+
 | Before                                              | After                                             |
 | --------------------------------------------------- | ------------------------------------------------- |
 | ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
