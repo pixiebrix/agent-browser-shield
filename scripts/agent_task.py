@@ -45,7 +45,7 @@ from _stagehand import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "extension.zip"
+DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "agent-browser-shield-extension.zip"
 DEFAULT_SKILL = REPO_ROOT / "skills" / "agent-browser-shield" / "SKILL.md"
 
 
@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--with-extension",
         action="store_true",
-        help="Upload extension/extension.zip and load it into the session.",
+        help="Upload the packaged agent-browser-shield-extension.zip and load it into the session.",
     )
     parser.add_argument(
         "--extension-zip",

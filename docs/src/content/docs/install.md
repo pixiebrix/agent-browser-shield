@@ -10,11 +10,11 @@ description: Build the agent-browser-shield extension and load it into Chromium.
 
 ## Download a prebuilt ZIP
 
-Each release publishes the packaged extension to S3. The `latest/` pointer
-follows the most recent release:
+Every release attaches the packaged extension to the GitHub Release. The
+`latest` redirect follows the most recent release:
 
 ```text
-https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip
+https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip
 ```
 
 `manifest.json` is at the archive root, so the ZIP can be uploaded straight to
@@ -101,7 +101,7 @@ After each rebuild, click the reload icon for the extension at
 The
 [Browserbase extensions API](https://docs.browserbase.com/platform/browser/core-features/browser-extensions#browser-extensions)
 accepts the prebuilt ZIP directly — download it from
-`https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
+`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
 and upload as-is.
 
 To build the ZIP from source instead:
@@ -109,7 +109,7 @@ To build the ZIP from source instead:
 ```sh
 cd extension
 bun run build
-bun run package   # writes output/extension.zip at the repo root
+bun run package   # writes output/agent-browser-shield-extension.zip at the repo root
 ```
 
 ## Contributing

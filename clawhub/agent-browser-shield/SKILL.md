@@ -12,15 +12,15 @@ engagement noise (ads, scarcity cues, social embeds).
 
 ## Install
 
-Release artifact (used by both paths):
-`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/extension.zip`
+Hosted ZIP (used by both paths):
+`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
 — `manifest.json` is at the archive root; do not re-zip.
 
 ### Path 1 — Local Chrome via remote CDP (OpenClaw `remote` driver)
 
 Use when OpenClaw is connecting to a Chromium you launch yourself.
 
-1. Unzip `extension.zip` to a stable directory (e.g.
+1. Unzip `agent-browser-shield-extension.zip` to a stable directory (e.g.
    `~/.cache/agent-browser-shield/extension/`).
 
 2. Launch Chromium **headed** with a dedicated profile and the extension loaded:
@@ -53,15 +53,15 @@ Use when OpenClaw is connecting to a Chromium you launch yourself.
    openclaw browserbase status       # confirm
    ```
 
-2. Download `extension.zip` from the release URL above, then upload it to
-   Browserbase using the
+2. Download `agent-browser-shield-extension.zip` from the URL above, then upload
+   it to Browserbase using the
    [`browse` CLI](https://docs.browserbase.com/integrations/skills/browse-cli)
    (npm `browse`):
 
    ```sh
    npm install -g browse
    export BROWSERBASE_API_KEY="…"   # same key used by openclaw browserbase setup
-   browse cloud extensions upload ./extension.zip
+   browse cloud extensions upload ./agent-browser-shield-extension.zip
    ```
 
    The command prints an extension ID. **Claw: persist that ID in memory for

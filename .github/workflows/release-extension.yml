@@ -3,10 +3,6 @@ name: Release extension
 on:
   workflow_dispatch:
     inputs:
-      publish_s3:
-        description: "Upload to S3 (versioned + latest)"
-        type: boolean
-        default: true
       publish_chrome_web_store:
         description: "Submit to Chrome Web Store for publication"
         type: boolean
@@ -14,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
 
 concurrency:
   group: release-extension
@@ -76,40 +71,15 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: extension-zip-${{ steps.version.outputs.tag }}
-          path: output/extension.zip
+          path: output/agent-browser-shield-extension.zip
           archive: false
           if-no-files-found: error
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        if: ${{ inputs.publish_s3 }}
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Upload versioned ZIP
-        if: ${{ inputs.publish_s3 }}
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          aws s3 cp output/extension.zip \
-            "s3://agent-browser-shield/${TAG}/extension.zip" \
-            --content-type application/zip \
-            --content-disposition 'attachment; filename="extension.zip"' \
-            --cache-control 'public, max-age=31536000, immutable'
-
-      - name: Upload latest pointer
-        if: ${{ inputs.publish_s3 }}
-        run: |
-          aws s3 cp output/extension.zip \
-            s3://agent-browser-shield/latest/extension.zip \
-            --content-type application/zip \
-            --content-disposition 'attachment; filename="extension.zip"' \
-            --cache-control 'public, max-age=300'
+          retention-days: 30
 
       # CWS rejects manifests containing a "key" field; produce a sibling zip
-      # with it stripped. The S3 zip still includes "key" if/when one is added,
-      # so consumers wanting a stable extension ID (e.g., Browserbase) aren't
-      # affected.
+      # with it stripped. The GitHub Release zip still includes "key" if/when
+      # one is added, so consumers wanting a stable extension ID (e.g.,
+      # Browserbase) aren't affected.
       - name: Package CWS-ready zip
         if: ${{ inputs.publish_chrome_web_store }}
         working-directory: extension
@@ -141,7 +111,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release create "$TAG" \
-            output/extension.zip \
+            output/agent-browser-shield-extension.zip \
             --title "$TAG" \
             --generate-notes \
             --target "$GITHUB_SHA"

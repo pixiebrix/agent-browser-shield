@@ -129,7 +129,7 @@ Bundle `extension/dist/` into a ZIP suitable for uploading via the
 ```sh
 cd extension
 bun run build
-bun run package           # writes output/extension.zip at the repo root
+bun run package           # writes output/agent-browser-shield-extension.zip at the repo root
 # or specify an output path / directory:
 bun run package -- ~/Downloads/agent-browser-shield.zip
 ```

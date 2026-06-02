@@ -126,8 +126,8 @@ The flow:
 Download the
 [prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), or
 follow [Install](/agent-browser-shield/install/) through `bun run package` to
-build one yourself at `output/extension.zip`. Either way, `manifest.json` sits
-at the archive root — do not re-zip it.
+build one yourself at `output/agent-browser-shield-extension.zip`. Either way,
+`manifest.json` sits at the archive root — do not re-zip it.
 
 ### 2. Upload to Browserbase
 
@@ -142,7 +142,7 @@ npm install -g browse
 export BROWSERBASE_API_KEY=bb_live_...
 export BROWSERBASE_PROJECT_ID=...
 
-browse cloud extensions upload ./output/extension.zip
+browse cloud extensions upload ./output/agent-browser-shield-extension.zip
 ```
 
 Stash the printed extension `id` — it's reusable across sessions until you

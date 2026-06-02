@@ -3,7 +3,7 @@
 #
 # Triggers .github/workflows/release-extension.yml on main. The workflow
 # computes the version (YYYY.M.D.<run_number>), patches the manifest, builds,
-# uploads to S3, and creates the GitHub Release.
+# and creates the GitHub Release with the extension zip attached.
 #
 # Usage:
 #   scripts/cut-release.sh           # dispatch and print the run URL

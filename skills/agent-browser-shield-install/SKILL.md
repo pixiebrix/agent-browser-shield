@@ -21,13 +21,13 @@ only covers getting the extension loaded.
 | Attaching via CDP / MCP to a Chrome the user already controls | **Path C** |
 
 The hosted ZIP is at
-`https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
+`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
 and has `manifest.json` at the archive root. Do not re-zip it.
 
 ## Path A — Local headed Chromium, unpacked load
 
 1. Download
-   `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
+   `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
    and unzip to a stable directory, e.g.
    `~/.cache/agent-browser-shield/extension/`. The unzipped directory must
    contain `manifest.json` directly (no nested folder).
@@ -62,7 +62,7 @@ and has `manifest.json` at the archive root. Do not re-zip it.
    ```
 
 2. **Download** the ZIP from
-   `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`.
+   `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`.
    Do not unzip.
 
 3. **Upload** the ZIP and capture the returned `id`. Pick one of the four
@@ -73,7 +73,7 @@ and has `manifest.json` at the archive root. Do not re-zip it.
 
    ```sh
    npm install -g browse
-   browse cloud extensions upload ./agent-browser-shield.zip
+   browse cloud extensions upload ./agent-browser-shield-extension.zip
    ```
 
    **b. Legacy Browserbase CLI** (`@browserbasehq/cli`, command `bb`). Still
@@ -82,7 +82,7 @@ and has `manifest.json` at the archive root. Do not re-zip it.
 
    ```sh
    npm install -g @browserbasehq/cli
-   bb extensions upload ./agent-browser-shield.zip
+   bb extensions upload ./agent-browser-shield-extension.zip
    ```
 
    **c. SDK:**
@@ -92,7 +92,7 @@ and has `manifest.json` at the archive root. Do not re-zip it.
    ```
 
    ```py
-   ext = bb.extensions.create(file=open("agent-browser-shield.zip", "rb"))  # Python
+   ext = bb.extensions.create(file=open("agent-browser-shield-extension.zip", "rb"))  # Python
    ```
 
    **d. REST:**
@@ -100,7 +100,7 @@ and has `manifest.json` at the archive root. Do not re-zip it.
    ```sh
    curl -X POST https://api.browserbase.com/v1/extensions \
      -H "X-BB-API-Key: $BROWSERBASE_API_KEY" \
-     -F "file=@agent-browser-shield.zip"
+     -F "file=@agent-browser-shield-extension.zip"
    ```
 
 4. Pass the returned id when creating the session: `extensionId` (Node SDK) or
@@ -122,7 +122,8 @@ and has `manifest.json` at the archive root. Do not re-zip it.
 6. The most common upload failure is `manifest.json` not at the archive root.
    The hosted ZIP is already correctly shaped; if you build your own, zip from
    inside the dist directory
-   (`cd dist && zip -r ../agent-browser-shield.zip .`), never the parent.
+   (`cd dist && zip -r ../agent-browser-shield-extension.zip .`), never the
+   parent.
 
 ## Path C — CDP / MCP attach to user-controlled Chrome
 
@@ -131,7 +132,7 @@ attaches.
 
 1. Tell the user (once, then remember it's done):
    1. Download
-      `https://agent-browser-shield.s3.us-east-2.amazonaws.com/latest/extension.zip`
+      `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
       and unzip somewhere stable.
    2. Open `chrome://extensions`, enable **Developer mode**, click **Load
       unpacked**, select the unzipped directory.

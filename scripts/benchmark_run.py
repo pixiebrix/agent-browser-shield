@@ -81,7 +81,7 @@ from _stagehand import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "extension.zip"
+DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "agent-browser-shield-extension.zip"
 DEFAULT_PRICING = REPO_ROOT / "benchmark" / "pricing.json"
 RESULTS_ROOT = REPO_ROOT / "output" / "results"
 

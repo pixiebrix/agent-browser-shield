@@ -124,7 +124,7 @@ from browser_use.llm import ChatOpenAI
 
 async def main():
     bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
-    with open("output/extension.zip", "rb") as fh:
+    with open("output/agent-browser-shield-extension.zip", "rb") as fh:
         extension = bb.extensions.create(file=fh)
 
     session = bb.sessions.create(

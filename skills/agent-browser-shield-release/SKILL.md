@@ -1,14 +1,15 @@
 ---
 name: agent-browser-shield-release
-description: Cut a release of the agent-browser-shield Chromium extension. CalVer YYYY.M.D.<github.run_number> versioning, workflow-driven — .github/workflows/release-extension.yml computes the version, patches the manifest, builds the ZIP, creates the GitHub Release, and uploads to S3. Use when the user asks to ship, release, publish, or push a new build of the extension. NOT for editing rule code, running benchmarks, or local-only testing.
+description: Cut a release of the agent-browser-shield Chromium extension. CalVer YYYY.M.D.<github.run_number> versioning, workflow-driven — .github/workflows/release-extension.yml computes the version, patches the manifest, builds the ZIP, and creates the GitHub Release with the ZIP attached. Use when the user asks to ship, release, publish, or push a new build of the extension. NOT for editing rule code, running benchmarks, or local-only testing.
 ---
 
 # Releasing agent-browser-shield
 
 Releases are produced by `.github/workflows/release-extension.yml`. The workflow
-computes the version, builds the extension, creates the GitHub Release with the
-ZIP attached, and uploads the ZIP to S3 (both a versioned path and the `latest/`
-pointer that the install skill points consumers at).
+computes the version, builds the extension, and creates the GitHub Release with
+the ZIP attached. Consumers download from
+`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
+— the `latest` redirect follows the most recent release.
 
 Nothing is tagged or version-bumped in the source tree. The tag, the manifest
 `version` field in the shipped ZIP, and the GitHub Release are all created by CI
@@ -61,12 +62,9 @@ gh workflow run release-extension.yml --ref main
 2. `jq`-patches `extension/src/manifest.json` `version` in the runner's
    checkout. Never committed back.
 3. `bun install --frozen-lockfile`, `bun run build`, `bun run package` →
-   `output/extension.zip`.
-4. Uploads to:
-   - `s3://agent-browser-shield/${tag}/extension.zip` (immutable, cached 1y)
-   - `s3://agent-browser-shield/latest/extension.zip` (5-minute cache)
-5. Creates the GitHub Release at `$GITHUB_SHA` with auto-generated notes and the
-   ZIP attached.
+   `output/agent-browser-shield-extension.zip`.
+4. Creates the GitHub Release at `$GITHUB_SHA` with auto-generated notes and the
+   ZIP attached as a release asset.
 
 ## Rolling back / re-releasing
 
@@ -78,8 +76,8 @@ gh workflow run release-extension.yml --ref <sha-or-branch>
 ```
 
 The new release will have a higher `run_number` than anything before it, so
-Chrome will auto-update to it. The previous "bad" S3 versioned URL is left in
-place (immutable); only `latest/` moves.
+Chrome will auto-update to it. The previous release's tag and assets stay
+published at their versioned URLs; only the `latest` redirect moves.
 
 The script `scripts/cut-release.sh` refuses to run off `main`. To release from a
 SHA or branch, invoke `gh workflow run` directly — be sure you know what you're
