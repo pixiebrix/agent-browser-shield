@@ -55,6 +55,12 @@ duplicate a rule between them.
 - `bun run check` runs Biome then ESLint; `bun run check:fix` runs both with
   `--fix`/`--write`.
 
+`demo-site/` has a smaller ESLint config (`demo-site/eslint.config.js`) that
+just enforces `unicorn/prevent-abbreviations` so the React surface stays
+grep-friendly with the same naming conventions as the extension. The replacement
+allowlist (`props`, `ref`, `args`, loop counters, etc.) mirrors the extension's.
+`bun run check` in `demo-site/` runs Biome + ESLint.
+
 ## Rule authoring: re-scan SPA mutations
 
 Rule `apply` runs once at `document_idle`. Client-side route changes in SPAs

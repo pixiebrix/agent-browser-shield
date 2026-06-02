@@ -45,8 +45,8 @@ export default function NewsletterModal() {
           events.
         </p>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={(event) => {
+            event.preventDefault();
             setDismissed(true);
           }}
           className="flex gap-2"
