@@ -116,6 +116,30 @@ def _kept_response_headers(headers: httpx.Headers) -> dict[str, str]:
     return {k: v for k, v in headers.items() if k.lower() not in _STRIP_RESPONSE_HEADERS}
 
 
+def _prefix_openai_model(body: bytes) -> bytes:
+    """Rewrite `{"model": "gpt-5-mini", ...}` → `{"model": "openai/gpt-5-mini", ...}`.
+
+    Stagehand's `provider: openai` config validates model names against
+    OpenAI's catalog, so we strip the `openai/` prefix on the way out of
+    benchmark_run.py. OpenRouter routes by provider-prefixed slug, so we add
+    it back here. Bodies that already carry a prefixed name, or that aren't
+    JSON, pass through unchanged.
+    """
+    if not body:
+        return body
+    try:
+        payload = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return body
+    if not isinstance(payload, dict):
+        return body
+    model = payload.get("model")
+    if not isinstance(model, str) or "/" in model:
+        return body
+    payload["model"] = f"openai/{model}"
+    return json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+
 def _try_parse_json(raw: bytes) -> Any:
     if not raw:
         return None
@@ -145,6 +169,10 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
     @app.api_route("/v1/{path:path}", methods=["POST"])
     async def passthrough(path: str, request: Request) -> Response:
         body = await request.body()
+        # Stagehand sends bare OpenAI model names (gpt-5-mini); OpenRouter
+        # needs the provider prefix as its routing key. Re-prefix any
+        # unprefixed model name in the JSON body before forwarding.
+        body = _prefix_openai_model(body)
         forwarded_headers = _kept_request_headers(dict(request.headers))
         forwarded_headers["authorization"] = f"Bearer {upstream_key}"
 

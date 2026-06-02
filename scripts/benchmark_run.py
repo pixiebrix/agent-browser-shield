@@ -482,9 +482,11 @@ def _agent_model_config(model: str, proxy_url: str | None, openrouter_api_key: s
     `base_url` points at the proxy and whose `api_key` is the developer's
     OpenRouter key — Browserbase calls the proxy in place of OpenRouter.
 
-    Model names are forwarded with their provider prefix intact (e.g.
-    `openai/gpt-5-mini`, `anthropic/claude-haiku-4-5`) because OpenRouter
-    expects the prefixed slug as its routing key.
+    The `openai/` provider prefix is stripped before handing the name to
+    Stagehand: with `provider: openai`, Stagehand validates the model against
+    OpenAI's catalog and rejects the prefixed form client-side ("Failed to
+    execute task: Not Found"). The proxy re-prefixes the bare name when
+    forwarding to OpenRouter, which needs the prefix as its routing key.
     """
     if not proxy_url:
         return model
@@ -493,9 +495,10 @@ def _agent_model_config(model: str, proxy_url: str | None, openrouter_api_key: s
             "--llm-proxy-url requires OPENROUTER_API_KEY in env (forwarded to the "
             "proxy as the agent's api_key)"
         )
+    bare = model.split("/", 1)[1] if model.startswith("openai/") else model
     return {
         "provider": "openai",
-        "modelName": model,
+        "modelName": bare,
         "baseURL": proxy_url.rstrip("/"),
         "apiKey": openrouter_api_key,
     }
