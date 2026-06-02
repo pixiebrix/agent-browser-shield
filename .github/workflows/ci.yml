@@ -163,7 +163,7 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   python:
-    name: Python (ruff + bandit + pyright)
+    name: Python (ruff + bandit + pyright + pytest)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -187,6 +187,12 @@ jobs:
       # into a shared venv). Ratchet up via per-file `# pyright: strict`.
       - name: Pyright type check
         run: uvx pyright
+      # Pytest covers the pure helpers shared across the benchmark loop
+      # (`_judge`, `_blockcheck`, `_stagehand`, `compare_scenarios`). The
+      # `--with` packages match what's imported at module load time of any
+      # helper a test pulls in (`python-dotenv` for compare_scenarios).
+      - name: Pytest (scripts/ helpers)
+        run: uvx --with pytest --with python-dotenv pytest
       # New-file ratchet: every newly-added Python file must opt in to
       # `# pyright: strict`. Stops legacy debt in scripts/ from growing
       # while we leave the global mode at standard. base_ref is passed via

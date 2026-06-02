@@ -86,12 +86,15 @@ class ExtractedAnswer:
 
 
 def build_judge_user_prompt(task: str, criteria: str, final_answer: str | None) -> str:
-    answer = final_answer.strip() if final_answer else "(no final answer reported)"
+    # Strip first, then test for emptiness — a whitespace-only answer
+    # ("   ") is semantically the same as a missing one and must surface
+    # the explicit placeholder so the judge LLM sees the intent.
+    answer = (final_answer or "").strip() or "(no final answer reported)"
     return f"Task: {task}\n\nSuccess criteria: {criteria}\n\nAgent's final answer:\n{answer}"
 
 
 def build_extractor_user_prompt(task: str, criteria: str, final_answer: str | None) -> str:
-    answer = final_answer.strip() if final_answer else "(no final answer reported)"
+    answer = (final_answer or "").strip() or "(no final answer reported)"
     return f"Task: {task}\n\nSuccess criteria: {criteria}\n\nAgent's final answer:\n{answer}"
 
 
