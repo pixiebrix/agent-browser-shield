@@ -7,6 +7,7 @@
     "prompt-injection-hide": true,
     "countdown-timer-hide": true,
     "scarcity-hide": true,
+    "confirmshame-neutralize": true,
     "footer-hide": true,
     "checkout-checkbox-clear": true,
     "cookie-banner-hide": true,

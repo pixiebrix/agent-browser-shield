@@ -86,6 +86,10 @@ Use when OpenClaw is connecting to a Chromium you launch yourself.
   user did not explicitly request. `aria-label` carries detail.
 - `data-abs-cleared` — pre-checked checkbox the extension unchecked on a
   cart/checkout page.
+- `data-abs-confirmshame-orig-text` / `…-orig-value` / `…-orig-aria` /
+  `…-orig-title` — a decline button whose guilt-tripping copy was rewritten in
+  place to a neutral "No thanks". The underlying control is unchanged; click it
+  normally.
 - `<style id="abs-ads-hide-easylist">` — stylesheet hiding ad selectors. Removed
   elements are gone, not hidden behind a click.
 

@@ -12,6 +12,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "prompt-injection-hide": true,
   "countdown-timer-hide": true,
   "scarcity-hide": true,
+  "confirmshame-neutralize": true,
   "footer-hide": true,
   "checkout-checkbox-clear": true,
   "cookie-banner-hide": true,

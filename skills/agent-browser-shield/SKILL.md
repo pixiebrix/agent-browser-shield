@@ -29,6 +29,10 @@ surfaces **before you see the page**.
   donation, round-up, gift wrap, carbon offset, shipping protection, driver tip,
   etc.). The line item itself is still in the cart.
 - `data-abs-cleared` — a pre-checked checkbox the extension unchecked.
+- `data-abs-confirmshame-orig-text` / `…-orig-value` / `…-orig-aria` /
+  `…-orig-title` — a decline button whose guilt-tripping copy ("No, I'd rather
+  pay full price") was rewritten in place to a neutral "No thanks". The control
+  is still the original decline button; click it normally.
 - `<style id="abs-ads-hide-easylist">` — silently CSS-hides ~13k EasyList ad
   selectors (you will not see those elements at all).
 
