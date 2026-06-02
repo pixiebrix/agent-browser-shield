@@ -235,24 +235,24 @@ Brignull's deceptive.design catalog (both cited in the section preamble).
 - **Default:** on
 
 Rewrite guilt-tripping decline buttons to a neutral `No thanks` so an agent
-reading the DOM or accessibility tree isn't pushed away from the decline
-option by manipulative copy. Coverage spans monetary confirmshame
-("No, I'd rather pay full price", "I don't want to save money", "I hate
-discounts"), health and safety guilt ("I don't care about my family's
-safety", "I'm fine being unprotected"), loyalty downgrades ("Downgrade to
-basic", "Forfeit my Gold status"), gamified progress loss ("Lose my streak",
-"Sacrifice my XP"), imperative self-commands ("Charge me extra", "Stop
-helping me save"), sarcastic acceptance ("Whatever, take my money"), and
-the reverse-positive "Yes, [bad outcome]" framing common on confirmation
-dialogs ("Yes, skip my savings", "Confirm: pay full price").
+reading the DOM or accessibility tree isn't pushed away from the decline option
+by manipulative copy. Coverage spans monetary confirmshame ("No, I'd rather pay
+full price", "I don't want to save money", "I hate discounts"), health and
+safety guilt ("I don't care about my family's safety", "I'm fine being
+unprotected"), loyalty downgrades ("Downgrade to basic", "Forfeit my Gold
+status"), gamified progress loss ("Lose my streak", "Sacrifice my XP"),
+imperative self-commands ("Charge me extra", "Stop helping me save"), sarcastic
+acceptance ("Whatever, take my money"), and the reverse-positive "Yes, \[bad
+outcome\]" framing common on confirmation dialogs ("Yes, skip my savings",
+"Confirm: pay full price").
 
-The underlying control is preserved — only its visible label and any
-matching `aria-label` / `title` are rewritten — so the agent can still click
-it normally. Plain decline labels like "No thanks", "Decline", "Maybe later",
-"Skip", and "Continue as guest" are left untouched.
+The underlying control is preserved — only its visible label and any matching
+`aria-label` / `title` are rewritten — so the agent can still click it normally.
+Plain decline labels like "No thanks", "Decline", "Maybe later", "Skip", and
+"Continue as guest" are left untouched.
 
-Prior art: Cataloged as *Confirmshaming* in Brignull's deceptive.design and
-as part of the *Misdirection* family in Mathur et al. 2019 (both cited in the
+Prior art: Cataloged as *Confirmshaming* in Brignull's deceptive.design and as
+part of the *Misdirection* family in Mathur et al. 2019 (both cited in the
 section preamble).
 
 ### Flag Cart Add-Ons (Sneak-Into-Basket)
