@@ -418,12 +418,13 @@ Wishlists: /wishlists/{userId}/{wishlistSlug}-{id}.
     ],
     recipe: `abs URL helper for allrecipes.com — prefer URL navigation over typing.
 Search: /search?q={query}
-Direct recipe: /recipe/{recipeId}/{slug}/ (recipeId is a 4-6 digit integer; trailing slug is informational and forgiving)
-Category browse: /recipes/{categoryId}/{slug}/ (e.g., /recipes/77/drinks/, /recipes/96/everyday-cooking/vegetarian/)
+Direct recipe: /recipe/{recipeId}/{slug}/ — recipeId is a 4-6 digit Allrecipes id visible in search-result anchors; do not invent one, discover via /search?q={query} first.
 Ingredient hub: /ingredients/{slug}/ (e.g., /ingredients/chicken/)
-Cuisine hub: /cuisine-a-z-1947/ index page, then /recipes/{categoryId}/cuisine/{slug}/
-Collections: /recipes/{categoryId}/{slug}/ also covers seasonal hubs (e.g., thanksgiving, super-bowl).
-Pagination on search/category pages: ?page={n} (1-indexed; on /search/ also as path segment in some hubs).
+# Category / cuisine / collection browse paths use an opaque numeric
+# {categoryId} (e.g., 77, 96) with no visible derivation. Agents that
+# guessed values landed on unrelated hubs, so the templates were dropped —
+# use the Search line instead. Re-add only if you ship an enumerated list.
+Pagination on search pages: ?page={n} (1-indexed).
 Recipe data (for parsing without rendering): /recipe/{id}/ pages embed schema.org/Recipe JSON-LD in a \`<script type="application/ld+json">\` block — read it directly instead of scraping the rendered DOM.
 `,
   },
@@ -495,9 +496,9 @@ Filters (query string, append):
   Search radius: &searchRadius={miles|0} (0 = nationwide)
 Sort (sortBy=): relevance (default), derivedpriceASC | derivedpriceDESC (price low/high), mileageASC, yearDESC, distanceASC, datelistedDESC (newest first).
 Pagination: &firstRecord={offset}&numRecords={25|50|100} (offset is 0-indexed; pageSize default 25).
-Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id.
+Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id, visible on search-result anchors; do NOT invent, discover via the vehicle-search SRP first.
 Dealer directory by city: /car-dealers/{city-slug}-{ST} (e.g., /car-dealers/austin-tx).
-Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} (e.g., /car-dealers/austin-tx/72359/leif-johnson-ford).
+Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} — dealerId is Autotrader's numeric id, visible on the dealer-directory listing for the city; do NOT invent, navigate from the directory page above.
 Research pages: /research/{make-slug}/{model-slug}/{year}/ (e.g., /research/honda/civic/2024/).
 `,
   },
@@ -520,9 +521,11 @@ Article URL form: /news/{slug}-{numericId} (e.g., /news/world-us-canada-12345678
     recipe: `abs URL helper for bestbuy.com — prefer URL navigation over typing.
 Search: /site/searchpage.jsp?st={query}&id=pcat17071&sp={sort}&cp={page}&intl=nosplash
 Sort (sp=): '+currentprice skuidsaas' (low→high), '-currentprice skuidsaas' (high→low), '-customertopratedcount skuidsaas' (top rated), '-customerreviewcount skuidsaas' (most reviewed), '-startdate skuidsaas' (newest)
-Category scope: &browsedCategory={abcat...orPcmcat...Id}
 Add intl=nosplash to skip the country-selection interstitial.
-Direct product: /site/{slug}/{productId}.p?skuId={sku}
+Direct product: /site/{slug}/{productId}.p?skuId={sku} — productId/sku are opaque Best Buy ids; do not invent them, read from a PDP or search-result anchor.
+# Category scope (&browsedCategory=) uses an opaque abcat*/pcmcat* id with
+# no visible derivation path. Agents that guessed values landed on unrelated
+# categories, so the template was dropped — use Search with the query alone.
 `,
   },
   {
@@ -601,10 +604,10 @@ Filters (query string, append):
   Photos required: &photo_only=true
 Sort (sort=): best_match_desc (default), list_price (low→high) or list_price_desc, mileage (low→high), year_desc, distance, listed_at_desc (newest first).
 Pagination: &page={n} (1-indexed) ; page size via &page_size={20|50|100}.
-Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id.
+Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id, visible on search-result anchors; do NOT invent, discover via the /shopping/results/ SRP first.
 Research / specs / pricing: /research/{make-model}/ ; year-specific: /research/{make-model-{year}}/ (e.g., /research/honda-civic-2024/).
 Consumer reviews: /research/{make-model-{year}}/consumer-reviews/.
-Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/.
+Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/. dealerId is cars.com's numeric id; do NOT invent, discover via a dealer-directory listing for the city.
 `,
   },
   {
@@ -645,11 +648,13 @@ AI-assist answer (web vertical): the result page surfaces an "AI Assist" box for
       new URLPattern({ hostname: "{*.}?ebay.com" }),
     ],
     recipe: `abs URL helper for ebay.com — prefer URL navigation over typing.
-Search: /sch/i.html?_nkw={query}&_sacat={categoryId}&_sop={sort}&_pgn={page}
+Search: /sch/i.html?_nkw={query}&_sacat=0&_sop={sort}&_pgn={page}
 Sort (_sop=): 12 (Best Match, default), 1 (Ending soonest), 10 (Newly listed), 15 (Price+Shipping low→high), 16 (Price+Shipping high→low), 7 (Distance nearest)
 Filters (append): LH_BIN=1 (Buy It Now only), LH_Auction=1 (Auctions only), LH_PrefLoc=1 (US only), LH_PrefLoc=2 (North America), LH_PrefLoc=98 (Worldwide), LH_FS=1 (Free shipping), LH_ItemCondition={3000=Used,1000=New}
-Category: _sacat={categoryId} (0 = all)
-Direct listing: /itm/{itemId}
+# _sacat takes an opaque eBay category id; only \`0\` (all categories) is
+# safe without a discovery step. Don't templatize _sacat={categoryId} —
+# agents that guessed values landed on the wrong taxon.
+Direct listing: /itm/{itemId} — itemId visible on search-result anchors; do not invent.
 Seller's store: /str/{sellerName}
 Catalog product page: /p/{epid} (epid from the listing's URL query)
 `,
@@ -704,7 +709,11 @@ Listing detail: /listing/{listingId}
     recipe: `abs URL helper for expedia.com — prefer URL navigation over typing.
 Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&children={ages|empty}&rooms={n}
 Children: &children=2:5,8 means two children aged 5 and 8 (comma-separated ages); &rooms=1 ; &rm1=a2:c5,c8 also accepted as the older per-room shape.
-Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+# &neighborhood= takes an opaque Expedia regionId and was dropped — the
+# destination= query alone already scopes by neighborhood name. Likewise,
+# Destination-Travel-Guides URLs use an opaque dx{destinationId} that
+# can't be derived from runtime intent.
 Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
 Pagination: &p={pageIndex} (0-indexed). Top-N picks per page is server-controlled.
 Direct hotel: /{Slug}.h{hotelId}.Hotel-Information (e.g., /Paris-Hotels-La-Maison-Favart.h2521440.Hotel-Information). Slug is hyphenated, no diacritics. \`chkin\`/\`chkout\` query params preserve pricing context.
@@ -713,7 +722,6 @@ One-way flights: same but trip=oneway and only leg1.
 Cars search: /Cars-Search?date1={M/D/YYYY}&time1={HHMM}&date2={M/D/YYYY}&time2={HHMM}&loc1={origin}&loc2={dropoff}
 Packages (Bundle and Save): /Flights-Hotel-Search?flightAttributes=…&hotelAttributes=… (best constructed via the UI; the URL state is brittle).
 Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
-Destination guides: /{Slug}.dx{destinationId}.Destination-Travel-Guides (read-only browsing).
 `,
   },
   {
@@ -858,8 +866,10 @@ Prefix (autocomplete-style) match: &prefix=true
 Search: /s/{query}?sortby={field}&sortorder={asc|desc}&Nao={offset}
 Sort fields: topsellers (default), price, customerrating, mostpopular, newest
 Pagination uses 0-based offset Nao= in multiples of 24 (page 1=0, page 2=24, …).
-Category browse: /b/{slug}/N-{taxonomyId} (taxonomyId starts with \`5yc1vZ\`; accepts the same query params as /s/)
-Direct product: /p/{slug-or-dash}/{omsId} (omsId is the 9-10 digit Internet number)
+Direct product: /p/{slug-or-dash}/{omsId} — omsId is the 9-10 digit "Internet number" printed on PDPs and visible in search-result anchors; do not invent.
+# Category browse (/b/{slug}/N-{taxonomyId}) requires an opaque
+# 5yc1vZ-prefixed taxonomy id with no derivation path. Dropped — agents
+# that guessed values landed on unrelated taxons. Use /s/{query} instead.
 `,
   },
   {
@@ -872,7 +882,11 @@ Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDa
 Hotels.com normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse for follow-up queries to skip ambiguity.
 Children: append &children={ages-comma-list} (e.g., &children=5,8 for two kids aged 5 and 8). Per-room legacy form \`&rm1=a2:c5,c8\` is also accepted.
 Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
-Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &reviewScore={7,8,9} (minimum guest score).
+Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &reviewScore={7,8,9} (minimum guest score).
+# &neighborhood= takes an opaque regionId. Keep the regionId capture note
+# above (it's used as a destination= shortcut), but don't templatize
+# neighborhood= as a separate filter — agents can't supply a sub-region id
+# without prior browsing, and destination= already covers neighborhood names.
 Pagination: &p={pageIndex} (0-indexed).
 Direct property: /ho{propertyId}/{slug}/ (e.g., /ho170687/la-maison-favart-paris-france/). The Hotels.com propertyId is distinct from Expedia's; do not reuse Expedia ids here. \`chkin\`/\`chkout\` query params preserve pricing context (also accepted as \`startDate\`/\`endDate\`).
 Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
@@ -919,7 +933,10 @@ Date posted (fromage=): 1, 3, 7, 14 (days ago).
 Job type (jt=): fulltime, parttime, contract, temporary, internship.
 Radius (radius=): miles around the location (default 25; 0 means exact location).
 Salary estimate (salary=): "$70,000" style — URL-encode the dollar sign and comma.
-Remote (sc=): 0kf%3Aattr(DSQF7)%7C (remote-only filter; built from \`attr(...)\` opaque ids that Indeed surfaces on filter pills).
+# The sc= "remote-only" filter takes opaque attr(...) pill ids that the
+# agent can't supply without first reading them off Indeed's UI. Dropped
+# — append \`&remotejob=1\` is not a documented alternative; rely on a
+# query like "remote {role}" instead.
 Company pages: /cmp/{Company-Name} (Pascal-cased slug, hyphen-separated for multi-word names; e.g. /cmp/Google, /cmp/Stripe-Inc, /cmp/Pwc).
 Company subtabs: /cmp/{Company}/reviews, /cmp/{Company}/jobs, /cmp/{Company}/salaries, /cmp/{Company}/benefits, /cmp/{Company}/faq, /cmp/{Company}/about, /cmp/{Company}/locations.
 Review list sort/filter (review page): &fcountry=US&floc={city}&ftopic={wlbalance|paybenefits|jobsecadv|mgmt|culture}&fjobtitle={role}&sort=helpful (default) or sort=date.
@@ -960,11 +977,13 @@ Currency / locale: ?currency=USD ; site mirror: kayak.{co.uk|de|fr|es|com.au} (U
     ],
     recipe: `abs URL helper for lowes.com — prefer URL navigation over typing.
 Free-text search: /search?searchTerm={query}
-Narrow search to a Lowe's catalog node: /search?searchTerm={query}&catalog={catalogId} (catalogId is the 10-digit \`taxonomy\` node; read it off facet links on a result page)
 Sort (sortMethod=): mostRelevant (default), priceLowToHigh, priceHighToLow, customerRating, mostReviewed, newest
 Pagination: &page={n} (1-indexed); page size knob is \`pageSize=24\` (max ~48).
-Category browse (canonical, no search term): /pl/{slug}/{plpNumber} (e.g., /pl/Drills-Drill-drivers-Power-tools-Tools/4294607722). Accepts the same sort/page params as /search.
-Direct product (PDP): /pd/{slug}/{productId} — productId (a.k.a. "Item #") is 9-10 digits and is also exposed in the schema.org/Product JSON-LD on the page.
+# &catalog={catalogId} (10-digit taxonomy node) and /pl/{slug}/{plpNumber}
+# category browse URLs both require opaque Lowe's catalog ids with no
+# derivation from runtime intent. Dropped — agents that guessed values
+# landed on unrelated nodes. Use the free-text /search path instead.
+Direct product (PDP): /pd/{slug}/{productId} — productId (the "Item #") is 9-10 digits printed on PDPs and visible in search-result anchors; do not invent.
 Reviews tab on a PDP: anchor \`#reviews\` (or \`#community-q-a\` for Q&A) — Lowe's accordion auto-expands when scrolled into view.
 Local-store filter (defines availability + price): cookies set during /store/{storeNumber} navigation persist; many URLs accept \`&storeNumber={n}\` as an override.
 Schema-rich product data: PDPs embed schema.org/Product JSON-LD with aggregate rating, brand, SKU, and price — prefer parsing it over scraping the rendered DOM.
@@ -1032,9 +1051,11 @@ Pagination on browse/user-reviews: append ?page={n} (1-indexed). On user-reviews
     ],
     recipe: `abs URL helper for newegg.com — prefer URL navigation over typing.
 Keyword search: /p/pl?d={query} (URL-encode spaces; Newegg's search lands on /p/pl which is the product-listing handler).
-Combined keyword + category: /p/pl?d={query}&N={categoryId}
-Direct category browse: /p/pl?N={categoryId} (categoryId is Newegg's numeric \`N=\` token; multiple categories can be combined as space-separated values, e.g. \`N=100006519%204016\`).
-Filters: most filters are appended as space-separated values to the \`N=\` param (each facet has its own numeric id Newegg's search rewrites into the same param). For typed query refinement use:
+# &N={categoryId} takes opaque Newegg category ids (e.g. 100006519) with
+# no derivation from runtime intent — direct category browse and the
+# combined keyword+category template were dropped. Agents that guessed
+# values landed on unrelated taxons. Use the keyword search alone.
+Filters: facet refinement is brittle because most facets rewrite into opaque \`N=\` ids. For typed query refinement use:
   Price: &LeftPriceRange={min}+{max} (note: \`+\` between min/max, not a hyphen) ; or use the per-category &PriceRange={min}+{max}.
   Order (sort): &Order={3|BESTMATCH|FEATURED|REVIEWS|PRICE|PRICEDESC|RATING|LAUNCHDATE} (3 = best match default; PRICE is ascending; PRICEDESC is descending; REVIEWS sorts by review count; RATING sorts by avg rating).
   Page size: &PageSize={36|60|96} (default 36).
@@ -1122,7 +1143,11 @@ Free-text geo search (no metroId): /s?term={query}&covers={n}&dateTime={YYYY-MM-
 metroId discovery: hit /s?term={cityName} once and read \`metroId\` from the resolved URL — OpenTable assigns numeric ids per metro (e.g., 8 = New York metro).
 Pagination: &page={n} (1-indexed); page size is server-controlled.
 Sort (sortBy=): web_conversion (default mixed-relevance), distance, rating, price_low_to_high, price_high_to_low, name, recommended, newest.
-Filters: &cuisineIds={id}[,{id}…] ; &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &neighborhoodIds={id} ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+Filters: &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+# &cuisineIds= / &neighborhoodIds= take opaque OpenTable ids with no
+# derivation from runtime intent (and OpenTable has no enumerated list).
+# Dropped — use /cuisine/{slug} and /neighborhoods/{slug} browse paths
+# below or include the cuisine/neighborhood name in the &term= query.
 Map mode: &showMap=true&boundsLat1=&boundsLng1=&boundsLat2=&boundsLng2= (NE/SW corners).
 Direct restaurant: /r/{slug} (slug includes city, e.g., /r/nobu-downtown-new-york). Reviews anchor: /r/{slug}#reviews. Menu: /r/{slug}/menu. Photos: /r/{slug}/photos. Private dining: /r/{slug}/private-dining.
 Reservation flow (numeric rid): /restref/client/?rid={restaurantId}&restref={ref}&datetime={YYYY-MM-DDTHH:MM}&covers={n} — restaurantId is OpenTable's internal numeric id, surfaced on the /r/ page's booking widget.
@@ -1366,7 +1391,7 @@ Filters (query string, append; multi-value tag filters use & or comma — both a
   VR: &vrsupport=101 (HTC Vive) ; 102 (Oculus Rift) ; 104 (Valve Index) ; 401 (Windows MR).
   Multiplayer / co-op: &category1=998 ; Online PvP: &category2=49 ; Co-op: &category2=9 ; LAN Co-op: &category2=48.
   Language interface (UI): &supportedlang={english|french|spanish|german|japanese|schinese|tchinese|koreana|russian|...} (Steam's language code).
-  Tags: &tags={tagId1},{tagId2},… (tag ids are Steam's numeric ids; discover via the storesearch API or by reading a category page URL).
+  Tags: &tags={tagId1},{tagId2},… — opaque Steam tag ids (e.g. 492=Indie, 1742=Multiplayer). Do NOT invent — discover by hitting /search/?term={tagName}, opening a category page, and reading the tagId off the resolved URL or anchor hrefs. Skip the &tags= filter entirely if you can express the tag as a keyword in &term=.
   Genre: &category1={26 = Adventure | 25 = Action | 23 = Indie | 28 = Simulation | 9 = RPG | 18 = Sports | 2 = Strategy} (rough mapping; Steam blurs genre and "Type" under category1).
   Reviews / rating: &review_score={6|7|8|9} (minimum positive %: 6=70%, 7=80%, 8=85%, 9=90%) and &review_type={positive|mixed|negative|all}.
   Release date: &category1={998} (Coming Soon) ; &untagged_yes=1 (hide tags) ; &hidef2p=1 (hide F2P).
@@ -1406,17 +1431,15 @@ Paywall: posts marked "paid" return a truncated body to anonymous fetches. A fri
     recipe: `abs URL helper for tripadvisor.com — prefer URL navigation over typing.
 Search: /Search?q={query}&searchSessionId=&searchNearby=false
 Free-form search (across hotels, restaurants, attractions, vacation rentals): /Search?q={query}
-Geo-prefixed location/category pages follow a slug+id contract:
-  Hotels in a city:        /Hotels-g{geoId}-{slug}-Hotels.html
-  Restaurants in a city:   /Restaurants-g{geoId}-{slug}.html
-  Attractions in a city:   /Attractions-g{geoId}-{slug}-Activities.html
-  Vacation rentals:        /VacationRentals-g{geoId}-Reviews-{slug}.html
-Direct property URLs (slug+two ids):
-  Hotel:        /Hotel_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-  Restaurant:   /Restaurant_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-  Attraction:   /Attraction_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-Pagination (review list on a property page): -or{offset} segment inserted before "-Reviews", offset is 0-indexed by 10 (page 2 = \`-or10-\`).
-Sort (hotel list, oa={offset}, ar=<rating>): /Hotels-g{geoId}-oa{offset}-{slug}-Hotels.html ; review-sort knob is \`sortOrder=\` with values RECENT, POPULAR, RATING_HIGH, RATING_LOW (appended as a query string).
+# Tripadvisor's category and property URLs require opaque g{geoId} and
+# d{locationId} ids (e.g. g60763 = NYC). Both are surfaced only inside
+# /Search result anchors. Do NOT construct these URLs from runtime intent
+# alone — agents that guessed ids landed on unrelated cities/properties.
+# Workflow: hit /Search?q={query}, then follow a result href whose path
+# already contains the correct geoId/locationId. Once on a property page,
+# the following shapes are useful for pagination/sort:
+Pagination (review list on a property page, follow an existing anchor first): the URL contains a \`-or{offset}\` segment inserted before "-Reviews"; offset is 0-indexed by 10 (page 2 = \`-or10-\`).
+Sort knob (on the resolved hotel-list page, follow an existing anchor first): \`sortOrder=\` with values RECENT, POPULAR, RATING_HIGH, RATING_LOW (appended as a query string).
 `,
   },
   {
@@ -1465,8 +1488,8 @@ Rewards (Vrbo One Key): append &useRewards=true to apply rewards pricing.
       new URLPattern({ hostname: "{*.}?wayfair.com" }),
     ],
     recipe: `abs URL helper for wayfair.com — prefer URL navigation over typing.
-Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}).
-Category browse (direct): /{department}/sb0/{slug}-c{categoryId}.html
+Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}). Capture the resolved categoryId from the redirect; do NOT invent one.
+Category browse (direct, only after capturing categoryId from a /keyword.php redirect or a category anchor on a hub page): /{department}/sb0/{slug}-c{categoryId}.html
   Common departments: furniture, decor-pillows, rugs, kitchen-tabletop, bed-bath, outdoor, baby-kids, lighting, storage-organization, home-improvement, appliances, holiday-decor.
   Pagination: ?curpage={n} (1-indexed)
   Sort (filterids syntax, on category URLs): ?sortby={topreviews|topsellers|recommended|pricelowtohigh|pricehightolow|recentlyadded}

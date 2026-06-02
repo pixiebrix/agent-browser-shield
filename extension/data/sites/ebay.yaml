@@ -22,10 +22,12 @@ rules:
   search-url-helper:
     recipe: |
       abs URL helper for ebay.com — prefer URL navigation over typing.
-      Search: /sch/i.html?_nkw={query}&_sacat={categoryId}&_sop={sort}&_pgn={page}
+      Search: /sch/i.html?_nkw={query}&_sacat=0&_sop={sort}&_pgn={page}
       Sort (_sop=): 12 (Best Match, default), 1 (Ending soonest), 10 (Newly listed), 15 (Price+Shipping low→high), 16 (Price+Shipping high→low), 7 (Distance nearest)
       Filters (append): LH_BIN=1 (Buy It Now only), LH_Auction=1 (Auctions only), LH_PrefLoc=1 (US only), LH_PrefLoc=2 (North America), LH_PrefLoc=98 (Worldwide), LH_FS=1 (Free shipping), LH_ItemCondition={3000=Used,1000=New}
-      Category: _sacat={categoryId} (0 = all)
-      Direct listing: /itm/{itemId}
+      # _sacat takes an opaque eBay category id; only `0` (all categories) is
+      # safe without a discovery step. Don't templatize _sacat={categoryId} —
+      # agents that guessed values landed on the wrong taxon.
+      Direct listing: /itm/{itemId} — itemId visible on search-result anchors; do not invent.
       Seller's store: /str/{sellerName}
       Catalog product page: /p/{epid} (epid from the listing's URL query)

@@ -18,14 +18,12 @@ rules:
       abs URL helper for tripadvisor.com — prefer URL navigation over typing.
       Search: /Search?q={query}&searchSessionId=&searchNearby=false
       Free-form search (across hotels, restaurants, attractions, vacation rentals): /Search?q={query}
-      Geo-prefixed location/category pages follow a slug+id contract:
-        Hotels in a city:        /Hotels-g{geoId}-{slug}-Hotels.html
-        Restaurants in a city:   /Restaurants-g{geoId}-{slug}.html
-        Attractions in a city:   /Attractions-g{geoId}-{slug}-Activities.html
-        Vacation rentals:        /VacationRentals-g{geoId}-Reviews-{slug}.html
-      Direct property URLs (slug+two ids):
-        Hotel:        /Hotel_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-        Restaurant:   /Restaurant_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-        Attraction:   /Attraction_Review-g{geoId}-d{locationId}-Reviews-{slug}.html
-      Pagination (review list on a property page): -or{offset} segment inserted before "-Reviews", offset is 0-indexed by 10 (page 2 = `-or10-`).
-      Sort (hotel list, oa={offset}, ar=<rating>): /Hotels-g{geoId}-oa{offset}-{slug}-Hotels.html ; review-sort knob is `sortOrder=` with values RECENT, POPULAR, RATING_HIGH, RATING_LOW (appended as a query string).
+      # Tripadvisor's category and property URLs require opaque g{geoId} and
+      # d{locationId} ids (e.g. g60763 = NYC). Both are surfaced only inside
+      # /Search result anchors. Do NOT construct these URLs from runtime intent
+      # alone — agents that guessed ids landed on unrelated cities/properties.
+      # Workflow: hit /Search?q={query}, then follow a result href whose path
+      # already contains the correct geoId/locationId. Once on a property page,
+      # the following shapes are useful for pagination/sort:
+      Pagination (review list on a property page, follow an existing anchor first): the URL contains a `-or{offset}` segment inserted before "-Reviews"; offset is 0-indexed by 10 (page 2 = `-or10-`).
+      Sort knob (on the resolved hotel-list page, follow an existing anchor first): `sortOrder=` with values RECENT, POPULAR, RATING_HIGH, RATING_LOW (appended as a query string).

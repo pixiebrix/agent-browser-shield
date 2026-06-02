@@ -30,10 +30,11 @@ rules:
     recipe: |
       abs URL helper for allrecipes.com — prefer URL navigation over typing.
       Search: /search?q={query}
-      Direct recipe: /recipe/{recipeId}/{slug}/ (recipeId is a 4-6 digit integer; trailing slug is informational and forgiving)
-      Category browse: /recipes/{categoryId}/{slug}/ (e.g., /recipes/77/drinks/, /recipes/96/everyday-cooking/vegetarian/)
+      Direct recipe: /recipe/{recipeId}/{slug}/ — recipeId is a 4-6 digit Allrecipes id visible in search-result anchors; do not invent one, discover via /search?q={query} first.
       Ingredient hub: /ingredients/{slug}/ (e.g., /ingredients/chicken/)
-      Cuisine hub: /cuisine-a-z-1947/ index page, then /recipes/{categoryId}/cuisine/{slug}/
-      Collections: /recipes/{categoryId}/{slug}/ also covers seasonal hubs (e.g., thanksgiving, super-bowl).
-      Pagination on search/category pages: ?page={n} (1-indexed; on /search/ also as path segment in some hubs).
+      # Category / cuisine / collection browse paths use an opaque numeric
+      # {categoryId} (e.g., 77, 96) with no visible derivation. Agents that
+      # guessed values landed on unrelated hubs, so the templates were dropped —
+      # use the Search line instead. Re-add only if you ship an enumerated list.
+      Pagination on search pages: ?page={n} (1-indexed).
       Recipe data (for parsing without rendering): /recipe/{id}/ pages embed schema.org/Recipe JSON-LD in a `<script type="application/ld+json">` block — read it directly instead of scraping the rendered DOM.

@@ -36,11 +36,13 @@ rules:
     recipe: |
       abs URL helper for lowes.com — prefer URL navigation over typing.
       Free-text search: /search?searchTerm={query}
-      Narrow search to a Lowe's catalog node: /search?searchTerm={query}&catalog={catalogId} (catalogId is the 10-digit `taxonomy` node; read it off facet links on a result page)
       Sort (sortMethod=): mostRelevant (default), priceLowToHigh, priceHighToLow, customerRating, mostReviewed, newest
       Pagination: &page={n} (1-indexed); page size knob is `pageSize=24` (max ~48).
-      Category browse (canonical, no search term): /pl/{slug}/{plpNumber} (e.g., /pl/Drills-Drill-drivers-Power-tools-Tools/4294607722). Accepts the same sort/page params as /search.
-      Direct product (PDP): /pd/{slug}/{productId} — productId (a.k.a. "Item #") is 9-10 digits and is also exposed in the schema.org/Product JSON-LD on the page.
+      # &catalog={catalogId} (10-digit taxonomy node) and /pl/{slug}/{plpNumber}
+      # category browse URLs both require opaque Lowe's catalog ids with no
+      # derivation from runtime intent. Dropped — agents that guessed values
+      # landed on unrelated nodes. Use the free-text /search path instead.
+      Direct product (PDP): /pd/{slug}/{productId} — productId (the "Item #") is 9-10 digits printed on PDPs and visible in search-result anchors; do not invent.
       Reviews tab on a PDP: anchor `#reviews` (or `#community-q-a` for Q&A) — Lowe's accordion auto-expands when scrolled into view.
       Local-store filter (defines availability + price): cookies set during /store/{storeNumber} navigation persist; many URLs accept `&storeNumber={n}` as an override.
       Schema-rich product data: PDPs embed schema.org/Product JSON-LD with aggregate rating, brand, SKU, and price — prefer parsing it over scraping the rendered DOM.

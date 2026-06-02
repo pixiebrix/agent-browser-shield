@@ -43,7 +43,7 @@ rules:
         Photos required: &photo_only=true
       Sort (sort=): best_match_desc (default), list_price (low→high) or list_price_desc, mileage (low→high), year_desc, distance, listed_at_desc (newest first).
       Pagination: &page={n} (1-indexed) ; page size via &page_size={20|50|100}.
-      Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id.
+      Direct VDP (vehicle detail): /vehicledetail/{listingId}/ — listingId is cars.com's numeric id, visible on search-result anchors; do NOT invent, discover via the /shopping/results/ SRP first.
       Research / specs / pricing: /research/{make-model}/ ; year-specific: /research/{make-model-{year}}/ (e.g., /research/honda-civic-2024/).
       Consumer reviews: /research/{make-model-{year}}/consumer-reviews/.
-      Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/.
+      Dealer profile / reviews: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/ ; reviews tab: /dealers/{ST}/{city-slug}/{dealer-slug}-{dealerId}/reviews/. dealerId is cars.com's numeric id; do NOT invent, discover via a dealer-directory listing for the city.

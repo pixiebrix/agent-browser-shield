@@ -30,9 +30,11 @@ rules:
     recipe: |
       abs URL helper for newegg.com — prefer URL navigation over typing.
       Keyword search: /p/pl?d={query} (URL-encode spaces; Newegg's search lands on /p/pl which is the product-listing handler).
-      Combined keyword + category: /p/pl?d={query}&N={categoryId}
-      Direct category browse: /p/pl?N={categoryId} (categoryId is Newegg's numeric `N=` token; multiple categories can be combined as space-separated values, e.g. `N=100006519%204016`).
-      Filters: most filters are appended as space-separated values to the `N=` param (each facet has its own numeric id Newegg's search rewrites into the same param). For typed query refinement use:
+      # &N={categoryId} takes opaque Newegg category ids (e.g. 100006519) with
+      # no derivation from runtime intent — direct category browse and the
+      # combined keyword+category template were dropped. Agents that guessed
+      # values landed on unrelated taxons. Use the keyword search alone.
+      Filters: facet refinement is brittle because most facets rewrite into opaque `N=` ids. For typed query refinement use:
         Price: &LeftPriceRange={min}+{max} (note: `+` between min/max, not a hyphen) ; or use the per-category &PriceRange={min}+{max}.
         Order (sort): &Order={3|BESTMATCH|FEATURED|REVIEWS|PRICE|PRICEDESC|RATING|LAUNCHDATE} (3 = best match default; PRICE is ascending; PRICEDESC is descending; REVIEWS sorts by review count; RATING sorts by avg rating).
         Page size: &PageSize={36|60|96} (default 36).

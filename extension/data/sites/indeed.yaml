@@ -29,7 +29,10 @@ rules:
       Job type (jt=): fulltime, parttime, contract, temporary, internship.
       Radius (radius=): miles around the location (default 25; 0 means exact location).
       Salary estimate (salary=): "$70,000" style — URL-encode the dollar sign and comma.
-      Remote (sc=): 0kf%3Aattr(DSQF7)%7C (remote-only filter; built from `attr(...)` opaque ids that Indeed surfaces on filter pills).
+      # The sc= "remote-only" filter takes opaque attr(...) pill ids that the
+      # agent can't supply without first reading them off Indeed's UI. Dropped
+      # — append `&remotejob=1` is not a documented alternative; rely on a
+      # query like "remote {role}" instead.
       Company pages: /cmp/{Company-Name} (Pascal-cased slug, hyphen-separated for multi-word names; e.g. /cmp/Google, /cmp/Stripe-Inc, /cmp/Pwc).
       Company subtabs: /cmp/{Company}/reviews, /cmp/{Company}/jobs, /cmp/{Company}/salaries, /cmp/{Company}/benefits, /cmp/{Company}/faq, /cmp/{Company}/about, /cmp/{Company}/locations.
       Review list sort/filter (review page): &fcountry=US&floc={city}&ftopic={wlbalance|paybenefits|jobsecadv|mgmt|culture}&fjobtitle={role}&sort=helpful (default) or sort=date.
