@@ -4,6 +4,7 @@
 import { walkTextNodes } from "../lib/dom-utils";
 import type { InlineMatch } from "../lib/placeholder";
 import { replaceMatchesInTextNode } from "../lib/placeholder";
+import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "pii-mask" as const;
@@ -75,7 +76,7 @@ function collectMatches(text: string): InlineMatch[] {
   return merged;
 }
 
-function apply(root: ParentNode): void {
+function scanAndMask(root: ParentNode): void {
   for (const node of walkTextNodes(root, { minLength: MIN_TEXT_LENGTH })) {
     const matches = collectMatches(node.nodeValue ?? "");
     if (matches.length > 0) {
@@ -84,9 +85,26 @@ function apply(root: ParentNode): void {
   }
 }
 
+const watcher = createSubtreeWatcher({
+  skipPlaceholderSubtrees: true,
+  onSubtrees: (roots) => {
+    for (const root of roots) {
+      scanAndMask(root);
+    }
+  },
+});
+
+function apply(root: ParentNode): void {
+  scanAndMask(root);
+  watcher.start(root);
+}
+
 export const piiMaskRule = {
   id: RULE_ID,
   label: "Mask PII",
   description: "Hide credit card numbers, phone numbers, and SSNs.",
   apply,
+  teardown: () => {
+    watcher.stop();
+  },
 } satisfies Rule;

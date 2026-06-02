@@ -6,8 +6,20 @@ const INVALID_CARD = "4111 1111 1111 1112"; // Same shape, Luhn-invalid.
 const SSN = "123-45-6789";
 const PHONE = "(555) 123-4567";
 
+const MUTATION_THROTTLE_MS = 250;
+
+async function flushMutations(): Promise<void> {
+  await Promise.resolve();
+}
+
 beforeEach(() => {
   document.body.innerHTML = "";
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  piiMaskRule.teardown();
+  jest.useRealTimers();
 });
 
 describe("pii-mask", () => {
@@ -84,5 +96,46 @@ describe("pii-mask", () => {
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     expect(document.body.textContent).toContain(SSN);
+  });
+});
+
+describe("pii-mask lazy-loaded subtrees", () => {
+  it("masks PII appearing after a client-side route change", async () => {
+    piiMaskRule.apply(document.body);
+
+    const route = document.createElement("section");
+    route.innerHTML = `<p>SSN ${SSN}</p>`;
+    document.body.append(route);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
+    expect(placeholder?.textContent).toBe("[ssn hidden]");
+    expect(document.body.textContent).not.toContain(SSN);
+  });
+
+  it("teardown stops the observer", async () => {
+    piiMaskRule.apply(document.body);
+    piiMaskRule.teardown();
+
+    const route = document.createElement("section");
+    route.innerHTML = `<p>SSN ${SSN}</p>`;
+    document.body.append(route);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("does not loop when its own placeholder is inserted", async () => {
+    document.body.innerHTML = `<p>SSN ${SSN}</p>`;
+    piiMaskRule.apply(document.body);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 });
