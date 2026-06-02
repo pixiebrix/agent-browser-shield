@@ -10,16 +10,16 @@ on the next page load.
 
 ## Opening the options page
 
-Click the **shield-icon badge** in the bottom-right corner of any page — it's a
-circular button with `[data-abs="open-options"]` that opens the options tab.
-Agents driving via the accessibility tree should target the button by its
-accessible name *"Open Agent Browser Shield options"* (the shield glyph is
-`aria-hidden`). This is the reliable path for browser agents that can't reach
-the Chrome toolbar.
+Humans: right-click the toolbar icon → *Options*, or go to `chrome://extensions`
+→ *Details* → *Extension options*. The popup (toolbar icon click) exposes the
+same per-rule toggles.
 
-Humans can also right-click the toolbar icon → *Options*, or go to
-`chrome://extensions` → *Details* → *Extension options*. The popup (toolbar icon
-click) exposes the same per-rule toggles.
+Builds may also enable a floating **shield-icon badge** in the bottom-right
+corner of every page — a circular button with `[data-abs="open-options"]` and
+accessible name *"Open Agent Browser Shield options"*. The badge is off by
+default and is enabled per-build via the `optionsButton: true` field in the
+defaults file (see the `agent-browser-shield-install` skill). When enabled,
+agents driving via the accessibility tree can target it by its accessible name.
 
 ## Applying a config by pasting JSON
 
@@ -39,11 +39,14 @@ to its default. To disable only one rule while preserving others, first click
 *Export JSON*, edit the downloaded file, then paste it back. Unknown keys and
 non-boolean values are rejected with an error.
 
-The same JSON shape can also be passed at build time via
-`bun run build --defaults <path>` or `EXTENSION_DEFAULTS_FILE=<path>`. That's
-the right tool for infrastructure deployments that need a custom default set in
-every fresh session without the agent flipping toggles each time — see the
-`agent-browser-shield-install` skill for the build-time workflow.
+A superset of this JSON shape can also be passed at build time via
+`bun run build --defaults <path>` or `EXTENSION_DEFAULTS_FILE=<path>`. The
+build-time file accepts the same rule-id keys plus a small set of reserved
+non-rule keys (currently `optionsButton`) for build-time toggles that aren't
+exposed in the Options page export. That's the right tool for infrastructure
+deployments that need a custom default set in every fresh session without the
+agent flipping toggles each time — see the `agent-browser-shield-install` skill
+for the build-time workflow.
 
 ## Rule IDs
 

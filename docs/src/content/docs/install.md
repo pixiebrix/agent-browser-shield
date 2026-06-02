@@ -61,7 +61,8 @@ each fresh session), pass a JSON override file to `bun run build`:
 cat > my-defaults.json <<'EOF'
 {
   "reviews-hide": false,
-  "ads-hide": false
+  "ads-hide": false,
+  "optionsButton": true
 }
 EOF
 
@@ -70,11 +71,21 @@ bun run build --defaults ./my-defaults.json
 EXTENSION_DEFAULTS_FILE=./my-defaults.json bun run build
 ```
 
-The override file is a flat `{ "<rule-id>": <boolean> }` map — the same shape
-the Options page exports and imports, so a JSON file exported from a tuned
-extension instance can be fed straight into the next build. The file may be
-partial; rules not listed keep the committed default. Unknown rule ids fail the
-build with a message naming them.
+The override file is a flat JSON object. Most keys are rule ids mapped to
+booleans — the same shape the Options page exports and imports, so a file
+exported from a tuned extension can be fed straight into the next build. A small
+set of reserved keys is also accepted for non-rule build-time toggles:
+
+- `optionsButton` (boolean, default **off**) — show the floating shield button
+  in the bottom-right corner of every page that opens this extension's options
+  page. Off by default because on sparse pages (JSON viewers, error screens,
+  interstitials) it can dominate the accessibility tree and become a misleading
+  target for browser-use agents. Enable for human-facing deployments where
+  on-page access to options is useful.
+
+The file may be partial; rules not listed keep the committed default. Unknown
+keys (neither a registered rule id nor a reserved key) and non-boolean values
+fail the build with a message naming them.
 
 Build-time overrides only affect **fresh** `chrome.storage` — users who already
 toggled rules in the Options UI keep their preferences. The typical target is

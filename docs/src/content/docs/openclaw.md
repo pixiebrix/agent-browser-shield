@@ -193,10 +193,11 @@ up on the first page navigation.
 
 On the first non-trivial page load, look for:
 
-- A circular shield-icon badge in the bottom-right corner (a11y name *"Open
-  Agent Browser Shield options"*).
 - `[data-abs-rule="<rule-id>"]` attributes in the DOM.
 - Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive data.
+- If the build enables the on-page options button (off by default), a circular
+  shield-icon badge in the bottom-right corner (a11y name *"Open Agent Browser
+  Shield options"*).
 
 If none of those markers appear, the extension is not attached:
 

@@ -25,21 +25,59 @@ describe("loadDefaultOverrides", () => {
     return file;
   }
 
-  it("returns a partial map for a valid file", () => {
+  it("returns rule overrides for a valid file", () => {
     const file = writeFile(
       "ok.json",
       JSON.stringify({ "pii-mask": true, "reviews-hide": false }),
     );
     expect(
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toEqual({ "pii-mask": true, "reviews-hide": false });
+    ).toEqual({
+      rules: { "pii-mask": true, "reviews-hide": false },
+    });
   });
 
   it("accepts an empty object", () => {
     const file = writeFile("empty.json", "{}");
     expect(
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toEqual({});
+    ).toEqual({ rules: {} });
+  });
+
+  it("extracts the optionsButton reserved key alongside rules", () => {
+    const file = writeFile(
+      "with-options-button.json",
+      JSON.stringify({ "pii-mask": true, optionsButton: false }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: { "pii-mask": true },
+      optionsButton: false,
+    });
+  });
+
+  it("accepts optionsButton on its own", () => {
+    const file = writeFile(
+      "only-options-button.json",
+      JSON.stringify({ optionsButton: true }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: {},
+      optionsButton: true,
+    });
+  });
+
+  it("rejects a non-boolean optionsButton value", () => {
+    const file = writeFile(
+      "bad-options-button.json",
+      JSON.stringify({ optionsButton: "yes" }),
+    );
+    expect(() =>
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toThrow(/non-boolean values for: optionsButton/);
   });
 
   it("throws when the file does not exist", () => {
@@ -65,14 +103,14 @@ describe("loadDefaultOverrides", () => {
     ).toThrow(/must be a JSON object/);
   });
 
-  it("rejects unknown rule ids", () => {
+  it("rejects unknown keys", () => {
     const file = writeFile(
       "unknown.json",
       JSON.stringify({ "pii-mask": true, "bogus-rule": false }),
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/unknown rule ids: bogus-rule/);
+    ).toThrow(/unknown keys: bogus-rule/);
   });
 
   it("rejects non-boolean values", () => {
@@ -92,6 +130,6 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/unknown rule ids: bogus-rule.*non-boolean values for: pii-mask/);
+    ).toThrow(/unknown keys: bogus-rule.*non-boolean values for: pii-mask/);
   });
 });

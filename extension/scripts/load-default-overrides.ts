@@ -1,16 +1,18 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Loads and validates a build-time rule-defaults override file. Consumed by
+// Loads and validates a build-time defaults override file. Consumed by
 // build.ts when the operator passes `--defaults <path>` or
-// `EXTENSION_DEFAULTS_FILE=<path>`. The file shape matches the JSON the
-// in-extension Options page exports/imports — flat
-// `{ "<rule-id>": <boolean>, ... }` — so the same file works in both
-// places.
+// `EXTENSION_DEFAULTS_FILE=<path>`.
 //
-// Validation is strict: unknown rule ids and non-boolean values fail the
-// build. Infra operators want loud failures, not silent drift if a rule was
-// renamed.
+// The file is a flat JSON object. Most keys are rule ids mapped to booleans —
+// the same shape the in-extension Options page exports/imports. A small set
+// of reserved keys is also accepted for non-rule build-time toggles (e.g.
+// `optionsButton`, which controls the floating on-page options button).
+//
+// Validation is strict: unknown keys (neither a registered rule id nor a
+// reserved key) and non-boolean values fail the build. Infra operators want
+// loud failures, not silent drift if a rule was renamed.
 
 import { readFileSync } from "node:fs";
 
@@ -19,9 +21,19 @@ export interface LoadOverridesOptions {
   knownRuleIds: readonly string[];
 }
 
+export interface DefaultOverrides {
+  rules: Record<string, boolean>;
+  optionsButton?: boolean;
+}
+
+// Reserved top-level keys are not rule ids; the loader maps each one to a
+// typed field on `DefaultOverrides`. Add new build-time toggles here as they
+// appear.
+const RESERVED_KEYS = new Set<string>(["optionsButton"]);
+
 export function loadDefaultOverrides(
   options: LoadOverridesOptions,
-): Record<string, boolean> {
+): DefaultOverrides {
   const { path, knownRuleIds } = options;
 
   let raw: string;
@@ -46,18 +58,29 @@ export function loadDefaultOverrides(
 
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error(
-      `Defaults file ${path} must be a JSON object mapping rule ids to booleans.`,
+      `Defaults file ${path} must be a JSON object mapping rule ids (or reserved keys) to booleans.`,
     );
   }
 
   const known = new Set<string>(knownRuleIds);
   const unknownIds: string[] = [];
   const nonBooleanIds: string[] = [];
-  const result: Record<string, boolean> = {};
+  const rules: Record<string, boolean> = {};
+  const result: DefaultOverrides = { rules };
 
   for (const [key, value] of Object.entries(
     parsed as Record<string, unknown>,
   )) {
+    if (RESERVED_KEYS.has(key)) {
+      if (typeof value !== "boolean") {
+        nonBooleanIds.push(key);
+        continue;
+      }
+      if (key === "optionsButton") {
+        result.optionsButton = value;
+      }
+      continue;
+    }
     if (!known.has(key)) {
       unknownIds.push(key);
       continue;
@@ -66,12 +89,12 @@ export function loadDefaultOverrides(
       nonBooleanIds.push(key);
       continue;
     }
-    result[key] = value;
+    rules[key] = value;
   }
 
   const issues: string[] = [];
   if (unknownIds.length > 0) {
-    issues.push(`unknown rule ids: ${unknownIds.join(", ")}`);
+    issues.push(`unknown keys: ${unknownIds.join(", ")}`);
   }
   if (nonBooleanIds.length > 0) {
     issues.push(`non-boolean values for: ${nonBooleanIds.join(", ")}`);
