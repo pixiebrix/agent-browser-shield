@@ -40,12 +40,13 @@ If the user already has a run in hand and just wants the *why*, hand off to
   "across models", scenarios for additional model pairs need to be added there
   first — don't guess names, ask the user or read the file.
 - The task id exists in `benchmark/tasks.csv` (or the BU Bench file).
-
-If `--llm-proxy-url` will be passed: `scripts/llm_proxy.py` must be running with
-a public tunnel (`cloudflared tunnel --url http://127.0.0.1:8787`) and
-`OPENAI_API_KEY` in that proxy's env. The proxy is OpenAI-only today — see
-`benchmark/README.md` "Capturing the LLM messages (proxy)". The runner appends
-`/v1` to the tunnel URL automatically; the user passes the bare root.
+- `scripts/llm_proxy.py` is running with a public tunnel
+  (`cloudflared tunnel --url http://127.0.0.1:8787`) and `OPENAI_API_KEY` set in
+  the proxy's env. The proxy is OpenAI-only today — see `benchmark/README.md`
+  "Capturing the LLM messages (proxy)". The runner appends `/v1` to the tunnel
+  URL automatically; pass the bare tunnel root to `--llm-proxy-url`. If the
+  proxy is not running, stop and ask the user to start it before continuing —
+  do not run a comparison without it (see §1 for why).
 
 ## 1. Run the focused comparison
 
@@ -57,20 +58,31 @@ uv run scripts/compare_scenarios.py \
     --scenario <baseline_id> \
     --scenario <guarded_id> \
     --task <task_id> \
-    -n 3
+    -n 3 \
+    --llm-proxy-url <tunnel-root>
 ```
 
-Add `--llm-proxy-url <tunnel-root>` if you want to inspect the exact LLM
-messages later (and you have the proxy running). For research, the proxy log is
-rarely needed — the trace bundles carry the page-state delta which is where rule
-effects live.
+`--llm-proxy-url` is required for autoresearch, not optional. Stagehand stubs
+intermediate `ariaTree` tool returns to a 48-byte placeholder ("ARIA tree
+extracted for context of page elements") and only embeds the *final* page's
+full a11y tree into `messages.json`. Without the proxy, you cannot see what the
+agent saw on intermediate pages — which is usually where the rule fingerprint
+that derailed it lives. The proxy captures the actual request bodies the
+runner ships to OpenAI, including the full tree at every turn. If the user
+declines to run the proxy, say so and proceed with `steps.json`/`messages.json`
+alone, but flag that intermediate-page conclusions will be speculative.
 
 The script writes:
 
 - `output/results/<run_id>/cost_diff.md` — aggregate + per-rep token/cost/step
   deltas, paired step-by-step a11y-byte deltas. Read this first.
 - `output/results/<run_id>/traces/<scenario>__<task>__r<n>/{summary,steps,messages}.json`
-  — per-rep structured traces.
+  — per-rep structured traces. `messages.json` only shows the final-page
+  tree at full size; everything earlier is stubbed.
+- `output/llm-proxy/proxy_<UTC-timestamp>.jsonl` — one JSON record per LLM
+  call with the full request body (system prompt, history, current
+  a11y-tree-bearing user message) and response. This is the authoritative
+  per-turn view; cross-reference by timestamp with `steps.json`.
 - `output/reports/<run_id>__<task>.html` — side-by-side HTML diff (for humans).
 
 ## 2. Read the digest
@@ -96,35 +108,63 @@ Classify the outcome:
 
 ## 3. Find the rule fingerprint
 
-Open the article-page (or task-target-page) `ariaTree` step on each side and
-diff the trees with **node IDs normalized** (raw IDs like `[0-7195]` shift
+Open the proxy log and diff the a11y trees at the turn where the two scenarios
+*first diverged* in step type or target — that's where the rule changed the
+agent's mind. Diff with **node IDs normalized** (raw IDs like `[0-7195]` shift
 between captures even when content is identical — without normalization the diff
 is mostly noise).
 
 ```python
 import json, re, difflib
-b = json.load(open("output/results/<run_id>/traces/<baseline>__<task>__r1/steps.json"))
-g = json.load(open("output/results/<run_id>/traces/<guarded>__<task>__r1/steps.json"))
-bt = next(s for s in b if s["type"]=="ariaTree" and s["tool_result"]["text_len"] > 1000)
-gt = next(s for s in g if s["type"]=="ariaTree" and s["tool_result"]["text_len"] > 1000)
+
+# Stagehand sends the current a11y tree as the latest user-role message
+# in the messages array; pluck the user-role text from each proxy record.
+def turns(log_path, session_id=None):
+    out = []
+    with open(log_path) as f:
+        for line in f:
+            r = json.loads(line)
+            req = r.get("request_body") or {}
+            msgs = req.get("messages") or []
+            # Last user message carries the current ariaTree
+            for m in reversed(msgs):
+                if m.get("role") == "user":
+                    c = m.get("content")
+                    text = c if isinstance(c, str) else " ".join(
+                        p.get("text","") for p in c if isinstance(p, dict))
+                    out.append((r.get("timestamp"), text))
+                    break
+    return out
+
+baseline = turns("output/llm-proxy/proxy_<ts>.jsonl")  # filter to baseline session if multi
+guarded  = turns("output/llm-proxy/proxy_<ts>.jsonl")  # filter to guarded session
+
+# Pick the turn at the divergence point (usually 1-3 turns after both
+# scenarios agree on the same opening act/goto)
+bt, gt = baseline[N][1], guarded[N][1]
 norm = re.compile(r"\[\d+-\d+\]")
 strip = lambda t: [norm.sub("[ID]", l) for l in t.splitlines()]
-diff = list(difflib.unified_diff(strip(bt["tool_result"]["text"]),
-                                  strip(gt["tool_result"]["text"]),
-                                  n=0, lineterm=""))
+diff = list(difflib.unified_diff(strip(bt), strip(gt), n=0, lineterm=""))
 for l in diff:
-    if l[0] in "+-" and not l.startswith(("+++", "---")):
+    if l and l[0] in "+-" and not l.startswith(("+++", "---")):
         print(l[:160])
 ```
+
+If the proxy multiplexed multiple parallel sessions into one log (the runner's
+default concurrency is `len(scenarios) × reps`), filter records by the
+session-correlation field the proxy writes — check the first record's keys, or
+split logs per run by stopping/starting the proxy between scenarios.
 
 The `-` lines are what the extension *stripped* from the page; the `+` lines are
 what it *added* (placeholders like `[footer hidden — click to reveal]`, helper
 notes like `abs URL helper`, marker buttons). Those together are the guard's
-fingerprint on this task.
+fingerprint at the divergence turn.
 
-Cross-check with reasoning: read the post-`ariaTree` step's `reasoning` field on
-the guarded side. Did the agent act on a hint the extension injected? Did it get
-blocked by a placeholder it couldn't interpret?
+Cross-check with the agent's next move: the next assistant-role message in the
+proxy log shows the tool call the agent issued *given* that tree. Did it act on
+a hint the extension injected? Did it get blocked by a placeholder it couldn't
+interpret? Did stripped content leave the next-best clickable target looking
+artificially attractive?
 
 ## 4. Propose changes
 
