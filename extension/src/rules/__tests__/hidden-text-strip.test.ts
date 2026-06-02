@@ -313,6 +313,25 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).toBeNull();
   });
 
+  // Tailwind v4 (and any modern stylesheet using CSS Color Level 4)
+  // compiles backgrounds to `oklch()` / `lab()` / `color()`, which browsers
+  // expose in computed style unnormalized. The walker historically treated
+  // those as transparent and kept climbing, so a `bg-orange-500` button
+  // with white text inside a white card looked like white-on-white and got
+  // stripped. Bail when we hit a background we can't parse rather than
+  // falling through to a distant white ancestor.
+  it("preserves white text on an oklch background nested in a white card", () => {
+    document.body.innerHTML = `
+      <aside style="background-color: rgb(255, 255, 255)">
+        <a id="buy" href="/checkout"
+           style="background-color: oklch(0.705 0.213 47.604); color: rgb(255, 255, 255)">Buy Now</a>
+      </aside>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#buy")).not.toBeNull();
+  });
+
   it("preserves text with normal contrast against its background", () => {
     document.body.setAttribute("style", "background-color: rgb(255, 255, 255)");
     document.body.innerHTML = `
