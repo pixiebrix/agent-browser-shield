@@ -11,14 +11,19 @@
 #     "uvicorn>=0.27.0",
 # ]
 # ///
-"""OpenRouter logging proxy (OpenAI-compatible wire format).
+"""OpenAI logging proxy.
 
-Forwards POST /v1/* to https://openrouter.ai/api/v1/* using
-`OPENROUTER_API_KEY`, logging each request/response pair to a JSONL file.
-The point is to capture the exact messages Browserbase ships to the model —
-system prompt, tool definitions, accumulated history, and the rendered
-accessibility tree per step — so you can diff what guarded vs. baseline
-runs send.
+Forwards `/v1/*` to https://api.openai.com/v1/* using `OPENAI_API_KEY`,
+logging each request/response pair to a JSONL file. The point is to
+capture the exact messages Browserbase ships to the model — system prompt,
+tool definitions, accumulated history, and the rendered accessibility
+tree per step — so you can diff what guarded vs. baseline runs send.
+
+OpenAI is the only fully-supported upstream today. OpenRouter accepts most
+chat-completions traffic but its `/v1/responses` schema rejects the
+`reasoning` items Stagehand includes across multi-turn agent runs, so
+multi-step tasks 400 after the first turn — not worth the multi-provider
+routing.
 
 Browserbase's backend (not your laptop) is what calls the LLM, so the proxy
 must be reachable from the public internet. Pair this with `cloudflared
@@ -57,7 +62,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOG_ROOT = REPO_ROOT / "output" / "llm-proxy"
-OPENROUTER_BASE = "https://openrouter.ai/api"
+OPENAI_BASE = "https://api.openai.com"
 
 # Headers that must NOT be forwarded — either hop-by-hop, or rewritten below.
 _STRIP_REQUEST_HEADERS = {
@@ -97,8 +102,8 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--upstream",
-        default=OPENROUTER_BASE,
-        help=f"Override upstream base URL (default: {OPENROUTER_BASE}).",
+        default=OPENAI_BASE,
+        help=f"Override upstream base URL (default: {OPENAI_BASE}).",
     )
     return parser.parse_args()
 
@@ -116,14 +121,13 @@ def _kept_response_headers(headers: httpx.Headers) -> dict[str, str]:
     return {k: v for k, v in headers.items() if k.lower() not in _STRIP_RESPONSE_HEADERS}
 
 
-def _prefix_openai_model(body: bytes) -> bytes:
-    """Rewrite `{"model": "gpt-5-mini", ...}` → `{"model": "openai/gpt-5-mini", ...}`.
+def _strip_openai_prefix(body: bytes) -> bytes:
+    """Rewrite `{"model": "openai/gpt-5-mini", ...}` → `{"model": "gpt-5-mini", ...}`.
 
-    Stagehand's `provider: openai` config validates model names against
-    OpenAI's catalog, so we strip the `openai/` prefix on the way out of
-    benchmark_run.py. OpenRouter routes by provider-prefixed slug, so we add
-    it back here. Bodies that already carry a prefixed name, or that aren't
-    JSON, pass through unchanged.
+    Stagehand's ModelConfigParam requires `provider/model` slugs, so the
+    runner sends `openai/gpt-5-mini`. OpenAI's API expects bare names, so
+    we strip the prefix before forwarding. Bodies without the prefix, or
+    that aren't JSON, pass through unchanged.
     """
     if not body:
         return body
@@ -134,9 +138,9 @@ def _prefix_openai_model(body: bytes) -> bytes:
     if not isinstance(payload, dict):
         return body
     model = payload.get("model")
-    if not isinstance(model, str) or "/" in model:
+    if not isinstance(model, str) or not model.startswith("openai/"):
         return body
-    payload["model"] = f"openai/{model}"
+    payload["model"] = model.split("/", 1)[1]
     return json.dumps(payload, ensure_ascii=False).encode("utf-8")
 
 
@@ -166,21 +170,24 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
     async def health() -> JSONResponse:
         return JSONResponse({"ok": True, "upstream": upstream_base, "log": str(log_path)})
 
-    @app.api_route("/v1/{path:path}", methods=["POST"])
+    _ALL_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+
+    @app.api_route("/v1/{path:path}", methods=_ALL_METHODS)
     async def passthrough(path: str, request: Request) -> Response:
         body = await request.body()
-        # Stagehand sends bare OpenAI model names (gpt-5-mini); OpenRouter
-        # needs the provider prefix as its routing key. Re-prefix any
-        # unprefixed model name in the JSON body before forwarding.
-        body = _prefix_openai_model(body)
+        # Stagehand sends OpenAI-prefixed slugs (openai/gpt-5-mini); OpenAI's
+        # API expects bare names. Strip the prefix from POST bodies before
+        # forwarding.
+        if request.method == "POST":
+            body = _strip_openai_prefix(body)
         forwarded_headers = _kept_request_headers(dict(request.headers))
         forwarded_headers["authorization"] = f"Bearer {upstream_key}"
 
         started_at = dt.datetime.now(dt.UTC).isoformat()
         upstream_req = client.build_request(
-            "POST",
+            request.method,
             f"/v1/{path}",
-            content=body,
+            content=body if request.method == "POST" else None,
             headers=forwarded_headers,
             params=dict(request.query_params),
         )
@@ -201,6 +208,7 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
                     "started_at": started_at,
                     "ended_at": ended_at,
                     "endpoint": f"/v1/{path}",
+                    "method": request.method,
                     "query": dict(request.query_params),
                     "status": upstream_resp.status_code,
                     "request_headers": forwarded_headers,
@@ -232,6 +240,7 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
                         "started_at": started_at,
                         "ended_at": ended_at,
                         "endpoint": f"/v1/{path}",
+                        "method": request.method,
                         "query": dict(request.query_params),
                         "status": upstream_resp.status_code,
                         "stream": True,
@@ -249,15 +258,36 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
             media_type=upstream_resp.headers.get("content-type"),
         )
 
+    @app.api_route("/{full_path:path}", methods=_ALL_METHODS)
+    async def catch_all(full_path: str, request: Request) -> JSONResponse:
+        """Log any request the /v1/* passthrough doesn't claim — useful for
+        diagnosing client misroutes (probing `/responses` without `/v1` etc.)
+        instead of getting a silent FastAPI 404."""
+        _write_log(
+            {
+                "ts": dt.datetime.now(dt.UTC).isoformat(),
+                "unhandled": True,
+                "method": request.method,
+                "path": f"/{full_path}",
+                "query": dict(request.query_params),
+                "headers": dict(request.headers),
+                "body": _try_parse_json(await request.body()),
+            }
+        )
+        return JSONResponse(
+            {"error": f"proxy only handles /v1/* (got {request.method} /{full_path})"},
+            status_code=404,
+        )
+
     return app
 
 
 def main() -> int:
     args = _parse_args()
     load_dotenv()
-    upstream_key = os.environ.get("OPENROUTER_API_KEY")
+    upstream_key = os.environ.get("OPENAI_API_KEY")
     if not upstream_key:
-        sys.exit("OPENROUTER_API_KEY is required (set in env or .env)")
+        sys.exit("OPENAI_API_KEY is required (set in env or .env)")
 
     log_path = args.out or _default_log_path()
     print(f"upstream: {args.upstream}")

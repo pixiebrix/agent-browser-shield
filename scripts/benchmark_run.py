@@ -181,7 +181,7 @@ def parse_args() -> argparse.Namespace:
         help="Route Stagehand's agent LLM calls through this OpenAI-compatible "
         "endpoint (e.g. a cloudflared tunnel exposing scripts/llm_proxy.py) so "
         "the proxy can log the full messages array per step. Requires "
-        "OPENROUTER_API_KEY in env (forwarded as the agent's api_key). Only "
+        "OPENAI_API_KEY in env (forwarded as the agent's api_key). Only "
         "the agent calls are proxied — judge/extractor continue calling "
         "OpenAI directly with OPENAI_API_KEY.",
     )
@@ -473,34 +473,41 @@ class JsonlSink:
                 os.fsync(fh.fileno())
 
 
-def _agent_model_config(model: str, proxy_url: str | None, openrouter_api_key: str | None) -> Any:
+def _agent_model_config(model: str, proxy_url: str | None, openai_api_key: str | None) -> Any:
     """Build the `agent_config.model` value.
 
     When no proxy is configured, the model is passed as a string and Stagehand
     routes through the Browserbase Model Gateway (or `model_api_key` if set).
     When a proxy URL is configured, the model is a structured object whose
     `base_url` points at the proxy and whose `api_key` is the developer's
-    OpenRouter key — Browserbase calls the proxy in place of OpenRouter.
+    OpenAI key — Browserbase calls the proxy in place of OpenAI.
 
-    The `openai/` provider prefix is stripped before handing the name to
-    Stagehand: with `provider: openai`, Stagehand validates the model against
-    OpenAI's catalog and rejects the prefixed form client-side ("Failed to
-    execute task: Not Found"). The proxy re-prefixes the bare name when
-    forwarding to OpenRouter, which needs the prefix as its routing key.
+    The model name keeps its `openai/` prefix: Stagehand's ModelConfigParam
+    rejects bare names with UnsupportedModelError 422. The proxy strips the
+    prefix before forwarding to the real OpenAI API, which expects bare
+    names.
+
+    The proxy URL is suffixed with `/v1` before handing it to Stagehand:
+    Stagehand uses the OpenAI Responses API and calls `<baseURL>/responses`
+    (the SDK's convention is that `base_url` already includes the API
+    version), so without `/v1` the request lands at `/responses` and the
+    proxy 404s. Users pass the bare tunnel root.
+
+    `provider` is omitted because passing both `provider` and `baseURL`
+    makes Stagehand validate against the built-in provider's catalog
+    instead of routing through the custom endpoint.
     """
     if not proxy_url:
         return model
-    if not openrouter_api_key:
+    if not openai_api_key:
         sys.exit(
-            "--llm-proxy-url requires OPENROUTER_API_KEY in env (forwarded to the "
+            "--llm-proxy-url requires OPENAI_API_KEY in env (forwarded to the "
             "proxy as the agent's api_key)"
         )
-    bare = model.split("/", 1)[1] if model.startswith("openai/") else model
     return {
-        "provider": "openai",
-        "modelName": bare,
-        "baseURL": proxy_url.rstrip("/"),
-        "apiKey": openrouter_api_key,
+        "modelName": model,
+        "baseURL": proxy_url.rstrip("/") + "/v1",
+        "apiKey": openai_api_key,
     }
 
 
@@ -517,7 +524,7 @@ def run_one(
     results: JsonlSink,
     judge_model: str | None,
     llm_proxy_url: str | None = None,
-    openrouter_api_key: str | None = None,
+    openai_api_key: str | None = None,
 ) -> dict[str, Any]:
     """Run a single (scenario, task, repetition). Always writes one row to
     results.jsonl, even on failure."""
@@ -597,7 +604,7 @@ def run_one(
             for event in stagehand.sessions.execute(
                 id=session.id,
                 agent_config={
-                    "model": _agent_model_config(scenario.model, llm_proxy_url, openrouter_api_key)
+                    "model": _agent_model_config(scenario.model, llm_proxy_url, openai_api_key)
                 },
                 execute_options={
                     "instruction": task.task,
@@ -855,9 +862,9 @@ def main() -> int:
     if model_api_key is None:
         LOG.info("MODEL_API_KEY not set; routing agent via Browserbase Model Gateway")
 
-    openrouter_api_key = optional_env("OPENROUTER_API_KEY")
-    if args.llm_proxy_url and not openrouter_api_key:
-        sys.exit("--llm-proxy-url requires OPENROUTER_API_KEY in env")
+    openai_api_key = optional_env("OPENAI_API_KEY")
+    if args.llm_proxy_url and not openai_api_key:
+        sys.exit("--llm-proxy-url requires OPENAI_API_KEY in env")
     if args.llm_proxy_url:
         LOG.info("agent LLM calls routed through proxy: %s", args.llm_proxy_url)
 
@@ -892,7 +899,7 @@ def main() -> int:
                 results=results,
                 judge_model=judge_model,
                 llm_proxy_url=args.llm_proxy_url,
-                openrouter_api_key=openrouter_api_key,
+                openai_api_key=openai_api_key,
             ): unit
             for unit in work_units
         }
