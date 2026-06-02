@@ -1485,6 +1485,7 @@ Idea boards (signed-in only): /myideaboards (out of scope without auth).
   {
     // from data/sites/weather-gov.yaml
     patterns: [
+      new URLPattern({ hostname: "www.weather.gov" }),
       new URLPattern({ hostname: "forecast.weather.gov" }),
     ],
     recipe: `abs URL helper for forecast.weather.gov — prefer URL navigation over typing.
