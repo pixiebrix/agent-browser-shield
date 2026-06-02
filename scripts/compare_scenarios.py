@@ -102,6 +102,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--pricing", type=Path, default=DEFAULT_PRICING)
     p.add_argument("--run-id", default=None, help="Override auto-minted run id.")
     p.add_argument(
+        "--no-rebuild-extension",
+        action="store_true",
+        help="Skip the pre-run `bun run build && bun run package`. By default "
+        "the script rebuilds output/extension.zip so source edits (rule code, "
+        "site YAMLs, defaults JSON) take effect this run. Pass this when the "
+        "zip path is pinned to a release artifact you don't want clobbered.",
+    )
+    p.add_argument(
         "--open",
         action="store_true",
         help="Open the HTML side-by-side diff in the default browser.",
@@ -119,6 +127,21 @@ def parse_args() -> argparse.Namespace:
 def mint_run_id() -> str:
     ts = dt.datetime.now(dt.UTC).strftime("%Y%m%d_%H%M%S")
     return f"cmp_{ts}_{secrets.token_hex(2)}"
+
+
+def rebuild_extension() -> None:
+    # Codegen + bundle + zip together take <2s on a clean tree; cheap enough
+    # to do every run so source edits in rules/, data/sites/, or
+    # data/rule-defaults.json can't silently miss this comparison the way
+    # they would with a stale zip on disk.
+    ext_dir = REPO_ROOT / "extension"
+    print("rebuilding extension (bun run build && bun run package)...")
+    rc = subprocess.call(["bun", "run", "build"], cwd=ext_dir)
+    if rc != 0:
+        sys.exit(f"`bun run build` exited {rc}")
+    rc = subprocess.call(["bun", "run", "package"], cwd=ext_dir)
+    if rc != 0:
+        sys.exit(f"`bun run package` exited {rc}")
 
 
 def run_benchmark(args: argparse.Namespace, run_id: str) -> None:
@@ -626,6 +649,16 @@ def main() -> int:
     if args.llm_proxy_url:
         print(f"llm proxy: {args.llm_proxy_url}")
     print()
+
+    if not args.no_rebuild_extension and args.extension_zip == DEFAULT_EXTENSION_ZIP:
+        rebuild_extension()
+        print()
+    elif args.extension_zip != DEFAULT_EXTENSION_ZIP and not args.no_rebuild_extension:
+        print(
+            f"skipping rebuild — --extension-zip overridden to "
+            f"{args.extension_zip.relative_to(REPO_ROOT) if args.extension_zip.is_relative_to(REPO_ROOT) else args.extension_zip}"
+        )
+        print()
 
     run_benchmark(args, run_id)
 
