@@ -49,7 +49,7 @@ Chrome for Testing downloads (~170 MB) — let it complete before continuing.
 
 ### 1. Branch off main
 
-Per CLAUDE.md GitHub flow: one branch per host (or one bundled branch if you're
+Per AGENTS.md GitHub flow: one branch per host (or one bundled branch if you're
 sweeping many hosts at once).
 
 ```bash
@@ -175,7 +175,7 @@ bun run build-site-data
 ```
 
 The script regenerates `extension/src/rules/site-data.generated.ts`. Per
-CLAUDE.md, the generated file is committed alongside the YAML.
+AGENTS.md, the generated file is committed alongside the YAML.
 
 ### 5. Commit and open the PR
 
