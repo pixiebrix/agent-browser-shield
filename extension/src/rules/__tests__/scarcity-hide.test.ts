@@ -1,4 +1,5 @@
-import { PLACEHOLDER_CLASS, RULE_ATTR } from "../../lib/placeholder";
+import { RULE_ATTR } from "../../lib/dom-markers";
+import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { matchesScarcityPattern, scarcityHideRule } from "../scarcity-hide";
 
 const MUTATION_THROTTLE_MS = 250;

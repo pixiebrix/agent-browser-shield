@@ -1,4 +1,5 @@
-import { HIDDEN_ATTR, PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { HIDDEN_ATTR } from "../../lib/dom-markers";
+import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { newsletterModalHideRule } from "../newsletter-modal-hide";
 
 const RULE_ID = "newsletter-modal-hide";

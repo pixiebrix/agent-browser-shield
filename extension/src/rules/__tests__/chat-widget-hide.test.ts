@@ -1,4 +1,5 @@
-import { HIDDEN_ATTR, PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { HIDDEN_ATTR } from "../../lib/dom-markers";
+import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { chatWidgetHideRule } from "../chat-widget-hide";
 
 const RULE_ID = "chat-widget-hide";

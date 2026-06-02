@@ -2,7 +2,8 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://www.amazon.com/dp/B0CN6JSMCW"}
  */
-import { PLACEHOLDER_CLASS, RULE_ATTR } from "../../lib/placeholder";
+import { RULE_ATTR } from "../../lib/dom-markers";
+import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { footerHideRule, selectorsFor } from "../footer-hide";
 
 const MUTATION_THROTTLE_MS = 250;

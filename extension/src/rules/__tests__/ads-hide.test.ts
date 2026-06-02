@@ -1,4 +1,5 @@
-import { HIDDEN_ATTR, PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { HIDDEN_ATTR } from "../../lib/dom-markers";
+import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { adsHideRule } from "../ads-hide";
 
 const RULE_ID = "ads-hide";

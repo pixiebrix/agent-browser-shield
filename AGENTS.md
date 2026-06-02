@@ -73,6 +73,16 @@ the pattern used in `pii-mask`, `secrets-mask`, `scarcity-hide`,
 initial load — e.g., a one-shot landmark injection — and call that out in a
 comment.
 
+## DOM marker attributes
+
+Every `data-abs-*` attribute the engine or any rule writes onto the page is
+declared and exported from `extension/src/lib/dom-markers.ts` — the single
+canonical registry. Engine-level markers are named `<PURPOSE>_ATTR`; per-rule
+markers are `<RULE>_<PURPOSE>_ATTR`. Import the constant; do not inline the
+literal. An ESLint `no-restricted-syntax` rule (`eslint.config.js`) blocks raw
+`"data-abs-…"` string and template literals everywhere except the registry
+itself, so name collisions and convention drift surface at lint time.
+
 ## Rule defaults
 
 The initial enabled/disabled state for each rule lives in
