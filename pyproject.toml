@@ -33,3 +33,23 @@ exclude_dirs = [".venv", "output", "benchmark", "node_modules"]
 # (e.g. `sips`, `git`). These scripts are dev tooling, not user-facing
 # services; the argv lists are static and `shell=True` is never used.
 skips = ["B404", "B603", "B607"]
+
+[tool.pyright]
+include = ["scripts"]
+exclude = [".venv", "output", "benchmark", "node_modules", "extension", "demo-site", "docs"]
+pythonVersion = "3.12"
+# Standard mode is the current floor — the existing tree passes it without
+# changes, and it catches real correctness issues (None subscripting,
+# optional member access, unbound variables). Full strict on the ~7.6k-LOC
+# tree would fire ~800 errors (mostly missing generic args on dict/list in
+# data-shuffling helpers), so strict is opted into per-file via
+# `# pyright: strict` headers — enforced on new files by
+# `scripts/check_pyright_strict_on_new_files.py`. Tighten the global mode
+# here once the long tail of legacy helpers is annotated.
+typeCheckingMode = "standard"
+# PEP 723 inline-deps (`# /// script` headers) are not installed into a
+# shared venv, so pyright cannot resolve `import browserbase`, `import httpx`,
+# etc. Silencing the import categories preserves real type-checking on
+# our own code without trying to materialize 20+ ephemeral environments.
+reportMissingImports = "none"
+reportMissingModuleSource = "none"

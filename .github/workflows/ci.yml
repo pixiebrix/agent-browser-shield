@@ -163,12 +163,16 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   python:
-    name: Python (ruff + bandit)
+    name: Python (ruff + bandit + pyright)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          # Full history so the strict-on-new-files ratchet below can compute
+          # `origin/<base>...HEAD` — the default shallow checkout lacks the
+          # merge base on most PRs.
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v7
       - name: Set up Python
         run: uv python install 3.14
@@ -178,3 +182,17 @@ jobs:
         run: uvx ruff format --check scripts/
       - name: Bandit security scan
         run: uvx --from "bandit[toml]" bandit -c pyproject.toml -r scripts/
+      # Pyright config lives in pyproject.toml `[tool.pyright]`; standard mode
+      # with import resolution disabled (PEP 723 inline-deps aren't installed
+      # into a shared venv). Ratchet up via per-file `# pyright: strict`.
+      - name: Pyright type check
+        run: uvx pyright
+      # New-file ratchet: every newly-added Python file must opt in to
+      # `# pyright: strict`. Stops legacy debt in scripts/ from growing
+      # while we leave the global mode at standard. base_ref is passed via
+      # env so it isn't expanded inside the shell (zizmor template-injection).
+      - name: Pyright strict-on-new-files ratchet
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: uv run scripts/check_pyright_strict_on_new_files.py "origin/$BASE_REF"
