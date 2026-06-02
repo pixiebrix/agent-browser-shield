@@ -8,7 +8,7 @@ by an anti-agent / anti-scraping defense (Cloudflare, hCaptcha,
 Shape mirrors `_judge.py` so it composes the same way at call sites:
   - dataclass with `.to_record()` for results.jsonl serialization
   - one entrypoint per row (`call_block_detector`)
-  - vendor dispatch reused from `_judge._call_json_llm`
+  - vendor dispatch reused from `_judge_client.call_json_llm`
 
 The detector reads the *trajectory* (URLs visited + ariaTree text +
 reasoning) from the per-row events JSONL, since block signals live there
@@ -25,7 +25,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_traces
-from _judge import _call_json_llm
+from _judge_client import call_json_llm
 
 ALLOWED_DEFENSE_TYPES = {
     "cloudflare",
@@ -159,7 +159,7 @@ def call_block_detector(
     model: str, task: str, trajectory: str, final_answer: str | None
 ) -> BlockVerdict:
     user_prompt = build_block_user_prompt(task, trajectory, final_answer)
-    text = _call_json_llm(model, BLOCK_SYSTEM, user_prompt, max_tokens=4000)
+    text = call_json_llm(model, BLOCK_SYSTEM, user_prompt, max_tokens=4000)
     parsed = json.loads(text)
     blocked = bool(parsed.get("blocked"))
     defense_type = parsed.get("defense_type")

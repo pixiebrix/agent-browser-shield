@@ -53,11 +53,10 @@ import build_traces  # noqa: E402
 from _blockcheck import call_block_detector, summarize_trajectory  # noqa: E402
 from _judge import (  # noqa: E402
     DEFAULT_JUDGE_MODEL,
-    call_extractor,
-    call_judge,
     load_judge_defaults_from_scenarios,
     resolve_judge_model,
 )
+from _judge_client import call_extractor, call_judge  # noqa: E402
 from _stagehand import event_to_dict, extract_usage  # noqa: E402
 
 # ---------- Argument parsing ----------
