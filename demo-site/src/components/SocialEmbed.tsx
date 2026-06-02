@@ -6,7 +6,10 @@ interface SocialEmbedProps {
   title?: string;
 }
 
-export default function SocialEmbed({ videoId, title = "Video review" }: SocialEmbedProps) {
+export default function SocialEmbed({
+  videoId,
+  title = "Video review",
+}: SocialEmbedProps) {
   return (
     <div className="my-4 aspect-video w-full max-w-2xl overflow-hidden rounded border border-stone-200">
       <iframe

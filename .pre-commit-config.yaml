@@ -77,8 +77,11 @@ repos:
       - id: biome-check
         name: Biome check (format + lint)
         additional_dependencies: ["@biomejs/biome@2.4.15"]
-        files: ^extension/.*\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc)$
-        exclude: ^extension/dist/|\.generated\.(ts|tsx|js|jsx)$
+        # File scope here mirrors the `includes` in the root `biome.json`. Keep
+        # them in sync — Biome resolves its own scope from biome.json; the regex
+        # below is purely to skip invoking the hook on irrelevant changes.
+        files: ^(extension|demo-site)/.*\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc|css)$|^docs/.*\.(ts|tsx|json|jsonc)$
+        exclude: /(dist|node_modules|\.astro)/|\.generated\.(ts|tsx|js|jsx)$
 
   - repo: local
     hooks:

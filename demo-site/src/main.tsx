@@ -5,14 +5,16 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "./App.tsx";
-import Home from "./pages/Home.tsx";
-import ProductDetail from "./pages/ProductDetail.tsx";
 import Cart from "./pages/Cart.tsx";
 import Checkout from "./pages/Checkout.tsx";
+import Home from "./pages/Home.tsx";
+import ProductDetail from "./pages/ProductDetail.tsx";
 import "./index.css";
 
 const root = document.getElementById("root");
-if (!root) throw new Error("#root not found");
+if (!root) {
+  throw new Error("#root not found");
+}
 
 createRoot(root).render(
   <StrictMode>

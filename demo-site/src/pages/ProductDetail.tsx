@@ -1,23 +1,27 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import CountdownBadge from "../components/CountdownBadge";
+import ReviewSection from "../components/ReviewSection";
+import ScarcityBadge from "../components/ScarcityBadge";
+import SocialEmbed from "../components/SocialEmbed";
+import { INJECTIONS } from "../data/injection-fixtures";
 import { getProduct } from "../data/products";
 import { getReviews } from "../data/reviews";
-import { INJECTIONS } from "../data/injection-fixtures";
-import CountdownBadge from "../components/CountdownBadge";
-import ScarcityBadge from "../components/ScarcityBadge";
-import ReviewSection from "../components/ReviewSection";
-import SocialEmbed from "../components/SocialEmbed";
 
 // React strips JSX comment children at build time, so an `<!-- ... -->` literal
 // would never reach the DOM. We need real HTML comments here so html-comment-strip
 // has something to remove — dangerouslySetInnerHTML is the only way to ship them
-// through React.
+// through React. The "untrusted" content is a static literal from our own fixture
+// file, not user input.
 function HtmlCommentInjection() {
   return (
     <span
-      dangerouslySetInnerHTML={{ __html: INJECTIONS.PRODUCT_DETAIL_HTML_COMMENT }}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: demo fixture for the html-comment-strip rule; static content from injection-fixtures.ts, no user input
+      dangerouslySetInnerHTML={{
+        __html: INJECTIONS.PRODUCT_DETAIL_HTML_COMMENT,
+      }}
     />
   );
 }
@@ -39,7 +43,9 @@ export default function ProductDetail() {
   }
 
   const discountPct = product.listPrice
-    ? Math.round(((product.listPrice - product.price) / product.listPrice) * 100)
+    ? Math.round(
+        ((product.listPrice - product.price) / product.listPrice) * 100,
+      )
     : 0;
 
   return (
@@ -81,7 +87,9 @@ export default function ProductDetail() {
         </div>
 
         <div className="space-y-3">
-          <h1 className="text-2xl font-semibold text-slate-900">{product.title}</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            {product.title}
+          </h1>
           <div className="text-sm text-orange-700 hover:underline">
             Visit the {product.brand} Store
           </div>
@@ -101,11 +109,15 @@ export default function ProductDetail() {
                 -{discountPct}%
               </span>
             )}
-            <span className="text-3xl text-red-700">${product.price.toFixed(2)}</span>
+            <span className="text-3xl text-red-700">
+              ${product.price.toFixed(2)}
+            </span>
             {product.listPrice && (
               <span className="text-sm text-stone-500">
                 List Price:{" "}
-                <span className="line-through">${product.listPrice.toFixed(2)}</span>
+                <span className="line-through">
+                  ${product.listPrice.toFixed(2)}
+                </span>
               </span>
             )}
           </div>
@@ -114,7 +126,10 @@ export default function ProductDetail() {
 
           <div className="flex flex-wrap gap-2 pt-2">
             <ScarcityBadge text="Only 2 left in stock — order soon" />
-            <ScarcityBadge text="12 people are viewing this right now" tone="info" />
+            <ScarcityBadge
+              text="12 people are viewing this right now"
+              tone="info"
+            />
             <ScarcityBadge text="Selling fast" />
           </div>
 
@@ -145,7 +160,9 @@ export default function ProductDetail() {
       </article>
 
       <section aria-label="About this item">
-        <h2 className="mb-2 text-lg font-semibold text-slate-900">About this item</h2>
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          About this item
+        </h2>
         <div className="max-w-3xl space-y-2 text-sm text-stone-800">
           <p>
             {product.description}{" "}
@@ -176,11 +193,17 @@ export default function ProductDetail() {
       </section>
 
       <section aria-label="From the manufacturer">
-        <h2 className="mb-2 text-lg font-semibold text-slate-900">From the manufacturer</h2>
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          From the manufacturer
+        </h2>
         <p className="max-w-3xl text-sm text-stone-700">
-          Watch the launch video to see what makes the {product.title} different.
+          Watch the launch video to see what makes the {product.title}{" "}
+          different.
         </p>
-        <SocialEmbed videoId="dQw4w9WgXcQ" title={`${product.title} demo video`} />
+        <SocialEmbed
+          videoId="dQw4w9WgXcQ"
+          title={`${product.title} demo video`}
+        />
       </section>
 
       <ReviewSection

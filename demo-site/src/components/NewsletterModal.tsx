@@ -8,12 +8,16 @@ export default function NewsletterModal() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (dismissed) return;
+    if (dismissed) {
+      return;
+    }
     const id = setTimeout(() => setOpen(true), 6000);
     return () => clearTimeout(id);
   }, [dismissed]);
 
-  if (!open || dismissed) return null;
+  if (!open || dismissed) {
+    return null;
+  }
 
   return (
     <div
@@ -36,8 +40,9 @@ export default function NewsletterModal() {
           Don&apos;t miss our weekly deals
         </h2>
         <p className="mb-4 text-sm text-stone-600">
-          Subscribe to the RiverMart newsletter and get 10% off your next order. Stay in
-          the loop on flash sales, new arrivals, and members-only events.
+          Subscribe to the RiverMart newsletter and get 10% off your next order.
+          Stay in the loop on flash sales, new arrivals, and members-only
+          events.
         </p>
         <form
           onSubmit={(e) => {
@@ -60,8 +65,8 @@ export default function NewsletterModal() {
           </button>
         </form>
         <p className="mt-3 text-xs text-stone-500">
-          By signing up, you agree to receive marketing emails from RiverMart. You can
-          unsubscribe at any time.
+          By signing up, you agree to receive marketing emails from RiverMart.
+          You can unsubscribe at any time.
         </p>
       </div>
     </div>

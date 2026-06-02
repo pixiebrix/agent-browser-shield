@@ -68,7 +68,7 @@ export const products: Product[] = [
     rating: 4.7,
     ratingCount: 9214,
     description:
-      'Heirloom-quality 12-inch cast iron skillet. Pre-seasoned with organic flaxseed oil so it\'s ready to use out of the box. Improves with every meal.',
+      "Heirloom-quality 12-inch cast iron skillet. Pre-seasoned with organic flaxseed oil so it's ready to use out of the box. Improves with every meal.",
     bulletPoints: [
       "Heat-retaining solid iron construction",
       "Oven safe to 500°F",

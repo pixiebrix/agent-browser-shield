@@ -44,7 +44,8 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-slate-800 py-4 text-center text-xs text-stone-400">
-        © 2026 RiverMart Holdings, Inc. — Conditions of Use | Privacy Notice | Your Ads Privacy Choices
+        © 2026 RiverMart Holdings, Inc. — Conditions of Use | Privacy Notice |
+        Your Ads Privacy Choices
       </div>
     </footer>
   );
