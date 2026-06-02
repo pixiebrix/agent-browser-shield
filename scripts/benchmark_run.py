@@ -594,9 +594,7 @@ def run_one(
             for event in stagehand.sessions.execute(
                 id=session.id,
                 agent_config={
-                    "model": _agent_model_config(
-                        scenario.model, llm_proxy_url, openai_api_key
-                    )
+                    "model": _agent_model_config(scenario.model, llm_proxy_url, openai_api_key)
                 },
                 execute_options={
                     "instruction": task.task,

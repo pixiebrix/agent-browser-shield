@@ -55,6 +55,8 @@ DEFAULT_PRICING = REPO_ROOT / "benchmark" / "pricing.json"
 sys.path.insert(0, str(SCRIPTS_DIR))
 from build_traces import (  # noqa: E402
     build_all as build_traces_all,
+)
+from build_traces import (  # noqa: E402
     diff_html_filename,
     pair_steps_by_type,
     trace_dirname,
@@ -162,7 +164,7 @@ def fmt_int(n: Any) -> str:
     if n is None:
         return "—"
     try:
-        return f"{int(round(float(n))):,}"
+        return f"{round(float(n)):,}"
     except (TypeError, ValueError):
         return str(n)
 
@@ -206,7 +208,7 @@ def fmt_abs_delta(a: float | None, b: float | None, kind: str = "int") -> str:
         return "—"
     diff = b - a
     if kind == "int":
-        return f"{int(round(diff)):+,}"
+        return f"{round(diff):+,}"
     if kind == "money":
         return f"{diff:+.4f}"
     if kind == "secs":
@@ -381,9 +383,7 @@ def render_summary_table(sid_a: str, sid_b: str, sa: dict, sb: dict) -> str:
     return "\n".join(out)
 
 
-def render_per_rep_table(
-    sid_a: str, sid_b: str, rows_a: list[dict], rows_b: list[dict]
-) -> str:
+def render_per_rep_table(sid_a: str, sid_b: str, rows_a: list[dict], rows_b: list[dict]) -> str:
     reps = sorted({int(r.get("repetition") or 1) for r in rows_a + rows_b})
     by_a = {int(r.get("repetition") or 1): r for r in rows_a}
     by_b = {int(r.get("repetition") or 1): r for r in rows_b}
@@ -525,10 +525,14 @@ def render_cost_diff(
     out.append(f"# Scenario diff — `{task_id}`")
     out.append("")
     out.append(f"- run: `{run_id}`")
-    out.append(f"- scenario A: `{sid_a}` (extension: {scen_a.get('extension')}, "
-               f"model: `{scen_a.get('model')}`)")
-    out.append(f"- scenario B: `{sid_b}` (extension: {scen_b.get('extension')}, "
-               f"model: `{scen_b.get('model')}`)")
+    out.append(
+        f"- scenario A: `{sid_a}` (extension: {scen_a.get('extension')}, "
+        f"model: `{scen_a.get('model')}`)"
+    )
+    out.append(
+        f"- scenario B: `{sid_b}` (extension: {scen_b.get('extension')}, "
+        f"model: `{scen_b.get('model')}`)"
+    )
     out.append(f"- reps: {manifest.get('repetitions')}")
     out.append(f"- task: {task_def.get('task', '')}")
     out.append(f"- success criteria: {task_def.get('success_criteria', '')}")
@@ -566,7 +570,7 @@ def render_cost_diff(
     out.append("## Files to drill into")
     out.append("")
     out.append(f"- HTML side-by-side: `{rel(diff_html)}` (open in browser)")
-    out.append(f"- Trace bundles (per rep, both scenarios):")
+    out.append("- Trace bundles (per rep, both scenarios):")
     for rep in reps:
         for sid in (sid_a, sid_b):
             tdir = run_dir / "traces" / trace_dirname(sid, task_id, rep)

@@ -127,10 +127,10 @@ explain the divergence.
 When you're actively iterating on a guarded rule and want a tight
 edit-run-diagnose loop instead of re-running the full matrix, use
 `compare_scenarios.py`. It runs `benchmark_run.py` for exactly two scenarios ×
-one task × N reps, builds the trace bundles + HTML diff, and writes a
-Markdown digest (`output/results/<run_id>/cost_diff.md`) that highlights what
-drove the cost/token delta — step count, a11y-tree byte size, paired step
-divergences — so a coding agent can read it directly.
+one task × N reps, builds the trace bundles + HTML diff, and writes a Markdown
+digest (`output/results/<run_id>/cost_diff.md`) that highlights what drove the
+cost/token delta — step count, a11y-tree byte size, paired step divergences — so
+a coding agent can read it directly.
 
 ```bash
 uv run scripts/compare_scenarios.py \
@@ -140,27 +140,27 @@ uv run scripts/compare_scenarios.py \
     -n 3 --open
 ```
 
-Pass `--llm-proxy-url <tunnel>` to also capture the exact LLM messages per
-call (see below); the digest will point at the proxy log when it's enabled.
+Pass `--llm-proxy-url <tunnel>` to also capture the exact LLM messages per call
+(see below); the digest will point at the proxy log when it's enabled.
 
 ## Capturing the LLM messages (proxy)
 
-By default Stagehand's event stream redacts the rendered a11y tree and
-system prompt — only token counts and the model's final action survive in
+By default Stagehand's event stream redacts the rendered a11y tree and system
+prompt — only token counts and the model's final action survive in
 `events/*.jsonl`. When you need to see the *exact* messages array Browserbase
 shipped to the model (system prompt, tool defs, accumulated history, the
 rendered a11y tree per step), route the agent calls through
 `scripts/llm_proxy.py`.
 
-`scripts/llm_proxy.py` is a small OpenAI-compatible FastAPI proxy that
-forwards `POST /v1/*` to OpenAI and logs each request/response pair to a
-JSONL file. Browserbase's backend (not your laptop) is what calls the LLM,
-so the proxy has to be reachable from the public internet — pair it with
-`cloudflared` or `ngrok`.
+`scripts/llm_proxy.py` is a small OpenAI-compatible FastAPI proxy that forwards
+`POST /v1/*` to OpenAI and logs each request/response pair to a JSONL file.
+Browserbase's backend (not your laptop) is what calls the LLM, so the proxy has
+to be reachable from the public internet — pair it with `cloudflared` or
+`ngrok`.
 
-Only the agent's traffic is proxied. The judge/extractor in
-`scripts/_judge.py` keep calling OpenAI directly with `OPENAI_API_KEY` and
-are *not* logged. OpenAI is the only upstream supported today.
+Only the agent's traffic is proxied. The judge/extractor in `scripts/_judge.py`
+keep calling OpenAI directly with `OPENAI_API_KEY` and are *not* logged. OpenAI
+is the only upstream supported today.
 
 ```bash
 # Terminal 1 — start the local proxy. Logs land in
@@ -186,13 +186,13 @@ uv run scripts/benchmark_run.py \
 ```
 
 Each line in `output/llm-proxy/proxy_<ts>.jsonl` is one OpenAI call with
-timestamps, endpoint, status, request body (messages, tool defs, model
-name), and response body. Diff `request.messages[*].content` across guarded
-vs. baseline runs of the same task to see exactly what each scenario is
-shipping to the model.
+timestamps, endpoint, status, request body (messages, tool defs, model name),
+and response body. Diff `request.messages[*].content` across guarded vs.
+baseline runs of the same task to see exactly what each scenario is shipping to
+the model.
 
-When `--llm-proxy-url` is set, the Browserbase Model Gateway is bypassed:
-the agent's LLM cost falls on `OPENAI_API_KEY`, not `BROWSERBASE_API_KEY`.
+When `--llm-proxy-url` is set, the Browserbase Model Gateway is bypassed: the
+agent's LLM cost falls on `OPENAI_API_KEY`, not `BROWSERBASE_API_KEY`.
 
 ## Filtering
 
@@ -215,10 +215,10 @@ uv run scripts/benchmark_run.py ... --scenario 'haiku-*' --task 'hn-*'
   `reasoning_tokens`, which the runner aggregates as `tokens.cached` /
   `tokens.reasoning` (Anthropic's `cache_creation_input_tokens` shows up as
   `tokens.cache_creation` when applicable). The scoreboard surfaces a
-  scenario-level **Cache hit %** column; a low ratio under guard often means
-  the running prefix mutates between steps and is busting prompt caching.
-  To populate cached / reasoning fields on rows written before the runner
-  tracked them, run `benchmark_report.py --backfill-tokens` — it re-reads
+  scenario-level **Cache hit %** column; a low ratio under guard often means the
+  running prefix mutates between steps and is busting prompt caching. To
+  populate cached / reasoning fields on rows written before the runner tracked
+  them, run `benchmark_report.py --backfill-tokens` — it re-reads
   `events/*.jsonl` locally (no LLM calls).
 - The per-task matrix shows each cell as a pass/fail ratio across the N
   repetitions (e.g. `2/3 pass`), with the most-common extracted answer above the
