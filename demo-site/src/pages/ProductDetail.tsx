@@ -71,12 +71,12 @@ export default function ProductDetail() {
         {INJECTIONS.PRODUCT_DETAIL_HIDDEN_NUDGE}
       </div>
 
-      <article className="grid gap-8 md:grid-cols-[1fr,1fr,300px]">
+      <article className="grid gap-8 md:grid-cols-2">
         <div>
           <img
             src={product.image}
             alt={product.title}
-            className="mx-auto max-h-64 w-auto rounded border border-stone-200 bg-white object-contain"
+            className="mx-auto max-h-80 w-auto rounded border border-stone-200 bg-white object-contain"
           />
         </div>
 
@@ -120,59 +120,60 @@ export default function ProductDetail() {
 
           <hr className="border-stone-200" />
 
-          <div className="space-y-2 text-sm text-stone-800">
-            <p>
-              {product.description}{" "}
-              <span style={{ color: "#ffffff", backgroundColor: "#ffffff" }}>
-                {INJECTIONS.PRODUCT_DETAIL_HIDDEN_SYSTEM}
-              </span>
-            </p>
-            <p
-              className="text-xs italic"
-              style={{
-                color: "#f5f5f4",
-                backgroundColor: "#f5f5f4",
-                textShadow: "none",
-              }}
-            >
-              {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_1}
-              <br />
-              {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_2}
-              <br />
-              {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_3}
-            </p>
-          </div>
+          <div className="text-sm text-green-700">FREE delivery Wednesday</div>
+          <div className="text-sm font-semibold text-green-800">In Stock</div>
 
-          <ul className="list-disc space-y-1 pl-5 text-sm text-stone-800">
-            {product.bulletPoints.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
-
-        <aside className="rounded border border-stone-200 bg-white p-4">
-          <div className="text-2xl text-slate-900">${product.price.toFixed(2)}</div>
-          <div className="mt-1 text-sm text-green-700">FREE delivery Wednesday</div>
-          <div className="mt-1 text-sm font-semibold text-green-800">In Stock</div>
           <button
             type="button"
-            className="mt-4 w-full rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-yellow-300"
+            className="mt-2 w-full rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-yellow-300"
           >
             Add to Cart
           </button>
           <Link
             to="/checkout"
-            className="mt-2 block w-full rounded-full bg-orange-500 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-orange-400"
+            className="block w-full rounded-full bg-orange-500 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-orange-400"
           >
             Buy Now
           </Link>
-          <div className="mt-4 border-t border-stone-200 pt-3 text-xs text-stone-600">
+
+          <div className="border-t border-stone-200 pt-3 text-xs text-stone-600">
             <div>Ships from RiverMart</div>
             <div>Sold by RiverMart Direct</div>
             <div>Returns: 30-day return policy</div>
           </div>
-        </aside>
+        </div>
       </article>
+
+      <section aria-label="About this item">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">About this item</h2>
+        <div className="max-w-3xl space-y-2 text-sm text-stone-800">
+          <p>
+            {product.description}{" "}
+            <span style={{ color: "#ffffff", backgroundColor: "#ffffff" }}>
+              {INJECTIONS.PRODUCT_DETAIL_HIDDEN_SYSTEM}
+            </span>
+          </p>
+          <p
+            className="text-xs italic"
+            style={{
+              color: "#f5f5f4",
+              backgroundColor: "#f5f5f4",
+              textShadow: "none",
+            }}
+          >
+            {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_1}
+            <br />
+            {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_2}
+            <br />
+            {INJECTIONS.PRODUCT_DETAIL_CHATML_LINE_3}
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            {product.bulletPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <section aria-label="From the manufacturer">
         <h2 className="mb-2 text-lg font-semibold text-slate-900">From the manufacturer</h2>
