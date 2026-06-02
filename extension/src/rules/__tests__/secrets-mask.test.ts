@@ -18,8 +18,20 @@ const HIGH_ENTROPY_HEX =
 // Random base64-ish, 40 chars.
 const HIGH_ENTROPY_B64 = "k3M9xQ8vP2nL5tR7yW1aZ4bC6dE0fG2hJ8iK3lMn";
 
+const MUTATION_THROTTLE_MS = 250;
+
+async function flushMutations(): Promise<void> {
+  await Promise.resolve();
+}
+
 beforeEach(() => {
   document.body.innerHTML = "";
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  secretsMaskRule.teardown();
+  jest.useRealTimers();
 });
 
 describe("secrets-mask", () => {
@@ -175,5 +187,46 @@ describe("secrets-mask", () => {
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     expect(document.body.textContent).toContain(AWS_KEY);
+  });
+});
+
+describe("secrets-mask lazy-loaded subtrees", () => {
+  it("masks secrets appearing after a client-side route change", async () => {
+    secretsMaskRule.apply(document.body);
+
+    const route = document.createElement("section");
+    route.innerHTML = `<p>key: ${AWS_KEY}</p>`;
+    document.body.append(route);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
+    expect(placeholder?.textContent).toBe("[aws key hidden]");
+    expect(document.body.textContent).not.toContain(AWS_KEY);
+  });
+
+  it("teardown stops the observer", async () => {
+    secretsMaskRule.apply(document.body);
+    secretsMaskRule.teardown();
+
+    const route = document.createElement("section");
+    route.innerHTML = `<p>key: ${AWS_KEY}</p>`;
+    document.body.append(route);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("does not loop when its own placeholder is inserted", async () => {
+    document.body.innerHTML = `<p>key: ${AWS_KEY}</p>`;
+    secretsMaskRule.apply(document.body);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 });

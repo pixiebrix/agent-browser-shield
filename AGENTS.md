@@ -55,6 +55,24 @@ duplicate a rule between them.
 - `bun run check` runs Biome then ESLint; `bun run check:fix` runs both with
   `--fix`/`--write`.
 
+## Rule authoring: re-scan SPA mutations
+
+Rule `apply` runs once at `document_idle`. Client-side route changes in SPAs
+(React Router, Vue Router, etc.) swap subtrees in and out without a new page
+load, so anything that only ran in `apply` will never see post-navigation
+content — and most of our targets (PII, secrets, scarcity badges, hidden text)
+are exactly the kind of late-mounted content SPAs are built on.
+
+Default to wiring a `createSubtreeWatcher`
+(`extension/src/lib/subtree-watcher.ts`) into any rule that mutates the DOM,
+with `skipPlaceholderSubtrees: true` when the rule inserts placeholders. Mirror
+the pattern used in `pii-mask`, `secrets-mask`, `scarcity-hide`,
+`hidden-text-strip`, etc.: a shared `scanAndX(root)` function called by both
+`apply` and the watcher's `onSubtrees`, plus a `teardown` that calls
+`watcher.stop()`. Skip the watcher only when there is nothing to re-scan after
+initial load — e.g., a one-shot landmark injection — and call that out in a
+comment.
+
 ## Rule defaults
 
 The initial enabled/disabled state for each rule lives in
