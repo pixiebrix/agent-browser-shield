@@ -57,6 +57,8 @@ for the build-time workflow.
 - `prompt-injection-hide` — placeholder over likely injection surfaces
 - `countdown-timer-hide` — remove urgency countdowns
 - `scarcity-hide` — remove "only N left" scarcity cues
+- `confirmshame-neutralize` — rewrite guilt-tripping decline buttons ("No, I'd
+  rather pay full price") to a neutral "No thanks"
 - `footer-hide` — collapse site footers
 - `checkout-checkbox-clear` — uncheck pre-checked checkout boxes
 - `cookie-banner-hide` — strip cookie consent banners

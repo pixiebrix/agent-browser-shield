@@ -6,6 +6,7 @@ import { cartAddonFlagRule } from "./cart-addon-flag";
 import { chatWidgetHideRule } from "./chat-widget-hide";
 import { checkoutCheckboxClearRule } from "./checkout-checkbox-clear";
 import { commentsHideRule } from "./comments-hide";
+import { confirmshameNeutralizeRule } from "./confirmshame-neutralize";
 import { cookieBannerHideRule } from "./cookie-banner-hide";
 import { countdownTimerHideRule } from "./countdown-timer-hide";
 import { crossOriginFrameHideRule } from "./cross-origin-frame-hide";
@@ -39,6 +40,7 @@ const RULES_TUPLE = [
   promptInjectionHideRule,
   countdownTimerHideRule,
   scarcityHideRule,
+  confirmshameNeutralizeRule,
   footerHideRule,
   checkoutCheckboxClearRule,
   cookieBannerHideRule,
