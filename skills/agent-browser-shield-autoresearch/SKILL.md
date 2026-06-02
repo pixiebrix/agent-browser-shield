@@ -29,8 +29,12 @@ If the user already has a run in hand and just wants the *why*, hand off to
 
 ## Pre-flight
 
-- `output/extension.zip` exists (any scenario with `extension: true` needs it).
-  Build with `cd extension && bun run build && bun run package && cd ..` if not.
+- `output/extension.zip` is auto-rebuilt by `compare_scenarios.py` before each
+  run (codegen + bundle + zip, \<2s on a clean tree), so source edits in
+  `extension/src/rules/`, `extension/data/sites/`, or
+  `extension/data/rule-defaults.json` take effect on the next comparison. Pass
+  `--no-rebuild-extension` to opt out (useful when `--extension-zip` is pinned
+  to a release artifact).
 - `OPENAI_API_KEY` is in `.env` (the judge always calls OpenAI directly,
   regardless of the agent model).
 - `BROWSERBASE_API_KEY` + `BROWSERBASE_PROJECT_ID` are in `.env`.
@@ -191,14 +195,100 @@ State the proposal in terms of: the file to change, the specific change, and the
 trace evidence supporting it. Don't propose changes that aren't grounded in the
 trace.
 
-## 5. Across-model loop (optional)
+## 5. Apply the change and re-test
+
+`scripts/compare_scenarios.py` auto-rebuilds `output/extension.zip` (codegen +
+bundle + zip, \<2s) before each run, so source edits below take effect on the
+next §1 invocation with no manual rebuild step. Pass `--no-rebuild-extension`
+only when `--extension-zip` is pinned to a release artifact you don't want
+clobbered.
+
+### Where each change lives
+
+- **Default rule toggles** — `extension/data/rule-defaults.json`. Flat map of
+  `<rule-id>` to boolean. The codegen
+  (`extension/scripts/build-rule-defaults.ts`) validates that every registered
+  id has a default and rejects unknown ids; do not edit the generated
+  `extension/src/rules/rule-defaults.generated.ts`. To flip
+  `irrelevant-sections-hide` on for one experiment, change `false` to `true`
+  here and rebuild.
+- **Site-specific rules** — `extension/data/sites/<host>.yaml`. Codegen
+  (`extension/scripts/build-site-data.ts`) validates each YAML against
+  `extension/data/site-rules.schema.ts` and emits
+  `extension/src/rules/site-data.generated.ts`. For selector-authoring workflow
+  (probing the live site, validating against the schema), hand off to
+  `agent-browser-shield-site-rules`. For the YAML edit alone, do it inline.
+- **Built-in JS rule behavior** — `extension/src/rules/<rule-id>.ts`. Edit when
+  the trace shows a rule firing on false-positives (e.g. masking a real price as
+  PII, stripping nav the agent needed) or missing content it should catch. Each
+  rule exports a `Rule` object from `./types`; see existing rules for the shape.
+  Unit tests live next to each rule at
+  `extension/src/rules/__tests__/<rule-id>.test.ts` — add a failing fixture
+  reproducing the trace observation before changing the rule, so the refinement
+  is anchored.
+- **New defense rule** — create `extension/src/rules/<new-id>.ts`, import + add
+  it to the tuple in `extension/src/rules/index.ts`, add a default to
+  `extension/data/rule-defaults.json`. See the `agent-browser-shield` skill for
+  the rule contract.
+- **Injection regex patterns** — `extension/data/injection-patterns.yaml`
+  (base64-encoded sources). Codegen emits the plaintext RegExp file. Do not edit
+  the generated file. Be aware of the project rule that the regex source
+  phrasing should not leak into docs (see auto-memory).
+
+### Re-run §1
+
+After editing, re-run §1 with the same task and scenarios. The script handles
+the rebuild itself; no `bun` commands needed from you. If you want a manual
+rebuild for some reason (e.g. inspecting the generated files before running the
+comparison): `cd extension && bun run build && bun run package`. `bun run build`
+invokes all three codegens automatically.
+
+### Verify the change shipped
+
+Before drawing conclusions from the re-run, confirm the change is actually in
+the bundle:
+
+- For default toggles or new rules: grep the rebuilt
+  `extension/src/rules/rule-defaults.generated.ts` for the id.
+- For site rules: grep `extension/src/rules/site-data.generated.ts` for the host
+  or selector.
+- For built-in rule code edits: `bun run test -- <rule-id>` (or
+  `jest <rule-id>`) and make sure the new fixture passes. Then check `mtime` on
+  `output/extension.zip` is newer than your edit.
+
+If the rebuild fails (typo in YAML, schema rejection, unknown rule id), the
+codegen error message names the offending file and line — fix and retry. Do not
+work around codegen by editing the `*.generated.ts` files directly.
+
+### Debugging a built-in rule from the trace
+
+When the divergence-turn diff (§3) implicates a specific built-in rule but the
+*why* isn't obvious from the rule's source, the fast loop is:
+
+1. Pull the exact pre-rule HTML for the divergence page — the proxy log only has
+   the post-rule a11y tree, so reproduce locally: load the page in a real
+   Chromium with the extension loaded (see `agent-browser-shield-install` Path
+   A), open DevTools, snapshot the relevant subtree, then load the same page
+   with the rule disabled via the Options page to compare.
+2. Distill into a Jest fixture under
+   `extension/src/rules/__tests__/<rule-id>.test.ts`. The existing tests use
+   `jsdom`-style DOM construction; mirror the pattern.
+3. Iterate the rule until the fixture matches expected behavior, then rebuild
+   and re-run §1 to confirm the trace-level effect.
+
+This is faster than the Browserbase round-trip for narrowing-down work — but the
+§1 re-run is still required to confirm the agent-level outcome actually moved.
+
+## 6. Across-model loop (optional)
 
 If the user asked "across models" and multiple `(baseline, guarded)` scenario
 pairs exist in the scenarios file:
 
 1. Run §1 once per pair.
 2. Apply §2–§3 to each run.
-3. Synthesize: does the guard's effect generalize across models, or is it
+3. If a refinement looks promising on one model, apply it once via §5 and re-run
+   all pairs — measuring the same edit across models is the point.
+4. Synthesize: does the guard's effect generalize across models, or is it
    model-specific?
 
 Common patterns:
@@ -216,7 +306,7 @@ If there's only one model pair available (the shipped file), say so and
 recommend adding scenarios for the other models the user cares about before
 extending the experiment.
 
-## 6. Report back
+## 7. Report back
 
 Lead with: the classification (helps / hurts / neutral / flips), the headline
 metric delta with its noise caveat (`n=3`), the *specific* rule fingerprint
