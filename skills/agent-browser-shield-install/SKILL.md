@@ -136,8 +136,10 @@ attaches.
       and unzip somewhere stable.
    2. Open `chrome://extensions`, enable **Developer mode**, click **Load
       unpacked**, select the unzipped directory.
-   3. Confirm a circular **shield-icon badge** appears in the bottom-right
-      corner of any page (a11y name: *"Open Agent Browser Shield options"*).
+   3. Confirm the extension is loaded by visiting `chrome://extensions` (or by
+      checking the toolbar icon menu). The floating on-page options button is
+      off by default — see *Customizing build-time defaults* below to ship a
+      build with it on.
 2. Attach via your runtime's normal CDP / Chrome DevTools MCP mechanism. No
    per-session extension setup on the claw side.
 
@@ -148,29 +150,42 @@ After the browser is up and you've navigated to any non-trivial page:
 - Look for `[data-abs-rule]` attributes anywhere in the DOM, or for
   `.abs-placeholder` buttons whose text matches `[… hidden — click to reveal]`,
   or for inline `[PII masked]` / `[secret masked]` chips.
-- A circular badge with selector `[data-abs="open-options"]` in the bottom-right
-  corner confirms the content script is running.
+- If the build enables the floating on-page options button (off by default), a
+  circular badge with selector `[data-abs="open-options"]` appears in the
+  bottom-right corner.
 - If none of those markers appear: the MV3 service worker may not have woken up.
   Navigate to a page that would trigger a rule (e.g. a product page for
   cart-addon-flag, a page with an email address for pii-mask) and recheck. If
   still nothing, the extension is not installed.
 
-## Customizing default-enabled rules at build time
+## Customizing build-time defaults
 
 For infra deployments where the same custom defaults should ship every session
 (so the agent doesn't have to flip toggles at runtime), build from source with a
 JSON override file instead of using the hosted ZIP.
 
-1. Write a JSON file using the same shape the Options page exports — a flat map
-   of `<rule-id>` to boolean. Partial is fine; rules not listed keep their
-   committed default from `extension/data/rule-defaults.json`:
+1. Write a JSON file mapping rule ids to booleans, plus any of the reserved
+   non-rule keys below. Rules not listed keep their committed default from
+   `extension/data/rule-defaults.json`:
 
    ```json
    {
      "reviews-hide": false,
-     "ads-hide": false
+     "ads-hide": false,
+     "optionsButton": true
    }
    ```
+
+   Reserved non-rule keys:
+
+   - `optionsButton` (boolean, default **off**) — show the floating shield
+     button in the bottom-right corner of every page that opens this
+     extension's options page. The button is visible to humans and to
+     browser-use agents reading the accessibility tree. Off by default
+     because on sparse pages (JSON viewers, error screens, interstitials) it
+     can dominate the a11y tree and become a misleading "click me to make
+     progress" target. Enable for human-facing deployments where on-page
+     access to options is useful.
 
 2. Pass the path via CLI flag or env var to `bun run build`:
 
@@ -181,7 +196,8 @@ JSON override file instead of using the hosted ZIP.
    EXTENSION_DEFAULTS_FILE=/abs/path/to/defaults.json bun run build
    ```
 
-3. Unknown rule ids fail the build with a clear error — catch typos before
+3. Unknown keys (neither a registered rule id nor a reserved key) and
+   non-boolean values fail the build with a clear error — catch typos before
    shipping.
 
 4. Package and deploy as usual (`bun run package` then upload via Path A / B / C

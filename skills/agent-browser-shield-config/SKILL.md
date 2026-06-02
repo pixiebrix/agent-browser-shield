@@ -10,16 +10,16 @@ on the next page load.
 
 ## Opening the options page
 
-Click the **shield-icon badge** in the bottom-right corner of any page — it's a
-circular button with `[data-abs="open-options"]` that opens the options tab.
-Agents driving via the accessibility tree should target the button by its
-accessible name *"Open Agent Browser Shield options"* (the shield glyph is
-`aria-hidden`). This is the reliable path for browser agents that can't reach
-the Chrome toolbar.
+Humans: right-click the toolbar icon → *Options*, or go to `chrome://extensions`
+→ *Details* → *Extension options*. The popup (toolbar icon click) exposes the
+same per-rule toggles.
 
-Humans can also right-click the toolbar icon → *Options*, or go to
-`chrome://extensions` → *Details* → *Extension options*. The popup (toolbar icon
-click) exposes the same per-rule toggles.
+Builds may also enable a floating **shield-icon badge** in the bottom-right
+corner of every page — a circular button with `[data-abs="open-options"]` and
+accessible name *"Open Agent Browser Shield options"*. The badge is off by
+default and is enabled per-build via the `optionsButton: true` field in the
+defaults file (see the `agent-browser-shield-install` skill). When enabled,
+agents driving via the accessibility tree can target it by its accessible name.
 
 ## Applying a config by pasting JSON
 

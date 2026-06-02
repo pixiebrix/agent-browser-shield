@@ -186,10 +186,11 @@ fragment briefing the agent on what to expect:
 
 On the first non-trivial page load, look for:
 
-- A circular shield-icon badge in the bottom-right corner (a11y name *"Open
-  Agent Browser Shield options"*).
 - `[data-abs-rule="<rule-id>"]` attributes in the DOM.
 - Inline `[PII masked]` / `[secret masked]` chips on pages with sensitive data.
+- If the build enables the on-page options button (off by default), a circular
+  shield-icon badge in the bottom-right corner (a11y name *"Open Agent Browser
+  Shield options"*).
 
 Open the session's live view at
 `https://www.browserbase.com/sessions/<session.id>` to inspect the rendered page

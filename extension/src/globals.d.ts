@@ -10,5 +10,9 @@ declare namespace NodeJS {
     // JSON-stringified Partial<Record<RuleId, boolean>>. Empty `"{}"` when no
     // build-time defaults override file is supplied.
     EXTENSION_DEFAULT_OVERRIDES: string;
+    // Build-time default for the floating on-page options button. Literal
+    // `"true"` / `"false"` to force a value, or empty string when the
+    // defaults file did not set `optionsButton`.
+    EXTENSION_OPTIONS_BUTTON_DEFAULT: string;
   }
 }

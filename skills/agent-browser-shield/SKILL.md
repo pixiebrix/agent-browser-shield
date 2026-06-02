@@ -65,7 +65,10 @@ surfaces **before you see the page**.
 
 ## Configuration
 
-Click the **shield-icon badge** in the bottom-right corner of any page
-(`[data-abs="open-options"]`, a11y name *"Open Agent Browser Shield options"*)
-to open the options tab. See the `agent-browser-shield-config` skill for the
-full rule list and the JSON-paste workflow.
+Open the options tab from the Chrome toolbar (right-click the extension icon →
+*Options*) or via `chrome://extensions` → *Details* → *Extension options*.
+Builds may also expose a floating **shield-icon badge** in the bottom-right
+corner of every page (`[data-abs="open-options"]`, a11y name *"Open Agent
+Browser Shield options"*); the badge is off by default and is enabled per-build
+via the defaults file. See the `agent-browser-shield-config` skill for the full
+rule list and the JSON-paste workflow.

@@ -103,9 +103,11 @@ async function build(): Promise<void> {
           : resolve(process.cwd(), defaultsPath),
         knownRuleIds,
       })
-    : {};
+    : { rules: {} };
   if (defaultsPath) {
-    const changed = Object.keys(overrides).length;
+    const changed =
+      Object.keys(overrides.rules).length +
+      (overrides.optionsButton === undefined ? 0 : 1);
     console.log(
       `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
     );
@@ -135,7 +137,12 @@ async function build(): Promise<void> {
         Boolean(OPENAI_API_KEY),
       ),
       "process.env.EXTENSION_DEFAULT_OVERRIDES": JSON.stringify(
-        JSON.stringify(overrides),
+        JSON.stringify(overrides.rules),
+      ),
+      "process.env.EXTENSION_OPTIONS_BUTTON_DEFAULT": JSON.stringify(
+        overrides.optionsButton === undefined
+          ? ""
+          : String(overrides.optionsButton),
       ),
     },
   });
