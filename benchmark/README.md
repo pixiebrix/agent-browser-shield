@@ -143,6 +143,14 @@ uv run scripts/compare_scenarios.py \
 Pass `--llm-proxy-url <tunnel>` to also capture the exact LLM messages per call
 (see below); the digest will point at the proxy log when it's enabled.
 
+The `agent-browser-shield-autoresearch` skill **requires** `--llm-proxy-url`.
+Stagehand stubs intermediate `ariaTree` tool returns to a 48-byte placeholder
+and only embeds the *final* page's full a11y tree into the trace bundle's
+`messages.json`. Without the proxy, you cannot see the trees the agent saw on
+intermediate pages — which is usually where a rule changes the agent's mind. For
+one-off cost/pass-rate checks the proxy is optional; for research, start it
+first.
+
 ## Capturing the LLM messages (proxy)
 
 By default Stagehand's event stream redacts the rendered a11y tree and system
