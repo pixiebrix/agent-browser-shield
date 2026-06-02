@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 23 rules grouped into five rough categories. Each rule is
+The extension ships 24 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -94,6 +94,36 @@ Prior art: Liao et al.,
 (ICLR 2025), demonstrates that web elements made invisible via CSS — opacity,
 off-screen positioning, zero-area clipping — are read by web agents but unseen
 by humans, the exact asymmetry this rule closes.
+
+### Strip Unicode Invisibles
+
+- **ID:** `unicode-invisibles-strip`
+- **Default:** on
+
+Remove Unicode code points that have no visible glyph but are still read by
+agents walking the DOM or accessibility tree: the Unicode Tags block
+(`U+E0000–U+E007F`), bidi override and isolate characters (`U+202A–U+202E`,
+`U+2066–U+2069`), and the zero-width family (`U+200B`, `U+2060–U+2064`,
+`U+FEFF`, `U+180E`). Applied to text nodes and to every attribute value, so the
+rule also closes the `aria-label` / `alt` / `title` / `placeholder` surface.
+Code points with legitimate script-shaping use are preserved: ZWJ (`U+200D`,
+emoji and Indic joining), ZWNJ (`U+200C`, Persian/Hindi ligature control), and
+the directional marks LRM/RLM (`U+200E`/`U+200F`).
+
+Prior art: Boucher & Anderson,
+[*Trojan Source: Invisible Vulnerabilities*](https://trojansource.codes/trojan-source.pdf)
+(USENIX Security 2023; CVE-2021-42574), introduces the bidi-override attack
+class — invisible reordering chars that make text render one way to humans and
+parse another way to compilers / interpreters / LLMs. Boucher, Pajola, Brookes,
+Anderson,
+[*Bad Characters: Imperceptible NLP Attacks*](https://arxiv.org/abs/2106.09898)
+(IEEE S&P 2022), extends the same family — zero-width insertions, homoglyph
+swaps, bidi reordering — to NLP systems and shows comparable degradation in
+sentiment, translation, and toxicity classifiers. The Unicode-tag-block variant
+against LLM-integrated browsers (the `U+E0000–U+E007F` carrier that encodes
+arbitrary ASCII as invisible tag characters) was popularized by Goodside (2024)
+and is now a standard test case in the indirect-injection benchmarks cited
+elsewhere on this page.
 
 ### Strip HTML Comments
 

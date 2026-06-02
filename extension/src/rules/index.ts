@@ -25,6 +25,7 @@ import { secretsMaskRule } from "./secrets-mask";
 import { socialEmbedHideRule } from "./social-embed-hide";
 import { svgSpriteSuppressRule } from "./svg-sprite-suppress";
 import type { Rule } from "./types";
+import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
 
 // Single source of truth for the rule catalog. RULE_IDS, RuleId, defaults, and
 // availability are all derived from this array. Adding a rule: create the
@@ -48,6 +49,7 @@ const RULES_TUPLE = [
   chatWidgetHideRule,
   htmlCommentStripRule,
   hiddenTextStripRule,
+  unicodeInvisiblesStripRule,
   newsletterModalHideRule,
   svgSpriteSuppressRule,
   socialEmbedHideRule,
