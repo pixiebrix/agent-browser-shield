@@ -122,6 +122,24 @@ Hand a regressed task's trace dir
 `steps.json` carries the per-step reasoning + a11y-tree snapshots needed to
 explain the divergence.
 
+### Iterating on one task with two scenarios
+
+When you're actively iterating on a guarded rule and want a tight
+edit-run-diagnose loop instead of re-running the full matrix, use
+`compare_scenarios.py`. It runs `benchmark_run.py` for exactly two scenarios ×
+one task × N reps, builds the trace bundles + HTML diff, and writes a
+Markdown digest (`output/results/<run_id>/cost_diff.md`) that highlights what
+drove the cost/token delta — step count, a11y-tree byte size, paired step
+divergences — so a coding agent can read it directly.
+
+```bash
+uv run scripts/compare_scenarios.py \
+    --scenario gpt5-mini-baseline \
+    --scenario gpt5-mini-guarded \
+    --task arxiv-recent-cs-ai \
+    -n 3 --open
+```
+
 ## Filtering
 
 Both scripts accept glob filters for partial runs:
