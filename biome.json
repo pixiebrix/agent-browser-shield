@@ -8,8 +8,11 @@
   "files": {
     "includes": [
       "extension/**",
+      "demo-site/**",
+      "docs/**/*.{ts,tsx,json,jsonc}",
       "!**/dist",
       "!**/node_modules",
+      "!**/.astro",
       "!**/*.generated.*"
     ]
   },

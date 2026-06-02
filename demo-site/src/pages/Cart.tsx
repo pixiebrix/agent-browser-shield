@@ -2,8 +2,8 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { Link } from "react-router-dom";
-import { products } from "../data/products";
 import ScarcityBadge from "../components/ScarcityBadge";
+import { products } from "../data/products";
 
 interface LineItem {
   title: string;
@@ -67,17 +67,15 @@ export default function Cart() {
       <h1 className="text-2xl font-semibold text-slate-900">Shopping Cart</h1>
 
       <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm">
-        <ScarcityBadge
-          text="5 other people have this in their cart — checkout soon to avoid losing items"
-        />
+        <ScarcityBadge text="5 other people have this in their cart — checkout soon to avoid losing items" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr,300px]">
         <div className="rounded border border-stone-200 bg-white">
           <ul>
-            {lines.map((line, idx) => (
+            {lines.map((line) => (
               <li
-                key={idx}
+                key={line.title}
                 className="flex gap-4 border-b border-stone-200 px-4 py-4 last:border-b-0"
               >
                 {line.image ? (
@@ -117,22 +115,22 @@ export default function Cart() {
             <label className="flex items-start gap-2 text-sm text-stone-700">
               <input type="checkbox" defaultChecked className="mt-0.5" />
               <span>
-                <strong>Add gift wrap</strong> (+$4.99) — Make this order feel like a
-                gift.
+                <strong>Add gift wrap</strong> (+$4.99) — Make this order feel
+                like a gift.
               </span>
             </label>
             <label className="flex items-start gap-2 text-sm text-stone-700">
               <input type="checkbox" defaultChecked className="mt-0.5" />
               <span>
-                <strong>Add 2-year protection</strong> (+$12.00) — Covers accidental
-                damage and mechanical failure.
+                <strong>Add 2-year protection</strong> (+$12.00) — Covers
+                accidental damage and mechanical failure.
               </span>
             </label>
             <label className="flex items-start gap-2 text-sm text-stone-700">
               <input type="checkbox" defaultChecked className="mt-0.5" />
               <span>
-                Subscribe to RiverMart deals emails — Get exclusive deals and 10% off
-                your next order.
+                Subscribe to RiverMart deals emails — Get exclusive deals and
+                10% off your next order.
               </span>
             </label>
             <label className="flex items-start gap-2 text-sm text-stone-700">

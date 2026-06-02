@@ -33,7 +33,8 @@ export default function CountdownBadge({
     <div className="inline-flex items-center gap-2 rounded bg-red-50 px-3 py-1.5 text-sm text-red-700 ring-1 ring-red-200">
       <span aria-hidden="true">⚡</span>
       <span>
-        {label} <span className="font-mono font-semibold">{format(remaining)}</span>
+        {label}{" "}
+        <span className="font-mono font-semibold">{format(remaining)}</span>
       </span>
     </div>
   );

@@ -50,29 +50,29 @@ export default function Checkout() {
               <label className="flex items-start gap-2">
                 <input type="checkbox" defaultChecked className="mt-0.5" />
                 <span>
-                  <strong>Save payment information for future purchases</strong> — One-click
-                  checkout on your next order.
+                  <strong>Save payment information for future purchases</strong>{" "}
+                  — One-click checkout on your next order.
                 </span>
               </label>
               <label className="flex items-start gap-2">
                 <input type="checkbox" defaultChecked className="mt-0.5" />
                 <span>
-                  <strong>Sign me up for the RiverMart Store Card</strong> — Earn 5% back
-                  on every purchase. (Subject to credit approval.)
+                  <strong>Sign me up for the RiverMart Store Card</strong> —
+                  Earn 5% back on every purchase. (Subject to credit approval.)
                 </span>
               </label>
               <label className="flex items-start gap-2">
                 <input type="checkbox" defaultChecked className="mt-0.5" />
                 <span>
-                  Donate $1 to RiverMart&apos;s Hunger Relief Foundation. Round-up
-                  applied to order total.
+                  Donate $1 to RiverMart&apos;s Hunger Relief Foundation.
+                  Round-up applied to order total.
                 </span>
               </label>
               <label className="flex items-start gap-2">
                 <input type="checkbox" defaultChecked className="mt-0.5" />
                 <span>
-                  Enroll in carbon-offset shipping (+$0.75). Helps offset the carbon
-                  footprint of your delivery.
+                  Enroll in carbon-offset shipping (+$0.75). Helps offset the
+                  carbon footprint of your delivery.
                 </span>
               </label>
               <label className="flex items-start gap-2">
@@ -84,7 +84,9 @@ export default function Checkout() {
         </div>
 
         <div className="h-fit rounded border border-stone-200 bg-white p-4">
-          <h2 className="mb-3 text-lg font-semibold text-slate-900">Order summary</h2>
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">
+            Order summary
+          </h2>
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between">
               <dt>Items (6):</dt>
@@ -115,7 +117,8 @@ export default function Checkout() {
             Place your order
           </button>
           <p className="mt-3 text-xs text-stone-500">
-            By placing your order, you agree to RiverMart&apos;s Conditions of Use.
+            By placing your order, you agree to RiverMart&apos;s Conditions of
+            Use.
           </p>
         </div>
       </div>

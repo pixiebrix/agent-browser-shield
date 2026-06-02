@@ -2,11 +2,11 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { Outlet } from "react-router-dom";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import CookieBanner from "./components/CookieBanner";
-import NewsletterModal from "./components/NewsletterModal";
 import ChatWidget from "./components/ChatWidget";
+import CookieBanner from "./components/CookieBanner";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+import NewsletterModal from "./components/NewsletterModal";
 
 export default function App() {
   return (

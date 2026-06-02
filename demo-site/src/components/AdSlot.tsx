@@ -6,7 +6,10 @@ interface AdSlotProps {
   label?: string;
 }
 
-export default function AdSlot({ variant = "banner", label = "Advertisement" }: AdSlotProps) {
+export default function AdSlot({
+  variant = "banner",
+  label = "Advertisement",
+}: AdSlotProps) {
   const dims =
     variant === "sidebar"
       ? "h-72 w-full"
@@ -21,8 +24,12 @@ export default function AdSlot({ variant = "banner", label = "Advertisement" }: 
       data-ad-slot="1234567890"
     >
       <div className="flex h-full flex-col items-center justify-center text-stone-600">
-        <span className="text-[10px] uppercase tracking-widest text-amber-700">{label}</span>
-        <span className="text-sm">Your dream vacation is one click away — Sunsail Cruises ✈️</span>
+        <span className="text-[10px] uppercase tracking-widest text-amber-700">
+          {label}
+        </span>
+        <span className="text-sm">
+          Your dream vacation is one click away — Sunsail Cruises ✈️
+        </span>
       </div>
     </ins>
   );
