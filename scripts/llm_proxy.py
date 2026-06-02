@@ -11,13 +11,14 @@
 #     "uvicorn>=0.27.0",
 # ]
 # ///
-"""OpenAI-compatible logging proxy.
+"""OpenRouter logging proxy (OpenAI-compatible wire format).
 
-Forwards POST /v1/* to https://api.openai.com/v1/* using `OPENAI_API_KEY`,
-logging each request/response pair to a JSONL file. The point is to capture
-the exact messages Browserbase ships to the model — system prompt, tool
-definitions, accumulated history, and the rendered accessibility tree per
-step — so you can diff what guarded vs. baseline runs send.
+Forwards POST /v1/* to https://openrouter.ai/api/v1/* using
+`OPENROUTER_API_KEY`, logging each request/response pair to a JSONL file.
+The point is to capture the exact messages Browserbase ships to the model —
+system prompt, tool definitions, accumulated history, and the rendered
+accessibility tree per step — so you can diff what guarded vs. baseline
+runs send.
 
 Browserbase's backend (not your laptop) is what calls the LLM, so the proxy
 must be reachable from the public internet. Pair this with `cloudflared
@@ -27,8 +28,8 @@ tunnel URL to `benchmark_run.py --llm-proxy-url <URL>`.
 Streaming responses (text/event-stream) are passed through chunk-by-chunk
 while the full body is buffered for logging.
 
-Judge/extractor calls in `scripts/_judge.py` go directly to OpenAI with the
-same `OPENAI_API_KEY` and intentionally bypass this proxy — only the
+Judge/extractor calls in `scripts/_judge.py` go directly to OpenAI with
+`OPENAI_API_KEY` and intentionally bypass this proxy — only the
 Browserbase-driven agent traffic is logged here.
 
 Usage:
@@ -56,7 +57,7 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOG_ROOT = REPO_ROOT / "output" / "llm-proxy"
-OPENAI_BASE = "https://api.openai.com"
+OPENROUTER_BASE = "https://openrouter.ai/api"
 
 # Headers that must NOT be forwarded — either hop-by-hop, or rewritten below.
 _STRIP_REQUEST_HEADERS = {
@@ -96,8 +97,8 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--upstream",
-        default=OPENAI_BASE,
-        help=f"Override upstream base URL (default: {OPENAI_BASE}).",
+        default=OPENROUTER_BASE,
+        help=f"Override upstream base URL (default: {OPENROUTER_BASE}).",
     )
     return parser.parse_args()
 
@@ -226,9 +227,9 @@ def build_app(*, log_path: Path, upstream_base: str, upstream_key: str) -> FastA
 def main() -> int:
     args = _parse_args()
     load_dotenv()
-    upstream_key = os.environ.get("OPENAI_API_KEY")
+    upstream_key = os.environ.get("OPENROUTER_API_KEY")
     if not upstream_key:
-        sys.exit("OPENAI_API_KEY is required (set in env or .env)")
+        sys.exit("OPENROUTER_API_KEY is required (set in env or .env)")
 
     log_path = args.out or _default_log_path()
     print(f"upstream: {args.upstream}")

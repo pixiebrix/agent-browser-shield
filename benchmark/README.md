@@ -152,21 +152,23 @@ shipped to the model (system prompt, tool defs, accumulated history, the
 rendered a11y tree per step), route the agent calls through
 `scripts/llm_proxy.py`.
 
-`scripts/llm_proxy.py` is a small OpenAI-compatible FastAPI proxy that forwards
-`POST /v1/*` to OpenAI and logs each request/response pair to a JSONL file.
-Browserbase's backend (not your laptop) is what calls the LLM, so the proxy has
-to be reachable from the public internet — pair it with `cloudflared` or
-`ngrok`.
+`scripts/llm_proxy.py` is a small FastAPI proxy that forwards `POST /v1/*` to
+OpenRouter (which speaks the OpenAI wire format) and logs each request/response
+pair to a JSONL file. Browserbase's backend (not your laptop) is what calls the
+LLM, so the proxy has to be reachable from the public internet — pair it with
+`cloudflared` or `ngrok`.
 
 Only the agent's traffic is proxied. The judge/extractor in `scripts/_judge.py`
-keep calling OpenAI directly with `OPENAI_API_KEY` and are *not* logged. OpenAI
-is the only upstream supported today.
+keep calling OpenAI directly with `OPENAI_API_KEY` and are *not* logged.
+OpenRouter accepts the provider-prefixed model slugs the scenarios file already
+uses (e.g. `openai/gpt-5-mini`, `anthropic/claude-haiku-4-5`,
+`google/gemini-2.5-flash`), so no scenario edits are needed.
 
 ```bash
 # Terminal 1 — start the local proxy. Logs land in
 # output/llm-proxy/proxy_<utc_ts>.jsonl unless --out overrides.
 uv run scripts/llm_proxy.py
-# → upstream: https://api.openai.com
+# → upstream: https://openrouter.ai/api
 # → log: output/llm-proxy/proxy_<utc_ts>.jsonl
 # → listening on http://127.0.0.1:8787
 
@@ -175,7 +177,7 @@ cloudflared tunnel --url http://127.0.0.1:8787
 # → prints https://<random>.trycloudflare.com
 
 # Terminal 3 — run the benchmark with --llm-proxy-url pointing at the tunnel.
-# Requires OPENAI_API_KEY in env (forwarded as the agent's api_key). The
+# Requires OPENROUTER_API_KEY in env (forwarded as the agent's api_key). The
 # proxy URL is recorded in manifest.json so you can tell which runs were
 # proxied after the fact.
 uv run scripts/benchmark_run.py \
@@ -185,14 +187,14 @@ uv run scripts/benchmark_run.py \
     --llm-proxy-url https://<random>.trycloudflare.com
 ```
 
-Each line in `output/llm-proxy/proxy_<ts>.jsonl` is one OpenAI call with
+Each line in `output/llm-proxy/proxy_<ts>.jsonl` is one OpenRouter call with
 timestamps, endpoint, status, request body (messages, tool defs, model name),
 and response body. Diff `request.messages[*].content` across guarded vs.
 baseline runs of the same task to see exactly what each scenario is shipping to
 the model.
 
 When `--llm-proxy-url` is set, the Browserbase Model Gateway is bypassed: the
-agent's LLM cost falls on `OPENAI_API_KEY`, not `BROWSERBASE_API_KEY`.
+agent's LLM cost falls on `OPENROUTER_API_KEY`, not `BROWSERBASE_API_KEY`.
 
 ## Filtering
 
