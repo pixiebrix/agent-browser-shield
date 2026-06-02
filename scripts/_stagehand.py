@@ -1,10 +1,18 @@
 # Copyright (c) 2026 PixieBrix, Inc.
 # Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+# pyright: strict
+
 """Helpers shared by scripts/agent_task.py and scripts/benchmark_run.py.
 
 This module is imported, not run as a script — its callers declare the
 relevant PEP 723 dependencies (stagehand, browserbase, python-dotenv).
+
+`event_to_dict` and `extract_usage` are *defensive* parsers — Stagehand
+payload shapes vary across event types (pydantic models, tuples, raw
+dicts), so their public signatures take `Any`. Internally we narrow with
+`isinstance` checks plus explicit `cast()`s at the boundary so strict
+mode sees concrete dict/list element types instead of `Unknown`.
 """
 
 from __future__ import annotations
@@ -13,7 +21,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any
+from typing import Any, cast
 
 LOG = logging.getLogger("agent-browser-shield")
 
@@ -64,13 +72,15 @@ def event_to_dict(event: Any) -> Any:
     payload lands as a `repr()` string and downstream parsers can't see the
     structured fields.
     """
-    if isinstance(event, (tuple, list)) and len(event) == 2 and isinstance(event[0], str):
-        return {"type": event[0], "payload": event_to_dict(event[1])}
-    if isinstance(event, (list, tuple)):
-        return [event_to_dict(item) for item in event]
+    if isinstance(event, (tuple, list)):
+        seq = cast("list[Any] | tuple[Any, ...]", event)
+        if len(seq) == 2 and isinstance(seq[0], str):
+            return {"type": seq[0], "payload": event_to_dict(seq[1])}
+        return [event_to_dict(item) for item in seq]
     if isinstance(event, dict):
-        return {k: event_to_dict(v) for k, v in event.items()}
-    dump = getattr(event, "model_dump", None)
+        event_dict = cast("dict[Any, Any]", event)
+        return {k: event_to_dict(v) for k, v in event_dict.items()}
+    dump = cast("Any", getattr(event, "model_dump", None))
     if callable(dump):
         try:
             return event_to_dict(dump())
@@ -78,7 +88,8 @@ def event_to_dict(event: Any) -> Any:
         except Exception:  # nosec B110
             pass
     if hasattr(event, "__dict__") and not isinstance(event, type):
-        return {k: event_to_dict(v) for k, v in vars(event).items() if not k.startswith("_")}
+        attrs = cast("dict[str, Any]", vars(event))
+        return {k: event_to_dict(v) for k, v in attrs.items() if not k.startswith("_")}
     if isinstance(event, (str, int, float, bool)) or event is None:
         return event
     return str(event)
@@ -102,59 +113,52 @@ def extract_usage(payload: Any) -> dict[str, int] | None:
     """
     if not isinstance(payload, dict):
         return None
-
-    def find(key_names: tuple[str, ...]) -> Any:
-        # Breadth-first hunt for the first matching key anywhere in the tree.
-        stack: list[Any] = [payload]
-        while stack:
-            node = stack.pop()
-            if isinstance(node, dict):
-                for key in key_names:
-                    if key in node:
-                        return node[key]
-                stack.extend(node.values())
-            elif isinstance(node, list):
-                stack.extend(node)
-        return None
+    payload_dict = cast("dict[str, Any]", payload)
 
     def find_in(root: Any, key_names: tuple[str, ...]) -> Any:
+        # Breadth-first hunt for the first matching key anywhere in the tree.
+        # `stack` is heterogeneous (any subtree element); each pop narrows via
+        # isinstance + cast so strict mode sees concrete dict/list types.
         stack: list[Any] = [root]
         while stack:
             node = stack.pop()
             if isinstance(node, dict):
+                node_dict = cast("dict[str, Any]", node)
                 for key in key_names:
-                    if key in node:
-                        return node[key]
-                stack.extend(node.values())
+                    if key in node_dict:
+                        return node_dict[key]
+                stack.extend(node_dict.values())
             elif isinstance(node, list):
-                stack.extend(node)
+                node_list = cast("list[Any]", node)
+                stack.extend(node_list)
         return None
 
-    usage_block = find(("usage", "token_usage", "tokenUsage"))
+    usage_block = find_in(payload_dict, ("usage", "token_usage", "tokenUsage"))
     if not isinstance(usage_block, dict):
         return None
+    usage = cast("dict[str, Any]", usage_block)
     input_tok = (
-        usage_block.get("input_tokens")
-        or usage_block.get("inputTokens")
-        or usage_block.get("prompt_tokens")
-        or usage_block.get("promptTokens")
-        or usage_block.get("prompt_token_count")
-        or usage_block.get("promptTokenCount")
+        usage.get("input_tokens")
+        or usage.get("inputTokens")
+        or usage.get("prompt_tokens")
+        or usage.get("promptTokens")
+        or usage.get("prompt_token_count")
+        or usage.get("promptTokenCount")
     )
     output_tok = (
-        usage_block.get("output_tokens")
-        or usage_block.get("outputTokens")
-        or usage_block.get("completion_tokens")
-        or usage_block.get("completionTokens")
-        or usage_block.get("candidates_token_count")
-        or usage_block.get("candidatesTokenCount")
+        usage.get("output_tokens")
+        or usage.get("outputTokens")
+        or usage.get("completion_tokens")
+        or usage.get("completionTokens")
+        or usage.get("candidates_token_count")
+        or usage.get("candidatesTokenCount")
     )
     if input_tok is None and output_tok is None:
         return None
     input_n = int(input_tok or 0)
     output_n = int(output_tok or 0)
     cached_tok = find_in(
-        usage_block,
+        usage,
         (
             "cached_input_tokens",
             "cachedInputTokens",
@@ -167,11 +171,11 @@ def extract_usage(payload: Any) -> dict[str, int] | None:
         ),
     )
     cache_creation_tok = find_in(
-        usage_block,
+        usage,
         ("cache_creation_input_tokens", "cacheCreationInputTokens"),
     )
     reasoning_tok = find_in(
-        usage_block,
+        usage,
         ("reasoning_tokens", "reasoningTokens"),
     )
     result: dict[str, int] = {
