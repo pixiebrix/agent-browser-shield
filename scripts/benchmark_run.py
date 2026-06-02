@@ -75,6 +75,7 @@ from _stagehand import (
     LOG,
     configure_logging,
     event_to_dict,
+    extract_usage,
     optional_env,
     require_env,
 )
@@ -173,6 +174,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip the inline judge call after each task. Use benchmark_report.py "
         "--judge to grade later.",
+    )
+    parser.add_argument(
+        "--llm-proxy-url",
+        default=None,
+        help="Route Stagehand's agent LLM calls through this OpenAI-compatible "
+        "endpoint (e.g. a cloudflared tunnel exposing scripts/llm_proxy.py) so "
+        "the proxy can log the full messages array per step. Requires "
+        "OPENAI_API_KEY in env (forwarded as the agent's api_key). Only the "
+        "agent calls are proxied — judge/extractor continue calling OpenAI "
+        "directly.",
     )
     parser.add_argument("-v", "--verbose", action="count", default=0)
     return parser.parse_args()
@@ -407,46 +418,8 @@ def compute_cost(
     return round(cost, 6), False
 
 
-def extract_usage(payload: Any) -> dict[str, int] | None:
-    """Walk an event payload looking for token-usage fields. Stagehand wraps
-    LLM call usage in different shapes across event types; this is defensive."""
-    if not isinstance(payload, dict):
-        return None
-
-    def find(key_names: tuple[str, ...]) -> Any:
-        # Breadth-first hunt for the first matching key anywhere in the tree.
-        stack: list[Any] = [payload]
-        while stack:
-            node = stack.pop()
-            if isinstance(node, dict):
-                for key in key_names:
-                    if key in node:
-                        return node[key]
-                stack.extend(node.values())
-            elif isinstance(node, list):
-                stack.extend(node)
-        return None
-
-    usage_block = find(("usage", "token_usage", "tokenUsage"))
-    if isinstance(usage_block, dict):
-        input_tok = (
-            usage_block.get("input_tokens")
-            or usage_block.get("inputTokens")
-            or usage_block.get("prompt_tokens")
-            or usage_block.get("promptTokens")
-        )
-        output_tok = (
-            usage_block.get("output_tokens")
-            or usage_block.get("outputTokens")
-            or usage_block.get("completion_tokens")
-            or usage_block.get("completionTokens")
-        )
-        if input_tok is None and output_tok is None:
-            return None
-        input_n = int(input_tok or 0)
-        output_n = int(output_tok or 0)
-        return {"input": input_n, "output": output_n, "total": input_n + output_n}
-    return None
+# extract_usage lives in _stagehand.py so benchmark_report can re-aggregate
+# token usage from events/*.jsonl without pulling in the Stagehand SDK.
 
 
 def event_type_of(payload: Any) -> str | None:
@@ -500,6 +473,34 @@ class JsonlSink:
                 os.fsync(fh.fileno())
 
 
+def _agent_model_config(model: str, proxy_url: str | None, openai_api_key: str | None) -> Any:
+    """Build the `agent_config.model` value.
+
+    When no proxy is configured, the model is passed as a string and Stagehand
+    routes through the Browserbase Model Gateway (or `model_api_key` if set).
+    When a proxy URL is configured, the model is a structured object whose
+    `base_url` points at the proxy and whose `api_key` is the developer's
+    OpenAI key — Browserbase calls the proxy in place of OpenAI.
+    """
+    if not proxy_url:
+        return model
+    if not openai_api_key:
+        sys.exit(
+            "--llm-proxy-url requires OPENAI_API_KEY in env (forwarded to the "
+            "proxy as the agent's api_key)"
+        )
+    # Stagehand accepts either an OpenAI-prefixed or a bare model name in this
+    # structured form; strip the `openai/` prefix because the proxy forwards
+    # to the real OpenAI API which expects the bare name in the request body.
+    bare = model.split("/", 1)[1] if model.startswith("openai/") else model
+    return {
+        "provider": "openai",
+        "modelName": bare,
+        "baseURL": proxy_url.rstrip("/"),
+        "apiKey": openai_api_key,
+    }
+
+
 def run_one(
     unit: WorkUnit,
     *,
@@ -512,6 +513,8 @@ def run_one(
     events_dir: Path,
     results: JsonlSink,
     judge_model: str | None,
+    llm_proxy_url: str | None = None,
+    openai_api_key: str | None = None,
 ) -> dict[str, Any]:
     """Run a single (scenario, task, repetition). Always writes one row to
     results.jsonl, even on failure."""
@@ -580,7 +583,8 @@ def run_one(
         if task.url:
             stagehand.sessions.navigate(id=session.id, url=task.url)
 
-        agg_tokens = {"input": 0, "output": 0, "total": 0}
+        agg_tokens: dict[str, int] = {"input": 0, "output": 0, "total": 0}
+        agg_optional: dict[str, int] = {}
         any_usage = False
         steps = 0
         final_answer: str | None = None
@@ -589,7 +593,11 @@ def run_one(
         with event_path.open("w", encoding="utf-8") as event_fh:
             for event in stagehand.sessions.execute(
                 id=session.id,
-                agent_config={"model": scenario.model},
+                agent_config={
+                    "model": _agent_model_config(
+                        scenario.model, llm_proxy_url, openai_api_key
+                    )
+                },
                 execute_options={
                     "instruction": task.task,
                     "maxSteps": effective_max_steps,
@@ -616,12 +624,15 @@ def run_one(
                     agg_tokens["input"] += usage["input"]
                     agg_tokens["output"] += usage["output"]
                     agg_tokens["total"] += usage["total"]
+                    for opt_key in ("cached", "cache_creation", "reasoning"):
+                        if opt_key in usage:
+                            agg_optional[opt_key] = agg_optional.get(opt_key, 0) + usage[opt_key]
 
         record["steps_taken"] = steps
         record["completed_within_budget"] = result_completed and steps <= effective_max_steps
         record["final_answer"] = final_answer
         if any_usage:
-            record["tokens"] = agg_tokens
+            record["tokens"] = {**agg_tokens, **agg_optional}
             record["tokens_missing"] = False
         cost, pricing_missing = compute_cost(scenario.model, record["tokens"], pricing)
         record["cost_usd"] = cost
@@ -784,6 +795,7 @@ def main() -> int:
         "concurrency": args.concurrency,
         "repetitions": repetitions,
         "judge_model": judge_model,
+        "llm_proxy_url": args.llm_proxy_url,
         "scenarios": [
             {
                 "id": s.id,
@@ -842,6 +854,12 @@ def main() -> int:
     if model_api_key is None:
         LOG.info("MODEL_API_KEY not set; routing agent via Browserbase Model Gateway")
 
+    openai_api_key = optional_env("OPENAI_API_KEY")
+    if args.llm_proxy_url and not openai_api_key:
+        sys.exit("--llm-proxy-url requires OPENAI_API_KEY in env")
+    if args.llm_proxy_url:
+        LOG.info("agent LLM calls routed through proxy: %s", args.llm_proxy_url)
+
     extension_id: str | None = None
     if needs_extension:
         bb = Browserbase(api_key=bb_api_key)
@@ -872,6 +890,8 @@ def main() -> int:
                 events_dir=events_dir,
                 results=results,
                 judge_model=judge_model,
+                llm_proxy_url=args.llm_proxy_url,
+                openai_api_key=openai_api_key,
             ): unit
             for unit in work_units
         }
