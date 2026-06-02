@@ -132,9 +132,9 @@ def apply_variant(template: str) -> tuple[int, int]:
         # Don't use str.format — variant templates legitimately contain
         # `{placeholder}` and `{value}` tokens we want to ship verbatim.
         new_line = template.replace("{host}", host)
-        # Lambda (instead of passing `new_line` directly) so backrefs like
-        # `\1` in the variant text aren't expanded by re.sub.
-        new_text = CANONICAL.sub(lambda _match: new_line, text, count=1)
+        # Escape backslashes so re.sub doesn't expand `\1`-style backrefs
+        # if a future variant text happens to contain one.
+        new_text = CANONICAL.sub(new_line.replace("\\", "\\\\"), text, count=1)
         if new_text == text:
             continue
         bak = path.with_suffix(path.suffix + BAK_SUFFIX)
@@ -175,8 +175,7 @@ def main() -> int:
     )
     if changed == 0:
         print(
-            "WARNING: no files changed. Either already-applied or canonical "
-            "line is missing.",
+            "WARNING: no files changed. Either already-applied or canonical line is missing.",
             file=sys.stderr,
         )
         return 1

@@ -165,9 +165,7 @@ def parse_args() -> argparse.Namespace:
     if args.task_prompt is None and (
         args.task_url or args.task_success or args.task_max_steps is not None
     ):
-        sys.exit(
-            "--task-url / --task-success / --task-max-steps only apply with --task-prompt"
-        )
+        sys.exit("--task-url / --task-success / --task-max-steps only apply with --task-prompt")
     return args
 
 
@@ -180,7 +178,9 @@ def write_inline_tasks_csv(
     path = Path(raw)
     with open(fd, "w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["id", "enabled", "max_steps", "disabled_reason", "url", "task", "success_criteria"])
+        writer.writerow(
+            ["id", "enabled", "max_steps", "disabled_reason", "url", "task", "success_criteria"]
+        )
         writer.writerow(
             [
                 task_id,
