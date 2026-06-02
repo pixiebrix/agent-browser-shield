@@ -887,7 +887,6 @@ Rewards (Hotels.com One Key): append &useRewards=true to apply rewards pricing.
     recipe: `abs URL helper for ikea.com — prefer URL navigation over typing.
 Locale prefix is required: /{country}/{language}/... (US English = /us/en/).
 Search: /{country}/{lang}/search/?q={query}&sort={sort}&page={n}
-Category browse: /{country}/{lang}/cat/{slug}-{categoryCode}/?sort={sort} (e.g., /us/en/cat/bookcases-st002/)
 Sort: RELEVANCE (default), PRICE_LOW_HIGH, PRICE_HIGH_LOW, NEW_PRODUCTS, RATING, MOST_POPULAR
 Direct product: /{country}/{lang}/p/{slug}-{8digitArticle}/ (article number is global; slug may be \`-\`)
 Article numbers are 8 digits — the dotted form on receipts (e.g., 604.169.25) with dots removed (60416925).
