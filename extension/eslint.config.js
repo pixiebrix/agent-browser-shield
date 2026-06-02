@@ -5,6 +5,7 @@
 // recommended set; ESLint runs only the rules Biome does not have (unicorn's
 // modern-API hints) plus this project's custom rules in `eslint-rules/`.
 
+import path from "node:path";
 import js from "@eslint/js";
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import importX from "eslint-plugin-import-x";
@@ -14,6 +15,14 @@ import unicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import localPlugin from "./eslint-rules/index.js";
+
+// `import-x/no-restricted-paths` resolves `from` against basePath (cwd) but
+// uses `except` patterns raw. We resolve them ourselves so the contract works
+// from any cwd — and so minimatch doesn't have to traverse dot-prefixed
+// segments like `.claude/worktrees/` (its default `dot: false` blocks `**`
+// from crossing those).
+const here = import.meta.dirname;
+const rulePath = (suffix) => path.join(here, "src/rules", suffix);
 
 export default tseslint.config(
   {
@@ -99,6 +108,11 @@ export default tseslint.config(
       "import-x/no-duplicates": "error",
       "import-x/no-useless-path-segments": "error",
       "import-x/consistent-type-specifier-style": ["error", "prefer-top-level"],
+
+      // The module-boundary contract between src/rules and src/lib lives in
+      // dedicated config blocks below (search for `no-restricted-paths`) —
+      // scoping via `files`/`ignores` is cleaner than encoding the same
+      // negation inside the zone definitions.
 
       // Disabled — overlaps with Biome's recommended set or its formatter.
       "unicorn/no-useless-undefined": "off",
@@ -233,6 +247,70 @@ export default tseslint.config(
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "error",
+    },
+  },
+  {
+    // Module-boundary contract: each rule file is a leaf. It can depend on
+    // shared helpers in ../lib, its own ./types contract, and codegen output
+    // (*.generated.ts) — but not on another rule's implementation. The only
+    // place allowed to enumerate the catalog is rules/index.ts (which is
+    // excluded from this block via `ignores`), where the RuleId union and
+    // RULES array are derived from a single tuple.
+    //
+    // `except` entries are absolute globs (via rulePath) for the reasons in
+    // the helper's docstring at the top of this file.
+    files: ["src/rules/*.ts"],
+    ignores: [
+      "src/rules/index.ts",
+      "src/rules/types.ts",
+      "src/rules/*.generated.ts",
+    ],
+    rules: {
+      "import-x/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: "./src/rules",
+              from: "./src/rules/*.ts",
+              // Brace expansions force is-glob to return true; the only file
+              // matched by each pattern is the literal one named.
+              except: [rulePath("types.{ts,tsx}"), rulePath("*.generated.ts")],
+              message:
+                "Rules must not import sibling rules — only ./types and ./*.generated.ts. Shared helpers belong in ../lib; the catalog lives in ./index.ts.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // lib/ owns the runtime engine and shared helpers. It depends on the
+    // rule catalog (rules/index), the contract (rules/types), and the
+    // generated defaults table — never on a specific rule implementation.
+    // Reaching into one rule from lib quietly couples a helper to that
+    // rule's internals and makes the next rule that needs the same hook
+    // copy-paste instead of factor.
+    files: ["src/lib/**/*.ts", "src/lib/**/*.tsx"],
+    ignores: ["src/lib/**/__tests__/**"],
+    rules: {
+      "import-x/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: "./src/lib",
+              from: "./src/rules/*.ts",
+              except: [
+                rulePath("{index,types}.ts"),
+                rulePath("*.generated.ts"),
+              ],
+              message:
+                "lib/ may only depend on rules/{index,types,*.generated} — not on a specific rule file.",
+            },
+          ],
+        },
+      ],
     },
   },
 );
