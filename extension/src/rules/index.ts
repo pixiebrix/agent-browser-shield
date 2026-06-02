@@ -14,6 +14,7 @@ import { footerHideRule } from "./footer-hide";
 import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
 import { irrelevantSectionsHideRule } from "./irrelevant-sections-hide";
+import { jsonLdSanitizeRule } from "./json-ld-sanitize";
 import { newsletterModalHideRule } from "./newsletter-modal-hide";
 import { noscriptStripRule } from "./noscript-strip";
 import { piiMaskRule } from "./pii-mask";
@@ -52,6 +53,7 @@ const RULES_TUPLE = [
   hiddenTextStripRule,
   unicodeInvisiblesStripRule,
   noscriptStripRule,
+  jsonLdSanitizeRule,
   newsletterModalHideRule,
   svgSpriteSuppressRule,
   socialEmbedHideRule,

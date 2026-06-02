@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 25 rules grouped into five rough categories. Each rule is
+The extension ships 26 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -165,6 +165,37 @@ disagree on what's visible" asymmetry is the same one Boucher et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents*](https://arxiv.org/abs/2409.11295)
 (ICLR 2025), formalize for zero-width characters and CSS-hidden DOM
 respectively.
+
+### Sanitize JSON-LD
+
+- **ID:** `json-ld-sanitize`
+- **Default:** on
+
+Walk every `<script type="application/ld+json">` block, parse it, recursively
+replace any string field whose value matches the prompt-injection pattern set
+(the same regex bundle used by `prompt-injection-hide`) with an empty string,
+and re-serialize. Structural fields useful to the agent — `price`,
+`priceCurrency`, `availability`, `sku`, `identifier`, `ratingValue`,
+`reviewCount`, `position` — are preserved exactly. Malformed JSON-LD is left
+alone; non-`application/ld+json` `<script>` blocks are not touched.
+
+Structured data is invisible to a sighted human reviewing the page but is
+increasingly cited by browser-use agents as a "trusted summary" of what the page
+is: `schema.org/Product` gives them name / brand / SKU / price,
+`schema.org/Article` gives them author / publisher / datePublished, and
+`schema.org/Review` gives them rating context. A site (or a third-party fragment
+writing into the page) can poison `description`, `articleBody`, `name`, or
+`author.name` without changing what a human sees.
+
+Prior art: JSON-LD is the JSON serialization of the
+[schema.org vocabulary](https://schema.org/) (W3C JSON-LD 1.1 Recommendation,
+2020\) — the same vocabulary `reviews-hide` reads to find user-generated reviews.
+The non-rendered-but-agent-read carrier model comes from Greshake et al. (cited
+in the section preamble); JSON-LD is the schema.org-shaped instance of that
+carrier. Liao et al.,
+[*EIA: Environmental Injection Attack on Generalist Web Agents for Privacy Leakage*](https://arxiv.org/abs/2409.11295)
+(ICLR 2025), and Wu et al., [*WIPI*](https://arxiv.org/abs/2402.16965), both
+demonstrate that web agents read page metadata an end user never sees.
 
 ### Hide Comments
 
