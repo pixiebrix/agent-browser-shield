@@ -27,8 +27,20 @@ ignore = [
 quote-style = "double"
 indent-style = "space"
 
+[tool.pytest.ini_options]
+testpaths = ["scripts/tests"]
+# `scripts/` lives outside any package and tests reach into it via
+# `from _judge import …` thanks to conftest.py's sys.path injection. Tell
+# pytest to prepend testpaths to sys.path so the conftest itself is found
+# before any rootdir-walking.
+addopts = "-ra"
+pythonpath = ["scripts"]
+
 [tool.bandit]
-exclude_dirs = [".venv", "output", "benchmark", "node_modules"]
+# `scripts/tests` is excluded because pytest's assertion mechanism is
+# `assert`, which trips B101 across every test line. The test files have
+# no production threat surface.
+exclude_dirs = [".venv", "output", "benchmark", "node_modules", "scripts/tests"]
 # B404/B603/B607: subprocess import + fixed-argv calls + partial paths
 # (e.g. `sips`, `git`). These scripts are dev tooling, not user-facing
 # services; the argv lists are static and `shell=True` is never used.
