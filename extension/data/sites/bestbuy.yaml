@@ -7,6 +7,8 @@ rules:
       abs URL helper for bestbuy.com — prefer URL navigation over typing.
       Search: /site/searchpage.jsp?st={query}&id=pcat17071&sp={sort}&cp={page}&intl=nosplash
       Sort (sp=): '+currentprice skuidsaas' (low→high), '-currentprice skuidsaas' (high→low), '-customertopratedcount skuidsaas' (top rated), '-customerreviewcount skuidsaas' (most reviewed), '-startdate skuidsaas' (newest)
-      Category scope: &browsedCategory={abcat...orPcmcat...Id}
       Add intl=nosplash to skip the country-selection interstitial.
-      Direct product: /site/{slug}/{productId}.p?skuId={sku}
+      Direct product: /site/{slug}/{productId}.p?skuId={sku} — productId/sku are opaque Best Buy ids; do not invent them, read from a PDP or search-result anchor.
+      # Category scope (&browsedCategory=) uses an opaque abcat*/pcmcat* id with
+      # no visible derivation path. Agents that guessed values landed on unrelated
+      # categories, so the template was dropped — use Search with the query alone.

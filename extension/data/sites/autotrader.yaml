@@ -49,7 +49,7 @@ rules:
         Search radius: &searchRadius={miles|0} (0 = nationwide)
       Sort (sortBy=): relevance (default), derivedpriceASC | derivedpriceDESC (price low/high), mileageASC, yearDESC, distanceASC, datelistedDESC (newest first).
       Pagination: &firstRecord={offset}&numRecords={25|50|100} (offset is 0-indexed; pageSize default 25).
-      Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id.
+      Direct VDP (vehicle detail): /cars-for-sale/vehicle/{listingId} — listingId is Autotrader's numeric id, visible on search-result anchors; do NOT invent, discover via the vehicle-search SRP first.
       Dealer directory by city: /car-dealers/{city-slug}-{ST} (e.g., /car-dealers/austin-tx).
-      Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} (e.g., /car-dealers/austin-tx/72359/leif-johnson-ford).
+      Dealer profile / reviews: /car-dealers/{city-slug}-{ST}/{dealerId}/{dealer-slug} — dealerId is Autotrader's numeric id, visible on the dealer-directory listing for the city; do NOT invent, navigate from the directory page above.
       Research pages: /research/{make-slug}/{model-slug}/{year}/ (e.g., /research/honda/civic/2024/).

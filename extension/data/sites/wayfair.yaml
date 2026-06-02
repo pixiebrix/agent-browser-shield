@@ -16,8 +16,8 @@ rules:
   search-url-helper:
     recipe: |
       abs URL helper for wayfair.com — prefer URL navigation over typing.
-      Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}).
-      Category browse (direct): /{department}/sb0/{slug}-c{categoryId}.html
+      Free-text search: /keyword.php?keyword={query} — Wayfair redirects this to the closest matching category browse page (/furniture/sb0/{slug}-c{categoryId}.html?redir={query}). Capture the resolved categoryId from the redirect; do NOT invent one.
+      Category browse (direct, only after capturing categoryId from a /keyword.php redirect or a category anchor on a hub page): /{department}/sb0/{slug}-c{categoryId}.html
         Common departments: furniture, decor-pillows, rugs, kitchen-tabletop, bed-bath, outdoor, baby-kids, lighting, storage-organization, home-improvement, appliances, holiday-decor.
         Pagination: ?curpage={n} (1-indexed)
         Sort (filterids syntax, on category URLs): ?sortby={topreviews|topsellers|recommended|pricelowtohigh|pricehightolow|recentlyadded}

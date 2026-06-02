@@ -38,7 +38,11 @@ rules:
       metroId discovery: hit /s?term={cityName} once and read `metroId` from the resolved URL — OpenTable assigns numeric ids per metro (e.g., 8 = New York metro).
       Pagination: &page={n} (1-indexed); page size is server-controlled.
       Sort (sortBy=): web_conversion (default mixed-relevance), distance, rating, price_low_to_high, price_high_to_low, name, recommended, newest.
-      Filters: &cuisineIds={id}[,{id}…] ; &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &neighborhoodIds={id} ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+      Filters: &priceRanges={1|2|3|4} (1=$ to 4=$$$$) ; &restrictTo={open|all} ; &diningStyles={CasualDining|FineDining|Cafe|...} ; &features={Outdoor|GoodForGroups|...}
+      # &cuisineIds= / &neighborhoodIds= take opaque OpenTable ids with no
+      # derivation from runtime intent (and OpenTable has no enumerated list).
+      # Dropped — use /cuisine/{slug} and /neighborhoods/{slug} browse paths
+      # below or include the cuisine/neighborhood name in the &term= query.
       Map mode: &showMap=true&boundsLat1=&boundsLng1=&boundsLat2=&boundsLng2= (NE/SW corners).
       Direct restaurant: /r/{slug} (slug includes city, e.g., /r/nobu-downtown-new-york). Reviews anchor: /r/{slug}#reviews. Menu: /r/{slug}/menu. Photos: /r/{slug}/photos. Private dining: /r/{slug}/private-dining.
       Reservation flow (numeric rid): /restref/client/?rid={restaurantId}&restref={ref}&datetime={YYYY-MM-DDTHH:MM}&covers={n} — restaurantId is OpenTable's internal numeric id, surfaced on the /r/ page's booking widget.

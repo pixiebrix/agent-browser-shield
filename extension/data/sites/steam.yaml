@@ -33,7 +33,7 @@ rules:
         VR: &vrsupport=101 (HTC Vive) ; 102 (Oculus Rift) ; 104 (Valve Index) ; 401 (Windows MR).
         Multiplayer / co-op: &category1=998 ; Online PvP: &category2=49 ; Co-op: &category2=9 ; LAN Co-op: &category2=48.
         Language interface (UI): &supportedlang={english|french|spanish|german|japanese|schinese|tchinese|koreana|russian|...} (Steam's language code).
-        Tags: &tags={tagId1},{tagId2},… (tag ids are Steam's numeric ids; discover via the storesearch API or by reading a category page URL).
+        Tags: &tags={tagId1},{tagId2},… — opaque Steam tag ids (e.g. 492=Indie, 1742=Multiplayer). Do NOT invent — discover by hitting /search/?term={tagName}, opening a category page, and reading the tagId off the resolved URL or anchor hrefs. Skip the &tags= filter entirely if you can express the tag as a keyword in &term=.
         Genre: &category1={26 = Adventure | 25 = Action | 23 = Indie | 28 = Simulation | 9 = RPG | 18 = Sports | 2 = Strategy} (rough mapping; Steam blurs genre and "Type" under category1).
         Reviews / rating: &review_score={6|7|8|9} (minimum positive %: 6=70%, 7=80%, 8=85%, 9=90%) and &review_type={positive|mixed|negative|all}.
         Release date: &category1={998} (Coming Soon) ; &untagged_yes=1 (hide tags) ; &hidef2p=1 (hide F2P).

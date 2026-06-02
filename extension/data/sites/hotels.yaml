@@ -37,7 +37,11 @@ rules:
       Hotels.com normalizes the destination and assigns &regionId={id} on the resolved URL — capture it from the redirect and reuse for follow-up queries to skip ambiguity.
       Children: append &children={ages-comma-list} (e.g., &children=5,8 for two kids aged 5 and 8). Per-room legacy form `&rm1=a2:c5,c8` is also accepted.
       Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
-      Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &reviewScore={7,8,9} (minimum guest score).
+      Filters: &star={3,4,5} ; &price={min}-{max} (per night, USD; Hotels.com sometimes splits into repeated &price= params on redirect — both shapes work on the inbound URL); &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &reviewScore={7,8,9} (minimum guest score).
+      # &neighborhood= takes an opaque regionId. Keep the regionId capture note
+      # above (it's used as a destination= shortcut), but don't templatize
+      # neighborhood= as a separate filter — agents can't supply a sub-region id
+      # without prior browsing, and destination= already covers neighborhood names.
       Pagination: &p={pageIndex} (0-indexed).
       Direct property: /ho{propertyId}/{slug}/ (e.g., /ho170687/la-maison-favart-paris-france/). The Hotels.com propertyId is distinct from Expedia's; do not reuse Expedia ids here. `chkin`/`chkout` query params preserve pricing context (also accepted as `startDate`/`endDate`).
       Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}

@@ -8,5 +8,7 @@ rules:
       Search: /s/{query}?sortby={field}&sortorder={asc|desc}&Nao={offset}
       Sort fields: topsellers (default), price, customerrating, mostpopular, newest
       Pagination uses 0-based offset Nao= in multiples of 24 (page 1=0, page 2=24, …).
-      Category browse: /b/{slug}/N-{taxonomyId} (taxonomyId starts with `5yc1vZ`; accepts the same query params as /s/)
-      Direct product: /p/{slug-or-dash}/{omsId} (omsId is the 9-10 digit Internet number)
+      Direct product: /p/{slug-or-dash}/{omsId} — omsId is the 9-10 digit "Internet number" printed on PDPs and visible in search-result anchors; do not invent.
+      # Category browse (/b/{slug}/N-{taxonomyId}) requires an opaque
+      # 5yc1vZ-prefixed taxonomy id with no derivation path. Dropped — agents
+      # that guessed values landed on unrelated taxons. Use /s/{query} instead.

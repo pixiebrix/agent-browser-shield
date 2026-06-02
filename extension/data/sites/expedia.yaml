@@ -29,7 +29,11 @@ rules:
       abs URL helper for expedia.com — prefer URL navigation over typing.
       Hotels search: /Hotel-Search?destination={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&adults={n}&children={ages|empty}&rooms={n}
       Children: &children=2:5,8 means two children aged 5 and 8 (comma-separated ages); &rooms=1 ; &rm1=a2:c5,c8 also accepted as the older per-room shape.
-      Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &neighborhood={regionId} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+      Filters (Hotel-Search query): &star={3,4,5} ; &price={min}-{max} (per night, USD) ; &amenities={POOL,FREE_WIFI,RESTAURANT_IN_HOTEL,SPA,GYM,PARKING_FREE} ; &lodging={HOTEL,VACATION_RENTAL,CONDO,HOSTEL,APARTMENT,VILLA} ; &chain={CHAIN_NAME} ; &reviewScore={7,8,9} (minimum guest score).
+      # &neighborhood= takes an opaque Expedia regionId and was dropped — the
+      # destination= query alone already scopes by neighborhood name. Likewise,
+      # Destination-Travel-Guides URLs use an opaque dx{destinationId} that
+      # can't be derived from runtime intent.
       Sort (sort=): RECOMMENDED, PRICE_LOW_TO_HIGH, PRICE_HIGH_TO_LOW, DISTANCE, REVIEW, PROPERTY_CLASS.
       Pagination: &p={pageIndex} (0-indexed). Top-N picks per page is server-controlled.
       Direct hotel: /{Slug}.h{hotelId}.Hotel-Information (e.g., /Paris-Hotels-La-Maison-Favart.h2521440.Hotel-Information). Slug is hyphenated, no diacritics. `chkin`/`chkout` query params preserve pricing context.
@@ -38,4 +42,3 @@ rules:
       Cars search: /Cars-Search?date1={M/D/YYYY}&time1={HHMM}&date2={M/D/YYYY}&time2={HHMM}&loc1={origin}&loc2={dropoff}
       Packages (Bundle and Save): /Flights-Hotel-Search?flightAttributes=…&hotelAttributes=… (best constructed via the UI; the URL state is brittle).
       Things to do / activities: /things-to-do/search?location={location}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}
-      Destination guides: /{Slug}.dx{destinationId}.Destination-Travel-Guides (read-only browsing).
