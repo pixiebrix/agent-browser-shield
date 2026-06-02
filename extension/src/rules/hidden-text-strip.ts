@@ -291,13 +291,21 @@ function parseColor(value: string): RGBA | null {
 // Effective background color: walk up ancestors and composite the first
 // opaque background we find. `transparent` and `rgba(_, _, _, 0)` mean
 // "ask my parent." Falls back to white because every browser paints the
-// canvas white when nothing intervenes.
-function effectiveBackgroundColor(element: Element): RGB {
+// canvas white when nothing intervenes. Returns null when we hit a
+// background whose computed value we can't parse (CSS Color Level 4
+// syntaxes like `oklch()` / `lab()` / `color()` reach computed style
+// unnormalized) — walking past it to a distant white ancestor would
+// strip legitimate UI like a `bg-orange-500` button with white text
+// sitting inside an otherwise-white card.
+function effectiveBackgroundColor(element: Element): RGB | null {
   let current: Element | null = element;
   while (current) {
     const style = globalThis.getComputedStyle(current);
     const bg = parseColor(style.backgroundColor);
-    if (bg && bg[3] >= 0.999) {
+    if (!bg) {
+      return null;
+    }
+    if (bg[3] >= 0.999) {
       return [bg[0], bg[1], bg[2]];
     }
     current = current.parentElement;
@@ -338,6 +346,9 @@ function detectColorMatch(
     return null;
   }
   const bg = effectiveBackgroundColor(element);
+  if (!bg) {
+    return null;
+  }
   const distance = colorDistance([fg[0], fg[1], fg[2]], bg);
   if (distance > COLOR_MATCH_DISTANCE) {
     return null;
