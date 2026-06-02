@@ -313,4 +313,27 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // `data-abs-*` attributes are the extension's DOM marker namespace —
+    // every one the engine or any rule stamps on a node has to be declared
+    // and exported from `src/lib/dom-markers.ts` so collisions surface at
+    // compile time and new rules have one canonical naming reference.
+    // Allowed only in the registry file itself.
+    ignores: ["src/lib/dom-markers.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/^data-abs-/]",
+          message:
+            "data-abs-* attribute names must be declared in src/lib/dom-markers.ts and imported — no inline string literals.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/^data-abs-/]",
+          message:
+            "data-abs-* attribute names must be declared in src/lib/dom-markers.ts and imported — no inline template literals.",
+        },
+      ],
+    },
+  },
 );

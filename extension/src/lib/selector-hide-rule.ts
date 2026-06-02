@@ -15,12 +15,8 @@
 
 import type { URLPattern } from "urlpattern-polyfill";
 import type { Rule } from "../rules/types";
-import {
-  HIDDEN_ATTR,
-  PLACEHOLDER_CLASS,
-  REVEALED_ATTR,
-  replaceWithBlockPlaceholder,
-} from "./placeholder";
+import { HIDDEN_ATTR, REVEALED_ATTR } from "./dom-markers";
+import { PLACEHOLDER_CLASS, replaceWithBlockPlaceholder } from "./placeholder";
 import type { RuleId } from "./storage";
 import { createSubtreeWatcher } from "./subtree-watcher";
 

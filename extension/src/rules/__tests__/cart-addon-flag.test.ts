@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://shop.example.com/cart"}
  */
+import { CART_ADDON_FLAGGED_ATTR as FLAGGED_ATTR } from "../../lib/dom-markers";
 import { cartAddonFlagRule, matchAddon } from "../cart-addon-flag";
 
 const MUTATION_THROTTLE_MS = 250;
-const FLAGGED_ATTR = "data-abs-cart-addon-flagged";
 const FLAG_CLASS = "abs-cart-addon-flag";
 
 async function flushMutations(): Promise<void> {

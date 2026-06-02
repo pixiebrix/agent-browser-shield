@@ -27,8 +27,8 @@
 // sr-only class allowlist plus the 1×1 + overflow:hidden inline envelope.
 
 import { URLPattern } from "urlpattern-polyfill";
+import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
-import { RULE_ATTR } from "../lib/placeholder";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import type { JustDeleteMeEntry } from "./justdeleteme.generated";
 import { JUSTDELETEME_ENTRIES } from "./justdeleteme.generated";

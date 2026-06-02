@@ -16,8 +16,9 @@
 // frequently lazy-load. Unlike countdown-timer-hide, we don't need a
 // snapshot/decrement check — the pattern itself is the signal.
 
+import { REVEALED_ATTR } from "../lib/dom-markers";
 import { findInnermostMatches, isInsidePlaceholder } from "../lib/dom-utils";
-import { REVEALED_ATTR, replaceWithBlockPlaceholder } from "../lib/placeholder";
+import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 

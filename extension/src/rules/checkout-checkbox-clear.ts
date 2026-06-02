@@ -13,15 +13,12 @@
 // agent/user must stick, or we'd be in a fight loop.
 
 import { isCheckoutUrl } from "../lib/checkout-url";
+import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-clear" as const;
-
-// Marks checkboxes we've already cleared so re-scans skip them and a
-// subsequent re-check by the agent/user is not undone.
-const CLEARED_ATTR = "data-abs-cleared";
 
 // React/Vue track checked state internally; setting `.checked` directly skips
 // their value-tracker, so onChange handlers never fire and totals don't

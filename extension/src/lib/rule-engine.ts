@@ -8,6 +8,7 @@ import {
   getRuleAvailabilityStates,
   subscribeRuleAvailability,
 } from "./availability";
+import { PLACEHOLDER_MODE_ATTR } from "./dom-markers";
 import {
   getEnforcementEnabled,
   subscribeEnforcementEnabled,
@@ -29,8 +30,6 @@ import {
 } from "./placeholder-display";
 import type { RuleStates } from "./storage";
 import { getRuleStates, subscribe } from "./storage";
-
-const PLACEHOLDER_MODE_ATTR = "data-abs-placeholder-mode";
 
 // Inline placeholders and the inner .${LABEL_CLASS} of block placeholders are
 // <button> elements so screen readers and browser-use agents see them as

@@ -15,8 +15,8 @@
 // extension/data/sites/*.yaml and are compiled into site-data.generated.ts
 // by `bun run build-site-data`.
 
+import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
-import { RULE_ATTR } from "../lib/placeholder";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { SEARCH_URL_HELPER_RECIPES } from "./site-data.generated";
 import type { Rule } from "./types";

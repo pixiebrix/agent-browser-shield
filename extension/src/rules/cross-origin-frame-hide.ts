@@ -19,7 +19,8 @@
 // cross-origin iframe children. Nested cross-origin frames inside a
 // same-origin iframe are caught by the same-origin frame's own instance.
 
-import { REVEALED_ATTR, replaceWithBlockPlaceholder } from "../lib/placeholder";
+import { REVEALED_ATTR } from "../lib/dom-markers";
+import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 

@@ -31,18 +31,17 @@
 // characterData on the rewritten subtree (or watch for the stash data-attr
 // being clobbered) and re-neutralize.
 
+import {
+  CONFIRMSHAME_ORIGINAL_ARIA_ATTR as ORIGINAL_ARIA_ATTR,
+  CONFIRMSHAME_ORIGINAL_TEXT_ATTR as ORIGINAL_TEXT_ATTR,
+  CONFIRMSHAME_ORIGINAL_TITLE_ATTR as ORIGINAL_TITLE_ATTR,
+  CONFIRMSHAME_ORIGINAL_VALUE_ATTR as ORIGINAL_VALUE_ATTR,
+} from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "confirmshame-neutralize" as const;
-
-// Stamped on rewritten controls so re-scans skip them and teardown can find
-// and restore them. Each attribute stashes the corresponding original value.
-const ORIGINAL_TEXT_ATTR = "data-abs-confirmshame-orig-text";
-const ORIGINAL_VALUE_ATTR = "data-abs-confirmshame-orig-value";
-const ORIGINAL_ARIA_ATTR = "data-abs-confirmshame-orig-aria";
-const ORIGINAL_TITLE_ATTR = "data-abs-confirmshame-orig-title";
 
 // Decline label that replaces confirmshame copy. "No thanks" reads as a
 // plain refusal in every context this rule fires in (modals, signup forms,

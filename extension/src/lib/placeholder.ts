@@ -1,6 +1,7 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { REVEALED_ATTR, RULE_ATTR } from "./dom-markers";
 import { log } from "./log";
 import type { RuleId } from "./storage";
 
@@ -8,15 +9,6 @@ export const PLACEHOLDER_CLASS = "abs-placeholder";
 export const LABEL_CLASS = "abs-placeholder__label";
 export const LABEL_TEXT_CLASS = "abs-placeholder__text";
 export const LABEL_ICON_CLASS = "abs-placeholder__icon";
-export const RULE_ATTR = "data-abs-rule";
-// Stamped onto the original element after the user clicks to reveal, so a
-// rule's subtree watcher doesn't immediately re-hide it on the next scan.
-export const REVEALED_ATTR = "data-abs-revealed";
-// Stamped onto elements hidden in-place via display:none (removeEntirely
-// rules). We don't detach the node because doing so breaks React's fiber when
-// it tries to reconcile siblings — the original is left in the DOM, just
-// non-rendering. The attribute lets the rule skip re-processing it.
-export const HIDDEN_ATTR = "data-abs-hidden";
 
 export interface InlineMatch {
   start: number;

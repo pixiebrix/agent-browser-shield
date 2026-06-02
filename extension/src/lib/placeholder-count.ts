@@ -11,7 +11,8 @@
 // placeholder construction/destruction site individually.
 
 import throttle from "lodash/throttle";
-import { HIDDEN_ATTR, PLACEHOLDER_CLASS } from "./placeholder";
+import { HIDDEN_ATTR } from "./dom-markers";
+import { PLACEHOLDER_CLASS } from "./placeholder";
 
 const COUNT_SELECTOR = `.${PLACEHOLDER_CLASS}, [${HIDDEN_ATTR}]`;
 const REPORT_THROTTLE_MS = 250;

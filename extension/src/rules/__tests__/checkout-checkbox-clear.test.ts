@@ -3,10 +3,10 @@
  * @jest-environment-options {"url": "https://shop.example.com/checkout"}
  */
 import { isCheckoutUrl } from "../../lib/checkout-url";
+import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
 import { checkoutCheckboxClearRule } from "../checkout-checkbox-clear";
 
 const MUTATION_THROTTLE_MS = 250;
-const CLEARED_ATTR = "data-abs-cleared";
 
 async function flushMutations(): Promise<void> {
   await Promise.resolve();

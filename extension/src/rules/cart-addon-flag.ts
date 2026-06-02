@@ -27,18 +27,17 @@
 // URLs and capping element text length keep the false-positive rate low.
 
 import { isCheckoutUrl } from "../lib/checkout-url";
+import {
+  CART_ADDON_FLAGGED_ATTR as FLAGGED_ATTR,
+  RULE_ATTR,
+} from "../lib/dom-markers";
 import { findInnermostMatches } from "../lib/dom-utils";
 import { log } from "../lib/log";
-import { RULE_ATTR } from "../lib/placeholder";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "cart-addon-flag" as const;
 
-// Marks elements we've already annotated so subsequent scans skip them
-// and the chip we prepended isn't itself counted as a fresh match on a
-// containing element.
-const FLAGGED_ATTR = "data-abs-cart-addon-flagged";
 const FLAG_CLASS = "abs-cart-addon-flag";
 
 // Cart line-item labels rarely exceed ~150 chars; capping prevents matching
