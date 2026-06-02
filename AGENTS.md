@@ -1,7 +1,7 @@
 # AGENTS.md
 
-This file provides guidance to coding agents (Claude Code, Cursor, Codex,
-Aider, etc.) when working with code in this repository.
+This file provides guidance to coding agents (Claude Code, Cursor, Codex, Aider,
+etc.) when working with code in this repository.
 
 ## Branching workflow
 
