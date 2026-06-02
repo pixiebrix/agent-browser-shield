@@ -8,7 +8,10 @@ decides whether a benchmark run hit an anti-agent defense."""
 
 from __future__ import annotations
 
-from _blockcheck import _truncate_middle  # pyright: ignore[reportPrivateUsage]
+from _blockcheck import (
+    _truncate_middle,  # pyright: ignore[reportPrivateUsage]
+    build_block_user_prompt,
+)
 
 
 class TestTruncateMiddle:
@@ -37,3 +40,30 @@ class TestTruncateMiddle:
 
     def test_empty_input(self) -> None:
         assert _truncate_middle("", max_chars=100) == ""
+
+
+class TestBuildBlockUserPrompt:
+    def test_includes_task_trajectory_and_answer(self) -> None:
+        prompt = build_block_user_prompt(
+            task="Find the price",
+            trajectory="[step 0] goto  url=https://example.com",
+            final_answer="$42.99",
+        )
+        assert "Find the price" in prompt
+        assert "[step 0] goto" in prompt
+        assert "$42.99" in prompt
+
+    def test_missing_answer_renders_placeholder(self) -> None:
+        # Mirror the bug pinned by `_judge`'s tests: `None`, empty string,
+        # and whitespace-only must all surface the same human-readable
+        # placeholder so the detector LLM doesn't see a literal empty
+        # answer (and a truthy whitespace string doesn't slip through the
+        # `if final_answer` check to be `.strip()`'d into nothing).
+        for missing in (None, "", "   "):
+            prompt = build_block_user_prompt("t", "trajectory", missing)
+            assert "(no final answer reported)" in prompt
+
+    def test_strips_whitespace_around_answer(self) -> None:
+        prompt = build_block_user_prompt("t", "trajectory", "  hello  \n")
+        assert "hello" in prompt
+        assert "  hello  " not in prompt
