@@ -25,6 +25,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "ads-hide": true,
   "cart-addon-flag": true,
   "search-url-helper": true,
+  "roach-motel-flag": true,
   "irrelevant-sections-hide": false,
   "cross-origin-frame-hide": false,
 };

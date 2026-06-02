@@ -1,0 +1,17 @@
+# Vonage — roach-motel-flag.
+#
+# FTC v. Vonage Holdings Corp. (Nov 2022, $100M settlement) over junk
+# fees and cancellation hurdles including extended hold times and
+# retention upsell loops on the cancellation phone line.
+
+hostnames:
+  - "{*.}?vonage.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/checkout*"
+      - "/business/*/buy*"
+      - "/signup*"
+    difficulty: "hard"
+    notes: "Subject of FTC enforcement (2022, $100M settlement) over cancellation friction and junk fees."

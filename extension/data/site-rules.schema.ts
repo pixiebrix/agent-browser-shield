@@ -22,6 +22,7 @@ export const SITE_DATA_RULE_IDS = [
   "comments-hide",
   "footer-hide",
   "search-url-helper",
+  "roach-motel-flag",
 ] as const;
 export type SiteDataRuleId = (typeof SITE_DATA_RULE_IDS)[number];
 
@@ -71,6 +72,22 @@ const RecipeRuleEntry = z
   })
   .strict();
 
+// Normalized cancellation-difficulty grade for roach-motel sites. Three
+// levels rather than a continuum so the SR-only note conveys a clear signal
+// the agent can branch on. Easy/medium grades aren't roach motels — the
+// list only carries sites graded hard or worse.
+const RoachMotelDifficulty = z.enum(["hard", "very-hard", "impossible"]);
+
+const WarningRuleEntry = z
+  .object({
+    hostnames: z.array(HostnamePattern).min(1).optional(),
+    pathnames: z.array(PathnamePattern).min(1).optional(),
+    difficulty: RoachMotelDifficulty,
+    cancellationUrl: z.url().optional(),
+    notes: z.string().min(1).optional(),
+  })
+  .strict();
+
 // Each rule key accepts either a single entry or an array of entries. The
 // array form covers cases like Hacker News' comments-hide, which carries a
 // general selector plus a pathname-narrowed one (`#bigbox` on /newcomments).
@@ -79,6 +96,10 @@ const SelectorRule = z.union([
   z.array(SelectorRuleEntry).min(1),
 ]);
 const RecipeRule = z.union([RecipeRuleEntry, z.array(RecipeRuleEntry).min(1)]);
+const WarningRule = z.union([
+  WarningRuleEntry,
+  z.array(WarningRuleEntry).min(1),
+]);
 
 export const SiteFileSchema = z
   .object({
@@ -89,6 +110,7 @@ export const SiteFileSchema = z
         "comments-hide": SelectorRule.optional(),
         "footer-hide": SelectorRule.optional(),
         "search-url-helper": RecipeRule.optional(),
+        "roach-motel-flag": WarningRule.optional(),
       })
       .strict()
       .refine((value) => Object.keys(value).length > 0, {
@@ -100,6 +122,8 @@ export const SiteFileSchema = z
 export type SiteFile = z.infer<typeof SiteFileSchema>;
 export type SelectorRuleEntryInput = z.infer<typeof SelectorRuleEntry>;
 export type RecipeRuleEntryInput = z.infer<typeof RecipeRuleEntry>;
+export type WarningRuleEntryInput = z.infer<typeof WarningRuleEntry>;
+export type RoachMotelDifficultyValue = z.infer<typeof RoachMotelDifficulty>;
 
 export function toEntries<T>(value: T | T[]): T[] {
   return Array.isArray(value) ? value : [value];

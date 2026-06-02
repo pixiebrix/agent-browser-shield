@@ -18,6 +18,7 @@ import { newsletterModalHideRule } from "./newsletter-modal-hide";
 import { piiMaskRule } from "./pii-mask";
 import { promptInjectionHideRule } from "./prompt-injection-hide";
 import { reviewsHideRule } from "./reviews-hide";
+import { roachMotelFlagRule } from "./roach-motel-flag";
 import { scarcityHideRule } from "./scarcity-hide";
 import { searchUrlHelperRule } from "./search-url-helper";
 import { secretsMaskRule } from "./secrets-mask";
@@ -53,6 +54,7 @@ const RULES_TUPLE = [
   adsHideRule,
   cartAddonFlagRule,
   searchUrlHelperRule,
+  roachMotelFlagRule,
   irrelevantSectionsHideRule,
   crossOriginFrameHideRule,
 ] as const satisfies readonly Rule[];

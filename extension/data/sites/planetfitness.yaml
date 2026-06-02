@@ -1,0 +1,18 @@
+# Planet Fitness — roach-motel-flag.
+#
+# Long-standing reputation for requiring in-person visit to the home
+# club OR certified-mail cancellation, despite fully online signup.
+# Repeatedly covered by Consumer Reports and class-action filings.
+
+hostnames:
+  - "{*.}?planetfitness.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/join*"
+      - "/membership*"
+      - "/signup*"
+      - "/clubs/*/join*"
+    difficulty: "very-hard"
+    notes: "Cancellation historically requires in-person visit to the home club or certified mail; no symmetric online cancel."

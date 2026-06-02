@@ -10,6 +10,15 @@ export interface SiteRecipe {
   recipe: string;
 }
 
+export type RoachMotelDifficulty = "hard" | "very-hard" | "impossible";
+
+export interface SiteWarning {
+  patterns: URLPattern[];
+  difficulty: RoachMotelDifficulty;
+  cancellationUrl: string | null;
+  notes: string | null;
+}
+
 export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
   {
     // from data/sites/airbnb.yaml
@@ -1587,5 +1596,137 @@ Map / advanced filters: searchQueryState={url-encoded JSON} carries map bounds, 
 Direct property: /homedetails/{slug}/{zpid}_zpid/ (zpid is Zillow's numeric property id)
 Agent / builder profile: /profile/{username}/
 `,
+  },
+];
+
+export const ROACH_MOTEL_WARNINGS: readonly SiteWarning[] = [
+  {
+    // from data/sites/adobe.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?adobe.com", pathname: "/creativecloud/plans*" }),
+      new URLPattern({ hostname: "{*.}?adobe.com", pathname: "/products/*/buy*" }),
+      new URLPattern({ hostname: "{*.}?adobe.com", pathname: "/store*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Subject of DOJ/FTC enforcement (2024) over hidden early-termination fees and cancellation friction on annual-paid-monthly plans.",
+  },
+  {
+    // from data/sites/amazon.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?amazon.com", pathname: "/amazonprime*" }),
+      new URLPattern({ hostname: "{*.}?amazon.com", pathname: "/prime*" }),
+      new URLPattern({ hostname: "{*.}?amazon.com", pathname: "/gp/prime*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: "https://www.amazon.com/gp/help/customer/display.html?nodeId=GHGUYUH7P9PKARRT",
+    notes: "Subject of FTC enforcement (2023, settled 2025) over multi-step cancellation flow.",
+  },
+  {
+    // from data/sites/care-com.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?care.com", pathname: "/join*" }),
+      new URLPattern({ hostname: "{*.}?care.com", pathname: "/signup*" }),
+      new URLPattern({ hostname: "{*.}?care.com", pathname: "/registration*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Subject of FTC enforcement (2024) including charges related to subscription cancellation difficulty.",
+  },
+  {
+    // from data/sites/cleo-ai.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?meetcleo.com", pathname: "/signup*" }),
+      new URLPattern({ hostname: "{*.}?meetcleo.com", pathname: "/subscribe*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Subject of FTC enforcement (2024) including charges related to subscription cancellation.",
+  },
+  {
+    // from data/sites/equinox.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?equinox.com", pathname: "/join*" }),
+      new URLPattern({ hostname: "{*.}?equinox.com", pathname: "/membership*" }),
+      new URLPattern({ hostname: "{*.}?equinox.com", pathname: "/signup*" }),
+    ],
+    difficulty: "very-hard",
+    cancellationUrl: null,
+    notes: "Cancellation historically requires certified mail or in-person Member Services visit; annual commitments and early-termination fees common.",
+  },
+  {
+    // from data/sites/lafitness.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?lafitness.com", pathname: "/join*" }),
+      new URLPattern({ hostname: "{*.}?lafitness.com", pathname: "/membership*" }),
+      new URLPattern({ hostname: "{*.}?lafitness.com", pathname: "/signup*" }),
+    ],
+    difficulty: "very-hard",
+    cancellationUrl: null,
+    notes: "Subject of FTC enforcement (2025). Historically required in-person visit or certified mail to cancel despite online signup.",
+  },
+  {
+    // from data/sites/match-com.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?match.com", pathname: "/registration*" }),
+      new URLPattern({ hostname: "{*.}?match.com", pathname: "/subscribe*" }),
+      new URLPattern({ hostname: "{*.}?match.com", pathname: "/subscription*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Subject of FTC enforcement (2019) over deceptive billing and cancellation friction.",
+  },
+  {
+    // from data/sites/nytimes.yaml
+    patterns: [
+      new URLPattern({ hostname: "www.nytimes.com", pathname: "/subscription*" }),
+      new URLPattern({ hostname: "www.nytimes.com", pathname: "/subscribe*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: "https://help.nytimes.com/hc/en-us/articles/115014679508",
+    notes: "Cancellation routes to live chat with retention offers; phone fallback during business hours only.",
+  },
+  {
+    // from data/sites/planetfitness.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?planetfitness.com", pathname: "/join*" }),
+      new URLPattern({ hostname: "{*.}?planetfitness.com", pathname: "/membership*" }),
+      new URLPattern({ hostname: "{*.}?planetfitness.com", pathname: "/signup*" }),
+      new URLPattern({ hostname: "{*.}?planetfitness.com", pathname: "/clubs/*/join*" }),
+    ],
+    difficulty: "very-hard",
+    cancellationUrl: null,
+    notes: "Cancellation historically requires in-person visit to the home club or certified mail; no symmetric online cancel.",
+  },
+  {
+    // from data/sites/vonage.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?vonage.com", pathname: "/checkout*" }),
+      new URLPattern({ hostname: "{*.}?vonage.com", pathname: "/business/*/buy*" }),
+      new URLPattern({ hostname: "{*.}?vonage.com", pathname: "/signup*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Subject of FTC enforcement (2022, $100M settlement) over cancellation friction and junk fees.",
+  },
+  {
+    // from data/sites/washingtonpost.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?washingtonpost.com", pathname: "/subscribe*" }),
+      new URLPattern({ hostname: "{*.}?washingtonpost.com", pathname: "/subscription*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Cancellation routes to phone or live chat with retention offers; no symmetric online cancel flow.",
+  },
+  {
+    // from data/sites/wsj.yaml
+    patterns: [
+      new URLPattern({ hostname: "{*.}?wsj.com", pathname: "/subscribe*" }),
+      new URLPattern({ hostname: "{*.}?wsj.com", pathname: "/subscription*" }),
+    ],
+    difficulty: "hard",
+    cancellationUrl: null,
+    notes: "Phone-based cancellation historically required, with retention scripts and extended holds.",
   },
 ];
