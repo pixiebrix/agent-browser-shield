@@ -76,7 +76,7 @@ export default function ProductDetail() {
           <img
             src={product.image}
             alt={product.title}
-            className="w-full rounded border border-stone-200 bg-white"
+            className="mx-auto max-h-64 w-auto rounded border border-stone-200 bg-white object-contain"
           />
         </div>
 
