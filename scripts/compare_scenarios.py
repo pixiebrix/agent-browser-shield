@@ -31,12 +31,14 @@ capture the exact LLM messages per call (see benchmark/README.md).
 from __future__ import annotations
 
 import argparse
+import csv
 import datetime as dt
 import json
 import secrets
 import statistics
 import subprocess
 import sys
+import tempfile
 import webbrowser
 from pathlib import Path
 from typing import Any
@@ -77,12 +79,44 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--task",
-        required=True,
+        default=None,
         metavar="ID",
-        help="Task id from --tasks-file. Exactly one.",
+        help="Task id from --tasks-file. Exactly one. Required unless "
+        "--task-prompt is supplied (in which case --task acts as the id of "
+        "the inline task and defaults to 'adhoc').",
     )
     p.add_argument("--scenarios-file", type=Path, default=DEFAULT_SCENARIOS)
     p.add_argument("--tasks-file", type=Path, default=DEFAULT_TASKS)
+    p.add_argument(
+        "--task-prompt",
+        default=None,
+        help="Inline task prompt for one-shot experiments. When set, the "
+        "script writes a temporary one-row CSV and uses it as --tasks-file, "
+        "so you can run autoresearch experiments without committing rows to "
+        "benchmark/tasks.csv. Requires --task-url; --task-success and "
+        "--task-max-steps are optional.",
+    )
+    p.add_argument(
+        "--task-url",
+        default=None,
+        help="Starting URL for the inline task (paired with --task-prompt).",
+    )
+    p.add_argument(
+        "--task-success",
+        default=None,
+        help="Success criteria fed to the judge for the inline task. "
+        "Defaults to a permissive 'agent produced a coherent answer to the "
+        "task' check when omitted, which is enough for cost/step research "
+        "but not for pass/fail signal — supply real criteria when you care "
+        "about the verdict.",
+    )
+    p.add_argument(
+        "--task-max-steps",
+        type=int,
+        default=None,
+        help="Per-task step budget for the inline task. Leave unset to "
+        "inherit the scenario default.",
+    )
     p.add_argument(
         "-n",
         "--repetitions",
@@ -121,7 +155,46 @@ def parse_args() -> argparse.Namespace:
         sys.exit("--scenario values must differ")
     if args.repetitions < 1:
         sys.exit(f"--repetitions must be >= 1 (got {args.repetitions})")
+    if args.task_prompt is not None:
+        if not args.task_url:
+            sys.exit("--task-prompt requires --task-url")
+        if args.task is None:
+            args.task = "adhoc"
+    elif args.task is None:
+        sys.exit("--task is required unless --task-prompt is supplied")
+    if args.task_prompt is None and (
+        args.task_url or args.task_success or args.task_max_steps is not None
+    ):
+        sys.exit("--task-url / --task-success / --task-max-steps only apply with --task-prompt")
     return args
+
+
+def write_inline_tasks_csv(
+    *, task_id: str, url: str, prompt: str, success: str | None, max_steps: int | None
+) -> Path:
+    """Write a one-row tasks.csv for inline-task runs. Returned path is in
+    the system temp dir so it doesn't leak into the repo."""
+    fd, raw = tempfile.mkstemp(prefix="compare_inline_tasks_", suffix=".csv")
+    path = Path(raw)
+    with open(fd, "w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(
+            ["id", "enabled", "max_steps", "disabled_reason", "url", "task", "success_criteria"]
+        )
+        writer.writerow(
+            [
+                task_id,
+                "true",
+                str(max_steps) if max_steps is not None else "",
+                "",
+                url,
+                prompt,
+                success
+                or "Final answer is coherent and on-topic for the task; "
+                "any plausible response counts as pass (no ground-truth check).",
+            ]
+        )
+    return path
 
 
 def mint_run_id() -> str:
@@ -637,6 +710,17 @@ def main() -> int:
     load_dotenv(REPO_ROOT / ".env")
     args = parse_args()
 
+    inline_tasks_path: Path | None = None
+    if args.task_prompt is not None:
+        inline_tasks_path = write_inline_tasks_csv(
+            task_id=args.task,
+            url=args.task_url,
+            prompt=args.task_prompt,
+            success=args.task_success,
+            max_steps=args.task_max_steps,
+        )
+        args.tasks_file = inline_tasks_path
+
     run_id = args.run_id or mint_run_id()
     run_dir = RESULTS_ROOT / run_id
     if run_dir.exists() and any(run_dir.iterdir()):
@@ -645,6 +729,8 @@ def main() -> int:
     print(f"run_id: {run_id}")
     print(f"scenarios: {args.scenario[0]} vs {args.scenario[1]}")
     print(f"task: {args.task}")
+    if inline_tasks_path is not None:
+        print(f"inline task csv: {inline_tasks_path}")
     print(f"reps: {args.repetitions}")
     if args.llm_proxy_url:
         print(f"llm proxy: {args.llm_proxy_url}")
