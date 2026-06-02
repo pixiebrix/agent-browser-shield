@@ -29,7 +29,7 @@ If the user already has a run in hand and just wants the *why*, hand off to
 
 ## Pre-flight
 
-- `output/extension.zip` is auto-rebuilt by `compare_scenarios.py` before each
+- `output/agent-browser-shield-extension.zip` is auto-rebuilt by `compare_scenarios.py` before each
   run (codegen + bundle + zip, \<2s on a clean tree), so source edits in
   `extension/src/rules/`, `extension/data/sites/`, or
   `extension/data/rule-defaults.json` take effect on the next comparison. Pass
@@ -197,7 +197,7 @@ trace.
 
 ## 5. Apply the change and re-test
 
-`scripts/compare_scenarios.py` auto-rebuilds `output/extension.zip` (codegen +
+`scripts/compare_scenarios.py` auto-rebuilds `output/agent-browser-shield-extension.zip` (codegen +
 bundle + zip, \<2s) before each run, so source edits below take effect on the
 next §1 invocation with no manual rebuild step. Pass `--no-rebuild-extension`
 only when `--extension-zip` is pinned to a release artifact you don't want
@@ -254,7 +254,7 @@ the bundle:
   or selector.
 - For built-in rule code edits: `bun run test -- <rule-id>` (or
   `jest <rule-id>`) and make sure the new fixture passes. Then check `mtime` on
-  `output/extension.zip` is newer than your edit.
+  `output/agent-browser-shield-extension.zip` is newer than your edit.
 
 If the rebuild fails (typo in YAML, schema rejection, unknown rule id), the
 codegen error message names the offending file and line — fix and retry. Do not

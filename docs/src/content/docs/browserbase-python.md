@@ -48,7 +48,7 @@ attach Playwright to the same `connect_url` for surgical interventions.
 - A packaged extension zip — download the
   [prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), or
   follow [Install](/agent-browser-shield/install/) through `bun run package` to
-  produce `output/extension.zip` from source.
+  produce `output/agent-browser-shield-extension.zip` from source.
 - `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` from *Settings → API Keys*
   at <https://www.browserbase.com>.
 - Python ≥ 3.11 with the [`browserbase`](https://pypi.org/project/browserbase/)
@@ -68,7 +68,7 @@ from browserbase import Browserbase
 
 bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
 
-with open("output/extension.zip", "rb") as fh:
+with open("output/agent-browser-shield-extension.zip", "rb") as fh:
     extension = bb.extensions.create(file=fh)
 
 print(extension.id)  # ext_...
@@ -93,7 +93,7 @@ from browserbase import Browserbase
 from stagehand import Stagehand
 
 bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
-with open("output/extension.zip", "rb") as fh:
+with open("output/agent-browser-shield-extension.zip", "rb") as fh:
     extension = bb.extensions.create(file=fh)
 
 stagehand = Stagehand(
@@ -127,7 +127,7 @@ drive.
 
 For a fully wired runner with logging, skill briefing, and CLI flags, see
 `scripts/agent_task.py` in the repo — pass `--with-extension` to upload and
-attach `output/extension.zip` automatically.
+attach `output/agent-browser-shield-extension.zip` automatically.
 
 ## Path B: Pure CDP (Playwright)
 
@@ -140,7 +140,7 @@ from browserbase import Browserbase
 from playwright.sync_api import sync_playwright
 
 bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
-with open("output/extension.zip", "rb") as fh:
+with open("output/agent-browser-shield-extension.zip", "rb") as fh:
     extension = bb.extensions.create(file=fh)
 
 session = bb.sessions.create(

@@ -64,9 +64,10 @@ jobs:
       - name: Upload extension zip
         uses: actions/upload-artifact@v7
         with:
-          path: output/extension.zip
+          path: output/agent-browser-shield-extension.zip
           archive: false
           if-no-files-found: error
+          retention-days: 30
 
       # CWS rejects manifests containing a "key" field. Emit a sibling zip with
       # "key" stripped so the initial CWS listing (and any manual re-uploads)

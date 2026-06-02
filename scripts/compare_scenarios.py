@@ -49,7 +49,7 @@ RESULTS_ROOT = REPO_ROOT / "output" / "results"
 REPORTS_ROOT = REPO_ROOT / "output" / "reports"
 DEFAULT_SCENARIOS = REPO_ROOT / "benchmark" / "scenarios.example.yaml"
 DEFAULT_TASKS = REPO_ROOT / "benchmark" / "tasks.csv"
-DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "extension.zip"
+DEFAULT_EXTENSION_ZIP = REPO_ROOT / "output" / "agent-browser-shield-extension.zip"
 DEFAULT_PRICING = REPO_ROOT / "benchmark" / "pricing.json"
 
 sys.path.insert(0, str(SCRIPTS_DIR))
@@ -105,7 +105,7 @@ def parse_args() -> argparse.Namespace:
         "--no-rebuild-extension",
         action="store_true",
         help="Skip the pre-run `bun run build && bun run package`. By default "
-        "the script rebuilds output/extension.zip so source edits (rule code, "
+        "the script rebuilds output/agent-browser-shield-extension.zip so source edits (rule code, "
         "site YAMLs, defaults JSON) take effect this run. Pass this when the "
         "zip path is pinned to a release artifact you don't want clobbered.",
     )

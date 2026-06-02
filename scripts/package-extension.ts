@@ -9,7 +9,7 @@ import { parseArgs } from "node:util";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 const DIST = join(REPO_ROOT, "extension", "dist");
-const DEFAULT_OUTPUT = join(REPO_ROOT, "output", "extension.zip");
+const DEFAULT_OUTPUT = join(REPO_ROOT, "output", "agent-browser-shield-extension.zip");
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -26,7 +26,7 @@ if (values.help) {
     `Usage: bun run scripts/package-extension.ts [output]\n\n` +
       `Zips extension/dist/ for upload to Browserbase or the Chrome Web Store.\n\n` +
       `Arguments:\n` +
-      `  output            Output path. If it's a directory, writes extension.zip inside.\n` +
+      `  output            Output path. If it's a directory, writes agent-browser-shield-extension.zip inside.\n` +
       `                    Defaults to ${relative(REPO_ROOT, DEFAULT_OUTPUT)}.\n\n` +
       `Options:\n` +
       `  -o, --output      Same as the positional argument.\n` +
@@ -57,7 +57,7 @@ async function resolveOutput(): Promise<string> {
   const abs = resolve(process.cwd(), raw);
   const existing = await stat(abs).catch(() => null);
   if (existing?.isDirectory() || raw.endsWith("/")) {
-    return join(abs, "extension.zip");
+    return join(abs, "agent-browser-shield-extension.zip");
   }
   return abs.endsWith(".zip") ? abs : `${abs}.zip`;
 }
