@@ -19,6 +19,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "chat-widget-hide": true,
   "html-comment-strip": true,
   "hidden-text-strip": true,
+  "unicode-invisibles-strip": true,
   "newsletter-modal-hide": true,
   "svg-sprite-suppress": true,
   "social-embed-hide": true,
