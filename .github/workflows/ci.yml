@@ -166,6 +166,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          # Full history so the strict-on-new-files ratchet below can compute
+          # `origin/<base>...HEAD` — the default shallow checkout lacks the
+          # merge base on most PRs.
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v7
       - name: Set up Python
         run: uv python install 3.14
@@ -182,9 +186,10 @@ jobs:
         run: uvx pyright
       # New-file ratchet: every newly-added Python file must opt in to
       # `# pyright: strict`. Stops legacy debt in scripts/ from growing
-      # while we leave the global mode at standard.
+      # while we leave the global mode at standard. base_ref is passed via
+      # env so it isn't expanded inside the shell (zizmor template-injection).
       - name: Pyright strict-on-new-files ratchet
         if: github.event_name == 'pull_request'
-        run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          uv run scripts/check_pyright_strict_on_new_files.py "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: uv run scripts/check_pyright_strict_on_new_files.py "origin/$BASE_REF"
