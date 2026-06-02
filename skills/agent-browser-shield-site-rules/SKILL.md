@@ -38,7 +38,8 @@ Only these four keys are valid in a site YAML:
 - **`search-url-helper`** — a free-text recipe (not a selector) describing the
   host's URL contract: search path, query/sort/filter params, pagination,
   direct-lookup URL shapes. Phrase it so an agent can construct URLs without
-  typing into search boxes.
+  typing into search boxes. Subject to the composability rule below — do not
+  include a template the agent can't fill from data it actually has.
 
 ## The Playwright MCP workflow
 
@@ -90,7 +91,70 @@ For each rule the host is getting:
   sample query, and observe the resulting URL. Capture the base path, query
   param name, sort/filter param vocabulary (probe the sort dropdown links if
   present), pagination shape, and any direct-lookup URL conventions for the
-  host's primary content type (product, hotel, article, question).
+  host's primary content type (product, hotel, article, question). Apply the
+  composability rule (next subsection) to every template before adding it.
+
+#### Composability rule for `search-url-helper` templates
+
+Site rules describe a host's URL contract for **any** agent performing
+reasonable, general-purpose tasks on it — finding a product, reading an article,
+looking up a hotel, opening a thread. They must not be tuned to any specific
+benchmark task. **Do not open `benchmark/tasks.csv` while authoring or reviewing
+a recipe.** If you do, you'll end up shipping templates that work because you
+encoded ground-truth identifiers from the benchmark, not because the recipe is
+general — that's cheating and it won't survive on tasks we haven't yet thought
+of.
+
+Frame each template by imagining the universe of things a real user would
+plausibly type into the host's own search box or address bar, then ask whether
+the template is fillable from data that universe produces.
+
+Every `{variable}` in a template must be derivable from one of these sources
+alone:
+
+1. **The agent's runtime intent** — content a user might naturally state when
+   directing the agent (a search query, a product name, a city, a date, an ISBN,
+   a SKU printed on a physical item). Roughly: what a human would type into the
+   host's own search box, written as a variable.
+2. **The current page tree** the agent is looking at on this host (an article
+   number visible in a link, a username in a header, a breadcrumb slug rendered
+   as DOM text).
+3. **A finite, fully-enumerated vocabulary you list inline in the recipe** —
+   sort values, locale codes, currency codes, status codes.
+
+If a template requires an opaque host-internal identifier the agent cannot
+plausibly read or be told (category codes, internal SKUs not shown on the page,
+slug suffixes that aren't the page title), **do not include it**. The agent will
+invent a plausible-looking value, the URL will resolve to the wrong page or 404,
+and the agent will spend extra steps recovering — usually ending up doing the
+same search-query workflow it could have started with.
+
+Worked example of the failure mode (observed in the wild on `ikea.com`, June
+2026): the IKEA recipe shipped a
+`Category browse: /{country}/{lang}/cat/{slug}-{categoryCode}/?sort={sort}`
+template with an example (`/us/en/cat/bookcases-st002/`). `{categoryCode}` is a
+host-internal 5-digit code the agent has no way to be told and no way to read
+without first browsing to the category page. Agents guessed values like
+`billy-bookcases-18732` and `billy-bookcases-16282`; both redirected to
+unrelated category pages and the agent then had to fall back to the search box.
+Dropping the `Category browse` line eliminated the failure mode without
+affecting wins driven by the `Search:` template (which fills cleanly from any
+runtime query).
+
+Quick checklist when reviewing a recipe:
+
+- For each `{variable}` in each template, point to its source — runtime intent,
+  page-tree node text, or the enumerated vocabulary in the recipe. Be honest
+  about whether a user could realistically supply it.
+- If any variable's source is "the agent will probably know this" or "from
+  training data," drop the template. Agent priors over host-specific identifiers
+  are exactly the case that produces hallucinated codes.
+- Prefer redundancy over breadth: it's better to ship one composable
+  search/direct-lookup template than three templates the agent can only use
+  one-third of the time.
+- Resist the urge to peek at any benchmark task to validate a recipe. Validate
+  against general agent intents instead — the recipe must pay off on tasks
+  nobody has written yet.
 
 ### 3. Write the YAML
 
