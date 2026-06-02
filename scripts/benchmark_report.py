@@ -58,6 +58,7 @@ from _judge import (  # noqa: E402
     load_judge_defaults_from_scenarios,
     resolve_judge_model,
 )
+from _stagehand import event_to_dict, extract_usage  # noqa: E402
 
 # ---------- Argument parsing ----------
 
@@ -98,6 +99,13 @@ def parse_args() -> argparse.Namespace:
         "--redetect",
         action="store_true",
         help="With --detect-blocks, re-detect rows that already have a blocked_by_defense verdict.",
+    )
+    parser.add_argument(
+        "--backfill-tokens",
+        action="store_true",
+        help="Re-aggregate token usage (input/output/cached/cache_creation/"
+        "reasoning) from each row's event log. Use to add cached/reasoning "
+        "fields to rows written before they were tracked. No LLM calls.",
     )
     parser.add_argument(
         "--judge-model",
@@ -408,6 +416,7 @@ def scenario_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     total_tokens: list[int] = []
     input_tokens: list[int] = []
     output_tokens: list[int] = []
+    cached_tokens: list[int] = []
     costs: list[float] = []
     pass_costs: list[float] = []
     steps: list[int] = []
@@ -436,6 +445,8 @@ def scenario_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
             input_tokens.append(int(toks["input"]))
         if toks.get("output") is not None:
             output_tokens.append(int(toks["output"]))
+        if toks.get("cached") is not None:
+            cached_tokens.append(int(toks["cached"]))
         cost = r.get("cost_usd")
         if cost is not None:
             costs.append(float(cost))
@@ -457,12 +468,19 @@ def scenario_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "total_tokens": _total(total_tokens),
         "total_input_tokens": _total(input_tokens),
         "total_output_tokens": _total(output_tokens),
+        "total_cached_tokens": _total(cached_tokens),
         "total_cost": _total(costs),
         "total_steps": _total(steps),
         "total_duration": _total(durations),
         "avg_tokens": _avg(total_tokens),
         "avg_input_tokens": _avg(input_tokens),
         "avg_output_tokens": _avg(output_tokens),
+        "avg_cached_tokens": _avg(cached_tokens),
+        "cache_hit_pct": (
+            100.0 * sum(cached_tokens) / sum(input_tokens)
+            if cached_tokens and sum(input_tokens) > 0
+            else None
+        ),
         "avg_cost": _avg(costs),
         "avg_cost_pass": _avg(pass_costs),
         "avg_cost_pass_n": len(pass_costs),
@@ -625,6 +643,58 @@ def run_block_detector(
         process=process,
         judge_model=judge_model,
     )
+
+
+def run_backfill_tokens(results_path: Path, rows: list[dict[str, Any]]) -> int:
+    """Re-aggregate token usage from each row's event log.
+
+    Reads `events/{scenario}_{task}_r{rep}.jsonl`, applies `extract_usage` to
+    each event, sums input/output/cached/cache_creation/reasoning, and writes
+    the merged `tokens` dict back to the row. Pure local work — no LLM calls.
+    """
+    events_dir = results_path.parent / "events"
+    if not events_dir.is_dir():
+        print(f"no events directory at {events_dir}; nothing to backfill")
+        return 0
+
+    updated = 0
+    for row in rows:
+        event_path = events_dir / build_traces.events_filename(
+            row.get("scenario_id") or "",
+            row.get("task_id") or "",
+            _rep_index(row),
+        )
+        if not event_path.is_file():
+            continue
+        agg: dict[str, int] = {"input": 0, "output": 0, "total": 0}
+        agg_opt: dict[str, int] = {}
+        any_usage = False
+        for line in event_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event_dict = event_to_dict(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+            usage = extract_usage(event_dict)
+            if not usage:
+                continue
+            any_usage = True
+            agg["input"] += usage["input"]
+            agg["output"] += usage["output"]
+            agg["total"] += usage["total"]
+            for k in ("cached", "cache_creation", "reasoning"):
+                if k in usage:
+                    agg_opt[k] = agg_opt.get(k, 0) + usage[k]
+        if any_usage:
+            row["tokens"] = {**agg, **agg_opt}
+            row["tokens_missing"] = False
+            updated += 1
+
+    write_jsonl_atomic(results_path, rows)
+    print(f"backfilled tokens on {updated} rows")
+    return updated
 
 
 # ---------- Prompt builders ----------
@@ -1036,9 +1106,10 @@ document.querySelectorAll('.copy-prompt').forEach(function(btn){
 """
 
 
-def _dual_th(total_label: str, avg_label: str) -> str:
+def _dual_th(total_label: str, avg_label: str, *, title: str | None = None) -> str:
+    title_attr = f" title='{html.escape(title)}'" if title else ""
     return (
-        "<th class='num'>"
+        f"<th class='num'{title_attr}>"
         f"<span class='v-total'>{html.escape(total_label)}</span>"
         f"<span class='v-avg'>{html.escape(avg_label)}</span>"
         "</th>"
@@ -1334,6 +1405,22 @@ def _render_scoreboard(
         + _dual_th("Total tokens", "Avg tokens")
         + _dual_th("Total input", "Avg input")
         + _dual_th("Total output", "Avg output")
+        + _dual_th(
+            "Total cached",
+            "Avg cached",
+            title=(
+                "Cache-read input tokens (Stagehand-normalized across providers: "
+                "OpenAI cached_input_tokens, Anthropic cache_read_input_tokens, "
+                "Gemini cachedContentTokenCount). Does NOT reduce the model's "
+                "input-token limit — only billing/latency."
+            ),
+        )
+        + (
+            "<th class='num' title='Share of input tokens served from cache "
+            "across all runs in the scenario. Low values often mean the running "
+            "prefix mutates between steps (e.g., DOM markers re-applied each "
+            "turn).'>Cache hit %</th>"
+        )
         + _dual_th("Total cost", "Avg cost")
         + (
             "<th class='num v-avg' title='Average cost across runs that "
@@ -1367,6 +1454,12 @@ def _render_scoreboard(
         parts.append(
             _dual_cell(fmt_int(summ["total_output_tokens"]), fmt_int(summ["avg_output_tokens"]))
         )
+        parts.append(
+            _dual_cell(fmt_int(summ["total_cached_tokens"]), fmt_int(summ["avg_cached_tokens"]))
+        )
+        hit_pct = summ.get("cache_hit_pct")
+        hit_html = "—" if hit_pct is None else f"{hit_pct:.1f}%"
+        parts.append(f"<td class='num'>{hit_html}</td>")
         parts.append(_dual_cell(fmt_money(summ["total_cost"]), fmt_money(summ["avg_cost"])))
         pass_n = summ["avg_cost_pass_n"]
         pass_cost_html = fmt_money(summ["avg_cost_pass"])
@@ -1751,6 +1844,10 @@ def main() -> int:
 
     manifest = json.loads(manifest_path.read_text())
     rows = load_jsonl(results_path)
+
+    if args.backfill_tokens:
+        run_backfill_tokens(results_path, rows)
+        rows = load_jsonl(results_path)
 
     if args.judge or args.extract or args.detect_blocks:
         # Prefer the judge model the runner recorded in the manifest, then fall

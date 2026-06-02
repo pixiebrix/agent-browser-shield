@@ -122,6 +122,80 @@ Hand a regressed task's trace dir
 `steps.json` carries the per-step reasoning + a11y-tree snapshots needed to
 explain the divergence.
 
+### Iterating on one task with two scenarios
+
+When you're actively iterating on a guarded rule and want a tight
+edit-run-diagnose loop instead of re-running the full matrix, use
+`compare_scenarios.py`. It runs `benchmark_run.py` for exactly two scenarios ×
+one task × N reps, builds the trace bundles + HTML diff, and writes a Markdown
+digest (`output/results/<run_id>/cost_diff.md`) that highlights what drove the
+cost/token delta — step count, a11y-tree byte size, paired step divergences — so
+a coding agent can read it directly.
+
+```bash
+uv run scripts/compare_scenarios.py \
+    --scenario gpt5-mini-baseline \
+    --scenario gpt5-mini-guarded \
+    --task arxiv-recent-cs-ai \
+    -n 3 --open
+```
+
+Pass `--llm-proxy-url <tunnel>` to also capture the exact LLM messages per call
+(see below); the digest will point at the proxy log when it's enabled.
+
+## Capturing the LLM messages (proxy)
+
+By default Stagehand's event stream redacts the rendered a11y tree and system
+prompt — only token counts and the model's final action survive in
+`events/*.jsonl`. When you need to see the *exact* messages array Browserbase
+shipped to the model (system prompt, tool defs, accumulated history, the
+rendered a11y tree per step), route the agent calls through
+`scripts/llm_proxy.py`.
+
+`scripts/llm_proxy.py` is a small FastAPI proxy that forwards `/v1/*` to OpenAI
+and logs each request/response pair to a JSONL file. Browserbase's backend (not
+your laptop) is what calls the LLM, so the proxy has to be reachable from the
+public internet — pair it with `cloudflared` or `ngrok`.
+
+Only the agent's traffic is proxied. The judge/extractor in `scripts/_judge.py`
+keep calling OpenAI directly with `OPENAI_API_KEY` and are *not* logged. OpenAI
+is the only fully-supported upstream today — OpenRouter accepts most
+chat-completions traffic but its `/v1/responses` schema rejects the `reasoning`
+items Stagehand re-sends across multi-turn agent runs, so multi-step tasks 400
+after the first turn.
+
+```bash
+# Terminal 1 — start the local proxy. Logs land in
+# output/llm-proxy/proxy_<utc_ts>.jsonl unless --out overrides.
+uv run scripts/llm_proxy.py
+# → upstream: https://api.openai.com
+# → log: output/llm-proxy/proxy_<utc_ts>.jsonl
+# → listening on http://127.0.0.1:8787
+
+# Terminal 2 — expose the proxy via a public tunnel.
+cloudflared tunnel --url http://127.0.0.1:8787
+# → prints https://<random>.trycloudflare.com
+
+# Terminal 3 — run the benchmark with --llm-proxy-url pointing at the tunnel.
+# Requires OPENAI_API_KEY in env (forwarded as the agent's api_key). The
+# proxy URL is recorded in manifest.json so you can tell which runs were
+# proxied after the fact.
+uv run scripts/benchmark_run.py \
+    --scenarios benchmark/scenarios.example.yaml \
+    --tasks benchmark/tasks.csv \
+    --task weather-nyc-week-coldest --task weather-nyc \
+    --llm-proxy-url https://<random>.trycloudflare.com
+```
+
+Each line in `output/llm-proxy/proxy_<ts>.jsonl` is one OpenAI call with
+timestamps, endpoint, status, request body (messages, tool defs, model name),
+and response body. Diff `request.messages[*].content` across guarded vs.
+baseline runs of the same task to see exactly what each scenario is shipping to
+the model.
+
+When `--llm-proxy-url` is set, the Browserbase Model Gateway is bypassed: the
+agent's LLM cost falls on `OPENAI_API_KEY`, not `BROWSERBASE_API_KEY`.
+
 ## Filtering
 
 Both scripts accept glob filters for partial runs:
@@ -138,7 +212,16 @@ uv run scripts/benchmark_run.py ... --scenario 'haiku-*' --task 'hn-*'
   Browserbase starts 429ing.
 - Token / cost numbers depend on Stagehand emitting usage in its event stream.
   If a row has `tokens_missing: true`, inspect the matching
-  `events/<scenario>_<task>_r<n>.jsonl` and adjust the parser.
+  `events/<scenario>_<task>_r<n>.jsonl` and adjust the parser. Stagehand's
+  normalized `usage` block also carries `cached_input_tokens` and
+  `reasoning_tokens`, which the runner aggregates as `tokens.cached` /
+  `tokens.reasoning` (Anthropic's `cache_creation_input_tokens` shows up as
+  `tokens.cache_creation` when applicable). The scoreboard surfaces a
+  scenario-level **Cache hit %** column; a low ratio under guard often means the
+  running prefix mutates between steps and is busting prompt caching. To
+  populate cached / reasoning fields on rows written before the runner tracked
+  them, run `benchmark_report.py --backfill-tokens` — it re-reads
+  `events/*.jsonl` locally (no LLM calls).
 - The per-task matrix shows each cell as a pass/fail ratio across the N
   repetitions (e.g. `2/3 pass`), with the most-common extracted answer above the
   fold and per-rep details (response + judge reason + session link) under an
