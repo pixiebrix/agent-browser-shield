@@ -147,8 +147,8 @@ The `agent-browser-shield-autoresearch` skill **requires** `--llm-proxy-url`.
 Stagehand stubs intermediate `ariaTree` tool returns to a 48-byte placeholder
 and only embeds the *final* page's full a11y tree into the trace bundle's
 `messages.json`. Without the proxy, you cannot see the trees the agent saw on
-intermediate pages — which is usually where a rule changes the agent's mind.
-For one-off cost/pass-rate checks the proxy is optional; for research, start it
+intermediate pages — which is usually where a rule changes the agent's mind. For
+one-off cost/pass-rate checks the proxy is optional; for research, start it
 first.
 
 ## Capturing the LLM messages (proxy)

@@ -45,8 +45,8 @@ If the user already has a run in hand and just wants the *why*, hand off to
   the proxy's env. The proxy is OpenAI-only today — see `benchmark/README.md`
   "Capturing the LLM messages (proxy)". The runner appends `/v1` to the tunnel
   URL automatically; pass the bare tunnel root to `--llm-proxy-url`. If the
-  proxy is not running, stop and ask the user to start it before continuing —
-  do not run a comparison without it (see §1 for why).
+  proxy is not running, stop and ask the user to start it before continuing — do
+  not run a comparison without it (see §1 for why).
 
 ## 1. Run the focused comparison
 
@@ -64,25 +64,25 @@ uv run scripts/compare_scenarios.py \
 
 `--llm-proxy-url` is required for autoresearch, not optional. Stagehand stubs
 intermediate `ariaTree` tool returns to a 48-byte placeholder ("ARIA tree
-extracted for context of page elements") and only embeds the *final* page's
-full a11y tree into `messages.json`. Without the proxy, you cannot see what the
-agent saw on intermediate pages — which is usually where the rule fingerprint
-that derailed it lives. The proxy captures the actual request bodies the
-runner ships to OpenAI, including the full tree at every turn. If the user
-declines to run the proxy, say so and proceed with `steps.json`/`messages.json`
-alone, but flag that intermediate-page conclusions will be speculative.
+extracted for context of page elements") and only embeds the *final* page's full
+a11y tree into `messages.json`. Without the proxy, you cannot see what the agent
+saw on intermediate pages — which is usually where the rule fingerprint that
+derailed it lives. The proxy captures the actual request bodies the runner ships
+to OpenAI, including the full tree at every turn. If the user declines to run
+the proxy, say so and proceed with `steps.json`/`messages.json` alone, but flag
+that intermediate-page conclusions will be speculative.
 
 The script writes:
 
 - `output/results/<run_id>/cost_diff.md` — aggregate + per-rep token/cost/step
   deltas, paired step-by-step a11y-byte deltas. Read this first.
 - `output/results/<run_id>/traces/<scenario>__<task>__r<n>/{summary,steps,messages}.json`
-  — per-rep structured traces. `messages.json` only shows the final-page
-  tree at full size; everything earlier is stubbed.
-- `output/llm-proxy/proxy_<UTC-timestamp>.jsonl` — one JSON record per LLM
-  call with the full request body (system prompt, history, current
-  a11y-tree-bearing user message) and response. This is the authoritative
-  per-turn view; cross-reference by timestamp with `steps.json`.
+  — per-rep structured traces. `messages.json` only shows the final-page tree at
+  full size; everything earlier is stubbed.
+- `output/llm-proxy/proxy_<UTC-timestamp>.jsonl` — one JSON record per LLM call
+  with the full request body (system prompt, history, current a11y-tree-bearing
+  user message) and response. This is the authoritative per-turn view;
+  cross-reference by timestamp with `steps.json`.
 - `output/reports/<run_id>__<task>.html` — side-by-side HTML diff (for humans).
 
 ## 2. Read the digest
