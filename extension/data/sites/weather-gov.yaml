@@ -1,4 +1,5 @@
 hostnames:
+  - "www.weather.gov"
   - "forecast.weather.gov"
 
 rules:
