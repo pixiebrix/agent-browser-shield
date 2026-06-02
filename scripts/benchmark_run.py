@@ -70,7 +70,8 @@ from _bu_bench import (
     load_plain_bu_bench,
     synthesize_criteria,
 )
-from _judge import call_extractor, call_judge, resolve_judge_model
+from _judge import resolve_judge_model
+from _judge_client import call_extractor, call_judge
 from _stagehand import (
     LOG,
     configure_logging,

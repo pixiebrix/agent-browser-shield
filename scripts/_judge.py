@@ -1,20 +1,21 @@
 # Copyright (c) 2026 PixieBrix, Inc.
 # Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-"""LLM-as-judge + LLM-as-extractor helpers shared by benchmark_run.py and
-benchmark_report.py.
+# pyright: strict
 
-This module is imported, not run as a script — its callers declare the
-relevant PEP 723 dependencies (anthropic, openai, pyyaml, python-dotenv).
+"""Pure judge/extractor helpers: prompts, dataclasses, configuration.
+
+Shared by benchmark_run.py and benchmark_report.py. The companion module
+`_judge_client.py` owns the LLM I/O (vendor dispatch, network calls) — that
+split lets this file stay strict-clean while the client keeps relaxed
+typing for the unresolved vendor SDK imports.
 """
 
 from __future__ import annotations
 
-import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 DEFAULT_JUDGE_MODEL = "openai/gpt-4o-mini"
 
@@ -98,103 +99,25 @@ def build_extractor_user_prompt(task: str, criteria: str, final_answer: str | No
     return f"Task: {task}\n\nSuccess criteria: {criteria}\n\nAgent's final answer:\n{answer}"
 
 
-def _call_json_llm(model: str, system: str, user_prompt: str, *, max_tokens: int = 4000) -> str:
-    """Dispatch to the configured vendor and return the raw JSON text."""
-    vendor, _, model_name = model.partition("/")
-    if not model_name:
-        raise ValueError(f"model must be vendor/name, got {model!r}")
-
-    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
-    if openrouter_key:
-        from openai import OpenAI
-
-        client = OpenAI(
-            api_key=openrouter_key,
-            base_url="https://openrouter.ai/api/v1",
-        )
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-            max_tokens=max_tokens,
-        )
-        return resp.choices[0].message.content or ""
-
-    if vendor == "anthropic":
-        from anthropic import Anthropic
-
-        api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("MODEL_API_KEY")
-        if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY (or MODEL_API_KEY) required for anthropic model")
-        client = Anthropic(api_key=api_key)
-        resp = client.messages.create(
-            model=model_name,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        return "".join(block.text for block in resp.content if getattr(block, "type", "") == "text")
-    if vendor == "openai":
-        from openai import OpenAI
-
-        api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("MODEL_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENAI_API_KEY (or MODEL_API_KEY) required for openai model")
-        client = OpenAI(api_key=api_key)
-        resp = client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
-        return resp.choices[0].message.content or ""
-    raise ValueError(f"unsupported vendor: {vendor!r}")
-
-
-def call_judge(model: str, task: str, criteria: str, final_answer: str | None) -> JudgeVerdict:
-    user_prompt = build_judge_user_prompt(task, criteria, final_answer)
-    text = _call_json_llm(model, JUDGE_SYSTEM, user_prompt, max_tokens=4000)
-    parsed = json.loads(text)
-    return JudgeVerdict(
-        passed=bool(parsed.get("pass")),
-        reason=str(parsed.get("reason") or "")[:500],
-        model=model,
-    )
-
-
-def call_extractor(
-    model: str, task: str, criteria: str, final_answer: str | None
-) -> ExtractedAnswer:
-    user_prompt = build_extractor_user_prompt(task, criteria, final_answer)
-    text = _call_json_llm(model, EXTRACTOR_SYSTEM, user_prompt, max_tokens=4000)
-    parsed = json.loads(text)
-    raw_value = parsed.get("value")
-    value: str | None
-    if raw_value is None:
-        value = None
-    else:
-        value = str(raw_value).strip() or None
-    return ExtractedAnswer(
-        extractable=bool(parsed.get("extractable")),
-        value=value,
-        reason=str(parsed.get("reason") or "")[:500],
-        model=model,
-    )
-
-
 def load_judge_defaults_from_scenarios(scenarios_path: Path) -> dict[str, Any]:
     """Pull the `defaults` block from a scenarios.yaml file. Returns {} on miss."""
-    try:
-        import yaml
+    # yaml is intentionally imported inside the function: this module is
+    # called from scripts whose PEP 723 deps include pyyaml, but the tests
+    # in scripts/tests/ don't pull yaml in. Lazy import keeps test
+    # invocation light. yaml.safe_load returns Any; we narrow at the
+    # boundary to satisfy strict mode.
+    import yaml  # pyright: ignore[reportMissingTypeStubs]
 
-        return yaml.safe_load(scenarios_path.read_text(encoding="utf-8")).get("defaults") or {}
-    except Exception:
+    try:
+        raw = yaml.safe_load(scenarios_path.read_text(encoding="utf-8"))  # pyright: ignore[reportUnknownMemberType]
+    except OSError:
         return {}
+    if not isinstance(raw, dict):
+        return {}
+    defaults = cast(dict[str, Any], raw).get("defaults")
+    if not isinstance(defaults, dict):
+        return {}
+    return cast(dict[str, Any], defaults)
 
 
 def resolve_judge_model(args_model: str | None, defaults: dict[str, Any]) -> str:
