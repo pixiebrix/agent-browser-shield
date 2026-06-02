@@ -112,7 +112,7 @@ jobs:
         run: bun run build
 
   docs:
-    name: Docs site (build)
+    name: Docs site (check / build)
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -135,6 +135,9 @@ jobs:
             echo "::error::package.json or bun.lock was modified by \`bun install --frozen-lockfile\` — your lockfile is out of sync. Run \`bun install\` locally and commit both files."
             exit 1
           fi
+      # `astro build` does not type-check .astro frontmatter; `astro check` does.
+      - name: Check (types + content schema)
+        run: bun run check
       - name: Build
         run: bun run build
 
