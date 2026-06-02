@@ -53,8 +53,8 @@ Use when OpenClaw is connecting to a Chromium you launch yourself.
    openclaw browserbase status       # confirm
    ```
 
-2. Download `agent-browser-shield-extension.zip` from the URL above, then upload it to
-   Browserbase using the
+2. Download `agent-browser-shield-extension.zip` from the URL above, then upload
+   it to Browserbase using the
    [`browse` CLI](https://docs.browserbase.com/integrations/skills/browse-cli)
    (npm `browse`):
 

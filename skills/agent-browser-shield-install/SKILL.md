@@ -122,7 +122,8 @@ and has `manifest.json` at the archive root. Do not re-zip it.
 6. The most common upload failure is `manifest.json` not at the archive root.
    The hosted ZIP is already correctly shaped; if you build your own, zip from
    inside the dist directory
-   (`cd dist && zip -r ../agent-browser-shield-extension.zip .`), never the parent.
+   (`cd dist && zip -r ../agent-browser-shield-extension.zip .`), never the
+   parent.
 
 ## Path C — CDP / MCP attach to user-controlled Chrome
 

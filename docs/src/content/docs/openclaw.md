@@ -126,8 +126,8 @@ The flow:
 Download the
 [prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), or
 follow [Install](/agent-browser-shield/install/) through `bun run package` to
-build one yourself at `output/agent-browser-shield-extension.zip`. Either way, `manifest.json` sits
-at the archive root — do not re-zip it.
+build one yourself at `output/agent-browser-shield-extension.zip`. Either way,
+`manifest.json` sits at the archive root — do not re-zip it.
 
 ### 2. Upload to Browserbase
 
