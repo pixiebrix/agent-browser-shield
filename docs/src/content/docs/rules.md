@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 22 rules grouped into five rough categories. Each rule is
+The extension ships 23 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -270,6 +270,50 @@ the annotation and decides whether to click the line's remove control.
 Prior art: Brignull's original 2010 *Sneak into Basket* pattern, generalized to
 the *Sneaking* family in Mathur et al. 2019 (both cited in the section
 preamble).
+
+### Flag Roach-Motel Sign-Ups
+
+- **ID:** `roach-motel-flag`
+- **Default:** on
+- **Scope:** top frame only
+
+On signup, subscription, and checkout pages of sites documented to make
+cancellation difficult, embed a screen-reader-only landmark carrying a
+normalized cancellation-difficulty grade (`hard`, `very-hard`, `impossible`),
+the canonical cancel/delete URL when known, and a short note. Agents reading the
+accessibility tree see the warning before completing signup; sighted users see
+nothing.
+
+Two data sources back the rule:
+
+- A hand-curated list under
+  [`extension/data/sites/`](https://github.com/pixiebrix/agent-browser-shield/tree/main/extension/data/sites)
+  for FTC-defendant cases (Amazon Prime, Care.com, Match.com, Cleo AI, LA
+  Fitness, Adobe, Vonage) and well-documented cancellation-friction cases
+  (NYTimes, Washington Post, WSJ, Planet Fitness, Equinox), each with its own
+  signup/subscription pathnames. Curated entries take precedence on URL match.
+- A vendored snapshot of [JustDeleteMe](https://justdelete.me/)'s
+  account-deletion directory
+  ([MIT License](https://github.com/justdeleteme/justdelete.me/blob/master/LICENSE.md),
+  Robb Lewis & contributors), filtered to entries graded `hard` or `impossible`.
+  Used as a fallback when the curated list misses, gated to signup-shaped
+  pathnames (`/signup`, `/subscribe`, `/join`, `/membership`, `/checkout`,
+  `/plans`, `/pricing`, `/billing`, `/cart`, `/upgrade`, `/register`).
+  JustDeleteMe attribution is included in the landmark text so the agent can
+  cite the source back to the user. Refresh with `bun run fetch-justdeleteme`.
+
+Prior art: Brignull's original 2010 *Roach Motel* pattern, renamed *Hard to
+cancel* in the current
+[deceptive.design](https://www.deceptive.design/types/hard-to-cancel) taxonomy.
+Vasudevan et al.,
+[*Staying at the Roach Motel: Cross-Country Analysis of Manipulative Subscription and Cancellation UXes*](https://arxiv.org/abs/2309.17145)
+(CHI 2024), gives the empirical basis: cancellation flows asymmetric to signup
+flows on a significant share of subscription sites across the US, EU, and UK.
+The legal "good" standard converges on signup/cancel symmetry — the FTC's 2024
+[Click-to-Cancel rule](https://www.ftc.gov/news-events/news/press-releases/2024/10/federal-trade-commission-announces-final-click-cancel-rule-making-it-easier-consumers-end-recurring),
+California
+[AB-2863](https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2863),
+and EU Digital Services Act Art. 25.
 
 ## Token-saving cleanup
 
