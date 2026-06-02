@@ -1,0 +1,17 @@
+# Equinox — roach-motel-flag.
+#
+# Long-documented cancellation friction including certified-mail
+# requirements and member-services-only cancel paths, often combined
+# with annual commitments and early-termination fees.
+
+hostnames:
+  - "{*.}?equinox.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/join*"
+      - "/membership*"
+      - "/signup*"
+    difficulty: "very-hard"
+    notes: "Cancellation historically requires certified mail or in-person Member Services visit; annual commitments and early-termination fees common."

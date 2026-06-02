@@ -1,0 +1,16 @@
+# LA Fitness — roach-motel-flag.
+#
+# FTC v. Fitness International, LLC (Aug 2025) over cancellation that
+# required in-person visit or certified mail despite online signup.
+
+hostnames:
+  - "{*.}?lafitness.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/join*"
+      - "/membership*"
+      - "/signup*"
+    difficulty: "very-hard"
+    notes: "Subject of FTC enforcement (2025). Historically required in-person visit or certified mail to cancel despite online signup."

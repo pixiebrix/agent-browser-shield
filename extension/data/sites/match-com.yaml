@@ -1,0 +1,17 @@
+# Match.com — roach-motel-flag.
+#
+# FTC v. Match Group, Inc. (2019) charged that the company made it
+# difficult for users to cancel and trapped them with deceptive billing.
+# Match Group operates Match.com, Tinder, Hinge, OkCupid, Plenty of Fish.
+
+hostnames:
+  - "{*.}?match.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/registration*"
+      - "/subscribe*"
+      - "/subscription*"
+    difficulty: "hard"
+    notes: "Subject of FTC enforcement (2019) over deceptive billing and cancellation friction."

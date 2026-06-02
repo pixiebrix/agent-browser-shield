@@ -1,0 +1,17 @@
+# Care.com — roach-motel-flag.
+#
+# FTC v. Care.com, Inc. (Aug 2024, $8.5M settlement) covered both
+# misrepresented job-count claims and cancellation friction for paying
+# families. Notice scoped to signup/join paths.
+
+hostnames:
+  - "{*.}?care.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/join*"
+      - "/signup*"
+      - "/registration*"
+    difficulty: "hard"
+    notes: "Subject of FTC enforcement (2024) including charges related to subscription cancellation difficulty."

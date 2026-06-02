@@ -24,6 +24,7 @@
     "package": "bun run ../scripts/package-extension.ts",
     "package:cws": "bun run ../scripts/package-extension.ts --strip-key -o ../output/extension-cws.zip",
     "fetch-easylist": "uv run --directory .. scripts/fetch_easylist.py",
+    "fetch-justdeleteme": "uv run --directory .. scripts/fetch_justdeleteme.py",
     "build-site-data": "bun run scripts/build-site-data.ts",
     "build-injection-patterns": "bun run scripts/build-injection-patterns.ts",
     "build-rule-defaults": "bun run scripts/build-rule-defaults.ts",

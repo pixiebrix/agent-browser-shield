@@ -1,4 +1,4 @@
-# Amazon — reviews-hide, footer-hide, search-url-helper.
+# Amazon — reviews-hide, footer-hide, search-url-helper, roach-motel-flag.
 #
 # `hostnames` here is the union across all rules on this file. Per-rule
 # `hostnames` narrow further (reviews-hide is only authored for amazon.com;
@@ -12,6 +12,19 @@ hostnames:
   - "{*.}?amazon.de"
 
 rules:
+  roach-motel-flag:
+    # Prime signup. FTC v. Amazon.com, Inc. (filed 2023) targeted the
+    # multi-step "Iliad" cancellation flow; settlement entered 2025.
+    hostnames:
+      - "{*.}?amazon.com"
+    pathnames:
+      - "/amazonprime*"
+      - "/prime*"
+      - "/gp/prime*"
+    difficulty: "hard"
+    cancellationUrl: "https://www.amazon.com/gp/help/customer/display.html?nodeId=GHGUYUH7P9PKARRT"
+    notes: "Subject of FTC enforcement (2023, settled 2025) over multi-step cancellation flow."
+
   reviews-hide:
     # Amazon doesn't expose schema.org microdata in the rendered DOM. Keep
     # `#averageCustomerReviews` near the product title visible — it only

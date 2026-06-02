@@ -1,0 +1,16 @@
+# Washington Post — roach-motel-flag.
+#
+# Long-documented in consumer press: cancellation routes to phone or
+# live chat with retention offers; no symmetric online "Cancel" button
+# matching the online "Subscribe" path.
+
+hostnames:
+  - "{*.}?washingtonpost.com"
+
+rules:
+  roach-motel-flag:
+    pathnames:
+      - "/subscribe*"
+      - "/subscription*"
+    difficulty: "hard"
+    notes: "Cancellation routes to phone or live chat with retention offers; no symmetric online cancel flow."

@@ -14,8 +14,10 @@ import { join, relative } from "node:path";
 import { load } from "js-yaml";
 import type {
   RecipeRuleEntryInput,
+  RoachMotelDifficultyValue,
   SelectorRuleEntryInput,
   SiteFile,
+  WarningRuleEntryInput,
 } from "../data/site-rules.schema";
 import {
   SITE_DATA_RULE_IDS,
@@ -44,6 +46,15 @@ interface RecipeBlock {
   hostnames: string[];
   pathnames: string[] | null;
   recipe: string;
+}
+
+interface WarningBlock {
+  fileName: string;
+  hostnames: string[];
+  pathnames: string[] | null;
+  difficulty: RoachMotelDifficultyValue;
+  cancellationUrl: string | null;
+  notes: string | null;
 }
 
 function loadSites(): ParsedSiteFile[] {
@@ -126,6 +137,27 @@ function collectRecipeBlocks(parsed: ParsedSiteFile[]): RecipeBlock[] {
   return blocks;
 }
 
+function collectWarningBlocks(parsed: ParsedSiteFile[]): WarningBlock[] {
+  const blocks: WarningBlock[] = [];
+  for (const { fileName, data } of parsed) {
+    const rule = data.rules["roach-motel-flag"];
+    if (!rule) {
+      continue;
+    }
+    for (const entry of toEntries<WarningRuleEntryInput>(rule)) {
+      blocks.push({
+        fileName,
+        hostnames: entry.hostnames ?? data.hostnames,
+        pathnames: entry.pathnames ?? null,
+        difficulty: entry.difficulty,
+        cancellationUrl: entry.cancellationUrl ?? null,
+        notes: entry.notes ?? null,
+      });
+    }
+  }
+  return blocks;
+}
+
 function emitPatternsLiteral(
   hostnames: string[],
   pathnames: string[] | null,
@@ -200,11 +232,31 @@ function emitRecipeArray(blocks: RecipeBlock[]): string {
   ].join("\n");
 }
 
+function emitNullableString(value: string | null): string {
+  return value === null ? "null" : JSON.stringify(value);
+}
+
+function emitWarningArray(blocks: WarningBlock[]): string {
+  if (blocks.length === 0) {
+    return "export const ROACH_MOTEL_WARNINGS: readonly SiteWarning[] = [];";
+  }
+  const entries = blocks.map(
+    (block) =>
+      `  {\n    // from data/sites/${block.fileName}\n    patterns: ${emitPatternsLiteral(block.hostnames, block.pathnames)},\n    difficulty: ${JSON.stringify(block.difficulty)},\n    cancellationUrl: ${emitNullableString(block.cancellationUrl)},\n    notes: ${emitNullableString(block.notes)},\n  },`,
+  );
+  return [
+    "export const ROACH_MOTEL_WARNINGS: readonly SiteWarning[] = [",
+    ...entries,
+    "];",
+  ].join("\n");
+}
+
 function buildOutput(parsed: ParsedSiteFile[]): string {
   const reviews = collectSelectorBlocks(parsed, "reviews-hide");
   const comments = collectSelectorBlocks(parsed, "comments-hide");
   const footer = collectSelectorBlocks(parsed, "footer-hide");
   const recipes = collectRecipeBlocks(parsed);
+  const warnings = collectWarningBlocks(parsed);
 
   return [
     "// AUTO-GENERATED — do not edit by hand.",
@@ -219,6 +271,15 @@ function buildOutput(parsed: ParsedSiteFile[]): string {
     "  recipe: string;",
     "}",
     "",
+    'export type RoachMotelDifficulty = "hard" | "very-hard" | "impossible";',
+    "",
+    "export interface SiteWarning {",
+    "  patterns: URLPattern[];",
+    "  difficulty: RoachMotelDifficulty;",
+    "  cancellationUrl: string | null;",
+    "  notes: string | null;",
+    "}",
+    "",
     emitSelectorRuleArray("REVIEWS_HIDE_SITE_RULES", reviews),
     "",
     emitSelectorRuleArray("COMMENTS_HIDE_SITE_RULES", comments),
@@ -226,6 +287,8 @@ function buildOutput(parsed: ParsedSiteFile[]): string {
     emitSelectorRuleArray("FOOTER_HIDE_SITE_RULES", footer),
     "",
     emitRecipeArray(recipes),
+    "",
+    emitWarningArray(warnings),
     "",
   ].join("\n");
 }
@@ -238,6 +301,7 @@ export function generateSiteData(): void {
     "comments-hide",
     "footer-hide",
     "search-url-helper",
+    "roach-motel-flag",
   ]);
   for (const id of SITE_DATA_RULE_IDS) {
     if (!emitted.has(id)) {
