@@ -12,12 +12,12 @@ Live deployment: <https://shield-dark-pattern-demo.vercel.app/>
 
 ## What's embedded
 
-| Page                            | Rules exercised                                                                                                                                              |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/` (Home)                      | `cookie-banner-hide`, `newsletter-modal-hide` (fires ~6s after load), `chat-widget-hide`, `ads-hide`, `footer-hide`, `countdown-timer-hide`, `scarcity-hide` |
+| Page                            | Rules exercised                                                                                                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/` (Home)                      | `cookie-banner-hide`, `newsletter-modal-hide` (fires ~6s after load), `chat-widget-hide`, `ads-hide`, `footer-hide`, `countdown-timer-hide`, `scarcity-hide`                 |
 | `/product/:id` (Product detail) | `countdown-timer-hide`, `scarcity-hide`, `reviews-hide`, `prompt-injection-hide`, `hidden-text-strip`, `html-comment-strip`, `unicode-invisibles-strip`, `social-embed-hide` |
-| `/cart`                         | `checkout-checkbox-clear`, `cart-addon-flag`, `scarcity-hide`                                                                                                |
-| `/checkout`                     | `checkout-checkbox-clear`, `pii-mask`                                                                                                                        |
+| `/cart`                         | `checkout-checkbox-clear`, `cart-addon-flag`, `scarcity-hide`                                                                                                                |
+| `/checkout`                     | `checkout-checkbox-clear`, `pii-mask`                                                                                                                                        |
 
 The global overlays (cookie banner, chat widget, newsletter modal, footer) are
 mounted on every page from `src/App.tsx`.
