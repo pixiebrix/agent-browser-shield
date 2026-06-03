@@ -92,6 +92,37 @@ describe("detectSpoof href/text domain mismatch", () => {
       detectSpoof(makeAnchor("paypal.com", "tel:+15555550100")),
     ).toBeNull();
   });
+
+  // The previous last-two-labels heuristic collapsed any host to its
+  // tail bigram, so `foo.co.uk` and `bar.co.uk` both flattened to
+  // `co.uk` and a real cross-site mismatch was missed. The PSL-backed
+  // helper distinguishes them.
+  it("flags mismatched sites that share a multi-part ICANN suffix", () => {
+    const anchor = makeAnchor(
+      "Sign in at bank.co.uk",
+      "https://evil.co.uk/login",
+    );
+    const triggers = detectSpoof(anchor);
+    expect(triggers?.textDomain).toBe("bank.co.uk");
+    expect(triggers?.hrefHost).toBe("evil.co.uk");
+  });
+
+  it("does not flag subdomains under a multi-part ICANN suffix", () => {
+    const anchor = makeAnchor("bank.co.uk", "https://login.bank.co.uk/account");
+    expect(detectSpoof(anchor)).toBeNull();
+  });
+
+  // The reverse case: PSL Private entries like `github.io` should not be
+  // treated as registrable suffixes for trust purposes, so two pages on
+  // `*.github.io` collapse to the same identity and the visible-text
+  // claim isn't surfaced as a mismatch.
+  it("does not flag mismatched github.io subdomains as cross-site", () => {
+    const anchor = makeAnchor(
+      "owner.github.io",
+      "https://other.github.io/path",
+    );
+    expect(detectSpoof(anchor)).toBeNull();
+  });
 });
 
 describe("linkSpoofAnnotateRule", () => {
