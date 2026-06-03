@@ -70,19 +70,19 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const SHIELD_PATH = "M12 21a9 9 0 0 1-9-9V5l9-3 9 3v7a9 9 0 0 1-9 9z";
 
 const RULE_ICON_PATHS: Partial<Record<RuleId, string>> = {
-  "reviews-hide":
+  "reviews-redact":
     "M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.9l-5.9 3.4 1.7-6.6L2.6 9.3l6.8-.5L12 2.5z",
-  "comments-hide":
+  "comments-redact":
     "M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-5l-5 4v-4H6a3 3 0 0 1-3-3V6z",
-  "prompt-injection-hide": "M12 3l10 18H2L12 3zM12 10v5M12 17.5v.01",
-  "countdown-timer-hide": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3",
-  "scarcity-hide":
+  "prompt-injection-redact": "M12 3l10 18H2L12 3zM12 10v5M12 17.5v.01",
+  "countdown-timer-redact": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3",
+  "scarcity-redact":
     "M12 22c-4 0-7-3-7-7 0-3 2-5 3-6-1 4 2 6 2 6 1-3 3-6 3-9 4 3 6 6 6 10 0 4-3 7-7 7z",
-  "footer-hide": "M4 5h16v10H4zM4 19h16",
-  "social-embed-hide": "M5 9h14M5 15h14M10 5l-2 14M16 5l-2 14",
-  "irrelevant-sections-hide": "M3 4h18l-7 9v6l-4 2v-8L3 4z",
+  "footer-redact": "M4 5h16v10H4zM4 19h16",
+  "social-embed-redact": "M5 9h14M5 15h14M10 5l-2 14M16 5l-2 14",
+  "irrelevant-sections-redact": "M3 4h18l-7 9v6l-4 2v-8L3 4z",
   // Globe with one meridian + one parallel — signals "different web origin".
-  "cross-origin-frame-hide":
+  "cross-origin-frame-redact":
     "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9z",
 };
 

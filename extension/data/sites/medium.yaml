@@ -1,6 +1,6 @@
 # Medium — search-url-helper only.
 #
-# comments-hide is deliberately omitted. Medium's "Responses" are
+# comments-redact is deliberately omitted. Medium's "Responses" are
 # click-mounted into a `<div role="dialog">` whose wrapper and each
 # response card use only hashed/obfuscated class names, with no
 # `data-testid` or stable id. Selectors derived from the current build
@@ -10,7 +10,7 @@
 # `pw-responses-*` wrapper) or a distinctly-labelled dialog.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?medium.com"

@@ -210,14 +210,16 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   (`extension/scripts/build-rule-defaults.ts`) validates that every registered
   id has a default and rejects unknown ids; do not edit the generated
   `extension/src/rules/rule-defaults.generated.ts`. To flip
-  `irrelevant-sections-hide` on for one experiment, change `false` to `true`
+  `irrelevant-sections-redact` on for one experiment, change `false` to `true`
   here and rebuild.
+
 - **Site-specific rules** — `extension/data/sites/<host>.yaml`. Codegen
   (`extension/scripts/build-site-data.ts`) validates each YAML against
   `extension/data/site-rules.schema.ts` and emits
   `extension/src/rules/site-data.generated.ts`. For selector-authoring workflow
   (probing the live site, validating against the schema), hand off to
   `agent-browser-shield-site-rules`. For the YAML edit alone, do it inline.
+
 - **Built-in JS rule behavior** — `extension/src/rules/<rule-id>.ts`. Edit when
   the trace shows a rule firing on false-positives (e.g. masking a real price as
   PII, stripping nav the agent needed) or missing content it should catch. Each
@@ -226,10 +228,27 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   `extension/src/rules/__tests__/<rule-id>.test.ts` — add a failing fixture
   reproducing the trace observation before changing the rule, so the refinement
   is anchored.
+
 - **New defense rule** — create `extension/src/rules/<new-id>.ts`, import + add
   it to the tuple in `extension/src/rules/index.ts`, add a default to
   `extension/data/rule-defaults.json`. See the `agent-browser-shield` skill for
   the rule contract.
+
+  Rule IDs are `<target>-<verb>`. Pick the verb by what the rule does to the
+  DOM, not the threat:
+
+  | Verb       | Use when the rule…                                                   |
+  | ---------- | -------------------------------------------------------------------- |
+  | `annotate` | adds an agent-readable warning or affordance; page content unchanged |
+  | `hide`     | visually conceals with `display: none`; element stays in the DOM     |
+  | `redact`   | replaces content with a click-to-reveal placeholder                  |
+  | `sanitize` | keeps the element and cleans its attributes / text / form state      |
+  | `strip`    | removes the element/node from the DOM entirely                       |
+
+  Pick `hide` over `redact` only when the element is a floating overlay the user
+  would never want back; for in-flow content prefer `redact` so the agent can
+  opt in via the placeholder.
+
 - **Injection regex patterns** — `extension/data/injection-patterns.yaml`
   (base64-encoded sources). Codegen emits the plaintext RegExp file. Do not edit
   the generated file. Be aware of the project rule that the regex source

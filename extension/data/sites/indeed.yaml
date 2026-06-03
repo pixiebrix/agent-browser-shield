@@ -1,13 +1,13 @@
-# Indeed — reviews-hide, search-url-helper.
+# Indeed — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?indeed.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-testid="reviewsList"]` wraps the company UGC review feed on
     # /cmp/{company}/reviews. The overall rating, rating histogram
     # (`[data-testid="review-histogram"]`), and filter controls

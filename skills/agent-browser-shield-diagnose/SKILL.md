@@ -103,7 +103,7 @@ Two ways to view the diff:
   - Missing nodes on the guarded side that the baseline used to read
   - `abs-placeholder` lines on the guarded side (see the `agent-browser-shield`
     skill for marker semantics) — the agent may have failed to recognize these
-  - Extra `abs-cart-addon-flag`, `data-abs-cleared`, or
+  - Extra `abs-cart-addon-annotate`, `data-abs-cleared`, or
     `data-abs-confirmshame-orig-*` markers
   - Truncation: large guarded trees can blow past the model's context budget
 

@@ -1,13 +1,13 @@
-# NYTimes — comments-hide, search-url-helper, roach-motel-flag.
+# NYTimes — comments-redact, search-url-helper, roach-motel-annotate.
 #
 # Footer is `<footer role="contentinfo">` — caught by the generic
-# always-on selector. No footer-hide entry needed.
+# always-on selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?nytimes.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     # NYT subscription cancellation routes to live chat with retention
     # offers; phone fallback is business-hours only. Long-documented in
     # consumer press.
@@ -20,7 +20,7 @@ rules:
     cancellationUrl: "https://help.nytimes.com/hc/en-us/articles/115014679508"
     notes: "Cancellation routes to live chat with retention offers; phone fallback during business hours only."
 
-  comments-hide:
+  comments-redact:
     # The "Read N comments" actionbar button stays visible — it conveys
     # only the aggregate count and lets the agent reason about whether to
     # expand. When the user/agent clicks it, NYT mounts the comments

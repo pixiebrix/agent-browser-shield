@@ -1,7 +1,7 @@
 # NPR — search-url-helper only.
 #
 # NPR removed open comments from npr.org years ago, so there is no
-# comments-hide target. The page footer is a semantic <footer> caught by
+# comments-redact target. The page footer is a semantic <footer> caught by
 # the generic always-on selector.
 
 hostnames:

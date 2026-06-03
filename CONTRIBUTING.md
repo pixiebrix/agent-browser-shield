@@ -94,7 +94,7 @@ registration step.
 
 Walkthrough:
 
-1. Copy a small existing rule (`scarcity-hide.ts` is a good starter).
+1. Copy a small existing rule (`scarcity-redact.ts` is a good starter).
 2. Implement the `Rule` interface from `extension/src/rules/types.ts` — `id`,
    `label`, `description`, `defaultEnabled`, `apply()`. The custom ESLint rule
    `agent-browser-shield/rule-id-matches-filename` enforces that `id` matches
@@ -105,6 +105,29 @@ Walkthrough:
    That's the only registration needed.
 5. Update `skills/agent-browser-shield-config/SKILL.md` so the rule appears in
    the list there.
+
+### Rule ID naming
+
+Rule IDs follow `<target>-<verb>`. Pick the verb that names what the rule
+actually does to the DOM, not the threat it addresses:
+
+| Verb       | Use when the rule…                                                   | Examples                                                                                                  |
+| ---------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `annotate` | adds an agent-readable warning or affordance; page content unchanged | `cart-addon-annotate`, `roach-motel-annotate`                                                             |
+| `hide`     | visually conceals with `display: none`; element stays in the DOM     | `ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`                             |
+| `redact`   | replaces content with a click-to-reveal placeholder                  | `pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`                              |
+| `sanitize` | keeps the element and cleans its attributes / text / form state      | `json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`, `checkout-checkbox-sanitize` |
+| `strip`    | removes the element/node from the DOM entirely                       | `noscript-strip`, `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`, `meta-injection-strip`   |
+
+Picking between `hide` and `redact`: if the user can still meaningfully act on
+the element when it's gone (e.g. a floating overlay they would never read),
+prefer `hide` with an in-place `display: none`. If the element occupies in-flow
+content the user/agent might want back on demand, prefer `redact` with a
+click-to-reveal placeholder.
+
+The `-helper` suffix is reserved for `search-url-helper` and any future
+agent-affordance rules that aren't defensive — they sit outside the verb
+taxonomy because they add capability rather than remove a problem.
 
 URL gating uses
 [`urlpattern-polyfill`](https://github.com/kenchris/urlpattern-polyfill). Use

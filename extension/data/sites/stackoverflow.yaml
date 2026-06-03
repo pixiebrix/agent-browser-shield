@@ -1,13 +1,13 @@
-# Stack Overflow — comments-hide, search-url-helper.
+# Stack Overflow — comments-redact, search-url-helper.
 #
 # Footer is `<footer class="site-footer" role="contentinfo">` — already
-# caught by the generic always-on selector. No footer-hide entry needed.
+# caught by the generic always-on selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?stackoverflow.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     # `.js-comments-container` wraps every per-post comments thread on
     # question and answer cards. The class is shared by both the question's
     # and each answer's comment container. The aggregated "X more comment(s)"

@@ -1,4 +1,4 @@
-# Wall Street Journal — roach-motel-flag.
+# Wall Street Journal — roach-motel-annotate.
 #
 # Long-documented cancellation friction: phone-only cancellation has
 # historically been required, with retention scripts and extended holds.
@@ -7,7 +7,7 @@ hostnames:
   - "{*.}?wsj.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/subscribe*"
       - "/subscription*"

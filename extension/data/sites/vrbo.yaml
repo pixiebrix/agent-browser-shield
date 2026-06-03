@@ -1,4 +1,4 @@
-# Vrbo — reviews-hide, search-url-helper.
+# Vrbo — reviews-redact, search-url-helper.
 #
 # Vrbo runs on the same Expedia Group property-page markup as
 # extension/data/sites/hotels.yaml and extension/data/sites/expedia.yaml:
@@ -7,13 +7,13 @@
 # stays visible.
 #
 # Footer is a semantic <footer> (lazy-mounted) caught by the generic
-# always-on selector. No footer-hide entry needed.
+# always-on selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?vrbo.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#Reviews [data-stid="carousel-wrapper"]` hides the UGC review
     # cards on property detail pages. The aggregate guest-score
     # summary outside `#Reviews` is preserved. Three URL shapes share

@@ -1,13 +1,13 @@
-# Booking.com — reviews-hide, search-url-helper.
+# Booking.com — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer role="contentinfo"> caught by the generic
-# always-on selector. No footer-hide entry needed.
+# always-on selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?booking.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-testid="PropertyReviewsRegionBlock"]` wraps the "Guest reviews"
     # region on /hotel/ pages — heading, AI-generated review summary, and
     # featured review cards. The aggregate score chip (`#reviewFloater`,

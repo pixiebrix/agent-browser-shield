@@ -1,4 +1,4 @@
-# Planet Fitness — roach-motel-flag.
+# Planet Fitness — roach-motel-annotate.
 #
 # Long-standing reputation for requiring in-person visit to the home
 # club OR certified-mail cancellation, despite fully online signup.
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?planetfitness.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/join*"
       - "/membership*"

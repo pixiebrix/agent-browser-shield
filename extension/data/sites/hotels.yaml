@@ -1,4 +1,4 @@
-# Hotels.com — reviews-hide, search-url-helper.
+# Hotels.com — reviews-redact, search-url-helper.
 #
 # Hotels.com runs on the same Expedia Group property-page markup as
 # extension/data/sites/expedia.yaml: `#Reviews` wraps the "Guest
@@ -8,13 +8,13 @@
 #
 # Footer is a semantic <footer> (lazy-mounted at the bottom of the
 # property page) caught by the generic always-on selector. No
-# footer-hide entry needed.
+# footer-redact entry needed.
 
 hostnames:
   - "{*.}?hotels.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#Reviews [data-stid="carousel-wrapper"]` targets the carousel
     # of individual UGC review cards inside the Reviews region on
     # property pages (`/ho{propertyId}/{slug}/`). The aggregate

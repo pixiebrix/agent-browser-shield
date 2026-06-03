@@ -3,14 +3,14 @@
 
 // Factory for the common "find elements matching a list of selectors and
 // replace each outermost match with a block placeholder" rule shape used by
-// reviews-hide, comments-hide, and footer-hide.
+// reviews-redact, comments-redact, and footer-redact.
 //
 // Each callsite defines:
 //   - selectors that ship on every page (semantic markers, conventional
 //     ids/classes)
 //   - optional site-specific selectors gated by URLPattern hostname/pathname
 //   - an optional candidateFilter for post-querySelectorAll narrowing
-//     (footer-hide uses this to drop per-section <footer>s nested inside
+//     (footer-redact uses this to drop per-section <footer>s nested inside
 //     <article>/<aside>/<nav>)
 
 import type { URLPattern } from "urlpattern-polyfill";

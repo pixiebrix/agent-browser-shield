@@ -1,4 +1,4 @@
-# Vonage — roach-motel-flag.
+# Vonage — roach-motel-annotate.
 #
 # FTC v. Vonage Holdings Corp. (Nov 2022, $100M settlement) over junk
 # fees and cancellation hurdles including extended hold times and
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?vonage.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/checkout*"
       - "/business/*/buy*"

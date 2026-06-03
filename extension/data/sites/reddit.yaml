@@ -2,7 +2,7 @@ hostnames:
   - "{*.}?reddit.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     selectors:
       - "shreddit-comment-tree"
       - "shreddit-comments-list"

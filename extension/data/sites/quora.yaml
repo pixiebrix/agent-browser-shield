@@ -1,4 +1,4 @@
-# Quora — comments-hide.
+# Quora — comments-redact.
 #
 # Quora's answers are the page's primary content but also user-written
 # long-form text, which makes them a prompt-injection vector when an
@@ -6,7 +6,7 @@
 # "N Answers" counter sit outside any answer card and stay visible.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed. No search-url-helper: Quora's
+# selector. No footer-redact entry needed. No search-url-helper: Quora's
 # /search?q= path is reachable, but most answer discovery happens via
 # topic feeds and personalization, so URL helpers add little value.
 
@@ -14,7 +14,7 @@ hostnames:
   - "{*.}?quora.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     # `dom_annotate_question_answer_item_*` is Quora's own stable hook
     # (the `dom_annotate_` and `puppeteer_test_` prefixes are kept
     # un-hashed across deploys for their automation). Each match wraps

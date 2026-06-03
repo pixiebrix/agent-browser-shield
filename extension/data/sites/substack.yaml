@@ -1,7 +1,7 @@
-# Substack — comments-hide, search-url-helper.
+# Substack — comments-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 #
 # Substack publications live across many hosts: the central
 # `substack.com` and per-publication subdomains (`{slug}.substack.com`)
@@ -16,7 +16,7 @@ hostnames:
   - "{*.}?substack.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     # `.comments-section` wraps the comment list and the inline
     # comment-composer below a post body. The discussion heading
     # ("Discussion about this post / Comments | Restacks" tab toggle)

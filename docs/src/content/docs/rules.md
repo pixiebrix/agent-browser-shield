@@ -27,7 +27,7 @@ renders normally for humans.
 
 ### Mask PII
 
-- **ID:** `pii-mask`
+- **ID:** `pii-redact`
 - **Default:** on
 
 Hide credit card numbers (Luhn-validated), phone numbers, and SSNs.
@@ -39,7 +39,7 @@ named-entity recognition to detect and redact PII in text.
 
 ### Mask Secrets
 
-- **ID:** `secrets-mask`
+- **ID:** `secrets-redact`
 - **Default:** on
 
 Hide API keys, tokens, JWTs, private keys, and other high-entropy credentials.
@@ -68,7 +68,7 @@ section each target a delivery vector documented in those threat models.
 
 ### Hide Prompt Injection
 
-- **ID:** `prompt-injection-hide`
+- **ID:** `prompt-injection-redact`
 - **Default:** on
 
 Hide page sections matching known prompt-injection patterns. The pattern set is
@@ -173,7 +173,7 @@ respectively.
 
 Walk every `<meta>` element with a `content` attribute and every `<title>`
 element. When the value matches the prompt-injection pattern set (the same regex
-bundle as `prompt-injection-hide`), remove the `<meta>` element outright and
+bundle as `prompt-injection-redact`), remove the `<meta>` element outright and
 blank the `<title>` text. The rule does not gate on specific `name=` /
 `property=` values — any meta whose content carries instruction-shaped text is
 removed, covering `name="description"`, `name="keywords"`,
@@ -202,16 +202,16 @@ the
 
 ### Scrub Attribute Injection
 
-- **ID:** `attribute-injection-scrub`
+- **ID:** `attribute-injection-sanitize`
 - **Default:** on
 
 Walk every element and, for a small allowlist of agent-readable attributes —
 `aria-label`, `aria-description`, `alt`, `title`, `placeholder`, `data-tooltip`,
 and `value` on disabled `<input>` elements — remove the attribute outright when
 its value matches the prompt-injection pattern set (the same regex bundle used
-by `prompt-injection-hide`). Clean attributes are preserved. Attributes outside
-the allowlist are not inspected. We remove the whole attribute rather than blank
-it because an empty `aria-label` actively hides an element from
+by `prompt-injection-redact`). Clean attributes are preserved. Attributes
+outside the allowlist are not inspected. We remove the whole attribute rather
+than blank it because an empty `aria-label` actively hides an element from
 accessibility-tree consumers, whereas a missing `aria-label` lets fallback name
 computation (visible text, `alt`, associated label) proceed normally.
 
@@ -239,7 +239,7 @@ explainer.
 
 Walk every `<script type="application/ld+json">` block, parse it, recursively
 replace any string field whose value matches the prompt-injection pattern set
-(the same regex bundle used by `prompt-injection-hide`) with an empty string,
+(the same regex bundle used by `prompt-injection-redact`) with an empty string,
 and re-serialize. Structural fields useful to the agent — `price`,
 `priceCurrency`, `availability`, `sku`, `identifier`, `ratingValue`,
 `reviewCount`, `position` — are preserved exactly. Malformed JSON-LD is left
@@ -255,17 +255,17 @@ writing into the page) can poison `description`, `articleBody`, `name`, or
 
 Prior art: JSON-LD is the JSON serialization of the
 [schema.org vocabulary](https://schema.org/) (W3C JSON-LD 1.1 Recommendation,
-2020\) — the same vocabulary `reviews-hide` reads to find user-generated reviews.
-The non-rendered-but-agent-read carrier model comes from Greshake et al. (cited
-in the section preamble); JSON-LD is the schema.org-shaped instance of that
-carrier. Liao et al.,
+2020\) — the same vocabulary `reviews-redact` reads to find user-generated
+reviews. The non-rendered-but-agent-read carrier model comes from Greshake et
+al. (cited in the section preamble); JSON-LD is the schema.org-shaped instance
+of that carrier. Liao et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents for Privacy Leakage*](https://arxiv.org/abs/2409.11295)
 (ICLR 2025), and Wu et al., [*WIPI*](https://arxiv.org/abs/2402.16965), both
 demonstrate that web agents read page metadata an end user never sees.
 
 ### Hide Comments
 
-- **ID:** `comments-hide`
+- **ID:** `comments-redact`
 - **Default:** on
 
 Hide user-generated comment threads so agents aren't exposed to potential prompt
@@ -277,7 +277,7 @@ WIPI threat model (Wu et al., cited in the section preamble).
 
 ### Hide Reviews
 
-- **ID:** `reviews-hide`
+- **ID:** `reviews-redact`
 - **Default:** on
 
 Hide user-generated review text so agents aren't exposed to potential prompt
@@ -291,7 +291,7 @@ referenced above.
 
 ### Hide Social Embeds
 
-- **ID:** `social-embed-hide`
+- **ID:** `social-embed-redact`
 - **Default:** on
 
 Hide embedded social-media widgets (Twitter/X, YouTube, Facebook, Instagram,
@@ -304,7 +304,7 @@ are a third-party content surface whose text the host page does not control.
 
 ### Hide Cross-Origin Frames (Experimental)
 
-- **ID:** `cross-origin-frame-hide`
+- **ID:** `cross-origin-frame-redact`
 - **Default:** off
 
 Replace every `<iframe>` whose `src` resolves to a different web origin with a
@@ -342,7 +342,7 @@ below target. Bösch et al.,
 
 ### Hide Countdown Timers
 
-- **ID:** `countdown-timer-hide`
+- **ID:** `countdown-timer-redact`
 - **Default:** on
 
 Hide running countdown timers so agents aren't pressured by the artificial
@@ -357,7 +357,7 @@ and comparing successive snapshots to confirm a ticking value.
 
 ### Hide Scarcity Warnings
 
-- **ID:** `scarcity-hide`
+- **ID:** `scarcity-redact`
 - **Default:** on
 
 Hide scarcity- and activity-based urgency messages ("Only 3 left", "Selling
@@ -371,7 +371,7 @@ on roughly a fifth of the 11K shopping sites they crawled.
 
 ### Clear Checkout Checkboxes
 
-- **ID:** `checkout-checkbox-clear`
+- **ID:** `checkout-checkbox-sanitize`
 - **Default:** on
 
 On checkout-like URLs (`/cart`, `/checkout`, `/basket`, `/bag`, `/payment`,
@@ -386,7 +386,7 @@ Brignull's deceptive.design catalog (both cited in the section preamble).
 
 ### Neutralize Confirmshame Buttons
 
-- **ID:** `confirmshame-neutralize`
+- **ID:** `confirmshame-sanitize`
 - **Default:** on
 
 Rewrite guilt-tripping decline buttons to a neutral `No thanks` so an agent
@@ -412,7 +412,7 @@ section preamble).
 
 ### Flag Cart Add-Ons (Sneak-Into-Basket)
 
-- **ID:** `cart-addon-flag`
+- **ID:** `cart-addon-annotate`
 - **Default:** on
 
 On checkout-like URLs, prepend a visible `[abs: likely cart add-on]` annotation
@@ -428,7 +428,7 @@ preamble).
 
 ### Flag Roach-Motel Sign-Ups
 
-- **ID:** `roach-motel-flag`
+- **ID:** `roach-motel-annotate`
 - **Default:** on
 - **Scope:** top frame only
 
@@ -486,7 +486,7 @@ generic article extractor.
 
 ### Hide Page Footer
 
-- **ID:** `footer-hide`
+- **ID:** `footer-redact`
 - **Default:** on
 
 Hide the page footer (legal links, sitemap, social icons, marketing copy) to
@@ -557,7 +557,7 @@ community-maintained ad and tracker selector patterns.
 
 ### Remove Unused SVG Sprites
 
-- **ID:** `svg-sprite-suppress`
+- **ID:** `svg-sprite-strip`
 - **Default:** on
 
 Remove hidden SVG sprite containers (those holding only `<symbol>`/`<defs>`
@@ -570,7 +570,7 @@ runtime. No direct academic prior art known.
 
 ### Hide Irrelevant Sections (AI)
 
-- **ID:** `irrelevant-sections-hide`
+- **ID:** `irrelevant-sections-redact`
 - **Default:** off
 - **Scope:** top frame only
 - **Availability:** requires an OpenAI API key — either bundled at build time

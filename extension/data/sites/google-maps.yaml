@@ -3,7 +3,7 @@
 # `hostnames` is wide (`google.com`) but rules below pin pathnames to
 # `/maps/*` so the entries only apply inside Maps, not on Search/News/etc.
 #
-# reviews-hide is deliberately omitted: Maps' SPA paints the place-panel
+# reviews-redact is deliberately omitted: Maps' SPA paints the place-panel
 # (where the reviews live) only after a geo-aware client-side render and
 # returns a near-empty document to a headless probe, so the reviews
 # container selector could not be verified against a live render. The

@@ -1,13 +1,13 @@
-# Expedia — reviews-hide, search-url-helper.
+# Expedia — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?expedia.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#Reviews [data-stid="carousel-wrapper"]` targets the "Guest
     # reviews" carousel of individual UGC review cards on hotel
     # information pages. The aggregate score panel above the carousel

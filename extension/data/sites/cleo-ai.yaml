@@ -1,4 +1,4 @@
-# Cleo AI (meetcleo.com) — roach-motel-flag.
+# Cleo AI (meetcleo.com) — roach-motel-annotate.
 #
 # FTC v. Cleo AI (2024) covered both deceptive cash-advance claims and
 # subscription-cancellation friction.
@@ -7,7 +7,7 @@ hostnames:
   - "{*.}?meetcleo.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/signup*"
       - "/subscribe*"

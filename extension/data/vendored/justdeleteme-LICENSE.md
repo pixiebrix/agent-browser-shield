@@ -2,7 +2,7 @@
 
 This directory ships a vendored snapshot of the JustDeleteMe
 (<https://justdelete.me/>) account-deletion difficulty grades, consumed by
-`extension/src/rules/roach-motel-flag.ts` as a fallback source after the
+`extension/src/rules/roach-motel-annotate.ts` as a fallback source after the
 hand-curated YAMLs under `extension/data/sites/`.
 
 Source: <https://github.com/justdeleteme/justdelete.me/blob/master/sites.json>

@@ -1,13 +1,13 @@
-# Autotrader — reviews-hide, search-url-helper.
+# Autotrader — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?autotrader.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#kbb_reviews` wraps the in-page "Ratings & Reviews" section on
     # dealer pages (`/car-dealers/{state}/{dealerId}/{dealer-slug}`),
     # including the heading and the embedded KBB-powered iframe of

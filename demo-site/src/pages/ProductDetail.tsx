@@ -114,7 +114,7 @@ export default function ProductDetail() {
         seen by a sighted user of this SPA. Still present in the DOM and
         readable by an agent walking textContent / the a11y tree. The
         payload nudges the agent to opt into the cart add-ons that
-        cart-addon-flag annotates on the next page. The noscript-strip
+        cart-addon-annotate annotates on the next page. The noscript-strip
         rule removes the wrapper element outright.
       */}
       <noscript>{INJECTIONS.PRODUCT_DETAIL_NOSCRIPT}</noscript>

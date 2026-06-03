@@ -1,13 +1,13 @@
-# Cars.com — reviews-hide, search-url-helper.
+# Cars.com — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?cars.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#vehicle-reviews-section` wraps the consumer-review list on
     # /research/{make-model}/consumer-reviews/ and the dealer review
     # list on /dealers/.../reviews/ pages — sort controls and the

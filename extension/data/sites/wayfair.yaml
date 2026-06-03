@@ -1,6 +1,6 @@
 # Wayfair — search-url-helper only.
 #
-# reviews-hide is deliberately omitted: Wayfair PDPs return a PerimeterX
+# reviews-redact is deliberately omitted: Wayfair PDPs return a PerimeterX
 # "Access to this page has been denied" interstitial when fetched
 # headlessly, so the review-section selector could not be verified
 # against a live render. Add the entry once selectors are confirmed

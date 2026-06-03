@@ -1,6 +1,6 @@
 ---
 name: agent-browser-shield-site-rules
-description: How to add a new host to `extension/data/sites/*.yaml` using the Playwright MCP — per-rule extraction recipe, selector signal hierarchy, false-positive checks, validation, and one-PR-per-host workflow. Use when the user wants to extend site coverage for `reviews-hide`, `comments-hide`, `footer-hide`, or `search-url-helper`, or when extracting/refreshing selectors for an existing host.
+description: How to add a new host to `extension/data/sites/*.yaml` using the Playwright MCP — per-rule extraction recipe, selector signal hierarchy, false-positive checks, validation, and one-PR-per-host workflow. Use when the user wants to extend site coverage for `reviews-redact`, `comments-redact`, `footer-redact`, or `search-url-helper`, or when extracting/refreshing selectors for an existing host.
 ---
 
 # Authoring per-site rule data
@@ -19,19 +19,19 @@ writing a new one.
 
 Only these four keys are valid in a site YAML:
 
-- **`reviews-hide`** — selectors for the UGC review section on product/place
+- **`reviews-redact`** — selectors for the UGC review section on product/place
   detail pages. Keep aggregate ratings near the product title visible; only hide
   containers whose subtree is user-written review text. Amazon's
   `#reviewsMedley` / Walmart's `[data-testid="enhanced-review-section"]`
   pattern: the medley contains UGC, the aggregate badge lives elsewhere.
 
-- **`comments-hide`** — selectors for discussion threads / comment sections.
-  Like reviews-hide, prefer the container that holds the comment list while
+- **`comments-redact`** — selectors for discussion threads / comment sections.
+  Like reviews-redact, prefer the container that holds the comment list while
   leaving the count/header/sort controls visible.
 
-- **`footer-hide`** — only needed when the page footer is *not* a semantic
+- **`footer-redact`** — only needed when the page footer is *not* a semantic
   `<footer>` and *not* `[role="contentinfo"]`. The generic always-on selectors
-  in `extension/src/rules/footer-hide.ts` already catch both; ~95% of hosts
+  in `extension/src/rules/footer-redact.ts` already catch both; ~95% of hosts
   don't need a site entry. Amazon's `<div id="navFooter">` is the canonical
   exception.
 
@@ -61,7 +61,7 @@ git checkout -b crawl/<slug>-rules
 
 For each rule the host is getting:
 
-- **reviews-hide / comments-hide**: navigate to a representative detail page
+- **reviews-redact / comments-redact**: navigate to a representative detail page
   (product, place, article, question), then probe candidate selectors using
   `mcp__playwright__browser_evaluate`. Prefer signals that decay slowly:
 
@@ -81,7 +81,7 @@ For each rule the host is getting:
   ancestry to find the tightest container that wraps the UGC without enveloping
   the aggregate rating chip.
 
-- **footer-hide**: usually skip. Quick check: does the page footer match
+- **footer-redact**: usually skip. Quick check: does the page footer match
   `<footer>` (top-level, not nested inside `article`/`section`/`aside`/`nav`) or
   `[role="contentinfo"]`? If yes, the generic always-on selector already catches
   it — don't author a site entry. If the footer is a plain `<div>` with an id or
@@ -161,8 +161,9 @@ Quick checklist when reviewing a recipe:
 Schema is in `extension/data/site-rules.schema.ts`. Minimum: a top-level
 `hostnames` array (URLPattern hostname strings) and a `rules` object with at
 least one key. Per-rule `hostnames`/`pathnames` arrays narrow further when
-needed (e.g. only apply `reviews-hide` on `/biz/*` for Yelp). Both the single-
-entry and array-of-entries forms are valid for `*-hide` rules.
+needed (e.g. only apply `reviews-redact` on `/biz/*` for Yelp). Both the single-
+entry and array-of-entries forms are valid for the selector-bearing rule keys
+(`reviews-redact`, `comments-redact`, `footer-redact`).
 
 Add a header comment explaining what's hidden and what's preserved. Reference
 the surviving aggregate/header that the user sees — future readers and review
@@ -197,7 +198,7 @@ so its rule ID list stays current.
   Chromium. Symptoms: `document.title === "<host>"`, body length under ~2 KB,
   body text starts with `var dd={...` or contains `geo.captcha-delivery.com`.
   Workarounds: retry after a few seconds (some clear automatically), try the
-  homepage first (lighter detection), or defer reviews-hide and ship
+  homepage first (lighter detection), or defer reviews-redact and ship
   search-url-helper only with a comment in the YAML explaining the deferral.
 
 - **Heavy SPAs with obfuscated class names** — Google Maps, Booking's embedded

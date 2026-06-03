@@ -29,8 +29,8 @@ Paste an object mapping rule IDs to booleans, then click *Apply*:
 ```json
 {
   "ads-hide": false,
-  "pii-mask": true,
-  "reviews-hide": false
+  "pii-redact": true,
+  "reviews-redact": false
 }
 ```
 
@@ -50,17 +50,17 @@ for the build-time workflow.
 
 ## Rule IDs
 
-- `pii-mask` — mask emails, phones, SSNs, addresses
-- `secrets-mask` — mask API keys, tokens, card numbers
-- `reviews-hide` — placeholder over user reviews
-- `comments-hide` — placeholder over comment threads
-- `prompt-injection-hide` — placeholder over likely injection surfaces
-- `countdown-timer-hide` — remove urgency countdowns
-- `scarcity-hide` — remove "only N left" scarcity cues
-- `confirmshame-neutralize` — rewrite guilt-tripping decline buttons ("No, I'd
+- `pii-redact` — mask emails, phones, SSNs, addresses
+- `secrets-redact` — mask API keys, tokens, card numbers
+- `reviews-redact` — placeholder over user reviews
+- `comments-redact` — placeholder over comment threads
+- `prompt-injection-redact` — placeholder over likely injection surfaces
+- `countdown-timer-redact` — remove urgency countdowns
+- `scarcity-redact` — remove "only N left" scarcity cues
+- `confirmshame-sanitize` — rewrite guilt-tripping decline buttons ("No, I'd
   rather pay full price") to a neutral "No thanks"
-- `footer-hide` — collapse site footers
-- `checkout-checkbox-clear` — uncheck pre-checked checkout boxes
+- `footer-redact` — collapse site footers
+- `checkout-checkbox-sanitize` — uncheck pre-checked checkout boxes
 - `cookie-banner-hide` — strip cookie consent banners
 - `chat-widget-hide` — strip live-chat widgets
 - `html-comment-strip` — strip HTML comments
@@ -70,24 +70,24 @@ for the build-time workflow.
   (.sr-only/.visually-hidden classes, plus the 1×1 + overflow:hidden structural
   envelope used by Amazon's `a-offscreen` etc.)
 - `newsletter-modal-hide` — strip newsletter modals
-- `svg-sprite-suppress` — strip inline SVG sprite definitions
-- `social-embed-hide` — strip social media embeds
+- `svg-sprite-strip` — strip inline SVG sprite definitions
+- `social-embed-redact` — strip social media embeds
 - `ads-hide` — remove display ads and paid/sponsored search results (curated
   selectors + EasyList stylesheet)
-- `cart-addon-flag` — flag likely sneak-into-basket add-ons
+- `cart-addon-annotate` — flag likely sneak-into-basket add-ons
 - `search-url-helper` — embed a screen-reader-only landmark with URL recipes
   (search/filter/sort/direct lookup) on covered hosts (Amazon, Best Buy, Etsy,
   IKEA, Home Depot, REI, GitHub, Wikipedia, Hacker News, hn.algolia.com, MDN,
   npm, weather.gov, arXiv, Python docs, BBC) so agents can navigate by URL
   instead of typing into search boxes
-- `irrelevant-sections-hide` — AI-classified hide of engagement / exploration
+- `irrelevant-sections-redact` — AI-classified hide of engagement / exploration
   rails (related products, "you might also like", recommended articles, trending
   now, sponsored, site-wide navigation rails). Calls a small LLM in the
   background worker; requires an OpenAI API key — either bundled at build time
   via `OPENAI_API_KEY` or saved on the options page. Until a key is configured
   the toggle shows as Unavailable. Hidden sections become click-to-reveal
   placeholders.
-- `cross-origin-frame-hide` — **experimental, off by default.** Replace
+- `cross-origin-frame-redact` — **experimental, off by default.** Replace
   cross-origin `<iframe>` elements with click-to-reveal placeholders so an agent
   reading the parent page doesn't ingest the embedded-origin content.
   Same-origin frames, `srcdoc` frames, and inert (`about:`/`javascript:`/

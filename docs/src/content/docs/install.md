@@ -60,7 +60,7 @@ each fresh session), pass a JSON override file to `bun run build`:
 ```sh
 cat > my-defaults.json <<'EOF'
 {
-  "reviews-hide": false,
+  "reviews-redact": false,
   "ads-hide": false,
   "optionsButton": true
 }

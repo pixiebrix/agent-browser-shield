@@ -2,7 +2,7 @@ hostnames:
   - "{*.}?rei.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # REI PDPs render no schema.org microdata. The accordion marked
     # `[data-ui="product-reviews"]` wraps the heading, histogram, and all UGC
     # review cards. The inline aggregate (`[data-ui="review-summary"]`) sits

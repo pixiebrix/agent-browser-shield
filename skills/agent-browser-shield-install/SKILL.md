@@ -155,8 +155,8 @@ After the browser is up and you've navigated to any non-trivial page:
   bottom-right corner.
 - If none of those markers appear: the MV3 service worker may not have woken up.
   Navigate to a page that would trigger a rule (e.g. a product page for
-  cart-addon-flag, a page with an email address for pii-mask) and recheck. If
-  still nothing, the extension is not installed.
+  cart-addon-annotate, a page with an email address for pii-redact) and recheck.
+  If still nothing, the extension is not installed.
 
 ## Customizing build-time defaults
 
@@ -170,7 +170,7 @@ JSON override file instead of using the hosted ZIP.
 
    ```json
    {
-     "reviews-hide": false,
+     "reviews-redact": false,
      "ads-hide": false,
      "optionsButton": true
    }
