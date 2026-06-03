@@ -5,8 +5,20 @@ description: Build the agent-browser-shield extension and load it into Chromium.
 
 ## Prerequisites
 
-- **Chrome / Chromium 148+** — to load the extension.
+- **Chrome / Chromium 148+** — to load the extension. Any Chromium-based browser
+  works (Chrome, Edge, Brave, Arc, Opera).
 - **Node** ≥ 24 and **Bun** ≥ 1.3 — only needed if you're building from source.
+
+## Install from the Chrome Web Store
+
+The simplest path for everyday use. Install the published extension on any
+Chromium-based browser:
+
+[Add to Chrome — Chrome Web Store](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)
+
+Updates roll out automatically through the store. Skip the rest of this page
+unless you need an unpacked build (agent runtimes that load via
+`--load-extension`), a ZIP for Browserbase, or a build off a specific commit.
 
 ## Download a prebuilt ZIP
 

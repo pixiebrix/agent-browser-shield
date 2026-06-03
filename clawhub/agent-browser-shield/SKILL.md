@@ -12,22 +12,39 @@ engagement noise (ads, scarcity cues, social embeds).
 
 ## Install
 
-Hosted ZIP (used by both paths):
-`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
-— `manifest.json` is at the archive root; do not re-zip.
+Sources:
+
+- **Chrome Web Store** (preferred for Path 1; auto-updates, works on any
+  Chromium browser):
+  `https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd`
+- **Hosted ZIP** (required for Path 2; also for Path 1 when pinning a specific
+  build):
+  `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
+  — `manifest.json` is at the archive root; do not re-zip.
 
 ### Path 1 — Local Chrome via remote CDP (OpenClaw `remote` driver)
 
 Use when OpenClaw is connecting to a Chromium you launch yourself.
 
-1. Unzip `agent-browser-shield-extension.zip` to a stable directory (e.g.
-   `~/.cache/agent-browser-shield/extension/`).
+1. Install the extension into the dedicated profile you'll launch Chromium
+   against. Either:
 
-2. Launch Chromium **headed** with a dedicated profile and the extension loaded:
+   - **From the Chrome Web Store:** launch Chromium with the dedicated profile,
+     install from the store URL above, pin the shield icon, then close it. On
+     subsequent launches (step 2) skip the `--load-extension` /
+     `--disable-extensions-except` flags — the store install is persisted in
+     the profile.
+   - **Unpacked (when pinning a build):** unzip
+     `agent-browser-shield-extension.zip` to a stable directory (e.g.
+     `~/.cache/agent-browser-shield/extension/`) and pass `--load-extension`
+     and `--disable-extensions-except` in step 2.
+
+2. Launch Chromium **headed** with the dedicated profile and CDP enabled:
 
    ```text
    --remote-debugging-port=9222
    --user-data-dir=/abs/path/to/dedicated-profile
+   # Unpacked path only — omit when installed from the Chrome Web Store:
    --load-extension=/abs/path/to/extension
    --disable-extensions-except=/abs/path/to/extension
    ```

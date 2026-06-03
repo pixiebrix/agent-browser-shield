@@ -13,12 +13,21 @@ that Hermes *attaches* to.
 
 ### 1. Install the extension
 
-Get the extension directory — either build from source (follow
-[Install](/agent-browser-shield/install/) through `bun run build` for
-`extension/dist/`) or download and unzip the
-[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). You will
-load that directory into the Chromium profile that Hermes attaches to in step 3
-— not your default Chrome profile.
+Two options, depending on whether you need a specific build:
+
+- **Chrome Web Store** — install
+  [agent-browser-shield](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)
+  into the dedicated user-data-dir from step 2 (open `chrome://extensions` in
+  the launched browser and add it there, not from your default profile).
+- **Unpacked / from source** — build from source (follow
+  [Install](/agent-browser-shield/install/) through `bun run build` for
+  `extension/dist/`) or download and unzip the
+  [prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip), then
+  load that directory at `chrome://extensions` → **Developer mode** → **Load
+  unpacked**.
+
+Either way, the extension must end up in the Chromium profile Hermes attaches
+to in step 3 — not your default Chrome profile.
 
 ### 2. Launch Chrome with remote debugging on a dedicated user-data-dir
 
