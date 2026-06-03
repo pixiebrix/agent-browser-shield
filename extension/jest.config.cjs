@@ -64,6 +64,16 @@ module.exports = {
     "!src/lib/automation-element-reference.ts",
     "!src/lib/enforcement.ts",
     "!src/lib/frame.ts",
+    // `webdriver-probe-source.ts` defines `installProbe`, which the rule
+    // serializes via `Function.prototype.toString` and ships into the
+    // page world via inline `<script>` `textContent`. Istanbul
+    // instrumentation injects `cov_*` counter references into the
+    // serialized source; jsdom then `ReferenceError`s when executing the
+    // injected script (the counters live in the test world, not the page
+    // world). The function is exercised end-to-end by the rule's tests
+    // via the apply flow; excluding the file from coverage keeps the
+    // serialize-and-inject path viable.
+    "!src/lib/webdriver-probe-source.ts",
   ],
   // Ratchet, not aspiration: thresholds sit just under the current baseline so
   // CI fails on a regression but doesn't block today's PR. Per Jest's rules,
