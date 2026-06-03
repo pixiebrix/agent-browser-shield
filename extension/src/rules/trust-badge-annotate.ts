@@ -298,9 +298,9 @@ function apply(root: ParentNode): void {
 
 export const trustBadgeAnnotateRule = {
   id: RULE_ID,
-  label: "Flag Trust Badges",
+  label: "Flag Trust Badges (Experimental)",
   description:
-    "Annotate image-shaped trust badges (Norton Secured, McAfee SECURE, BBB Accredited, Verified Seller, and similar) whose accessible name carries a self-asserted trust claim that no transport-level signal backs. Useful for vision- and accessibility-tree-driven agents, which over-weight these badges as evidence of trustworthiness.",
+    "Annotate image-shaped trust badges (Norton Secured, McAfee SECURE, BBB Accredited, Verified Seller, and similar) whose accessible name carries a self-asserted trust claim that no transport-level signal backs. Useful for vision- and accessibility-tree-driven agents, which over-weight these badges as evidence of trustworthiness. Off by default while we gather real-world signal on false positives.",
   apply,
   teardown: () => {
     watcher.stop();
