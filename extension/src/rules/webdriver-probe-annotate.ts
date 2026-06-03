@@ -33,7 +33,7 @@
 // removes the landmark and the isolated-world listener so re-enabling
 // while still on the same page still picks up later reads.
 
-import { RULE_ATTR, WEBDRIVER_PROBE_SCRIPT_ATTR } from "../lib/dom-markers";
+import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import type { Rule } from "./types";
@@ -43,7 +43,6 @@ const RULE_ID = "webdriver-probe-annotate" as const;
 const EVENT_NAME = "abs:webdriver-probed";
 
 const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
-const PROBE_SCRIPT_SELECTOR = `script[${WEBDRIVER_PROBE_SCRIPT_ATTR}]`;
 
 const LANDMARK_TEXT =
   "This page read navigator.webdriver. The site can distinguish AI-agent traffic from human traffic and may serve different content to agents than to people.";
@@ -103,6 +102,13 @@ function installProbe(this: Window): void {
 const PROBE_SOURCE = `(${installProbe.toString()}).call(window);`;
 
 let listenerAttached = false;
+// Tracks whether the page-world probe has already been injected into this
+// document. The probe itself short-circuits on `__abs_webdriver_probe_installed`,
+// so this is a same-frame churn guard — without it, every re-enable would
+// create → append → execute (as a no-op) → remove a new <script> element.
+// We never reset this on teardown: the prototype wrap persists across
+// enable/disable cycles, so re-enable doesn't need to re-inject.
+let probeInjected = false;
 
 function buildLandmark(): HTMLElement {
   const note = document.createElement("section");
@@ -137,11 +143,11 @@ function onProbed(): void {
 }
 
 function injectProbe(): void {
-  if (document.querySelector(PROBE_SCRIPT_SELECTOR)) {
+  if (probeInjected) {
     return;
   }
+  probeInjected = true;
   const script = document.createElement("script");
-  script.setAttribute(WEBDRIVER_PROBE_SCRIPT_ATTR, "");
   script.textContent = PROBE_SOURCE;
   // documentElement so the script runs whether or not <head> is present
   // (some pages skip <head> in early-mounted templates).

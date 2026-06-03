@@ -61,12 +61,6 @@ export const TRUST_BADGE_ANNOTATED_ATTR = "data-abs-trust-badge-annotated";
 export const DISGUISED_AD_FLAG_CONSIDERED_ATTR =
   "data-abs-disguised-ad-considered";
 
-// `webdriver-probe-annotate`: marks the <script> element the rule injects
-// into the top-level document to install the main-world getter wrap, so a
-// re-enable on the same page can detect the existing injection and skip
-// a duplicate.
-export const WEBDRIVER_PROBE_SCRIPT_ATTR = "data-abs-webdriver-probe";
-
 // `confirmshame-sanitize`: stores the original copy of attributes the
 // rule rewrites so reveal-on-click can restore the user-visible
 // confirmshame language.

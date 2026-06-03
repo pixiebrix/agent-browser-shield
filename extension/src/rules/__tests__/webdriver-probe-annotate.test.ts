@@ -1,7 +1,6 @@
 /**
  * @jest-environment jsdom
  */
-import { WEBDRIVER_PROBE_SCRIPT_ATTR } from "../../lib/dom-markers";
 import { hiddenTextStripRule } from "../hidden-text-strip";
 import {
   EVENT_NAME,
@@ -11,7 +10,6 @@ import {
 } from "../webdriver-probe-annotate";
 
 const LANDMARK_SELECTOR = 'section[data-abs-rule="webdriver-probe-annotate"]';
-const PROBE_SCRIPT_SELECTOR = `script[${WEBDRIVER_PROBE_SCRIPT_ATTR}]`;
 
 function dispatchProbe(): void {
   document.dispatchEvent(new CustomEvent(EVENT_NAME));
@@ -35,16 +33,6 @@ afterEach(() => {
 });
 
 describe("webdriverProbeAnnotateRule.apply", () => {
-  it("injects a probe script with the marker attribute", () => {
-    webdriverProbeAnnotateRule.apply(document.body);
-
-    const scripts = document.querySelectorAll(PROBE_SCRIPT_SELECTOR);
-    // We remove the <script> element after appending it (the closure
-    // remains live on Navigator.prototype), so there should be zero
-    // remaining script elements — the absence here proves we cleaned up.
-    expect(scripts).toHaveLength(0);
-  });
-
   it("does not stamp a landmark until a probe event fires", () => {
     webdriverProbeAnnotateRule.apply(document.body);
     expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
