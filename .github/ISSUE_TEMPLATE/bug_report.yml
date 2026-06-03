@@ -38,7 +38,7 @@ body:
     id: rule-id
     attributes:
       label: Which rule(s) are involved?
-      description: e.g. `cookie-banner-hide`, `pii-mask`. Leave blank if not rule-specific.
+      description: e.g. `cookie-banner-hide`, `pii-redact`. Leave blank if not rule-specific.
   - type: input
     id: chrome-version
     attributes:

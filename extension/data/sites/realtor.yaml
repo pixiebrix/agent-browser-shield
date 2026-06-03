@@ -1,6 +1,6 @@
 # Realtor.com — search-url-helper only.
 #
-# reviews-hide is deliberately omitted: Realtor.com property detail
+# reviews-redact is deliberately omitted: Realtor.com property detail
 # pages don't carry buyer-written UGC reviews (sections are
 # agent-authored facts, public records, schools, neighborhood data).
 # Agent profile pages do show client reviews, but the agent-page URL
@@ -8,7 +8,7 @@
 # it became a coverage gap (matches the Redfin convention).
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?realtor.com"

@@ -1,6 +1,6 @@
 # DuckDuckGo — search-url-helper only.
 #
-# DDG has no UGC sections — no reviews-hide or comments-hide. Footer is a
+# DDG has no UGC sections — no reviews-redact or comments-redact. Footer is a
 # small marketing strip caught by the generic semantic <footer>.
 
 hostnames:

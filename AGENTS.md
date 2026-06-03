@@ -72,7 +72,7 @@ are exactly the kind of late-mounted content SPAs are built on.
 Default to wiring a `createSubtreeWatcher`
 (`extension/src/lib/subtree-watcher.ts`) into any rule that mutates the DOM,
 with `skipPlaceholderSubtrees: true` when the rule inserts placeholders. Mirror
-the pattern used in `pii-mask`, `secrets-mask`, `scarcity-hide`,
+the pattern used in `pii-redact`, `secrets-redact`, `scarcity-redact`,
 `hidden-text-strip`, etc.: a shared `scanAndX(root)` function called by both
 `apply` and the watcher's `onSubtrees`, plus a `teardown` that calls
 `watcher.stop()`. Skip the watcher only when there is nothing to re-scan after
@@ -120,7 +120,7 @@ rebuild — do not edit the generated file.
 
 ## Prompt-injection patterns
 
-Regex sources for `prompt-injection-hide` live base64-encoded in
+Regex sources for `prompt-injection-redact` live base64-encoded in
 `extension/data/injection-patterns.yaml`. The codegen in
 `extension/scripts/build-injection-patterns.ts` decodes them and emits
 `extension/src/rules/injection-patterns.generated.ts` with plaintext RegExp

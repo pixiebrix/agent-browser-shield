@@ -1,4 +1,4 @@
-# Equinox — roach-motel-flag.
+# Equinox — roach-motel-annotate.
 #
 # Long-documented cancellation friction including certified-mail
 # requirements and member-services-only cancel paths, often combined
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?equinox.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/join*"
       - "/membership*"

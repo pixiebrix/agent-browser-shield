@@ -37,15 +37,15 @@ export const PLACEHOLDER_MODE_ATTR = "data-abs-placeholder-mode";
 // Per-rule — set by exactly one rule's `apply` and read by its watcher /
 // teardown. Add new entries here when a new rule needs an attribute marker.
 
-// `checkout-checkbox-clear`: marks checkboxes the rule has unchecked so the
+// `checkout-checkbox-sanitize`: marks checkboxes the rule has unchecked so the
 // next scan doesn't re-process them.
 export const CHECKOUT_CHECKBOX_CLEARED_ATTR = "data-abs-cleared";
 
-// `cart-addon-flag`: marks the wrapper of a sneaky add-on item the rule has
+// `cart-addon-annotate`: marks the wrapper of a sneaky add-on item the rule has
 // already badged, so the watcher doesn't double-badge on re-scan.
-export const CART_ADDON_FLAGGED_ATTR = "data-abs-cart-addon-flagged";
+export const CART_ADDON_ANNOTATED_ATTR = "data-abs-cart-addon-annotated";
 
-// `confirmshame-neutralize`: stores the original copy of attributes the
+// `confirmshame-sanitize`: stores the original copy of attributes the
 // rule rewrites so reveal-on-click can restore the user-visible
 // confirmshame language.
 export const CONFIRMSHAME_ORIGINAL_TEXT_ATTR =

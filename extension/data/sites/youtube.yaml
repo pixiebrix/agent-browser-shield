@@ -2,6 +2,6 @@ hostnames:
   - "{*.}?youtube.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     selectors:
       - "ytd-comments"

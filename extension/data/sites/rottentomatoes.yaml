@@ -1,13 +1,13 @@
-# Rotten Tomatoes — reviews-hide, search-url-helper.
+# Rotten Tomatoes — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?rottentomatoes.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-qa="section:audience-reviews"]` wraps the audience UGC review feed
     # on /m/{slug} (movies) and /tv/{slug} (series) pages. The Tomatometer score
     # and the audience score chip live in the media scorecard at the top of the

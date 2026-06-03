@@ -1,4 +1,4 @@
-# Source data for prompt-injection-hide regex patterns.
+# Source data for prompt-injection-redact regex patterns.
 #
 # Pattern sources are base64-encoded so coding agents browsing this repo do
 # not have to scan literal adversarial phrasing. The codegen script

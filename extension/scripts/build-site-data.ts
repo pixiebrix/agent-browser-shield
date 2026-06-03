@@ -98,7 +98,7 @@ function loadSites(): ParsedSiteFile[] {
 
 function collectSelectorBlocks(
   parsed: ParsedSiteFile[],
-  ruleId: "reviews-hide" | "comments-hide" | "footer-hide",
+  ruleId: "reviews-redact" | "comments-redact" | "footer-redact",
 ): SelectorBlock[] {
   const blocks: SelectorBlock[] = [];
   for (const { fileName, data } of parsed) {
@@ -140,7 +140,7 @@ function collectRecipeBlocks(parsed: ParsedSiteFile[]): RecipeBlock[] {
 function collectWarningBlocks(parsed: ParsedSiteFile[]): WarningBlock[] {
   const blocks: WarningBlock[] = [];
   for (const { fileName, data } of parsed) {
-    const rule = data.rules["roach-motel-flag"];
+    const rule = data.rules["roach-motel-annotate"];
     if (!rule) {
       continue;
     }
@@ -252,9 +252,9 @@ function emitWarningArray(blocks: WarningBlock[]): string {
 }
 
 function buildOutput(parsed: ParsedSiteFile[]): string {
-  const reviews = collectSelectorBlocks(parsed, "reviews-hide");
-  const comments = collectSelectorBlocks(parsed, "comments-hide");
-  const footer = collectSelectorBlocks(parsed, "footer-hide");
+  const reviews = collectSelectorBlocks(parsed, "reviews-redact");
+  const comments = collectSelectorBlocks(parsed, "comments-redact");
+  const footer = collectSelectorBlocks(parsed, "footer-redact");
   const recipes = collectRecipeBlocks(parsed);
   const warnings = collectWarningBlocks(parsed);
 
@@ -280,11 +280,11 @@ function buildOutput(parsed: ParsedSiteFile[]): string {
     "  notes: string | null;",
     "}",
     "",
-    emitSelectorRuleArray("REVIEWS_HIDE_SITE_RULES", reviews),
+    emitSelectorRuleArray("REVIEWS_REDACT_SITE_RULES", reviews),
     "",
-    emitSelectorRuleArray("COMMENTS_HIDE_SITE_RULES", comments),
+    emitSelectorRuleArray("COMMENTS_REDACT_SITE_RULES", comments),
     "",
-    emitSelectorRuleArray("FOOTER_HIDE_SITE_RULES", footer),
+    emitSelectorRuleArray("FOOTER_REDACT_SITE_RULES", footer),
     "",
     emitRecipeArray(recipes),
     "",
@@ -297,11 +297,11 @@ export function generateSiteData(): void {
   // Sanity: every rule id we emit an array for must appear in the
   // schema's SITE_DATA_RULE_IDS so the two stay in lockstep.
   const emitted = new Set([
-    "reviews-hide",
-    "comments-hide",
-    "footer-hide",
+    "reviews-redact",
+    "comments-redact",
+    "footer-redact",
     "search-url-helper",
-    "roach-motel-flag",
+    "roach-motel-annotate",
   ]);
   for (const id of SITE_DATA_RULE_IDS) {
     if (!emitted.has(id)) {

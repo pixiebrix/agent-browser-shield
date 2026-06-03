@@ -18,11 +18,11 @@ import { z } from "zod";
 // requires extending this union and updating `build-site-data.ts` to emit a
 // new generated array for it.
 export const SITE_DATA_RULE_IDS = [
-  "reviews-hide",
-  "comments-hide",
-  "footer-hide",
+  "reviews-redact",
+  "comments-redact",
+  "footer-redact",
   "search-url-helper",
-  "roach-motel-flag",
+  "roach-motel-annotate",
 ] as const;
 export type SiteDataRuleId = (typeof SITE_DATA_RULE_IDS)[number];
 
@@ -89,7 +89,7 @@ const WarningRuleEntry = z
   .strict();
 
 // Each rule key accepts either a single entry or an array of entries. The
-// array form covers cases like Hacker News' comments-hide, which carries a
+// array form covers cases like Hacker News' comments-redact, which carries a
 // general selector plus a pathname-narrowed one (`#bigbox` on /newcomments).
 const SelectorRule = z.union([
   SelectorRuleEntry,
@@ -106,11 +106,11 @@ export const SiteFileSchema = z
     hostnames: z.array(HostnamePattern).min(1),
     rules: z
       .object({
-        "reviews-hide": SelectorRule.optional(),
-        "comments-hide": SelectorRule.optional(),
-        "footer-hide": SelectorRule.optional(),
+        "reviews-redact": SelectorRule.optional(),
+        "comments-redact": SelectorRule.optional(),
+        "footer-redact": SelectorRule.optional(),
         "search-url-helper": RecipeRule.optional(),
-        "roach-motel-flag": WarningRule.optional(),
+        "roach-motel-annotate": WarningRule.optional(),
       })
       .strict()
       .refine((value) => Object.keys(value).length > 0, {

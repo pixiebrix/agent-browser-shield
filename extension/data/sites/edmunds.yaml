@@ -1,13 +1,13 @@
-# Edmunds — reviews-hide, search-url-helper.
+# Edmunds — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?edmunds.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `.reviews-list` on `/{make}/{model}/{year}/consumer-reviews/`
     # pages wraps the owner-written review entries (each entry is a
     # `.review-item` inside the inner `.reviews-list`). The page's

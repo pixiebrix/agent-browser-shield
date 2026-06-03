@@ -1,13 +1,13 @@
-# Sephora — reviews-hide, search-url-helper.
+# Sephora — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?sephora.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#ratings-reviews-container` wraps the full "Ratings & Reviews"
     # section on product pages (`/product/{slug}-P{productId}`) —
     # the star-distribution histogram, sort/filter controls, and

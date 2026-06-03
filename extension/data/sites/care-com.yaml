@@ -1,4 +1,4 @@
-# Care.com — roach-motel-flag.
+# Care.com — roach-motel-annotate.
 #
 # FTC v. Care.com, Inc. (Aug 2024, $8.5M settlement) covered both
 # misrepresented job-count claims and cancellation friction for paying
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?care.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/join*"
       - "/signup*"

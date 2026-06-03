@@ -1,9 +1,9 @@
-# Trustpilot — reviews-hide, search-url-helper.
+# Trustpilot — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer role="contentinfo"> caught by the generic
-# always-on selector. No footer-hide entry needed.
+# always-on selector. No footer-redact entry needed.
 #
-# reviews-hide is pathname-narrowed to /review/* (business review pages).
+# reviews-redact is pathname-narrowed to /review/* (business review pages).
 # The aggregate score, review count, claimed status, and category live in
 # the page header (above `[data-reviews-overview-section]`) and stay
 # visible. We do NOT hide `[data-summary-section]` — despite the name,
@@ -14,7 +14,7 @@ hostnames:
   - "{*.}?trustpilot.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     hostnames:
       - "{*.}?trustpilot.com"
     pathnames:

@@ -1,7 +1,7 @@
-# Yelp — reviews-hide, search-url-helper.
+# Yelp — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 #
 # Yelp business pages can be served behind a DataDome anti-bot challenge
 # that briefly stalls navigation; the selectors below apply to the real
@@ -11,7 +11,7 @@ hostnames:
   - "{*.}?yelp.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#reviews` is the "Recommended Reviews" section on /biz/ pages — it
     # contains the heading, review filter/sort controls, and the review
     # cards (the entire UGC review feed). The aggregate rating and review

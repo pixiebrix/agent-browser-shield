@@ -1,13 +1,13 @@
-# eBay — reviews-hide, search-url-helper.
+# eBay — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer class="gh-footer"> caught by the generic
-# always-on selector — no footer-hide entry needed.
+# always-on selector — no footer-redact entry needed.
 
 hostnames:
   - "{*.}?ebay.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#UserReviews` (`.x-reviews`) is the product reviews module on
     # catalog-mapped /itm/ listings — it contains the aggregate, top
     # favorable/critical summaries, and the most-relevant review list.

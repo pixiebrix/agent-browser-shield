@@ -1,6 +1,6 @@
 # Zillow — search-url-helper only.
 #
-# reviews-hide and comments-hide are deliberately omitted: Zillow's home
+# reviews-redact and comments-redact are deliberately omitted: Zillow's home
 # detail and search pages return a PerimeterX "Press & Hold" interstitial
 # when fetched headlessly, so the agent-reviews and Q&A region selectors
 # could not be verified against a live render. Add those entries once

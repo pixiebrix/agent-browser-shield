@@ -19,7 +19,7 @@ export interface SiteWarning {
   notes: string | null;
 }
 
-export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
+export const REVIEWS_REDACT_SITE_RULES: readonly SiteRule[] = [
   {
     // from data/sites/airbnb.yaml
     patterns: [
@@ -280,7 +280,7 @@ export const REVIEWS_HIDE_SITE_RULES: readonly SiteRule[] = [
   },
 ];
 
-export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
+export const COMMENTS_REDACT_SITE_RULES: readonly SiteRule[] = [
   {
     // from data/sites/allrecipes.yaml
     patterns: [
@@ -384,7 +384,7 @@ export const COMMENTS_HIDE_SITE_RULES: readonly SiteRule[] = [
   },
 ];
 
-export const FOOTER_HIDE_SITE_RULES: readonly SiteRule[] = [
+export const FOOTER_REDACT_SITE_RULES: readonly SiteRule[] = [
   {
     // from data/sites/amazon.yaml
     patterns: [

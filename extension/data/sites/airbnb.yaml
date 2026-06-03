@@ -1,13 +1,13 @@
-# Airbnb — reviews-hide, search-url-helper.
+# Airbnb — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?airbnb.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-section-id="REVIEWS_DEFAULT"]` wraps the entire reviews
     # region on /rooms/ pages — section heading, category-rating
     # breakdown, "How reviews work" disclosure, and the review cards.

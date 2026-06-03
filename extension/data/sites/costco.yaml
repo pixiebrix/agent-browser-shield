@@ -1,14 +1,14 @@
-# Costco — reviews-hide, search-url-helper.
+# Costco — reviews-redact, search-url-helper.
 #
 # Footer is `<footer>` (semantic) — caught by the generic always-on
-# selector. The footer-hide rule's `watchSubtrees` flag already accounts
+# selector. The footer-redact rule's `watchSubtrees` flag already accounts
 # for Costco's Next.js Suspense re-mount, so no site entry is needed.
 
 hostnames:
   - "{*.}?costco.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # On PDPs (canonical path `/p/...`) the "Member Reviews" section sits
     # inside a Material UI Accordion identified by
     # `[data-testid="Accordion_member_reviews"]`. The accordion is

@@ -127,8 +127,8 @@ interface FindInnermostMatchesOptions<T> {
 }
 
 // Shared "find leaf-ish elements whose trimmed text matches a predicate, then
-// keep the innermost overlapping match" shape used by countdown-timer-hide,
-// scarcity-hide, and cart-addon-flag. Each rule passes its own match function
+// keep the innermost overlapping match" shape used by countdown-timer-redact,
+// scarcity-redact, and cart-addon-annotate. Each rule passes its own match function
 // and its own skip predicate (placeholder check, revealed-attr check, etc.).
 export function findInnermostMatches<T>(
   root: ParentNode,
@@ -171,7 +171,7 @@ interface WalkTextNodesOptions {
 // Walk every text node under `root` whose parent is a content element (not
 // SCRIPT/STYLE/NOSCRIPT, not inside an existing placeholder) and is at least
 // `minLength` characters. Replaces the hand-rolled TreeWalker + collection
-// loop in pii-mask / secrets-mask / prompt-injection-hide.
+// loop in pii-redact / secrets-redact / prompt-injection-redact.
 export function walkTextNodes(
   root: ParentNode,
   options: WalkTextNodesOptions = {},

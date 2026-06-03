@@ -1,4 +1,4 @@
-# Adobe — roach-motel-flag.
+# Adobe — roach-motel-annotate.
 #
 # DOJ/FTC v. Adobe Inc. (June 2024) over hidden early-termination fees
 # and complicated cancellation for Creative Cloud annual plans paid
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?adobe.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/creativecloud/plans*"
       - "/products/*/buy*"

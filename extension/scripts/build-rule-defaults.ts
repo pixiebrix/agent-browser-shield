@@ -25,7 +25,7 @@ const INPUT = join(ROOT, "data", "rule-defaults.json");
 const OUTPUT = join(ROOT, "src", "rules", "rule-defaults.generated.ts");
 
 // A handful of rule modules touch DOM constructors at top level (e.g.
-// `HTMLInputElement.prototype` in checkout-checkbox-clear.ts) to capture
+// `HTMLInputElement.prototype` in checkout-checkbox-sanitize.ts) to capture
 // native setters before any framework can override them. Importing
 // `../src/rules` from this Node-context script therefore needs DOM globals
 // in scope. Jest already runs tests under jsdom; we reuse the same window

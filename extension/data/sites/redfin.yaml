@@ -1,6 +1,6 @@
 # Redfin — search-url-helper only.
 #
-# reviews-hide is deliberately omitted: Redfin property pages don't
+# reviews-redact is deliberately omitted: Redfin property pages don't
 # carry buyer-written UGC reviews (the page sections are agent-
 # authored facts, public records, climate data, and Redfin's own
 # market insights). Agent profile pages do show client reviews, but

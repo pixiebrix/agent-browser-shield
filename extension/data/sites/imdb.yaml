@@ -1,13 +1,13 @@
-# IMDb — reviews-hide, search-url-helper.
+# IMDb — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 
 hostnames:
   - "{*.}?imdb.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-testid="UserReviews"]` is the SECTION on /title/{id}/ pages that
     # wraps the "User reviews" heading, distribution, and featured user-written
     # review cards. The aggregate IMDb rating (`hero-rating-bar__aggregate-rating`)

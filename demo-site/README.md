@@ -14,10 +14,10 @@ Live deployment: <https://shield-dark-pattern-demo.vercel.app/>
 
 | Page                            | Rules exercised                                                                                                                                                                                                                                                         |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/` (Home)                      | `cookie-banner-hide`, `newsletter-modal-hide` (fires ~6s after load), `chat-widget-hide`, `ads-hide`, `footer-hide`, `countdown-timer-hide`, `scarcity-hide`                                                                                                            |
-| `/product/:id` (Product detail) | `countdown-timer-hide`, `scarcity-hide`, `reviews-hide`, `prompt-injection-hide`, `hidden-text-strip`, `html-comment-strip`, `noscript-strip`, `unicode-invisibles-strip`, `json-ld-sanitize`, `attribute-injection-scrub`, `meta-injection-strip`, `social-embed-hide` |
-| `/cart`                         | `checkout-checkbox-clear`, `cart-addon-flag`, `scarcity-hide`                                                                                                                                                                                                           |
-| `/checkout`                     | `checkout-checkbox-clear`, `pii-mask`                                                                                                                                                                                                                                   |
+| `/` (Home)                      | `cookie-banner-hide`, `newsletter-modal-hide` (fires ~6s after load), `chat-widget-hide`, `ads-hide`, `footer-redact`, `countdown-timer-redact`, `scarcity-redact`                                                                                                            |
+| `/product/:id` (Product detail) | `countdown-timer-redact`, `scarcity-redact`, `reviews-redact`, `prompt-injection-redact`, `hidden-text-strip`, `html-comment-strip`, `noscript-strip`, `unicode-invisibles-strip`, `json-ld-sanitize`, `attribute-injection-sanitize`, `meta-injection-strip`, `social-embed-redact` |
+| `/cart`                         | `checkout-checkbox-sanitize`, `cart-addon-annotate`, `scarcity-redact`                                                                                                                                                                                                           |
+| `/checkout`                     | `checkout-checkbox-sanitize`, `pii-redact`                                                                                                                                                                                                                                   |
 
 The global overlays (cookie banner, chat widget, newsletter modal, footer) are
 mounted on every page from `src/App.tsx`.
@@ -39,7 +39,7 @@ site once the extension is installed.
 
 The site is configured to deploy as a static SPA at the **root** of a Vercel
 project (no path prefix). Path-based URL gating in the extension (e.g. the
-`checkout-checkbox-clear` rule matches `/cart` and `/checkout`) requires those
+`checkout-checkbox-sanitize` rule matches `/cart` and `/checkout`) requires those
 paths at the root, which is why we use Vercel rather than GitHub Pages (GH Pages
 project pages would force a `/agent-browser-shield/` prefix and the rule
 patterns would not match).

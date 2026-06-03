@@ -40,7 +40,7 @@
 # ANTHROPIC_API_KEY) in your env to match the judge provider, even when
 # the agent itself is on Gateway.
 #
-# `extension` may be a mapping in v2 (e.g. {rules: {pii-mask: true, ...}}), but
+# `extension` may be a mapping in v2 (e.g. {rules: {pii-redact: true, ...}}), but
 # v1 ignores the rule list and treats any truthy value as "extension on with
 # default rule states".
 #

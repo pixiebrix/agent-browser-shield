@@ -6,7 +6,7 @@
 // `nanoid` and `abort-utils` are pure-ESM. ts-jest with `useESM: false`
 // (jest.config.cjs) can't transform them. Mock both before the catalog
 // import transitively pulls them in (via automation-element-reference,
-// llm-client, irrelevant-sections-hide). The catalog invariants don't
+// llm-client, irrelevant-sections-redact). The catalog invariants don't
 // exercise the runtime behavior these provide; they only inspect the
 // catalog's static shape.
 jest.mock("nanoid", () => ({ nanoid: () => "test-ref" }));

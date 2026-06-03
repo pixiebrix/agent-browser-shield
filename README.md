@@ -116,7 +116,7 @@ bun run test
 ```
 
 Filter to a single suite with the standard Jest CLI, e.g.
-`bun run test -- pii-mask`.
+`bun run test -- pii-redact`.
 
 ### Refresh EasyList snapshot
 
@@ -227,7 +227,7 @@ for invocation details.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, expectations, and the
 contributor-license-agreement workflow. New rules are a great place to start —
-`extension/src/rules/scarcity-hide.ts` is a small worked example.
+`extension/src/rules/scarcity-redact.ts` is a small worked example.
 
 ## License
 

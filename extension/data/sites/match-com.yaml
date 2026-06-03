@@ -1,4 +1,4 @@
-# Match.com — roach-motel-flag.
+# Match.com — roach-motel-annotate.
 #
 # FTC v. Match Group, Inc. (2019) charged that the company made it
 # difficult for users to cancel and trapped them with deceptive billing.
@@ -8,7 +8,7 @@ hostnames:
   - "{*.}?match.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/registration*"
       - "/subscribe*"

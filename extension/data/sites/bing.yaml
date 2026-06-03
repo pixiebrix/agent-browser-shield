@@ -1,6 +1,6 @@
 # Bing — search-url-helper only.
 #
-# Bing has no UGC sections — no reviews-hide or comments-hide. Footer is a
+# Bing has no UGC sections — no reviews-redact or comments-redact. Footer is a
 # semantic <footer> caught by the generic always-on selector.
 
 hostnames:

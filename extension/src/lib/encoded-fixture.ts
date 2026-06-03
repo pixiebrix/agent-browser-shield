@@ -5,7 +5,7 @@
 //
 // Several files in this repo legitimately need to embed phrases that look
 // like prompt-injection attacks — the rule patterns in
-// `rules/prompt-injection-hide.ts` (which must spell out the phrases they
+// `rules/prompt-injection-redact.ts` (which must spell out the phrases they
 // match), and the test fixtures in `rules/__tests__/*.test.ts` (which
 // assert that the rules correctly identify those phrases). Reading those
 // strings in plain text trips up downstream coding agents that scan the

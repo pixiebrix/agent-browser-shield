@@ -101,7 +101,7 @@ export function Options() {
           className="json-input"
           rows={12}
           spellCheck={false}
-          placeholder='{"ads-hide": false, "pii-mask": true}'
+          placeholder='{"ads-hide": false, "pii-redact": true}'
           value={draft}
           onChange={(event) => {
             setDraft(event.target.value);
@@ -191,7 +191,7 @@ export function Options() {
 
       <Section id="api-key" title="OpenAI API key">
         <p className="hint">
-          Used by the <code>irrelevant-sections-hide</code> rule.{" "}
+          Used by the <code>irrelevant-sections-redact</code> rule.{" "}
           {HAS_BUILT_IN_OPENAI_KEY
             ? "A built-in key is bundled with this build; saving a key here overrides it."
             : "No built-in key is bundled with this build — provide one here to enable the rule."}

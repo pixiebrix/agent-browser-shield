@@ -2,7 +2,7 @@ hostnames:
   - "news.ycombinator.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     # The general selector covers item threads; /newcomments lists comments
     # directly under #bigbox without a .comment-tree wrapper, so the
     # pathname-narrowed entry hides the whole container on that page.

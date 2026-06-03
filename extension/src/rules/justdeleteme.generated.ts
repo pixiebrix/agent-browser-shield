@@ -7,7 +7,7 @@
 // Full license text: extension/data/vendored/justdeleteme-LICENSE.md
 //
 // Filtered to entries graded `hard` or `impossible`. Consumed by
-// `extension/src/rules/roach-motel-flag.ts` as a fallback after the
+// `extension/src/rules/roach-motel-annotate.ts` as a fallback after the
 // hand-curated YAMLs under `extension/data/sites/*.yaml`.
 
 export type JustDeleteMeDifficulty = "hard" | "impossible";

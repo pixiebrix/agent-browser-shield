@@ -2,7 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 // Mock the rules registry so we don't transitively pull in every rule module
-// (irrelevant-sections-hide → automation-element-reference → nanoid, whose ESM
+// (irrelevant-sections-redact → automation-element-reference → nanoid, whose ESM
 // build trips ts-jest's CJS transform).
 jest.mock("../../rules", () => ({
   RULES: [{ id: "rule-a" }, { id: "rule-b" }],

@@ -94,7 +94,7 @@ registration step.
 
 Walkthrough:
 
-1. Copy a small existing rule (`scarcity-hide.ts` is a good starter).
+1. Copy a small existing rule (`scarcity-redact.ts` is a good starter).
 2. Implement the `Rule` interface from `extension/src/rules/types.ts` — `id`,
    `label`, `description`, `defaultEnabled`, `apply()`. The custom ESLint rule
    `agent-browser-shield/rule-id-matches-filename` enforces that `id` matches

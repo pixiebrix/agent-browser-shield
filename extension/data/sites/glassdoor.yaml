@@ -1,7 +1,7 @@
-# Glassdoor — reviews-hide, search-url-helper.
+# Glassdoor — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 #
 # Glassdoor sits behind Cloudflare; cold direct loads of /Reviews/* can
 # stall on a "Just a moment..." interstitial. Selectors below match the
@@ -12,7 +12,7 @@ hostnames:
   - "{*.}?glassdoor.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `[data-test="review-detail"]` is each individual review card on
     # /Reviews/ employer pages — pros/cons/advice prose, demographic
     # claims, free-form ratings copy. The aggregate rating header at the

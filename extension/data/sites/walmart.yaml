@@ -2,7 +2,7 @@ hostnames:
   - "{*.}?walmart.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # Keep the inline aggregate (`[data-testid="reviews-and-ratings"]`) near
     # the product title visible — it's a rating summary, not user-generated
     # content. Only hide sections that contain UGC.

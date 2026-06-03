@@ -1,10 +1,10 @@
 # Yahoo Finance — search-url-helper only.
 #
-# comments-hide is deliberately omitted: Yahoo Finance's Conversations module
+# comments-redact is deliberately omitted: Yahoo Finance's Conversations module
 # on /quote/{TICKER}/community/ is an embedded third-party widget whose DOM
 # does not render to anonymous probes (sign-in required), and the surrounding
 # Yahoo shell uses hash-suffixed Lit-style class names (`yf-1073xd7`,
-# `_yb_z547h0`) that rotate per deploy. Author comments-hide here once stable
+# `_yb_z547h0`) that rotate per deploy. Author comments-redact here once stable
 # selectors are confirmed from an unblocked session.
 #
 # Footer (when rendered) is a semantic <footer> caught by the generic always-on

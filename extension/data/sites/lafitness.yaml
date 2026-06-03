@@ -1,4 +1,4 @@
-# LA Fitness — roach-motel-flag.
+# LA Fitness — roach-motel-annotate.
 #
 # FTC v. Fitness International, LLC (Aug 2025) over cancellation that
 # required in-person visit or certified mail despite online signup.
@@ -7,7 +7,7 @@ hostnames:
   - "{*.}?lafitness.com"
 
 rules:
-  roach-motel-flag:
+  roach-motel-annotate:
     pathnames:
       - "/join*"
       - "/membership*"

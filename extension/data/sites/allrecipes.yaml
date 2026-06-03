@@ -1,4 +1,4 @@
-# AllRecipes — reviews-hide, comments-hide, search-url-helper.
+# AllRecipes — reviews-redact, comments-redact, search-url-helper.
 #
 # Footer is `[role="contentinfo"]` and is already caught by the generic
 # always-on selector. The aggregate star rating and review count near
@@ -9,7 +9,7 @@ hostnames:
   - "{*.}?allrecipes.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # The threaded UGC review section is mounted into a Vue island whose
     # outer wrapper is `comp recipe-ugc-threaded-wrapper mntl-block`. The
     # id (`recipe-ugc-threaded-wrapper_{slot}-{n}`) carries a numeric
@@ -19,7 +19,7 @@ rules:
     selectors:
       - ".recipe-ugc-threaded-wrapper"
 
-  comments-hide:
+  comments-redact:
     # "Ask the Community" Q&A panel — same Vue-island wrapper pattern as
     # reviews, but rendered into `recipe-ugc-qanda-wrapper`. Hides the
     # heading, the question form, and every Q&A thread.

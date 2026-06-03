@@ -1,15 +1,15 @@
-# Goodreads — reviews-hide, search-url-helper.
+# Goodreads — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> — caught by the generic always-on
-# selector. comments-hide is not authored separately: Goodreads doesn't
+# selector. comments-redact is not authored separately: Goodreads doesn't
 # have a distinct "comments" feature on book pages; reader reactions
-# live inside each review card and are covered by reviews-hide.
+# live inside each review card and are covered by reviews-redact.
 
 hostnames:
   - "{*.}?goodreads.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `article.ReviewCard` is the per-review container on `/book/show/*`
     # pages — there are 150+ cards per book in the initial render.
     # Hiding the cards keeps the "Community Reviews" heading, the

@@ -1,13 +1,13 @@
-# Metacritic — reviews-hide, search-url-helper.
+# Metacritic — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?metacritic.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # On `/user-reviews/` subpages (games, movies, TV, music),
     # `.c-reviews-container` wraps the list of UGC user-written
     # reviews. The aggregate `.product-reviews-score` card —

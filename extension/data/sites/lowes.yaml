@@ -1,4 +1,4 @@
-# Lowe's — reviews-hide, comments-hide, search-url-helper.
+# Lowe's — reviews-redact, comments-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
 # The aggregate rating chip (`[data-testid="rating-trigger"]` showing
@@ -9,7 +9,7 @@ hostnames:
   - "{*.}?lowes.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # PDP review section is a Bazaarvoice-backed accordion mounted under
     # `[data-testid="reviews-accordion"]`. The wrapper carries the
     # heading and the (often collapsed) review cards / breakdown. The
@@ -22,7 +22,7 @@ rules:
     selectors:
       - '[data-testid="reviews-accordion"]'
 
-  comments-hide:
+  comments-redact:
     # "Community Q & A" accordion. Same pattern as reviews — wrapper
     # tagged with a stable data-testid, contents may be lazy-loaded.
     hostnames:

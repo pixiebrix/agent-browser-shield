@@ -1,7 +1,7 @@
-# OpenTable — reviews-hide, search-url-helper.
+# OpenTable — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on selector.
-# No footer-hide entry needed.
+# No footer-redact entry needed.
 #
 # OpenTable serves an interstitial ("Well, this is embarrassing.") to
 # cold direct loads of /r/{slug} restaurant pages. Selectors below
@@ -13,7 +13,7 @@ hostnames:
   - "{*.}?opentable.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # `#reviews` is the "What N people are saying" section on /r/
     # restaurant profiles — section header, aggregate ratings panel
     # (overall, food/service/ambience/value, 1-to-5 histogram), sort

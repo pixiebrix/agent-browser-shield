@@ -1,13 +1,13 @@
-# Newegg — reviews-hide, search-url-helper.
+# Newegg — reviews-redact, search-url-helper.
 #
 # Footer is a semantic <footer> caught by the generic always-on
-# selector. No footer-hide entry needed.
+# selector. No footer-redact entry needed.
 
 hostnames:
   - "{*.}?newegg.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # On product detail pages (`/{slug}/p/{itemNumber}`), customer
     # reviews mount inside a tab pane uniquely marked by the
     # `updated_style` class modifier — `.tab-pane.updated_style` is

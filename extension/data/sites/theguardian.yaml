@@ -1,7 +1,7 @@
-# The Guardian — comments-hide.
+# The Guardian — comments-redact.
 #
 # Footer is a semantic <footer role="contentinfo"> caught by the
-# generic always-on selector. No footer-hide entry needed.
+# generic always-on selector. No footer-redact entry needed.
 #
 # search-url-helper deliberately omitted: theguardian.com's search
 # routes (/uk/search, /us/search, /au/search, /international/search)
@@ -13,7 +13,7 @@ hostnames:
   - "{*.}?theguardian.com"
 
 rules:
-  comments-hide:
+  comments-redact:
     # `#comments` is the discussion section at the foot of opinion and
     # comment-enabled news articles — "Comments (N)" heading,
     # sign-in/sort controls, and the threaded reader comment list. The

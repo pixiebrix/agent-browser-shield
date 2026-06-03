@@ -1,9 +1,9 @@
 # Tripadvisor — search-url-helper only.
 #
-# reviews-hide is deliberately omitted: Tripadvisor's hotel/restaurant
+# reviews-redact is deliberately omitted: Tripadvisor's hotel/restaurant
 # detail pages return a DataDome captcha interstitial when fetched
 # headlessly, so the review-list container selector could not be
-# verified against a live render. Add a reviews-hide entry here once
+# verified against a live render. Add a reviews-redact entry here once
 # selectors are confirmed from a logged-in / unblocked browser session.
 #
 # Footer (when the real page does render) is a semantic <footer> and is

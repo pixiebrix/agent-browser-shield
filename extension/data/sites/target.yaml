@@ -2,7 +2,7 @@ hostnames:
   - "{*.}?target.com"
 
 rules:
-  reviews-hide:
+  reviews-redact:
     # Target PDPs render the review section as `#Reviews` /
     # `[data-test="ReviewsDashboard"]` with no schema.org microdata. The
     # dashboard wraps the heading, histogram, and all UGC review cards, so a

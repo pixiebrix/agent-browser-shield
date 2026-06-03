@@ -210,7 +210,7 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   (`extension/scripts/build-rule-defaults.ts`) validates that every registered
   id has a default and rejects unknown ids; do not edit the generated
   `extension/src/rules/rule-defaults.generated.ts`. To flip
-  `irrelevant-sections-hide` on for one experiment, change `false` to `true`
+  `irrelevant-sections-redact` on for one experiment, change `false` to `true`
   here and rebuild.
 - **Site-specific rules** — `extension/data/sites/<host>.yaml`. Codegen
   (`extension/scripts/build-site-data.ts`) validates each YAML against
