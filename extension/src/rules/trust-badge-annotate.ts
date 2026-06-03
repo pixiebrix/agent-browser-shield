@@ -194,6 +194,10 @@ export interface TrustBadgeMatch {
   // third-party issuer. `null` for generic phrases that have no specific
   // issuer.
   issuerDomain: string | null;
+  // The accessible name the matcher computed, returned so the caller can
+  // pass it into the chip without recomputing aria-labelledby / SVG-title
+  // resolution.
+  accessibleName: string;
 }
 
 function lookupIssuer(phrase: string): string | null {
@@ -233,7 +237,7 @@ export function detectTrustBadge(
       return null;
     }
   }
-  return { phrase, issuerDomain };
+  return { phrase, issuerDomain, accessibleName: name };
 }
 
 function chipText(name: string): string {
@@ -273,7 +277,7 @@ function scanAndAnnotate(root: ParentNode): void {
     }
     const match = detectTrustBadge(node, pageHost);
     if (match !== null) {
-      annotate(node, readAccessibleName(node));
+      annotate(node, match.accessibleName);
       count++;
     }
   }
