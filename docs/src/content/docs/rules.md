@@ -638,22 +638,21 @@ and entropy heuristics to surface API keys, tokens, and private keys in source
 repositories. This rule applies the same approach to live page text instead of
 files on disk.
 
-## Boilerplate and agent affordances
+## Context pollution
 
-Remove page chrome that costs tokens without helping the agent complete its
-task, and inject hints that make pages easier for agents to navigate.
+Remove page chrome and irrelevant regions that cost tokens without helping the
+agent complete its task — footers, cookie banners, chat widgets, ads, and dead
+SVG sprite definitions.
 
 Content-vs-boilerplate separation has a long line of prior art, starting with
 Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) — the basis for the
 Boilerpipe library — and Mozilla's
 [Readability.js](https://github.com/mozilla/readability), the algorithm behind
-Firefox Reader View. Several rules below are the agent-facing analogue of those
+Firefox Reader View. The rules below are the agent-facing analogue of those
 heuristics, targeted at specific chrome categories instead of running a single
 generic article extractor.
 
-### Page chrome
-
-#### Hide Page Footer
+### Hide Page Footer
 
 - **ID:** `footer-redact`
 - **Default:** on
@@ -663,7 +662,7 @@ save tokens. Per-section footers inside articles or asides are left visible.
 Footers are a canonical boilerplate region in Kohlschütter et al.
 [[13]](#ref-kohlschutter-boilerplate) and are stripped by Readability.js.
 
-#### Remove Cookie Banners
+### Remove Cookie Banners
 
 - **ID:** `cookie-banner-hide`
 - **Default:** on
@@ -680,7 +679,7 @@ canonical open ruleset for matching CMPs (Consent Management Platforms) like
 OneTrust, Cookiebot, and TrustArc — the same CMP coverage this rule targets,
 though Consent-O-Matic auto-fills banners while this rule removes them outright.
 
-#### Remove Chat Widgets
+### Remove Chat Widgets
 
 - **ID:** `chat-widget-hide`
 - **Default:** on
@@ -691,7 +690,7 @@ Olark, LiveChat, Freshchat, Zopim). These bubbles float above the page, so
 they're removed entirely rather than replaced with an in-flow placeholder. Chat
 bubbles are floating chrome that Readability-style extractors discard.
 
-#### Hide Ads and Sponsored Results
+### Hide Ads and Sponsored Results
 
 - **ID:** `ads-hide`
 - **Default:** on
@@ -707,7 +706,7 @@ that powers [uBlock Origin](https://github.com/gorhill/uBlock), Adblock Plus,
 and most other consumer ad blockers — over a decade of community-maintained ad
 and tracker selector patterns.
 
-#### Remove Unused SVG Sprites
+### Remove Unused SVG Sprites
 
 - **ID:** `svg-sprite-strip`
 - **Default:** on
@@ -718,9 +717,13 @@ the page. Referenced sprites are preserved so icons keep working. Dead-code
 elimination — the bundler optimization of dropping references that no live code
 reaches — applied to SVG `<symbol>` definitions at runtime.
 
-### Agent affordances
+## Agent shortcuts
 
-#### Embed Search URL Recipes
+Inject hints that let agents reach what they need without navigating the
+human-facing UI — currently URL recipes for searches, filters, and direct
+lookups on covered hosts.
+
+### Embed Search URL Recipes
 
 - **ID:** `search-url-helper`
 - **Default:** on
