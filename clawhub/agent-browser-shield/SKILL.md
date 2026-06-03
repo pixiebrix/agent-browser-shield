@@ -32,12 +32,12 @@ Use when OpenClaw is connecting to a Chromium you launch yourself.
    - **From the Chrome Web Store:** launch Chromium with the dedicated profile,
      install from the store URL above, pin the shield icon, then close it. On
      subsequent launches (step 2) skip the `--load-extension` /
-     `--disable-extensions-except` flags — the store install is persisted in
-     the profile.
+     `--disable-extensions-except` flags — the store install is persisted in the
+     profile.
    - **Unpacked (when pinning a build):** unzip
      `agent-browser-shield-extension.zip` to a stable directory (e.g.
-     `~/.cache/agent-browser-shield/extension/`) and pass `--load-extension`
-     and `--disable-extensions-except` in step 2.
+     `~/.cache/agent-browser-shield/extension/`) and pass `--load-extension` and
+     `--disable-extensions-except` in step 2.
 
 2. Launch Chromium **headed** with the dedicated profile and CDP enabled:
 

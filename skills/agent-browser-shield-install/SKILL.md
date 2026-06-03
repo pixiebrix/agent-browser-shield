@@ -139,6 +139,7 @@ attaches.
 
 1. Tell the user (once, then remember it's done). Prefer the Chrome Web Store —
    it auto-updates and works on any Chromium browser:
+
    - **Chrome Web Store (preferred):** install from
      `https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd`,
      then confirm the shield icon in the toolbar.
@@ -151,6 +152,7 @@ attaches.
    The floating on-page options button is off by default — see *Customizing
    build-time defaults* below to ship a build with it on (requires the unpacked
    path).
+
 2. Attach via your runtime's normal CDP / Chrome DevTools MCP mechanism. No
    per-session extension setup on the claw side.
 

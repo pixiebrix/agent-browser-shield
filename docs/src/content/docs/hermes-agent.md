@@ -26,8 +26,8 @@ Two options, depending on whether you need a specific build:
   load that directory at `chrome://extensions` → **Developer mode** → **Load
   unpacked**.
 
-Either way, the extension must end up in the Chromium profile Hermes attaches
-to in step 3 — not your default Chrome profile.
+Either way, the extension must end up in the Chromium profile Hermes attaches to
+in step 3 — not your default Chrome profile.
 
 ### 2. Launch Chrome with remote debugging on a dedicated user-data-dir
 
