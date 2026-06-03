@@ -33,6 +33,7 @@ import {
   LINK_SPOOF_ANNOTATED_ATTR as FLAGGED_ATTR,
   RULE_ATTR,
 } from "../lib/dom-markers";
+import { registrableDomain } from "../lib/domain-trust";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
@@ -55,20 +56,6 @@ const MIXED_SCRIPT_RE = /[A-Za-z][Ͱ-ϿЀ-ӿ԰-֏Ꭰ-᏿]|[Ͱ-ϿЀ-ӿ԰-֏Ꭰ-�
 // label written in Cyrillic / Greek in the visible text (e.g. рф) won't
 // surface a spurious "text vs href" candidate.
 const DOMAIN_RE = /\b((?:[a-z0-9-]{1,63}\.)+[a-z]{2,24})\b/i;
-
-function stripWww(host: string): string {
-  return host.startsWith("www.") ? host.slice(4) : host;
-}
-
-// Last-two-labels approximation of the registrable domain. Doesn't
-// handle multi-part public suffixes (co.uk, com.au) — a real PSL parser
-// would be heavier than this rule warrants. False positives surface as
-// misleading chip text, not as broken navigation, and the chip discloses
-// what was compared so a reader can judge.
-function apex(host: string): string {
-  const labels = stripWww(host).split(".");
-  return labels.length >= 2 ? labels.slice(-2).join(".") : host;
-}
 
 export interface SpoofTriggers {
   homoglyphWord: string | null;
@@ -99,9 +86,9 @@ export function detectSpoof(link: HTMLAnchorElement): SpoofTriggers | null {
     if (raw !== null && /^https?:/i.test(raw)) {
       try {
         const url = new URL(link.href);
-        const textApex = apex(candidateDomain.toLowerCase());
-        const hrefApex = apex(url.hostname.toLowerCase());
-        if (textApex !== hrefApex) {
+        const textRD = registrableDomain(candidateDomain.toLowerCase());
+        const hrefRD = registrableDomain(url.hostname.toLowerCase());
+        if (textRD !== null && hrefRD !== null && textRD !== hrefRD) {
           textDomain = candidateDomain.toLowerCase();
           hrefHost = url.hostname.toLowerCase();
         }
