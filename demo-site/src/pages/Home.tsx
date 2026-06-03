@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import AdSlot from "../components/AdSlot";
+import AdvertorialCard from "../components/AdvertorialCard";
 import CountdownBadge from "../components/CountdownBadge";
 import ProductCard from "../components/ProductCard";
 import { products } from "../data/products";
@@ -76,6 +77,53 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <section aria-label="From our partners">
+        <h2 className="mb-3 text-xl font-semibold text-slate-900">
+          From Our Partners
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AdvertorialCard
+            label="Sponsored"
+            headline="Why this commuter e-bike is the upgrade your morning needs"
+            body="Northwind's new urban e-bike combines a torque-sensing motor with a removable battery so you can charge it at your desk. Riders in city pilots report cutting their commute by 22 minutes on average."
+            brand="Northwind Cycles"
+          />
+          <AdvertorialCard
+            label="[Ad]"
+            headline="The five-minute breakfast that's quietly taking over Brooklyn"
+            body="Made with overnight oats, fresh stone fruit, and a single-origin cold brew, Vellichor's grab-and-go cups have a cult following in coffee shops from Greenpoint to Park Slope."
+            brand="Vellichor Foods"
+          />
+          <AdvertorialCard
+            label="Paid for and presented by Aperture Home"
+            headline="Renovating a kitchen on a weekend timeline: it's possible"
+            body="Aperture's modular cabinet system installs without a contractor, ships flat-packed, and includes a guided AR planner so you can confirm fit before the truck arrives."
+            brand="Aperture Home"
+          />
+        </div>
+      </section>
+
+      <article
+        aria-label="Editorial article — should remain visible"
+        className="editorial-card rounded border border-stone-200 bg-white p-4"
+      >
+        <h2 className="text-base font-semibold text-slate-900">
+          Local roads team takes silver in regional championship
+        </h2>
+        <p className="mt-2 text-sm text-stone-700">
+          The Riverside cycling club placed second overall this weekend. The
+          team is sponsored by Adidas this season under a three-year
+          partnership, but the win was earned on the strength of a late-stage
+          breakaway by junior rider Mia Chen.
+        </p>
+        <a
+          href="https://example.com/news/riverside-silver"
+          className="mt-2 inline-block text-sm font-medium text-orange-700 hover:text-orange-800"
+        >
+          Read the full recap
+        </a>
+      </article>
     </div>
   );
 }

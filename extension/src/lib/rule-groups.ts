@@ -70,6 +70,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "cookie-banner-hide",
       "chat-widget-hide",
       "ads-hide",
+      "disguised-ad-flag",
       "svg-sprite-strip",
       "irrelevant-sections-redact",
     ],

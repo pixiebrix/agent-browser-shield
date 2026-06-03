@@ -37,4 +37,5 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "irrelevant-sections-redact": false,
   "cross-origin-frame-redact": false,
   "schema-trust-sanitize": false,
+  "disguised-ad-flag": true,
 };
