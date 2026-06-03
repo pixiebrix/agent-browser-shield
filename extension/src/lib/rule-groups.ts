@@ -55,7 +55,6 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "confirmshame-sanitize",
       "roach-motel-annotate",
       "newsletter-modal-hide",
-      "irrelevant-sections-redact",
     ],
   },
   {
@@ -72,6 +71,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "chat-widget-hide",
       "ads-hide",
       "svg-sprite-strip",
+      "irrelevant-sections-redact",
     ],
   },
   {

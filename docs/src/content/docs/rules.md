@@ -571,7 +571,7 @@ California
 [AB-2863](https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2863),
 and EU Digital Services Act Art. 25.
 
-### Nagging and interface interference
+### Nagging
 
 #### Remove Newsletter Modals
 
@@ -585,28 +585,6 @@ login modals, paywalls, and small toasts are kept visible.
 
 Interstitial signup modals are categorized as *Nagging* in Mathur et al.
 [[9]](#ref-mathur-dark-patterns).
-
-#### Hide Irrelevant Sections (AI)
-
-- **ID:** `irrelevant-sections-redact`
-- **Default:** off
-- **Scope:** top frame only
-- **Availability:** requires an OpenAI API key — either bundled at build time
-  via `OPENAI_API_KEY`, or saved on the extension's options page. Until a key is
-  configured the rule shows as Unavailable in the popup and options.
-
-Use a small LLM to identify engagement/exploration rails (related products, "you
-might also like", recommended articles, trending now, etc.) and replace them
-with click-to-reveal placeholders. Sends a compressed page tree with stable refs
-so the LLM can choose the right granularity; interactive elements (search, cart,
-checkout, login) are labeled as protected. Re-scans on scroll to catch
-lazy-loaded content.
-
-An LLM-driven generalization of the boilerplate-detection heuristics in
-Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) and
-[Readability.js](https://github.com/mozilla/readability). The specific targeting
-of engagement and recommendation rails aligns with the *Nagging* and *Interface
-Interference* families in Mathur et al. [[9]](#ref-mathur-dark-patterns).
 
 ## Sensitive-data masking
 
@@ -641,8 +619,8 @@ files on disk.
 ## Context pollution
 
 Remove page chrome and irrelevant regions that cost tokens without helping the
-agent complete its task — footers, cookie banners, chat widgets, ads, and dead
-SVG sprite definitions.
+agent complete its task — footers, cookie banners, chat widgets, ads, engagement
+rails, and dead SVG sprite definitions.
 
 Content-vs-boilerplate separation has a long line of prior art, starting with
 Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) — the basis for the
@@ -716,6 +694,27 @@ definitions) when none of their symbols are referenced by any `<use>` element on
 the page. Referenced sprites are preserved so icons keep working. Dead-code
 elimination — the bundler optimization of dropping references that no live code
 reaches — applied to SVG `<symbol>` definitions at runtime.
+
+### Hide Irrelevant Sections (AI)
+
+- **ID:** `irrelevant-sections-redact`
+- **Default:** off
+- **Scope:** top frame only
+- **Availability:** requires an OpenAI API key — either bundled at build time
+  via `OPENAI_API_KEY`, or saved on the extension's options page. Until a key is
+  configured the rule shows as Unavailable in the popup and options.
+
+Use a small LLM to identify engagement/exploration rails (related products, "you
+might also like", recommended articles, trending now, etc.) and replace them
+with click-to-reveal placeholders. Sends a compressed page tree with stable refs
+so the LLM can choose the right granularity; interactive elements (search, cart,
+checkout, login) are labeled as protected. Re-scans on scroll to catch
+lazy-loaded content.
+
+An LLM-driven generalization of the boilerplate-detection heuristics in
+Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) and
+[Readability.js](https://github.com/mozilla/readability), targeted at engagement
+and recommendation rails instead of running a generic article extractor.
 
 ## Agent shortcuts
 
