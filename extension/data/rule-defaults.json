@@ -33,6 +33,7 @@
     "schema-trust-sanitize": false,
     "trust-badge-annotate": false,
     "disguised-ad-flag": true,
-    "encoded-payload-redact": true
+    "encoded-payload-redact": true,
+    "webdriver-probe-annotate": false
   }
 }

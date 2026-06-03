@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 34 rules, each independently toggleable from the extension
+The extension ships 35 rules, each independently toggleable from the extension
 popup. Rules marked **default: on** are active on fresh install; **default:
 off** rules must be enabled manually.
 
@@ -354,6 +354,43 @@ the user reveals.
 Motivated by Roesner & Kohlbrenner [[15]](#ref-roesner-sop), which shows that
 agents willing to read cross-origin frame content turn the same-origin policy
 from a hard guarantee into a soft one.
+
+#### Flag navigator.webdriver Reads (Experimental)
+
+- **ID:** `webdriver-probe-annotate`
+- **Default:** off
+- **Top frame only**
+
+Inject a main-world probe that wraps `navigator.webdriver`'s getter on the
+top-level document and listens for reads. If the page reads the property, the
+rule prepends a screen-reader-only landmark to the document noting that the site
+can distinguish AI-agent traffic from human traffic and may serve different
+content to agents than to people.
+
+Content scripts run in the extension's isolated JavaScript world and cannot
+observe page-world property accesses directly; the rule wires a tiny inline
+`<script>` whose `textContent` executes in the page world, defines a wrapping
+getter on `Navigator.prototype.webdriver`, and dispatches a DOM `CustomEvent`
+each time the getter fires. The isolated content script listens for that event
+and stamps the landmark on first detection. Pages with a strict `script-src` CSP
+block the inline `<script>`; on those origins the rule silently degrades to a
+no-op. The probe is injected at `document_idle`, so reads issued during the
+page's initial parse are not caught — reads from `DOMContentLoaded` / `load`
+handlers, polled checks, and interaction-driven fingerprinters are.
+
+The annotation flags *capability*, not measured cloaking — a
+`navigator.webdriver` read by itself is also consistent with legitimate
+anti-fraud fingerprinting on banking, payments, and checkout flows. The landmark
+text accordingly never uses the unqualified word "cloaking". Off by default
+while the false-positive rate is characterized.
+
+Motivated by the AI-targeted cloaking threat model: Caspi & Tugendhaft
+[[18]](#ref-caspi-cloaking) demonstrate that a site identifying inbound requests
+as agent traffic can serve a poisoned, attacker-controlled version of a page
+that human reviewers never see, turning the page itself into an
+indirect-prompt-injection delivery surface. Search-engine cloaking has a long
+lineage [[19]](#ref-wu-cloaking); the same primitive aimed at LLM crawlers is
+the new threat.
 
 ### Visual identity spoofing
 
@@ -882,3 +919,18 @@ computer-use-agent susceptibility to manipulative UI.
 <a id="ref-decepticon"></a>**[17] Cuvin et al. (2025).** *DECEPTICON.*
 [arxiv:2512.22894](https://arxiv.org/abs/2512.22894). Companion benchmark for
 agent susceptibility to deceptive interface patterns.
+
+<a id="ref-caspi-cloaking"></a>**[18] Caspi & Tugendhaft (2025).** *A Whole New
+World: Creating a Parallel-Poisoned Web Only AI-Agents Can See.*
+[arxiv:2509.00124](https://arxiv.org/abs/2509.00124). Demonstrates that a site
+identifying inbound requests as agent traffic — via UA, IP range, or automation
+telltales like `navigator.webdriver` — can serve a different,
+attacker-controlled version of a page to AI agents than to human reviewers,
+turning the cloaked page into an indirect-prompt-injection carrier.
+
+<a id="ref-wu-cloaking"></a>**[19] Wu & Davison (2005).** *Cloaking and
+Redirection: A Preliminary Study.* AIRWeb 2005.
+[lehigh.edu](https://www.cse.lehigh.edu/~brian/pubs/2005/airweb/cloaking.pdf).
+Names server-side cloaking against search-engine crawlers and characterizes the
+agent-fingerprinting techniques operators use to decide which version of a page
+to serve. The AI-targeted variant is the same primitive aimed at LLM crawlers.
