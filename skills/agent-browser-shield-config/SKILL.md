@@ -71,6 +71,9 @@ for the build-time workflow.
   envelope used by Amazon's `a-offscreen` etc.)
 - `newsletter-modal-hide` — strip newsletter modals
 - `svg-sprite-strip` — strip inline SVG sprite definitions
+- `svg-text-strip` — blank injection-shaped text inside in-page SVG `<title>`,
+  `<desc>`, and `<text>` elements (covers logos, infographics, and charts;
+  complements `svg-sprite-strip`, which only removes unused sprite containers)
 - `social-embed-redact` — strip social media embeds
 - `ads-hide` — remove display ads and paid/sponsored search results (curated
   selectors + EasyList stylesheet)
