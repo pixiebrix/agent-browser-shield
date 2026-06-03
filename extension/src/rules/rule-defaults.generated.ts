@@ -39,4 +39,5 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "schema-trust-sanitize": false,
   "disguised-ad-flag": true,
   "encoded-payload-redact": true,
+  "webdriver-probe-annotate": false,
 };

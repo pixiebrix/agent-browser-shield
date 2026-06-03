@@ -3,6 +3,7 @@
 
 import AdSlot from "../components/AdSlot";
 import AdvertorialCard from "../components/AdvertorialCard";
+import BotDetectorProbe from "../components/BotDetectorProbe";
 import CountdownBadge from "../components/CountdownBadge";
 import ProductCard from "../components/ProductCard";
 import { products } from "../data/products";
@@ -103,6 +104,8 @@ export default function Home() {
           />
         </div>
       </section>
+
+      <BotDetectorProbe />
 
       <article
         aria-label="Editorial article — should remain visible"

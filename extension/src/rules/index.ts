@@ -36,6 +36,7 @@ import { svgTextStripRule } from "./svg-text-strip";
 import { trustBadgeAnnotateRule } from "./trust-badge-annotate";
 import type { Rule } from "./types";
 import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
+import { webdriverProbeAnnotateRule } from "./webdriver-probe-annotate";
 
 // Single source of truth for the rule catalog. RULE_IDS, RuleId, defaults, and
 // availability are all derived from this array. Adding a rule: create the
@@ -79,6 +80,7 @@ const RULES_TUPLE = [
   schemaTrustSanitizeRule,
   disguisedAdFlagRule,
   encodedPayloadRedactRule,
+  webdriverProbeAnnotateRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];

@@ -43,6 +43,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "cross-origin-frame-redact",
       "link-spoof-annotate",
       "trust-badge-annotate",
+      "webdriver-probe-annotate",
     ],
   },
   {
