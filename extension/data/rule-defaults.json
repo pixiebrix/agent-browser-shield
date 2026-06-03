@@ -30,6 +30,7 @@
     "roach-motel-annotate": true,
     "irrelevant-sections-redact": false,
     "cross-origin-frame-redact": false,
-    "schema-trust-sanitize": false
+    "schema-trust-sanitize": false,
+    "trust-badge-annotate": false
   }
 }

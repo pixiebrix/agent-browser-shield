@@ -49,6 +49,11 @@ export const CART_ADDON_ANNOTATED_ATTR = "data-abs-cart-addon-annotated";
 // doesn't append a second chip on the next mutation pass.
 export const LINK_SPOOF_ANNOTATED_ATTR = "data-abs-link-spoof-annotated";
 
+// `trust-badge-annotate`: marks an image-shaped trust badge the rule has
+// already annotated so the watcher doesn't append a second chip on
+// re-scan.
+export const TRUST_BADGE_ANNOTATED_ATTR = "data-abs-trust-badge-annotated";
+
 // `confirmshame-sanitize`: stores the original copy of attributes the
 // rule rewrites so reveal-on-click can restore the user-visible
 // confirmshame language.

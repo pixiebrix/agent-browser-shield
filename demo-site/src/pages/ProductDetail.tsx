@@ -282,6 +282,36 @@ export default function ProductDetail() {
             </svg>
           </div>
 
+          {/*
+            Third-party "trust badge" images. Sighted users read a Norton
+            Secured / BBB Accredited / Verified Seller graphic and treat the
+            page as endorsed by an external authority; the content script
+            has no transport-level signal that backs any of the three.
+            trust-badge-annotate appends an inline chip noting the claim is
+            unverifiable. The third image carries a long descriptive alt —
+            negative case — and should not receive a chip.
+          */}
+          <aside
+            aria-label="Trust badges"
+            className="flex flex-wrap items-center gap-3 pt-1"
+          >
+            <img
+              src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='28'%3E%3Crect width='110' height='28' rx='3' fill='%23ffd200'/%3E%3Ctext x='10' y='18' font-family='sans-serif' font-size='11' font-weight='700' fill='%23000'%3ENorton Secured%3C/text%3E%3C/svg%3E"
+              alt="Norton Secured"
+              className="h-7 w-auto"
+            />
+            <img
+              src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='28'%3E%3Crect width='110' height='28' rx='3' fill='%231d4ed8'/%3E%3Ctext x='8' y='18' font-family='sans-serif' font-size='11' font-weight='700' fill='%23fff'%3EVerified Seller%3C/text%3E%3C/svg%3E"
+              alt="Verified Seller"
+              className="h-7 w-auto"
+            />
+            <img
+              src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='28'%3E%3Crect width='150' height='28' rx='3' fill='%23166534'/%3E%3Ctext x='8' y='18' font-family='sans-serif' font-size='10' fill='%23fff'%3EBuy with confidence%3C/text%3E%3C/svg%3E"
+              alt="A confident customer holding the product after fast shipping arrival from our regional distribution center"
+              className="h-7 w-auto"
+            />
+          </aside>
+
           <div className="border-t border-stone-200 pt-3 text-xs text-stone-600">
             <div>Ships from RiverMart</div>
             <div>Sold by RiverMart Direct</div>

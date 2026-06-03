@@ -31,6 +31,7 @@ import { secretsRedactRule } from "./secrets-redact";
 import { socialEmbedRedactRule } from "./social-embed-redact";
 import { svgSpriteStripRule } from "./svg-sprite-strip";
 import { svgTextStripRule } from "./svg-text-strip";
+import { trustBadgeAnnotateRule } from "./trust-badge-annotate";
 import type { Rule } from "./types";
 import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
 
@@ -68,6 +69,7 @@ const RULES_TUPLE = [
   adsHideRule,
   cartAddonAnnotateRule,
   linkSpoofAnnotateRule,
+  trustBadgeAnnotateRule,
   searchUrlHelperRule,
   roachMotelAnnotateRule,
   irrelevantSectionsRedactRule,
