@@ -78,7 +78,7 @@ DOM. Five canonical verbs:
   `checkout-checkbox-sanitize`)
 - `strip` — removes the element/node from the DOM entirely (`noscript-strip`,
   `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`,
-  `meta-injection-strip`)
+  `svg-text-strip`, `meta-injection-strip`)
 
 `-helper` is reserved for non-defensive agent affordances (`search-url-helper`).
 See CONTRIBUTING.md → *Adding a new rule* → *Rule ID naming* for the longer

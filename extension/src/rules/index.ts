@@ -29,6 +29,7 @@ import { searchUrlHelperRule } from "./search-url-helper";
 import { secretsRedactRule } from "./secrets-redact";
 import { socialEmbedRedactRule } from "./social-embed-redact";
 import { svgSpriteStripRule } from "./svg-sprite-strip";
+import { svgTextStripRule } from "./svg-text-strip";
 import type { Rule } from "./types";
 import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
 
@@ -61,6 +62,7 @@ const RULES_TUPLE = [
   attributeInjectionSanitizeRule,
   newsletterModalHideRule,
   svgSpriteStripRule,
+  svgTextStripRule,
   socialEmbedRedactRule,
   adsHideRule,
   cartAddonAnnotateRule,

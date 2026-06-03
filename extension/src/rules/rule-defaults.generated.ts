@@ -26,6 +26,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "attribute-injection-sanitize": true,
   "newsletter-modal-hide": true,
   "svg-sprite-strip": true,
+  "svg-text-strip": true,
   "social-embed-redact": true,
   "ads-hide": true,
   "cart-addon-annotate": true,
