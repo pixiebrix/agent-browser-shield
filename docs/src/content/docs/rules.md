@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 27 rules grouped into five rough categories. Each rule is
+The extension ships 28 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -165,6 +165,40 @@ disagree on what's visible" asymmetry is the same one Boucher et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents*](https://arxiv.org/abs/2409.11295)
 (ICLR 2025), formalize for zero-width characters and CSS-hidden DOM
 respectively.
+
+### Strip Meta Injection
+
+- **ID:** `meta-injection-strip`
+- **Default:** on
+
+Walk every `<meta>` element with a `content` attribute and every `<title>`
+element. When the value matches the prompt-injection pattern set (the same regex
+bundle as `prompt-injection-hide`), remove the `<meta>` element outright and
+blank the `<title>` text. The rule does not gate on specific `name=` /
+`property=` values — any meta whose content carries instruction-shaped text is
+removed, covering `name="description"`, `name="keywords"`,
+`property="og:title"`, `property="og:description"`, `name="twitter:title"`,
+`name="twitter:description"`, `name="twitter:image:alt"`, and the `article:*`
+family. Meta tags without a content attribute are left alone. The rule scans
+`document.head` in addition to the engine's `apply` root, since meta and title
+normally live in `<head>` and SPA frameworks (React 19 native head metadata,
+react-helmet) mutate `<head>` on route changes.
+
+Page metadata is invisible to a sighted human (it surfaces in the browser tab,
+social-share unfurls, and search-result snippets, not in the rendered article
+body), but agents that summarize a page frequently pull `description` /
+`og:description` / `<title>` first as a compact "what is this page" answer. A
+poisoned description reaches the agent without ever appearing in the page
+content the user reviews.
+
+Prior art: Greshake et al. (cited in the section preamble) enumerates HTML
+metadata among the non-rendered carriers for indirect prompt injection. The
+metadata vocabularies themselves are [Open Graph](https://ogp.me/) (Facebook,
+2010 — `og:*`) and
+[Twitter Cards](https://developer.x.com/en/docs/twitter-for-websites/cards/overview/abouts-cards)
+(Twitter / X — `twitter:*`); the underlying `<meta name="description">` is in
+the
+[HTML Living Standard](https://html.spec.whatwg.org/multipage/semantics.html#meta-name-description-2).
 
 ### Scrub Attribute Injection
 
