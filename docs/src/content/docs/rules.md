@@ -412,19 +412,18 @@ content turn the same-origin policy from a hard guarantee into a soft one.
 - **Default:** off
 
 Walk JSON-LD blocks and microdata items for schema.org `Organization`-typed
-claims — `Article.publisher`, `Article.sourceOrganization`, `ClaimReview.author`,
-and top-level brand assertions — and blank the `name`, `url`, and `@id` fields
-when the claim's `url` resolves to a different
+claims — `Article.publisher`, `Article.sourceOrganization`,
+`ClaimReview.author`, and top-level brand assertions — and blank the `name`,
+`url`, and `@id` fields when the claim's `url` resolves to a different
 [registrable domain](https://publicsuffix.org/) than the page asserting it.
 Structural fields (`@type`, `logo`, `datePublished`, `price`, `ratingValue`) are
-preserved exactly, so an agent still gets the article's body data; it just
-loses the impersonating identity strings. `Person`-typed claims and
-name-only claims with no `url` to anchor against are out of scope and left
-alone. Off by default while we gather real-world signal on false positives;
-the rule short-circuits entirely on known syndicators (Google News, Yahoo News,
-MSN, Apple News, Flipboard, SmartNews, Feedly, Pocket), web archives,
-AMP cache, and Google Translate proxies, where mismatched publisher claims are
-expected.
+preserved exactly, so an agent still gets the article's body data; it just loses
+the impersonating identity strings. `Person`-typed claims and name-only claims
+with no `url` to anchor against are out of scope and left alone. Off by default
+while we gather real-world signal on false positives; the rule short-circuits
+entirely on known syndicators (Google News, Yahoo News, MSN, Apple News,
+Flipboard, SmartNews, Feedly, Pocket), web archives, AMP cache, and Google
+Translate proxies, where mismatched publisher claims are expected.
 
 Schema.org has no native provenance mechanism — every claim is self-asserted,
 which is structurally why a page can list itself as published by The New York
@@ -434,13 +433,13 @@ JASIST 2025; Google's own
 [Structured Data General Guidelines](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
 treat publisher impersonation as a policy violation enforced manually after
 crawl, not a markup-level check). The unearned-authority surface for agents is
-the same one already established for `json-ld-sanitize` and `meta-injection-strip`
-— structured data the human reviewer does not see but the agent ingests as a
-"trusted summary." Wu et al.,
+the same one already established for `json-ld-sanitize` and
+`meta-injection-strip` — structured data the human reviewer does not see but the
+agent ingests as a "trusted summary." Wu et al.,
 [*WIPI*](https://arxiv.org/abs/2402.16965), and Liao et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents*](https://arxiv.org/abs/2409.11295)
-(ICLR 2025), both document agents acting on page metadata that has no
-visible counterpart.
+(ICLR 2025), both document agents acting on page metadata that has no visible
+counterpart.
 
 ## Dark-pattern blocking
 
