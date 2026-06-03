@@ -54,6 +54,13 @@ export const LINK_SPOOF_ANNOTATED_ATTR = "data-abs-link-spoof-annotated";
 // re-scan.
 export const TRUST_BADGE_ANNOTATED_ATTR = "data-abs-trust-badge-annotated";
 
+// `disguised-ad-flag`: marks a label element that the rule has already
+// considered and rejected (no article-shaped ancestor, in a filter chip,
+// inside an existing ad-hide region, etc.), so subtree-watcher re-scans
+// don't re-evaluate the same negative case on every mutation burst.
+export const DISGUISED_AD_FLAG_CONSIDERED_ATTR =
+  "data-abs-disguised-ad-considered";
+
 // `confirmshame-sanitize`: stores the original copy of attributes the
 // rule rewrites so reveal-on-click can restore the user-visible
 // confirmshame language.

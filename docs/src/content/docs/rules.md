@@ -684,6 +684,34 @@ that powers [uBlock Origin](https://github.com/gorhill/uBlock), Adblock Plus,
 and most other consumer ad blockers — over a decade of community-maintained ad
 and tracker selector patterns.
 
+### Hide Disguised Ads (Native Advertorials)
+
+- **ID:** `disguised-ad-flag`
+- **Default:** on
+
+Hide article-shaped blocks that carry a visible disclosure label — "Sponsored",
+"Promoted", "Advertorial", "Paid Post", "Partner Content", or the bracketed
+variants common in social feeds — but are rendered by the publisher's own CMS
+rather than served from an ad network. Native advertorials bypass the
+infrastructure-level selectors that power `ads-hide` because they share class
+names and DOM shape with editorial articles; the only signal that distinguishes
+them is the disclosure label itself, which the
+[FTC's `.com Disclosures`](https://www.ftc.gov/business-guidance/resources/com-disclosures-how-make-effective-disclosures-digital-advertising)
+require publishers to render prominently.
+
+Detection works on the visible label — not network selectors — and only fires
+when the label sits inside an article-shaped container (heading, image or
+outbound link, body prose). Filter chips, navigation links, and editorial
+paragraphs that mention sponsorship in passing are excluded by that shape
+check, by an interactive-ancestor guard, and by a whole-string regex on the
+label element. Matching cards are replaced with a click-to-reveal placeholder
+in the same style as `ads-hide` and `irrelevant-sections-redact`.
+
+The label-only approach is the boilerplate-detection counterpart to
+Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) and
+[Readability.js](https://github.com/mozilla/readability), narrowed to the
+disclosure signal that paid content must carry by law.
+
 ### Remove Unused SVG Sprites
 
 - **ID:** `svg-sprite-strip`

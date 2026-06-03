@@ -11,6 +11,7 @@ import { confirmshameSanitizeRule } from "./confirmshame-sanitize";
 import { cookieBannerHideRule } from "./cookie-banner-hide";
 import { countdownTimerRedactRule } from "./countdown-timer-redact";
 import { crossOriginFrameRedactRule } from "./cross-origin-frame-redact";
+import { disguisedAdFlagRule } from "./disguised-ad-flag";
 import { footerRedactRule } from "./footer-redact";
 import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
@@ -75,6 +76,7 @@ const RULES_TUPLE = [
   irrelevantSectionsRedactRule,
   crossOriginFrameRedactRule,
   schemaTrustSanitizeRule,
+  disguisedAdFlagRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];
