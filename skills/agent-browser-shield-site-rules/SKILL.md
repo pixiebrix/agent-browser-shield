@@ -162,7 +162,8 @@ Schema is in `extension/data/site-rules.schema.ts`. Minimum: a top-level
 `hostnames` array (URLPattern hostname strings) and a `rules` object with at
 least one key. Per-rule `hostnames`/`pathnames` arrays narrow further when
 needed (e.g. only apply `reviews-redact` on `/biz/*` for Yelp). Both the single-
-entry and array-of-entries forms are valid for `*-hide` rules.
+entry and array-of-entries forms are valid for the selector-bearing rule keys
+(`reviews-redact`, `comments-redact`, `footer-redact`).
 
 Add a header comment explaining what's hidden and what's preserved. Reference
 the surviving aggregate/header that the user sees — future readers and review

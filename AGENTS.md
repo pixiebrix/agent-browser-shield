@@ -61,6 +61,28 @@ grep-friendly with the same naming conventions as the extension. The replacement
 allowlist (`props`, `ref`, `args`, loop counters, etc.) mirrors the extension's.
 `bun run check` in `demo-site/` runs Biome + ESLint.
 
+## Rule ID naming
+
+Rule IDs follow `<target>-<verb>` and the verb names what the rule does to the
+DOM. Five canonical verbs:
+
+- `annotate` — adds agent-readable info; page content unchanged
+  (`cart-addon-annotate`, `roach-motel-annotate`)
+- `hide` — visually conceals via `display: none`; element stays in DOM
+  (`ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`)
+- `redact` — replaces content with a click-to-reveal placeholder
+  (`pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`)
+- `sanitize` — keeps the element and cleans attributes/text/state
+  (`json-ld-sanitize`, `attribute-injection-sanitize`,
+  `confirmshame-sanitize`, `checkout-checkbox-sanitize`)
+- `strip` — removes the element/node from the DOM entirely
+  (`noscript-strip`, `html-comment-strip`, `hidden-text-strip`,
+  `svg-sprite-strip`, `meta-injection-strip`)
+
+`-helper` is reserved for non-defensive agent affordances
+(`search-url-helper`). See CONTRIBUTING.md → *Adding a new rule* → *Rule ID
+naming* for the longer write-up and the hide-vs-redact decision rule.
+
 ## Rule authoring: re-scan SPA mutations
 
 Rule `apply` runs once at `document_idle`. Client-side route changes in SPAs
