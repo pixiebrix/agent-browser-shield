@@ -12,7 +12,8 @@ export type RuleGroupId =
   | "indirect-prompt-injection"
   | "dark-patterns"
   | "sensitive-data-masking"
-  | "boilerplate-and-affordances";
+  | "context-pollution"
+  | "agent-shortcuts";
 
 export interface RuleGroup {
   id: RuleGroupId;
@@ -63,15 +64,19 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
     ruleIds: ["pii-redact", "secrets-redact"],
   },
   {
-    id: "boilerplate-and-affordances",
-    label: "Boilerplate and agent affordances",
+    id: "context-pollution",
+    label: "Context pollution",
     ruleIds: [
       "footer-redact",
       "cookie-banner-hide",
       "chat-widget-hide",
       "ads-hide",
       "svg-sprite-strip",
-      "search-url-helper",
     ],
+  },
+  {
+    id: "agent-shortcuts",
+    label: "Agent shortcuts",
+    ruleIds: ["search-url-helper"],
   },
 ];
