@@ -289,23 +289,23 @@ explainer.
 
 Walk every `<title>`, `<desc>`, and `<text>` element that lives inside an
 `<svg>` and blank its text content when it matches the prompt-injection pattern
-set (the same regex bundle used by `prompt-injection-redact`). The element
-shell is preserved: `<text>` belongs to the visible drawing and removing it can
-shift surrounding geometry, while `<title>` and `<desc>` are anchored to
-specific shapes for accessibility-tree consumers — keeping the element keeps
-the structural mapping intact while the payload is gone. The companion
+set (the same regex bundle used by `prompt-injection-redact`). The element shell
+is preserved: `<text>` belongs to the visible drawing and removing it can shift
+surrounding geometry, while `<title>` and `<desc>` are anchored to specific
+shapes for accessibility-tree consumers — keeping the element keeps the
+structural mapping intact while the payload is gone. The companion
 `svg-sprite-strip` rule only removes hidden, unreferenced sprite containers;
-this rule handles SVGs that render visually (logos, infographics, charts,
-inline icons).
+this rule handles SVGs that render visually (logos, infographics, charts, inline
+icons).
 
 SVG `<title>` and `<desc>` are the SVG-namespace equivalents of HTML's
 accessible-name and accessible-description: screen readers surface them, and
 browser-use agents reading the accessibility tree pull them as "what is this
 image?" without the operator having to render any visible text. SVG `<text>`
 content does render, but inside an `<svg>` it lives outside the regular
-flow-text walkers that drive several other rules. Either surface can be
-authored without touching surrounding HTML — for example, swapping the SVG
-asset behind an `<img src=…svg>` reference on a CDN.
+flow-text walkers that drive several other rules. Either surface can be authored
+without touching surrounding HTML — for example, swapping the SVG asset behind
+an `<img src=…svg>` reference on a CDN.
 
 Prior art: Greshake et al. (cited in the section preamble) enumerates
 non-rendered DOM regions as carriers for indirect prompt injection; the SVG
