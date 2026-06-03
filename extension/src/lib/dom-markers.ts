@@ -45,6 +45,10 @@ export const CHECKOUT_CHECKBOX_CLEARED_ATTR = "data-abs-cleared";
 // already badged, so the watcher doesn't double-badge on re-scan.
 export const CART_ADDON_ANNOTATED_ATTR = "data-abs-cart-addon-annotated";
 
+// `link-spoof-annotate`: marks an <a> the rule has badged so the watcher
+// doesn't append a second chip on the next mutation pass.
+export const LINK_SPOOF_ANNOTATED_ATTR = "data-abs-link-spoof-annotated";
+
 // `confirmshame-sanitize`: stores the original copy of attributes the
 // rule rewrites so reveal-on-click can restore the user-visible
 // confirmshame language.

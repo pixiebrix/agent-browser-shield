@@ -75,6 +75,10 @@ for the build-time workflow.
 - `ads-hide` — remove display ads and paid/sponsored search results (curated
   selectors + EasyList stylesheet)
 - `cart-addon-annotate` — flag likely sneak-into-basket add-ons
+- `link-spoof-annotate` — flag `<a>` elements whose visible text mixes scripts
+  (homoglyph) or shows a domain that doesn't match the link's actual host.
+  Renders a visible inline chip next to the anchor; useful for vision-based
+  agents (DOM-walking agents can spot the same discrepancies themselves)
 - `search-url-helper` — embed a screen-reader-only landmark with URL recipes
   (search/filter/sort/direct lookup) on covered hosts (Amazon, Best Buy, Etsy,
   IKEA, Home Depot, REI, GitHub, Wikipedia, Hacker News, hn.algolia.com, MDN,

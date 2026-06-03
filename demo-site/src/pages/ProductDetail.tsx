@@ -266,6 +266,48 @@ export default function ProductDetail() {
         </div>
       </section>
 
+      {/*
+        Two anchors crafted to trip link-spoof-annotate so a sighted reviewer
+        (or a vision-based agent) can see the chip rendered next to each link.
+          (a) Text "PayPaI Buyer Protection" uses an uppercase Latin I in
+              place of the lowercase l — pure ASCII, so the homoglyph check
+              does not fire; this one trips the href / text-domain check
+              because the visible "paypal.com" mismatches the actual host.
+          (b) Text starts with a Cyrillic letter substituted into a Latin
+              brand word — the mixed-script check fires inside the rendered
+              chip's quoted match string.
+        Static fixtures; no user input. */}
+      <section
+        aria-label="Trust and safety"
+        className="rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700"
+      >
+        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+          Buyer protection
+        </h3>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            Pay safely with{" "}
+            <a
+              href="https://account-verify.example.test/login"
+              className="text-orange-700 hover:underline"
+            >
+              paypal.com Buyer Protection
+            </a>
+            .
+          </li>
+          <li>
+            Read independent reviews at{" "}
+            <a
+              href="https://reviews.example.test/rivermart"
+              className="text-orange-700 hover:underline"
+            >
+              {"рeview-trust.example"}
+            </a>
+            .
+          </li>
+        </ul>
+      </section>
+
       <section aria-label="From the manufacturer">
         <h2 className="mb-2 text-lg font-semibold text-slate-900">
           From the manufacturer

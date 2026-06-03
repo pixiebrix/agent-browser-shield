@@ -29,6 +29,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "social-embed-redact": true,
   "ads-hide": true,
   "cart-addon-annotate": true,
+  "link-spoof-annotate": true,
   "search-url-helper": true,
   "roach-motel-annotate": true,
   "irrelevant-sections-redact": false,

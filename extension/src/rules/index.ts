@@ -16,6 +16,7 @@ import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
 import { irrelevantSectionsRedactRule } from "./irrelevant-sections-redact";
 import { jsonLdSanitizeRule } from "./json-ld-sanitize";
+import { linkSpoofAnnotateRule } from "./link-spoof-annotate";
 import { metaInjectionStripRule } from "./meta-injection-strip";
 import { newsletterModalHideRule } from "./newsletter-modal-hide";
 import { noscriptStripRule } from "./noscript-strip";
@@ -63,6 +64,7 @@ const RULES_TUPLE = [
   socialEmbedRedactRule,
   adsHideRule,
   cartAddonAnnotateRule,
+  linkSpoofAnnotateRule,
   searchUrlHelperRule,
   roachMotelAnnotateRule,
   irrelevantSectionsRedactRule,

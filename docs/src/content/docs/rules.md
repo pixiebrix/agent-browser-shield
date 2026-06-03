@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 28 rules grouped into five rough categories. Each rule is
+The extension ships 29 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -124,6 +124,56 @@ against LLM-integrated browsers (the `U+E0000–U+E007F` carrier that encodes
 arbitrary ASCII as invisible tag characters) was popularized by Goodside (2024)
 and is now a standard test case in the indirect-injection benchmarks cited
 elsewhere on this page.
+
+### Flag Spoofed Links
+
+- **ID:** `link-spoof-annotate`
+- **Default:** on
+
+Annotate `<a>` elements whose visible text is visually spoofed relative to the
+link's actual destination. Two checks, both signalled with a visible inline chip
+appended next to the anchor:
+
+1. The visible text contains a word that mixes Latin letters with letters from
+   Greek (`U+0370–03FF`), Cyrillic (`U+0400–04FF`), Armenian (`U+0530–058F`), or
+   Cherokee (`U+13A0–13FF`) — the script blocks that supply the Latin
+   confusables used in homoglyph attacks. A pure-Cyrillic word adjacent to a
+   pure-Latin word does not match; the test requires within-word script mixing.
+2. The visible text contains a fully-formed domain whose last-two-labels apex
+   doesn't match `URL.hostname` of the link's `href` (after stripping `www.`).
+   Gated to `http(s):` hrefs so `mailto:`, `tel:`, and fragment anchors don't
+   get spurious comparisons.
+
+The chip is rendered as visible markup — not just a `data-*` attribute — because
+the rule's threat model is the asymmetry where a vision-based agent (or a
+sighted user) reads the rendered glyphs and acts on the displayed domain, while
+the real navigation target is hidden in the unrendered `href`. DOM-walking
+agents see the raw code points and the raw href and can perform the same
+comparisons themselves; this rule mainly exists to close the gap for
+accessibility-tree and screenshot consumers.
+
+Prior art: Gabrilovich & Gontmakher,
+[*The Homograph Attack*](https://gabrilovich.com/publications/papers/Gabrilovich02TheHomographAttack.pdf)
+(CACM 2002), names the attack class and demonstrates the
+`microsoft.com`-with-Cyrillic-`o` proof of concept that prompted the IDN
+ecosystem's response. Holgers, Watson, Gribble,
+[*Cutting Through the Confusion: A Measurement Study of Homograph Attacks*](https://www.usenix.org/legacy/event/usenix06/tech/full_papers/holgers/holgers.pdf)
+(USENIX ATC 2006), measures real-world prevalence and confusable coverage. The
+confusables-policy lineage is Unicode TR #36
+([*Unicode Security Considerations*](https://www.unicode.org/reports/tr36/)) and
+TR #39 ([*Unicode Security Mechanisms*](https://www.unicode.org/reports/tr39/)),
+which define the canonical confusable mapping browsers and TLDs use to refuse
+mixed-script IDN labels. Boucher et al.,
+[*Bad Characters: Imperceptible NLP Attacks*](https://arxiv.org/abs/2106.09898)
+(IEEE S&P 2022, cited under `unicode-invisibles-strip` above), demonstrates that
+homoglyph substitution degrades modern NLP classifiers at rates comparable to
+zero-width insertions and bidi reordering — the human / machine reading
+asymmetry that makes the attack work on LLM-driven agents too. For the href /
+text-domain mismatch check, Dhamija, Tygar, Hearst,
+[*Why Phishing Works*](https://people.eecs.berkeley.edu/~tygar/papers/Phishing/why_phishing_works.pdf)
+(CHI 2006), is the foundational user study showing that the link-text /
+link-target mismatch is the single most reliable cue users fail to check —
+making it the cue best worth re-presenting visibly to the agent.
 
 ### Strip HTML Comments
 
