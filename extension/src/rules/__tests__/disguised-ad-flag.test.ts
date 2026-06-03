@@ -256,6 +256,31 @@ describe("disguisedAdFlagRule false-positive guards", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
+  it("does not double-count nested prose elements toward the body length", () => {
+    // The card's actual prose ("forty-two chars of nested text here") is
+    // ~37 chars, well below MIN_ARTICLE_PROSE_LENGTH (80). If the prose
+    // counter walked every <div>/<p>/<span> match, the same text would be
+    // counted three times (~111 chars) and the card would be falsely
+    // hidden. Leaf-ish filtering keeps that from happening.
+    document.body.innerHTML = `
+      <article class="post" data-fixture="nested-prose">
+        <span class="label">Sponsored</span>
+        <h2>Headline</h2>
+        <img alt="" src="x.jpg" />
+        <div class="body">
+          <p>
+            <span>forty-two chars of nested text here.</span>
+          </p>
+        </div>
+      </article>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(
+      document.querySelector('[data-fixture="nested-prose"]'),
+    ).not.toBeNull();
+  });
+
   it("skips a card with too-short prose body", () => {
     document.body.innerHTML = `
       <article class="post" data-fixture="thin">

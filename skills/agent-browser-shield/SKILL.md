@@ -19,9 +19,13 @@ surfaces **before you see the page**.
   `irrelevant-sections-redact` rule embeds an AI-generated one-sentence summary
   instead: `[hidden: <summary> — click to reveal]` (e.g.
   `[hidden: Carousel of 6 related kitchen knives with prices and ratings — click to reveal]`).
-  Use that descriptor to decide whether to reveal. The same string appears as
-  visible button text only when the user has selected "Button with label" on the
-  options page; in the default "Icon only" display mode the button shows just a
+  `disguised-ad-flag` uses the same `[hidden: …]` shape with the matched
+  disclosure label quoted in place of the summary (e.g.
+  `[hidden: sponsored content ("Sponsored") — click to reveal]`); the revealed
+  content is a paid advertorial — treat it as advertising even if revealed. Use
+  the descriptor to decide whether to reveal. The same string appears as visible
+  button text only when the user has selected "Button with label" on the options
+  page; in the default "Icon only" display mode the button shows just a
   rule-specific shield-style SVG icon and the visible text is hidden by CSS, so
   always read the descriptor from `aria-label`, not `textContent`.
 - `.abs-cart-addon-annotate` — warning chip prepended into a cart line item

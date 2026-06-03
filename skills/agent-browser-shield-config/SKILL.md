@@ -77,6 +77,12 @@ for the build-time workflow.
 - `social-embed-redact` — strip social media embeds
 - `ads-hide` — remove display ads and paid/sponsored search results (curated
   selectors + EasyList stylesheet)
+- `disguised-ad-flag` — hide article-shaped blocks carrying a visible
+  "Sponsored" / "Promoted" / "Advertorial" / "Paid Post" / "Partner Content"
+  disclosure label (plus bracket forms like `[Ad]` and suffix forms like "Paid
+  for and presented by X"). Catches native advertorials rendered by the
+  publisher's CMS that bypass the network-level selectors in `ads-hide`.
+  Replaces matching cards with click-to-reveal placeholders.
 - `cart-addon-annotate` — flag likely sneak-into-basket add-ons
 - `link-spoof-annotate` — flag `<a>` elements whose visible text mixes scripts
   (homoglyph) or shows a domain that doesn't match the link's actual host.

@@ -195,22 +195,29 @@ function isArticleShaped(element: Element, labelElement: Element): boolean {
   // remainder is the prose body. Card-shaped UI chrome (sort headers,
   // facet rows) has a label and maybe a heading but nothing substantial
   // after that.
+  //
+  // We only count "leaf-ish" candidates — those that don't themselves
+  // contain another selector match. `<div><p><span>X</span></p></div>`
+  // would otherwise count the same characters three times (div, p, span)
+  // and let a 40-char card slip past an 80-char minimum.
+  const proseCandidates = element.querySelectorAll("p, span, div, li");
+  const candidateSet = new Set(proseCandidates);
   let proseLength = 0;
-  for (const child of element.querySelectorAll("p, span, div, li")) {
+  for (const child of proseCandidates) {
     if (child === labelElement || labelElement.contains(child)) {
       continue;
     }
     if (child.querySelector("h1, h2, h3, h4, h5, h6") !== null) {
       continue;
     }
-    if (
-      child.localName === "h1" ||
-      child.localName === "h2" ||
-      child.localName === "h3" ||
-      child.localName === "h4" ||
-      child.localName === "h5" ||
-      child.localName === "h6"
-    ) {
+    let hasNestedCandidate = false;
+    for (const nested of child.querySelectorAll("p, span, div, li")) {
+      if (candidateSet.has(nested)) {
+        hasNestedCandidate = true;
+        break;
+      }
+    }
+    if (hasNestedCandidate) {
       continue;
     }
     proseLength += child.textContent.trim().length;
