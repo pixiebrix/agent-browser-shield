@@ -111,12 +111,12 @@ Walkthrough:
 Rule IDs follow `<target>-<verb>`. Pick the verb that names what the rule
 actually does to the DOM, not the threat it addresses:
 
-| Verb       | Use when the rule…                                                   | Examples                                                                                                  |
-| ---------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `annotate` | adds an agent-readable warning or affordance; page content unchanged | `cart-addon-annotate`, `roach-motel-annotate`                                                             |
-| `hide`     | visually conceals with `display: none`; element stays in the DOM     | `ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`                             |
-| `redact`   | replaces content with a click-to-reveal placeholder                  | `pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`                              |
-| `sanitize` | keeps the element and cleans its attributes / text / form state      | `json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`, `checkout-checkbox-sanitize` |
+| Verb       | Use when the rule…                                                   | Examples                                                                                                                  |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `annotate` | adds an agent-readable warning or affordance; page content unchanged | `cart-addon-annotate`, `roach-motel-annotate`                                                                             |
+| `hide`     | visually conceals with `display: none`; element stays in the DOM     | `ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`                                             |
+| `redact`   | replaces content with a click-to-reveal placeholder                  | `pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`                                              |
+| `sanitize` | keeps the element and cleans its attributes / text / form state      | `json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`, `checkout-checkbox-sanitize`                 |
 | `strip`    | removes the element/node from the DOM entirely                       | `noscript-strip`, `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`, `svg-text-strip`, `meta-injection-strip` |
 
 Picking between `hide` and `redact`: if the user can still meaningfully act on
