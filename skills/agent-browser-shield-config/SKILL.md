@@ -56,10 +56,9 @@ for the build-time workflow.
 - `comments-redact` — placeholder over comment threads
 - `prompt-injection-redact` — placeholder over likely injection surfaces
 - `encoded-payload-redact` — placeholder over long base64 / hex /
-  percent-encoded runs in text whose decoded bytes are mostly printable
-  ASCII (the "decode this and follow it" indirect-injection carrier).
-  Hashes, fingerprints, and binary blobs are left alone; JWTs defer to
-  `secrets-redact`
+  percent-encoded runs in text whose decoded bytes are mostly printable ASCII
+  (the "decode this and follow it" indirect-injection carrier). Hashes,
+  fingerprints, and binary blobs are left alone; JWTs defer to `secrets-redact`
 - `countdown-timer-redact` — remove urgency countdowns
 - `scarcity-redact` — remove "only N left" scarcity cues
 - `confirmshame-sanitize` — rewrite guilt-tripping decline buttons ("No, I'd
