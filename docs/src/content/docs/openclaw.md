@@ -37,16 +37,17 @@ attaches via CDP and inherits whatever's already loaded.
 
 ### 1. Install the extension into the profile
 
-Get the extension directory — either build from source (follow
-[Install](/agent-browser-shield/install/) through `bun run build` for
-`extension/dist/`) or download and unzip the
-[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip). Then, in
-the Chromium-based browser whose profile OpenClaw will drive:
+In the Chromium-based browser whose profile OpenClaw will drive, install the
+extension from the
+[Chrome Web Store](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd).
+Pin the shield icon so it's easy to confirm the extension is live.
 
-1. Open `chrome://extensions` (or `brave://extensions`, `edge://extensions`).
-2. Enable **Developer mode**.
-3. Click **Load unpacked** and select that directory.
-4. Pin the shield icon so it's easy to confirm the extension is live.
+If you need to pin a specific commit or rule set, follow
+[Install](/agent-browser-shield/install/) through `bun run build` for
+`extension/dist/` (or download and unzip the
+[prebuilt ZIP](/agent-browser-shield/install/#download-a-prebuilt-zip)), then
+load that directory at `chrome://extensions` → **Developer mode** → **Load
+unpacked**.
 
 Use a dedicated browser profile for agent runs if you don't want OpenClaw
 touching your everyday tabs and cookies — create one from the browser's profile

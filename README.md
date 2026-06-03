@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/pixiebrix/agent-browser-shield)](https://github.com/pixiebrix/agent-browser-shield/releases/latest)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/gnejacdioaelglahihpagpfjpddpnamd?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)
 [![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
 
 > **Alpha prototype:** rulesets may change without notice
@@ -16,6 +17,11 @@ effective and secure:
   that could carry prompt-injection payloads.
 - **Accuracy:** block manipulative dark patterns and hide engagement rails and
   other content that could distract the model from the user's task.
+
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)**
+— works on any Chromium-based browser (Chrome, Edge, Brave, Arc, Opera). For
+agent runtimes that need an unpacked extension or a ZIP, see the
+[install guide](https://pixiebrix.github.io/agent-browser-shield/install/).
 
 **[Documentation](https://pixiebrix.github.io/agent-browser-shield/)** — install
 guide, rule reference, and configuration.

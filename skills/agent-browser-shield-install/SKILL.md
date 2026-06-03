@@ -20,9 +20,16 @@ only covers getting the extension loaded.
 | Remote browser running on Browserbase                         | **Path B** |
 | Attaching via CDP / MCP to a Chrome the user already controls | **Path C** |
 
-The hosted ZIP is at
-`https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
-and has `manifest.json` at the archive root. Do not re-zip it.
+Sources, in order of preference per path:
+
+- **Chrome Web Store** —
+  `https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd`.
+  Auto-updates, works on any Chromium browser. Use for Path C; not usable for
+  Paths A or B which need a local extension directory or ZIP.
+- **Hosted ZIP** —
+  `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`.
+  `manifest.json` is at the archive root; do not re-zip it. Used by Paths A
+  (unzip → `--load-extension`) and B (upload as-is).
 
 ## Path A — Local headed Chromium, unpacked load
 
@@ -130,16 +137,22 @@ and has `manifest.json` at the archive root. Do not re-zip it.
 The user is responsible for installing the extension once; the claw only
 attaches.
 
-1. Tell the user (once, then remember it's done):
-   1. Download
-      `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`
-      and unzip somewhere stable.
-   2. Open `chrome://extensions`, enable **Developer mode**, click **Load
-      unpacked**, select the unzipped directory.
-   3. Confirm the extension is loaded by visiting `chrome://extensions` (or by
-      checking the toolbar icon menu). The floating on-page options button is
-      off by default — see *Customizing build-time defaults* below to ship a
-      build with it on.
+1. Tell the user (once, then remember it's done). Prefer the Chrome Web Store —
+   it auto-updates and works on any Chromium browser:
+
+   - **Chrome Web Store (preferred):** install from
+     `https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd`,
+     then confirm the shield icon in the toolbar.
+   - **Unpacked (when a specific commit / build-time defaults are needed):**
+     download
+     `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`,
+     unzip somewhere stable, then `chrome://extensions` → **Developer mode** →
+     **Load unpacked** → select the unzipped directory.
+
+   The floating on-page options button is off by default — see *Customizing
+   build-time defaults* below to ship a build with it on (requires the unpacked
+   path).
+
 2. Attach via your runtime's normal CDP / Chrome DevTools MCP mechanism. No
    per-session extension setup on the claw side.
 
