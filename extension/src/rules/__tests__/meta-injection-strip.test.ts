@@ -90,9 +90,7 @@ describe("meta-injection-strip meta tags", () => {
     expect(
       document.head.querySelector('meta[name="description"]'),
     ).not.toBeNull();
-    expect(
-      document.head.querySelector('meta[name="viewport"]'),
-    ).not.toBeNull();
+    expect(document.head.querySelector('meta[name="viewport"]')).not.toBeNull();
   });
 
   it("removes a poisoned meta but keeps siblings", () => {
