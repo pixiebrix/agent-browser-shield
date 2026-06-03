@@ -32,6 +32,7 @@
     "cross-origin-frame-redact": false,
     "schema-trust-sanitize": false,
     "trust-badge-annotate": false,
-    "disguised-ad-flag": true
+    "disguised-ad-flag": true,
+    "encoded-payload-redact": true
   }
 }

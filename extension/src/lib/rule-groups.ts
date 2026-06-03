@@ -27,6 +27,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
     label: "Indirect prompt injection",
     ruleIds: [
       "prompt-injection-redact",
+      "encoded-payload-redact",
       "comments-redact",
       "reviews-redact",
       "social-embed-redact",
