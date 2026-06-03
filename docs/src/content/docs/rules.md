@@ -368,15 +368,31 @@ can distinguish AI-agent traffic from human traffic and may serve different
 content to agents than to people.
 
 Content scripts run in the extension's isolated JavaScript world and cannot
-observe page-world property accesses directly; the rule wires a tiny inline
-`<script>` whose `textContent` executes in the page world, defines a wrapping
-getter on `Navigator.prototype.webdriver`, and dispatches a DOM `CustomEvent`
-each time the getter fires. The isolated content script listens for that event
-and stamps the landmark on first detection. Pages with a strict `script-src` CSP
-block the inline `<script>`; on those origins the rule silently degrades to a
-no-op. The probe is injected at `document_idle`, so reads issued during the
-page's initial parse are not caught — reads from `DOMContentLoaded` / `load`
-handlers, polled checks, and interaction-driven fingerprinters are.
+observe page-world property accesses directly. Two complementary delivery paths
+run the same wrap-and-dispatch logic in the page world, so the rule fires
+regardless of when the user toggled it on:
+
+1. **Primary, document_start.** When the rule becomes enabled, the background
+   service worker registers a standalone main-world bundle
+   (`webdriver-probe.js`) via `chrome.scripting.registerContentScripts` with
+   `world: "MAIN"` and `runAt: "document_start"`. Subsequent navigations run the
+   probe before the page's first script, so reads issued during initial HTML
+   parse are caught.
+2. **Fallback, document_idle.** The rule's own `apply` inline-injects the same
+   probe via `<script>` `textContent`. Covers the tab the user was already
+   viewing when they toggled the rule on (dynamic registrations only apply to
+   future navigations). Misses early-parse reads on that tab but catches
+   `DOMContentLoaded` / `load` handlers, polled fingerprinters, and
+   interaction-driven checks. Pages with a strict `script-src` CSP block the
+   inline `<script>`; future navigations are still covered by the registered
+   bundle.
+
+Either path dispatches the same DOM `CustomEvent` on the document; the
+isolated-world content script listens and stamps the landmark on first
+detection. The wrapped getter persists for the lifetime of the document —
+disabling the rule stops new landmarks from being added and unregisters the
+main-world script for future navigations, but the wrap on the already-loaded
+page is left in place.
 
 The annotation flags *capability*, not measured cloaking — a
 `navigator.webdriver` read by itself is also consistent with legitimate

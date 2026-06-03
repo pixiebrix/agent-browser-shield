@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Improve AI agent effectiveness.",
   "minimum_chrome_version": "148",
-  "permissions": ["storage"],
+  "permissions": ["storage", "scripting"],
   "host_permissions": ["https://api.openai.com/*"],
   "icons": {
     "16": "icons/icon-16.png",

@@ -3,6 +3,7 @@
 
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
+import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 
 // Per-tab, per-frame placeholder counts. Each content script reports its own
 // frame's tally; the badge shows the sum across frames for that tab.
@@ -131,3 +132,11 @@ chrome.runtime.onMessage.addListener(
 // content-side abort can propagate to the background's fetch. See
 // `lib/llm-background.ts` for the per-port AbortController wiring.
 startClassifyPortListener();
+
+// Register/unregister the page-world `navigator.webdriver` probe as a
+// `world: "MAIN"`, `runAt: "document_start"` content script whenever the
+// `webdriver-probe-annotate` rule's effective state changes. Lets the
+// probe catch reads during the page's initial parse, which the rule's
+// content-script-side inline fallback can't reach. See
+// `lib/webdriver-probe-registration.ts`.
+startWebdriverProbeRegistration();

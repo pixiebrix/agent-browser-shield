@@ -17,25 +17,34 @@
 // banking, payments, and checkout flows.
 //
 // Mechanics: content scripts run in the isolated world and cannot directly
-// observe page-world property accesses. The rule's `apply` injects a tiny
-// `<script>` element whose `textContent` runs in the page's main world,
-// wraps `Navigator.prototype.webdriver`'s getter, and dispatches a DOM
-// `CustomEvent` on the document each time a read occurs. The isolated
-// content script listens for that event and stamps the landmark on first
-// detection. Pages with a strict `script-src` CSP block the inline
-// `<script>`; on those origins the rule silently degrades to a no-op.
+// observe page-world property accesses. Two delivery paths cover the rule:
 //
-// Because the engine fires `apply` at document_idle, reads issued during
-// the page's initial parse (very early fingerprinters) are not caught.
-// Reads from `DOMContentLoaded`/`load` handlers, polled checks, and
-// interaction-driven fingerprinters are caught. The wrapped getter
-// persists for the lifetime of the page; the rule's `teardown` only
-// removes the landmark and the isolated-world listener so re-enabling
-// while still on the same page still picks up later reads.
+//   1. Primary: when the user toggles the rule on, the background worker
+//      registers `webdriver-probe.js` as a dynamic content script with
+//      `world: "MAIN"` and `runAt: "document_start"`
+//      (`background-webdriver-probe.ts`). Subsequent navigations get the
+//      probe before the page's first script — early-parse reads ARE
+//      caught.
+//   2. Fallback: this rule's `apply` (at document_idle) injects the same
+//      probe via inline `<script>` `textContent`. Covers the tab the user
+//      was already viewing when they toggled on, since dynamic
+//      registrations only apply to future navigations. Misses early-parse
+//      reads on that tab but catches `DOMContentLoaded`/`load` handlers,
+//      polled fingerprinters, and interaction-driven checks. Pages with a
+//      strict `script-src` CSP block the inline `<script>`; those origins
+//      silently fall back to the next navigation, which the dynamic
+//      registration handles.
+//
+// Either path triggers the same `CustomEvent` the isolated content
+// script listens for; the listener stamps the landmark on first read.
+// The wrapped getter persists for the lifetime of the document — the
+// rule's `teardown` only removes the landmark and the isolated-world
+// listener so re-enabling on the same page still picks up later reads.
 
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
+import { installProbe } from "../lib/webdriver-probe-source";
 import type { Rule } from "./types";
 
 const RULE_ID = "webdriver-probe-annotate" as const;
@@ -47,58 +56,12 @@ const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 const LANDMARK_TEXT =
   "This page read navigator.webdriver. The site can distinguish AI-agent traffic from human traffic and may serve different content to agents than to people.";
 
-// Page-world implementation. Authored as a real function so TypeScript
-// type-checks the body; serialized via `Function.prototype.toString` so
-// the rule can ship it as inline `<script>` text. The function must not
-// reference any module-scope identifiers — the only thing that crosses
-// into the page world is the function body's source. The event name is
-// hard-coded as a literal here and re-declared as a module constant for
-// the isolated-world listener; the catalog test below asserts the two
-// agree.
-function installProbe(this: Window): void {
-  const FLAG = "__abs_webdriver_probe_installed";
-  const probeWindow = this as Window & Record<string, unknown>;
-  if (probeWindow[FLAG]) {
-    return;
-  }
-  probeWindow[FLAG] = true;
-  const proto = Navigator.prototype;
-  interface WebdriverDescriptor {
-    enumerable?: boolean;
-    get?: (this: Navigator) => boolean | undefined;
-    set?: (this: Navigator, value: unknown) => void;
-  }
-  const original = Object.getOwnPropertyDescriptor(proto, "webdriver") as
-    | WebdriverDescriptor
-    | undefined;
-  function wrappedGet(this: Navigator): boolean | undefined {
-    try {
-      document.dispatchEvent(new CustomEvent("abs:webdriver-probed"));
-    } catch {
-      // Some pages frame-bust by replacing CustomEvent; swallow and
-      // continue so the page's read still returns the original value.
-    }
-    return original?.get?.call(this);
-  }
-  try {
-    const descriptor: PropertyDescriptor = {
-      configurable: true,
-      enumerable: original?.enumerable ?? true,
-      get: wrappedGet,
-    };
-    if (original?.set) {
-      descriptor.set = original.set;
-    }
-    Object.defineProperty(proto, "webdriver", descriptor);
-  } catch {
-    // Non-configurable property — give up silently. The rule is
-    // best-effort; a future Chrome that locks down Navigator.prototype
-    // would simply disable detection on those pages.
-  }
-}
-
-// Body that runs in the page's main world. The IIFE wrap is structural;
-// the actual de-duplication guard lives inside installProbe itself.
+// Body that runs in the page's main world via the rule's inline-injection
+// fallback. The IIFE wrap is structural; the actual de-duplication guard
+// lives inside installProbe itself. Built from the shared source in
+// `lib/webdriver-probe-source.ts`, which is also the entry point for the
+// background-registered standalone bundle, so both delivery paths run the
+// same code.
 const PROBE_SOURCE = `(${installProbe.toString()}).call(window);`;
 
 let listenerAttached = false;
@@ -198,4 +161,4 @@ export const webdriverProbeAnnotateRule = {
   teardown,
 } satisfies Rule;
 
-export { EVENT_NAME, installProbe, PROBE_SOURCE };
+export { EVENT_NAME, PROBE_SOURCE };

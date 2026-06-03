@@ -1,10 +1,10 @@
 /**
  * @jest-environment jsdom
  */
+import { installProbe } from "../../lib/webdriver-probe-source";
 import { hiddenTextStripRule } from "../hidden-text-strip";
 import {
   EVENT_NAME,
-  installProbe,
   PROBE_SOURCE,
   webdriverProbeAnnotateRule,
 } from "../webdriver-probe-annotate";

@@ -111,11 +111,13 @@ for the build-time workflow.
   `data:`/`blob:`) frames are left alone. Off by default because legitimate
   cross-origin embeds (payment widgets, OAuth pop-ins, video) are common and
   removing them breaks those flows until revealed.
-- `webdriver-probe-annotate` — **experimental, off by default.** Inject a
-  main-world probe that wraps `navigator.webdriver`'s getter on the top-level
-  document. If the page reads the property, the rule prepends a
-  screen-reader-only landmark noting the site can distinguish AI-agent traffic
-  from human traffic — a precondition for AI-targeted cloaking. The probe is
-  installed at `document_idle`, so reads issued during initial parse are not
-  caught; pages with a strict `script-src` CSP block the inline `<script>` and
-  the rule degrades to a no-op.
+- `webdriver-probe-annotate` — **experimental, off by default.** Wrap
+  `navigator.webdriver`'s getter on the top-level document and prepend a
+  screen-reader-only landmark when the page reads it — a precondition for
+  AI-targeted cloaking. Two delivery paths: when the rule is enabled, the
+  background worker registers a `world: "MAIN"`, `runAt: "document_start"`
+  content script so subsequent navigations catch reads during initial parse; the
+  rule's `apply` also inline-injects the same probe at `document_idle` as a
+  fallback for the tab the user was on when toggling. Pages with a strict
+  `script-src` CSP block the inline fallback; future navigations are still
+  covered by the registered bundle.

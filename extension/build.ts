@@ -122,6 +122,13 @@ async function build(): Promise<void> {
       join(SRC, "popup.tsx"),
       join(SRC, "options.tsx"),
       join(SRC, "background.ts"),
+      // Standalone main-world bundle registered by the background worker
+      // via chrome.scripting.registerContentScripts when
+      // `webdriver-probe-annotate` is enabled. Must build separately so
+      // it ships as its own file and can be referenced by name in the
+      // registration call. See `lib/webdriver-probe-source.ts` and
+      // `lib/webdriver-probe-registration.ts`.
+      join(SRC, "webdriver-probe.ts"),
     ],
     outdir: DIST,
     target: "browser",
