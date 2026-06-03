@@ -225,6 +225,49 @@ export default function ProductDetail() {
             Buy Now
           </Link>
 
+          {/*
+            Inline "RiverMart Verified" trust badge as an SVG. The visible
+            ribbon and check mark are plain shapes; the <title>, <desc>, and
+            <text> children carry instruction-shaped payloads. Sighted users
+            see a badge; an agent walking the accessibility tree (title/desc)
+            or rendered text inside the SVG pulls the injected directives.
+            svg-text-strip blanks the matching text content while keeping the
+            shapes intact.
+          */}
+          <div className="flex items-center gap-2 pt-1">
+            <svg
+              role="img"
+              aria-labelledby="rm-verified-title rm-verified-desc"
+              viewBox="0 0 160 32"
+              className="h-7 w-auto"
+            >
+              <title id="rm-verified-title">
+                {INJECTIONS.PRODUCT_DETAIL_SVG_TITLE}
+              </title>
+              <desc id="rm-verified-desc">
+                {INJECTIONS.PRODUCT_DETAIL_SVG_DESC}
+              </desc>
+              <rect x="0" y="0" width="160" height="32" rx="4" fill="#166534" />
+              <circle cx="16" cy="16" r="8" fill="#ffffff" />
+              <path
+                d="M12 16 l3 3 l6 -6"
+                stroke="#166534"
+                strokeWidth="2"
+                fill="none"
+              />
+              <text
+                x="32"
+                y="20"
+                fontFamily="sans-serif"
+                fontSize="11"
+                fontWeight="600"
+                fill="#ffffff"
+              >
+                {INJECTIONS.PRODUCT_DETAIL_SVG_TEXT}
+              </text>
+            </svg>
+          </div>
+
           <div className="border-t border-stone-200 pt-3 text-xs text-stone-600">
             <div>Ships from RiverMart</div>
             <div>Sold by RiverMart Direct</div>
