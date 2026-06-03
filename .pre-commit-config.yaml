@@ -86,11 +86,18 @@ repos:
   - repo: local
     hooks:
       - id: eslint
-        name: ESLint (unicorn + custom)
+        name: ESLint (extension — unicorn + custom)
         language: system
         entry: bash -c 'cd extension && bun run lint:eslint'
         files: ^extension/.*\.(ts|tsx|js|mjs|cjs)$
         exclude: ^extension/dist/|\.generated\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+      - id: eslint-demo-site
+        name: ESLint (demo-site — prevent-abbreviations)
+        language: system
+        entry: bash -c 'cd demo-site && bun run lint:eslint'
+        files: ^demo-site/.*\.(ts|tsx|js|mjs|cjs)$
+        exclude: ^demo-site/dist/
         pass_filenames: false
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

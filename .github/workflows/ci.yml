@@ -160,6 +160,9 @@ jobs:
       - name: Install extension dependencies
         run: bun install --frozen-lockfile
         working-directory: extension
+      - name: Install demo-site dependencies
+        run: bun install --frozen-lockfile
+        working-directory: demo-site
       - uses: pre-commit/action@v3.0.1
 
   python:

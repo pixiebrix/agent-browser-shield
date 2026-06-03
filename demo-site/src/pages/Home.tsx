@@ -36,14 +36,14 @@ export default function Home() {
           Today&apos;s Deals
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((product, idx) => (
+          {featured.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
               scarcity={
-                idx === 0
+                index === 0
                   ? "Only 4 left in stock"
-                  : idx === 1
+                  : index === 1
                     ? "Selling fast"
                     : "23 people are viewing this right now"
               }
