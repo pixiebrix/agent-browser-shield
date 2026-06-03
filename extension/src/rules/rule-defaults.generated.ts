@@ -35,4 +35,5 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "roach-motel-annotate": true,
   "irrelevant-sections-redact": false,
   "cross-origin-frame-redact": false,
+  "schema-trust-sanitize": false,
 };

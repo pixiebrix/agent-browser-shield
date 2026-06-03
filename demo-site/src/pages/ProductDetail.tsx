@@ -53,12 +53,26 @@ export default function ProductDetail() {
   // poisoned with an instruction-shaped payload; price / sku /
   // aggregateRating are valid. json-ld-sanitize blanks the description and
   // leaves everything else intact.
+  //
+  // The `manufacturer` field is a brand-impersonation fixture for
+  // schema-trust-sanitize: a RiverMart product page asserting the listing
+  // is manufactured by Sony Corporation, with a `url` pointing at
+  // sony.com. The page is on the demo's own domain, so the claim's
+  // registrable domain doesn't match — the rule blanks `name`, `url`, and
+  // `@id` on the Organization object while leaving `@type` and the
+  // surrounding Product / Offer / AggregateRating fields untouched.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
     description: INJECTIONS.PRODUCT_DETAIL_JSON_LD_DESCRIPTION,
     brand: { "@type": "Brand", name: product.brand },
+    manufacturer: {
+      "@type": "Organization",
+      name: "Sony Corporation",
+      url: "https://www.sony.com",
+      "@id": "https://www.sony.com/#org",
+    },
     sku: product.id,
     offers: {
       "@type": "Offer",

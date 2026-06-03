@@ -25,6 +25,7 @@ import { promptInjectionRedactRule } from "./prompt-injection-redact";
 import { reviewsRedactRule } from "./reviews-redact";
 import { roachMotelAnnotateRule } from "./roach-motel-annotate";
 import { scarcityRedactRule } from "./scarcity-redact";
+import { schemaTrustSanitizeRule } from "./schema-trust-sanitize";
 import { searchUrlHelperRule } from "./search-url-helper";
 import { secretsRedactRule } from "./secrets-redact";
 import { socialEmbedRedactRule } from "./social-embed-redact";
@@ -71,6 +72,7 @@ const RULES_TUPLE = [
   roachMotelAnnotateRule,
   irrelevantSectionsRedactRule,
   crossOriginFrameRedactRule,
+  schemaTrustSanitizeRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];
