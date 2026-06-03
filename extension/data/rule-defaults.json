@@ -18,6 +18,7 @@
     "noscript-strip": true,
     "json-ld-sanitize": true,
     "attribute-injection-scrub": true,
+    "meta-injection-strip": true,
     "newsletter-modal-hide": true,
     "svg-sprite-suppress": true,
     "social-embed-hide": true,

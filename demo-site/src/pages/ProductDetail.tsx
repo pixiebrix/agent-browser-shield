@@ -75,6 +75,27 @@ export default function ProductDetail() {
 
   return (
     <div className="space-y-8">
+      {/*
+        React 19 hoists <title> and <meta> renders to <head>. The values
+        are poisoned: an agent summarizing the page via document.title or
+        og:description / twitter:description reads instruction-shaped
+        text the human never sees in the page body. meta-injection-strip
+        clears the title text and removes the matched meta elements.
+      */}
+      <title>{INJECTIONS.PRODUCT_DETAIL_TITLE}</title>
+      <meta
+        name="description"
+        content={INJECTIONS.PRODUCT_DETAIL_META_DESCRIPTION}
+      />
+      <meta
+        property="og:description"
+        content={INJECTIONS.PRODUCT_DETAIL_META_DESCRIPTION}
+      />
+      <meta
+        name="twitter:description"
+        content={INJECTIONS.PRODUCT_DETAIL_META_DESCRIPTION}
+      />
+
       <script
         type="application/ld+json"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: demo fixture for json-ld-sanitize — static content from injection-fixtures.ts, no user input

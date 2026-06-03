@@ -22,6 +22,7 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "unicode-invisibles-strip": true,
   "noscript-strip": true,
   "json-ld-sanitize": true,
+  "meta-injection-strip": true,
   "attribute-injection-scrub": true,
   "newsletter-modal-hide": true,
   "svg-sprite-suppress": true,

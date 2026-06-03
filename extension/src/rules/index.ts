@@ -16,6 +16,7 @@ import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
 import { irrelevantSectionsHideRule } from "./irrelevant-sections-hide";
 import { jsonLdSanitizeRule } from "./json-ld-sanitize";
+import { metaInjectionStripRule } from "./meta-injection-strip";
 import { newsletterModalHideRule } from "./newsletter-modal-hide";
 import { noscriptStripRule } from "./noscript-strip";
 import { piiMaskRule } from "./pii-mask";
@@ -55,6 +56,7 @@ const RULES_TUPLE = [
   unicodeInvisiblesStripRule,
   noscriptStripRule,
   jsonLdSanitizeRule,
+  metaInjectionStripRule,
   attributeInjectionScrubRule,
   newsletterModalHideRule,
   svgSpriteSuppressRule,
