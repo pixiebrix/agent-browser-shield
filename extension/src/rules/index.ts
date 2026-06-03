@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { adsHideRule } from "./ads-hide";
+import { attributeInjectionScrubRule } from "./attribute-injection-scrub";
 import { cartAddonFlagRule } from "./cart-addon-flag";
 import { chatWidgetHideRule } from "./chat-widget-hide";
 import { checkoutCheckboxClearRule } from "./checkout-checkbox-clear";
@@ -54,6 +55,7 @@ const RULES_TUPLE = [
   unicodeInvisiblesStripRule,
   noscriptStripRule,
   jsonLdSanitizeRule,
+  attributeInjectionScrubRule,
   newsletterModalHideRule,
   svgSpriteSuppressRule,
   socialEmbedHideRule,

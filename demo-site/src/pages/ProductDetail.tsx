@@ -120,9 +120,15 @@ export default function ProductDetail() {
 
       <article className="grid gap-8 md:grid-cols-2">
         <div>
+          {/*
+            Poisoned alt attribute — sighted users see the photo; agents
+            walking the a11y tree pull instruction-shaped text the page
+            operator never has to render. attr-injection-scrub removes
+            the attribute when it matches the injection pattern set.
+          */}
           <img
             src={product.image}
-            alt={product.title}
+            alt={INJECTIONS.PRODUCT_DETAIL_IMAGE_ALT}
             className="mx-auto max-h-80 w-auto rounded border border-stone-200 bg-white object-contain"
           />
         </div>
@@ -179,8 +185,14 @@ export default function ProductDetail() {
           <div className="text-sm text-green-700">FREE delivery Wednesday</div>
           <div className="text-sm font-semibold text-green-800">In Stock</div>
 
+          {/*
+            Poisoned aria-label — sighted users see "Add to Cart"; the
+            accessible name an agent uses contains an instruction
+            instead. attr-injection-scrub strips the attribute on match.
+          */}
           <button
             type="button"
+            aria-label={INJECTIONS.PRODUCT_DETAIL_ADD_TO_CART_ARIA}
             className="mt-2 w-full rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-yellow-300"
           >
             Add to Cart

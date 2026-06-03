@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 26 rules grouped into five rough categories. Each rule is
+The extension ships 27 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -165,6 +165,38 @@ disagree on what's visible" asymmetry is the same one Boucher et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents*](https://arxiv.org/abs/2409.11295)
 (ICLR 2025), formalize for zero-width characters and CSS-hidden DOM
 respectively.
+
+### Scrub Attribute Injection
+
+- **ID:** `attribute-injection-scrub`
+- **Default:** on
+
+Walk every element and, for a small allowlist of agent-readable attributes —
+`aria-label`, `aria-description`, `alt`, `title`, `placeholder`, `data-tooltip`,
+and `value` on disabled `<input>` elements — remove the attribute outright when
+its value matches the prompt-injection pattern set (the same regex bundle used
+by `prompt-injection-hide`). Clean attributes are preserved. Attributes outside
+the allowlist are not inspected. We remove the whole attribute rather than blank
+it because an empty `aria-label` actively hides an element from
+accessibility-tree consumers, whereas a missing `aria-label` lets fallback name
+computation (visible text, `alt`, associated label) proceed normally.
+
+These attributes are almost never the main visible label sighted users read —
+they surface in screen readers, hover popups, and empty-state hints. Browser-use
+agents, on the other hand, read the accessibility tree where they are
+first-class names and descriptions, so an attribute is a quiet carrier for
+instruction-shaped text the operator never has to render.
+
+Prior art: Greshake et al. (cited in the section preamble) enumerates HTML
+attribute values among the non-rendered carriers for indirect prompt injection.
+Liao et al.,
+[*EIA: Environmental Injection Attack on Generalist Web Agents for Privacy Leakage*](https://arxiv.org/abs/2409.11295)
+(ICLR 2025), demonstrates that web agents act on accessibility-tree content that
+has no visible counterpart, the exact asymmetry this rule closes. The
+accessibility-tree threat surface itself is documented by the W3C ARIA specs
+(Accessible Name and Description Computation 1.2) and by Mozilla's
+[A11y Tree](https://developer.mozilla.org/en-US/docs/Glossary/Accessibility_tree)
+explainer.
 
 ### Sanitize JSON-LD
 
