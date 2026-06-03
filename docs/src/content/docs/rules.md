@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 32 rules, each independently toggleable from the extension
+The extension ships 33 rules, each independently toggleable from the extension
 popup. Rules marked **default: on** are active on fresh install; **default:
 off** rules must be enabled manually.
 
@@ -702,13 +702,13 @@ require publishers to render prominently.
 Detection works on the visible label — not network selectors — and only fires
 when the label sits inside an article-shaped container (heading, image or
 outbound link, body prose). Filter chips, navigation links, and editorial
-paragraphs that mention sponsorship in passing are excluded by that shape
-check, by an interactive-ancestor guard, and by a whole-string regex on the
-label element. Matching cards are replaced with a click-to-reveal placeholder
-in the same style as `ads-hide` and `irrelevant-sections-redact`.
+paragraphs that mention sponsorship in passing are excluded by that shape check,
+by an interactive-ancestor guard, and by a whole-string regex on the label
+element. Matching cards are replaced with a click-to-reveal placeholder in the
+same style as `ads-hide` and `irrelevant-sections-redact`.
 
-The label-only approach is the boilerplate-detection counterpart to
-Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) and
+The label-only approach is the boilerplate-detection counterpart to Kohlschütter
+et al. [[13]](#ref-kohlschutter-boilerplate) and
 [Readability.js](https://github.com/mozilla/readability), narrowed to the
 disclosure signal that paid content must carry by law.
 

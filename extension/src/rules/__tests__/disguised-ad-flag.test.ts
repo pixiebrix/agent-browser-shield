@@ -207,7 +207,9 @@ describe("disguisedAdFlagRule false-positive guards", () => {
     disguisedAdFlagRule.apply(document.body);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
-    expect(document.querySelector('[data-fixture="loose-label"]')).not.toBeNull();
+    expect(
+      document.querySelector('[data-fixture="loose-label"]'),
+    ).not.toBeNull();
     // Negative caches the decision so re-scans don't re-evaluate.
     const span = document
       .querySelector('[data-fixture="loose-label"]')
@@ -237,7 +239,9 @@ describe("disguisedAdFlagRule false-positive guards", () => {
     disguisedAdFlagRule.apply(document.body);
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     // The ads-hide-marked wrapper still exists; we didn't touch it.
-    expect(document.querySelector(`[${HIDDEN_ATTR}="ads-hide"]`)).not.toBeNull();
+    expect(
+      document.querySelector(`[${HIDDEN_ATTR}="ads-hide"]`),
+    ).not.toBeNull();
   });
 
   it("skips an article without a heading even if labeled 'Sponsored'", () => {
