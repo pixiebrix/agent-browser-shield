@@ -1,0 +1,46 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+import Default from "@astrojs/starlight/components/SocialIcons.astro";
+---
+
+<a
+  class="star-cta"
+  href="https://github.com/pixiebrix/agent-browser-shield"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <Icon name="star" size="1em" />
+  <span>Star on GitHub</span>
+</a>
+<Default><slot /></Default>
+
+<style>
+  .star-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--sl-color-white);
+    text-decoration: none;
+    background: var(--sl-color-gray-6, transparent);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .star-cta:hover {
+    background: var(--sl-color-gray-5);
+    border-color: var(--sl-color-gray-4);
+  }
+  @media (max-width: 50rem) {
+    .star-cta span {
+      display: none;
+    }
+    .star-cta {
+      padding: 0.3rem;
+      border-radius: 999px;
+    }
+  }
+</style>
