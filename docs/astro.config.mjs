@@ -12,7 +12,10 @@ export default defineConfig({
     starlight({
       title: "agent-browser-shield",
       description:
-        "Browser extension prototypes for improving browser-use agent performance.",
+        "Browser extension with 30+ rules for keeping your AI agent safe while browsing.",
+      components: {
+        SocialIcons: "./src/components/SocialIcons.astro",
+      },
       social: [
         {
           icon: "github",
