@@ -21,7 +21,7 @@ If this page disagrees with either, trust the source. The
 [Install page](/install/#customizing-defaults-at-build-time) covers how to
 override defaults at build time without forking the repo.
 
-Numbered citations like [\[1\]](#ref-greshake-2023) link to the
+Numbered citations like [[1]](#ref-greshake-2023) link to the
 [References](#references) section at the bottom.
 
 ## Indirect prompt injection
@@ -29,8 +29,8 @@ Numbered citations like [\[1\]](#ref-greshake-2023) link to the
 Remove or neutralize content that could carry attacker-controlled instructions
 to a browser-use agent. The threat model — attacker text reaches the model via
 the page the agent reads, not via the user's prompt — is introduced by Greshake
-et al. [\[1\]](#ref-greshake-2023) and extended specifically to LLM-driven web
-agents by Wu et al. (WIPI) [\[2\]](#ref-wu-wipi). Each rule below targets a
+et al. [[1]](#ref-greshake-2023) and extended specifically to LLM-driven web
+agents by Wu et al. (WIPI) [[2]](#ref-wu-wipi). Each rule below targets a
 delivery vector documented in those threat models.
 
 ### Rendered text and user-generated content
@@ -54,7 +54,7 @@ injection from commenters. Covers common platforms (Disqus, Facebook) plus
 Reddit, YouTube, and Hacker News.
 
 User-generated text as a prompt-injection delivery vector is core to the WIPI
-threat model [\[2\]](#ref-wu-wipi).
+threat model [[2]](#ref-wu-wipi).
 
 #### Hide Reviews
 
@@ -90,7 +90,7 @@ Remove HTML comments from the page. Comments are invisible to humans but
 readable by agents and can carry prompt-injection payloads. Comments inside
 `<script>`/`<style>`/`<noscript>` are preserved. Removal is not reversible
 within the current page load. HTML comments are explicitly enumerated as a
-non-rendered carrier in Greshake et al. [\[1\]](#ref-greshake-2023).
+non-rendered carrier in Greshake et al. [[1]](#ref-greshake-2023).
 
 #### Strip Noscript
 
@@ -109,11 +109,11 @@ Comment nodes inside `<noscript>` so that SSR hydration markers and
 conditional-CSS fragments survived; with this rule on, the surrounding noscript
 element is removed outright, taking those comments with it.
 
-Same non-rendered-carrier class as Greshake et al. [\[1\]](#ref-greshake-2023);
+Same non-rendered-carrier class as Greshake et al. [[1]](#ref-greshake-2023);
 the "renderer-and-reader disagree on what's visible" asymmetry is the one
 formalized for zero-width characters in Boucher et al.
-[\[5\]](#ref-boucher-bad-chars) and CSS-hidden DOM in Liao et al. (EIA)
-[\[3\]](#ref-liao-eia).
+[[5]](#ref-boucher-bad-chars) and CSS-hidden DOM in Liao et al. (EIA)
+[[3]](#ref-liao-eia).
 
 #### Strip Hidden Text
 
@@ -129,7 +129,7 @@ the 1×1 + `overflow:hidden` + `position:absolute` envelope) so a11y-tree
 affordances like Amazon SERP prices stay intact. `display:none` is left alone so
 collapsed menus and tab panels keep working.
 
-Liao et al. (EIA) [\[3\]](#ref-liao-eia) demonstrates that web elements made
+Liao et al. (EIA) [[3]](#ref-liao-eia) demonstrates that web elements made
 invisible via CSS — opacity, off-screen positioning, zero-area clipping — are
 read by web agents but unseen by humans, the exact asymmetry this rule closes.
 
@@ -150,12 +150,11 @@ the directional marks LRM/RLM (`U+200E`/`U+200F`).
 
 The bidi-override attack class — invisible reordering chars that make text
 render one way to humans and parse another way to compilers, interpreters, or
-LLMs — comes from Boucher & Anderson (Trojan Source)
-[\[4\]](#ref-boucher-trojan). Boucher et al. (Bad Characters)
-[\[5\]](#ref-boucher-bad-chars) extends the same family — zero-width insertions,
-homoglyph swaps, bidi reordering — to NLP systems and shows comparable
-degradation in sentiment, translation, and toxicity classifiers. The
-Unicode-tag-block variant against LLM-integrated browsers (the
+LLMs — comes from Boucher & Anderson (Trojan Source) [[4]](#ref-boucher-trojan).
+Boucher et al. (Bad Characters) [[5]](#ref-boucher-bad-chars) extends the same
+family — zero-width insertions, homoglyph swaps, bidi reordering — to NLP
+systems and shows comparable degradation in sentiment, translation, and toxicity
+classifiers. The Unicode-tag-block variant against LLM-integrated browsers (the
 `U+E0000–U+E007F` carrier that encodes arbitrary ASCII as invisible tag
 characters) was popularized by Goodside (2024) and is now a standard test case
 in the indirect-injection benchmarks.
@@ -194,7 +193,7 @@ The metadata vocabularies themselves are [Open Graph](https://ogp.me/)
 the
 [HTML Living Standard](https://html.spec.whatwg.org/multipage/semantics.html#meta-name-description-2).
 HTML metadata is enumerated among the non-rendered carriers in Greshake et al.
-[\[1\]](#ref-greshake-2023).
+[[1]](#ref-greshake-2023).
 
 #### Scrub Attribute Injection
 
@@ -218,10 +217,10 @@ first-class names and descriptions, so an attribute is a quiet carrier for
 instruction-shaped text the operator never has to render.
 
 HTML attribute values are enumerated as non-rendered carriers in Greshake et al.
-[\[1\]](#ref-greshake-2023); Liao et al. (EIA) [\[3\]](#ref-liao-eia)
-demonstrates that web agents act on accessibility-tree content that has no
-visible counterpart. The accessibility-tree surface itself is documented by the
-W3C ARIA Accessible Name and Description Computation 1.2 spec and Mozilla's
+[[1]](#ref-greshake-2023); Liao et al. (EIA) [[3]](#ref-liao-eia) demonstrates
+that web agents act on accessibility-tree content that has no visible
+counterpart. The accessibility-tree surface itself is documented by the W3C ARIA
+Accessible Name and Description Computation 1.2 spec and Mozilla's
 [A11y Tree](https://developer.mozilla.org/en-US/docs/Glossary/Accessibility_tree)
 explainer.
 
@@ -250,11 +249,11 @@ writing into the page) can poison `description`, `articleBody`, `name`, or
 
 JSON-LD is the JSON serialization of the
 [schema.org vocabulary](https://schema.org/) (W3C JSON-LD 1.1 Recommendation,
-2020) — the same vocabulary `reviews-redact` reads to find user-generated
+2020\) — the same vocabulary `reviews-redact` reads to find user-generated
 reviews. The non-rendered-but-agent-read carrier model comes from Greshake et
-al. [\[1\]](#ref-greshake-2023); Liao et al. (EIA) [\[3\]](#ref-liao-eia) and Wu
-et al. (WIPI) [\[2\]](#ref-wu-wipi) both demonstrate agents acting on page
-metadata an end user never sees.
+al. [[1]](#ref-greshake-2023); Liao et al. (EIA) [[3]](#ref-liao-eia) and Wu et
+al. (WIPI) [[2]](#ref-wu-wipi) both demonstrate agents acting on page metadata
+an end user never sees.
 
 #### Strip SVG Injection
 
@@ -282,10 +281,10 @@ without touching surrounding HTML — for example, swapping the SVG asset behind
 an `<img src=…svg>` reference on a CDN.
 
 SVG accessibility text is the SVG-namespace instance of the non-rendered-carrier
-class in Greshake et al. [\[1\]](#ref-greshake-2023); the surface is documented
-by the [W3C SVG Accessibility API Mappings](https://www.w3.org/TR/svg-aam-1.0/)
-and the rendered-but-isolated `<text>` case is covered by Liao et al. (EIA)
-[\[3\]](#ref-liao-eia).
+class in Greshake et al. [[1]](#ref-greshake-2023); the surface is documented by
+the [W3C SVG Accessibility API Mappings](https://www.w3.org/TR/svg-aam-1.0/) and
+the rendered-but-isolated `<text>` case is covered by Liao et al. (EIA)
+[[3]](#ref-liao-eia).
 
 #### Sanitize Schema Trust Claims (Experimental)
 
@@ -309,14 +308,14 @@ Translate proxies, where mismatched publisher claims are expected.
 Schema.org has no native provenance mechanism — every claim is self-asserted,
 which is structurally why a page can list itself as published by The New York
 Times without any binding to that organization (Iliadis & Pedersen
-[\[14\]](#ref-iliadis-schema); Google's own
+[[14]](#ref-iliadis-schema); Google's own
 [Structured Data General Guidelines](https://developers.google.com/search/docs/appearance/structured-data/sd-policies)
 treat publisher impersonation as a policy violation enforced manually after
 crawl, not a markup-level check). The unearned-authority surface for agents is
 the same one already established for `json-ld-sanitize` and
 `meta-injection-strip` — structured data the human reviewer does not see but the
-agent ingests as a "trusted summary." Wu et al. (WIPI) [\[2\]](#ref-wu-wipi) and
-Liao et al. (EIA) [\[3\]](#ref-liao-eia) both document agents acting on page
+agent ingests as a "trusted summary." Wu et al. (WIPI) [[2]](#ref-wu-wipi) and
+Liao et al. (EIA) [[3]](#ref-liao-eia) both document agents acting on page
 metadata that has no visible counterpart.
 
 ### Cross-origin surface
@@ -328,15 +327,15 @@ metadata that has no visible counterpart.
 
 Replace every `<iframe>` whose `src` resolves to a different web origin with a
 click-to-reveal placeholder, so a browser-use agent reading the parent page
-doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc`
-frames, and inert `about:`/`javascript:`/`data:`/`blob:` frames are left alone.
-Each frame in the page processes its own direct children, so a cross-origin
-frame nested inside a same-origin frame is also caught. Off by default because
+doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc` frames,
+and inert `about:`/`javascript:`/`data:`/`blob:` frames are left alone. Each
+frame in the page processes its own direct children, so a cross-origin frame
+nested inside a same-origin frame is also caught. Off by default because
 legitimate cross-origin embeds (payment widgets, OAuth pop-ins, video,
 third-party comments) are common and removing them will break those flows until
 the user reveals.
 
-Motivated by Roesner & Kohlbrenner [\[15\]](#ref-roesner-sop), which shows that
+Motivated by Roesner & Kohlbrenner [[15]](#ref-roesner-sop), which shows that
 agents willing to read cross-origin frame content turn the same-origin policy
 from a hard guarantee into a soft one.
 
@@ -370,16 +369,15 @@ comparisons themselves; this rule mainly exists to close the gap for
 accessibility-tree and screenshot consumers.
 
 The homograph attack class is named by Gabrilovich & Gontmakher
-[\[6\]](#ref-gabrilovich-homograph); Holgers et al.
-[\[7\]](#ref-holgers-homograph) measures real-world prevalence and confusable
-coverage. The canonical confusable mapping browsers and TLDs use to refuse
-mixed-script IDN labels comes from Unicode
-[TR #36](https://www.unicode.org/reports/tr36/) and
+[[6]](#ref-gabrilovich-homograph); Holgers et al. [[7]](#ref-holgers-homograph)
+measures real-world prevalence and confusable coverage. The canonical confusable
+mapping browsers and TLDs use to refuse mixed-script IDN labels comes from
+Unicode [TR #36](https://www.unicode.org/reports/tr36/) and
 [TR #39](https://www.unicode.org/reports/tr39/). Boucher et al. (Bad Characters)
-[\[5\]](#ref-boucher-bad-chars) shows homoglyph substitution degrades modern NLP
+[[5]](#ref-boucher-bad-chars) shows homoglyph substitution degrades modern NLP
 classifiers at rates comparable to zero-width insertions and bidi reordering.
 For the href / text-domain mismatch check, Dhamija et al. (Why Phishing Works)
-[\[8\]](#ref-dhamija-phishing) is the foundational user study showing that
+[[8]](#ref-dhamija-phishing) is the foundational user study showing that
 link-text / link-target mismatch is the single most reliable cue users fail to
 check — making it the cue best worth re-presenting visibly to the agent.
 
@@ -412,7 +410,7 @@ the rule closes is the same one `link-spoof-annotate` closes for
 visible-text-vs-href: a vision-based or accessibility-tree-driven agent sees the
 badge as evidence of trustworthiness, with no way to check it.
 
-SusBench [\[16\]](#ref-susbench) and DECEPTICON [\[17\]](#ref-decepticon) both
+SusBench [[16]](#ref-susbench) and DECEPTICON [[17]](#ref-decepticon) both
 include trust-badge spoofing in their benchmark suites and document that current
 computer-use agents over-weight these badges as proof of legitimacy. The
 unverifiable-claim framing is the same one applied by `schema-trust-sanitize` to
@@ -422,17 +420,17 @@ page-asserted authority that has no binding to the entity it names.
 ## Dark patterns
 
 Block manipulative UI patterns that work on humans and can mislead agents the
-same way. Current computer-use agents are highly susceptible to these patterns
-— sometimes more so than humans — per SusBench [\[16\]](#ref-susbench) and
-DECEPTICON [\[17\]](#ref-decepticon).
+same way. Current computer-use agents are highly susceptible to these patterns —
+sometimes more so than humans — per SusBench [[16]](#ref-susbench) and
+DECEPTICON [[17]](#ref-decepticon).
 
 The pattern taxonomy itself traces to Brignull's
 [deceptive.design](https://www.deceptive.design/) catalog (originally
-darkpatterns.org, 2010) [\[10\]](#ref-brignull) and the empirical study by
-Mathur et al. [\[9\]](#ref-mathur-dark-patterns), which enumerates *Scarcity*,
-*Sneaking* (sneak-into-basket), *Preselection*, *Urgency* (countdown timers),
+darkpatterns.org, 2010) [[10]](#ref-brignull) and the empirical study by Mathur
+et al. [[9]](#ref-mathur-dark-patterns), which enumerates *Scarcity*, *Sneaking*
+(sneak-into-basket), *Preselection*, *Urgency* (countdown timers),
 *Confirmshaming* (under *Misdirection*), and *Nagging* — the families the rules
-below target. Bösch et al. [\[11\]](#ref-bosch-privacy) gives the parallel
+below target. Bösch et al. [[11]](#ref-bosch-privacy) gives the parallel
 privacy-side taxonomy.
 
 ### Urgency
@@ -446,8 +444,8 @@ Hide running countdown timers so agents aren't pressured by the artificial
 time-sensitivity dark pattern. Snapshots timer-shaped text and confirms the
 value decreased after 1.5s; re-scans on subtree mutations to catch lazy-loaded
 sections. The snapshot-and-confirm approach follows Mathur et al.
-[\[9\]](#ref-mathur-dark-patterns), who detected countdown timers by capturing
-DOM mutations over time and comparing successive snapshots to confirm a ticking
+[[9]](#ref-mathur-dark-patterns), who detected countdown timers by capturing DOM
+mutations over time and comparing successive snapshots to confirm a ticking
 value.
 
 ### Scarcity
@@ -462,8 +460,8 @@ fast", "12 viewing now") so agents aren't pressured by manufactured scarcity.
 Out-of-stock indicators and bestseller badges are kept visible because they
 convey real purchaseability or preference information. Cataloged as *Scarcity*
 (low-stock and high-demand subtypes) in Mathur et al.
-[\[9\]](#ref-mathur-dark-patterns), which found scarcity claims on roughly a
-fifth of the 11K shopping sites they crawled.
+[[9]](#ref-mathur-dark-patterns), which found scarcity claims on roughly a fifth
+of the 11K shopping sites they crawled.
 
 ### Sneaking
 
@@ -479,9 +477,9 @@ donation/round-up, gift wrap, carbon offset, shipping/package protection, Route,
 Seel, Navidium, driver tips). The line item is **not** removed — the agent reads
 the annotation and decides whether to click the line's remove control.
 
-Brignull's original 2010 *Sneak into Basket* pattern
-[\[10\]](#ref-brignull), generalized to the *Sneaking* family in Mathur et al.
-[\[9\]](#ref-mathur-dark-patterns).
+Brignull's original 2010 *Sneak into Basket* pattern [[10]](#ref-brignull),
+generalized to the *Sneaking* family in Mathur et al.
+[[9]](#ref-mathur-dark-patterns).
 
 ### Preselection
 
@@ -498,8 +496,8 @@ including required agreements. `role="checkbox"` widgets and radio groups are
 out of scope.
 
 Pre-checked opt-ins are *Preselection* in Mathur et al.
-[\[9\]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
-[\[10\]](#ref-brignull).
+[[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
+[[10]](#ref-brignull).
 
 ### Confirmshaming
 
@@ -526,8 +524,8 @@ Plain decline labels like "No thanks", "Decline", "Maybe later", "Skip", and
 "Continue as guest" are left untouched.
 
 Cataloged as *Confirmshaming* in Brignull's deceptive.design
-[\[10\]](#ref-brignull) and as part of the *Misdirection* family in Mathur et
-al. [\[9\]](#ref-mathur-dark-patterns).
+[[10]](#ref-brignull) and as part of the *Misdirection* family in Mathur et al.
+[[9]](#ref-mathur-dark-patterns).
 
 ### Roach Motel
 
@@ -564,11 +562,10 @@ Two data sources back the rule:
 
 Brignull's original 2010 *Roach Motel* pattern, renamed *Hard to cancel* in the
 current [deceptive.design](https://www.deceptive.design/types/hard-to-cancel)
-taxonomy [\[10\]](#ref-brignull). Vasudevan et al.
-[\[12\]](#ref-vasudevan-roach) gives the empirical basis: cancellation flows
-asymmetric to signup flows on a significant share of subscription sites across
-the US, EU, and UK. The legal "good" standard converges on signup/cancel
-symmetry — the FTC's 2024
+taxonomy [[10]](#ref-brignull). Vasudevan et al. [[12]](#ref-vasudevan-roach)
+gives the empirical basis: cancellation flows asymmetric to signup flows on a
+significant share of subscription sites across the US, EU, and UK. The legal
+"good" standard converges on signup/cancel symmetry — the FTC's 2024
 [Click-to-Cancel rule](https://www.ftc.gov/news-events/news/press-releases/2024/10/federal-trade-commission-announces-final-click-cancel-rule-making-it-easier-consumers-end-recurring),
 California
 [AB-2863](https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2863),
@@ -587,7 +584,7 @@ fixed-position dialogs containing signup language and an email input. Standard
 login modals, paywalls, and small toasts are kept visible.
 
 Interstitial signup modals are categorized as *Nagging* in Mathur et al.
-[\[9\]](#ref-mathur-dark-patterns).
+[[9]](#ref-mathur-dark-patterns).
 
 #### Hide Irrelevant Sections (AI)
 
@@ -606,10 +603,10 @@ checkout, login) are labeled as protected. Re-scans on scroll to catch
 lazy-loaded content.
 
 An LLM-driven generalization of the boilerplate-detection heuristics in
-Kohlschütter et al. [\[13\]](#ref-kohlschutter-boilerplate) and
+Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) and
 [Readability.js](https://github.com/mozilla/readability). The specific targeting
 of engagement and recommendation rails aligns with the *Nagging* and *Interface
-Interference* families in Mathur et al. [\[9\]](#ref-mathur-dark-patterns).
+Interference* families in Mathur et al. [[9]](#ref-mathur-dark-patterns).
 
 ## Sensitive-data masking
 
@@ -647,7 +644,7 @@ Remove page chrome that costs tokens without helping the agent complete its
 task, and inject hints that make pages easier for agents to navigate.
 
 Content-vs-boilerplate separation has a long line of prior art, starting with
-Kohlschütter et al. [\[13\]](#ref-kohlschutter-boilerplate) — the basis for the
+Kohlschütter et al. [[13]](#ref-kohlschutter-boilerplate) — the basis for the
 Boilerpipe library — and Mozilla's
 [Readability.js](https://github.com/mozilla/readability), the algorithm behind
 Firefox Reader View. Several rules below are the agent-facing analogue of those
@@ -664,7 +661,7 @@ generic article extractor.
 Hide the page footer (legal links, sitemap, social icons, marketing copy) to
 save tokens. Per-section footers inside articles or asides are left visible.
 Footers are a canonical boilerplate region in Kohlschütter et al.
-[\[13\]](#ref-kohlschutter-boilerplate) and are stripped by Readability.js.
+[[13]](#ref-kohlschutter-boilerplate) and are stripped by Readability.js.
 
 #### Remove Cookie Banners
 
@@ -738,8 +735,8 @@ affordance — the landmark is preserved by `hidden-text-strip` via the `sr-only
 class allowlist.
 
 Same goal as the [llms.txt](https://llmstxt.org/) proposal (Howard, Answer.AI,
-2024) — give LLMs a compact, machine-readable hint about how to use a site —
-but injected client-side as a hidden landmark instead of relying on the site to
+2024\) — give LLMs a compact, machine-readable hint about how to use a site — but
+injected client-side as a hidden landmark instead of relying on the site to
 publish a top-level file. The hidden-but-readable delivery mechanism reuses the
 long-established `sr-only` / `visually-hidden` convention from screen-reader
 accessibility practice.
@@ -755,17 +752,16 @@ document the LLM reads, not via the user's prompt — and enumerates non-rendere
 DOM regions (HTML comments, hidden text, alt and metadata attributes) as
 carriers.
 
-<a id="ref-wu-wipi"></a>**[2] Wu et al.** *WIPI: A New Web Threat for
-LLM-Driven Web Agents.*
-[arxiv:2402.16965](https://arxiv.org/abs/2402.16965). Extends the indirect
-prompt injection threat model specifically to LLM-driven web agents.
+<a id="ref-wu-wipi"></a>**[2] Wu et al.** *WIPI: A New Web Threat for LLM-Driven
+Web Agents.* [arxiv:2402.16965](https://arxiv.org/abs/2402.16965). Extends the
+indirect prompt injection threat model specifically to LLM-driven web agents.
 
 <a id="ref-liao-eia"></a>**[3] Liao et al. (2025).** *EIA: Environmental
 Injection Attack on Generalist Web Agents for Privacy Leakage.* ICLR 2025.
 [arxiv:2409.11295](https://arxiv.org/abs/2409.11295). Demonstrates that web
 elements made invisible via CSS — opacity, off-screen positioning, zero-area
-clipping — and accessibility-tree content without a visible counterpart are
-read by web agents but unseen by humans.
+clipping — and accessibility-tree content without a visible counterpart are read
+by web agents but unseen by humans.
 
 <a id="ref-boucher-trojan"></a>**[4] Boucher & Anderson (2023).** *Trojan
 Source: Invisible Vulnerabilities.* USENIX Security 2023; CVE-2021-42574.
@@ -806,8 +802,8 @@ Enumerates *Scarcity*, *Sneaking*, *Preselection*, *Urgency*, *Misdirection*
 [deceptive.design](https://www.deceptive.design/) (originally darkpatterns.org).
 The pattern taxonomy this section's categories follow.
 
-<a id="ref-bosch-privacy"></a>**[11] Bösch et al. (2016).** *Tales from the
-Dark Side: Privacy Dark Strategies and Privacy Dark Patterns.* PoPETs 2016.
+<a id="ref-bosch-privacy"></a>**[11] Bösch et al. (2016).** *Tales from the Dark
+Side: Privacy Dark Strategies and Privacy Dark Patterns.* PoPETs 2016.
 [petsymposium.org](https://petsymposium.org/popets/2016/popets-2016-0038.php).
 Parallel privacy-side taxonomy.
 
@@ -817,8 +813,8 @@ Cancellation UXes.* CHI 2024.
 [arxiv:2309.17145](https://arxiv.org/abs/2309.17145). Cancellation flows
 asymmetric to signup flows across the US, EU, and UK.
 
-<a id="ref-kohlschutter-boilerplate"></a>**[13] Kohlschütter, Fankhauser,
-Nejdl (2010).** *Boilerplate Detection using Shallow Text Features.* WSDM 2010.
+<a id="ref-kohlschutter-boilerplate"></a>**[13] Kohlschütter, Fankhauser, Nejdl
+(2010).** *Boilerplate Detection using Shallow Text Features.* WSDM 2010.
 [dl.acm.org](https://dl.acm.org/doi/10.1145/1718487.1718542). The basis for the
 Boilerpipe library.
 

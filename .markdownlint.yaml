@@ -6,3 +6,8 @@ MD013: false
 # mdformat normalizes ordered lists to consecutive numbering with --number.
 MD029:
   style: ordered
+
+# Allow <a id="..."> anchors so docs can link to bibliography entries inline
+# without auto-generated heading slugs (used by docs/rules.md References).
+MD033:
+  allowed_elements: [a]
