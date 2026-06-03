@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 30 rules grouped into five rough categories. Each rule is
+The extension ships 32 rules grouped into five rough categories. Each rule is
 independently toggleable from the extension popup. Rules marked **default: on**
 are active on fresh install; **default: off** rules must be enabled manually.
 
@@ -174,6 +174,43 @@ text-domain mismatch check, Dhamija, Tygar, Hearst,
 (CHI 2006), is the foundational user study showing that the link-text /
 link-target mismatch is the single most reliable cue users fail to check —
 making it the cue best worth re-presenting visibly to the agent.
+
+### Flag Trust Badges
+
+- **ID:** `trust-badge-annotate`
+- **Default:** on
+
+Annotate image-shaped trust badges — Norton Secured, McAfee SECURE, BBB
+Accredited, TrustPilot, Verified Seller, and similar — whose accessible name
+asserts third-party endorsement that no content-script-accessible signal backs.
+The chip notes the claim is not verifiable from page content; the badge itself
+is left in place so the visual layout the page operator chose is preserved.
+
+Detection is intentionally narrow. Only `<img>`, `<svg>`, and elements with
+`role="img"` are considered, so plain text labels (e.g., the "Verified Purchase"
+line on a review, which `reviews-redact` already owns) are out of scope. The
+accessible name is read in standard precedence (`aria-label` →
+`aria-labelledby` → SVG `<title>` → `alt` → `title`), capped at a short length,
+and matched against a curated phrase set with word boundaries; bare single
+words like "verified" or "trusted" do not match. Badges on the issuer's own
+registrable domain — a Norton page showing its own logo, BBB.org showing its
+accreditation seal — are exempted as first-party.
+
+A page operator can drop `<img alt="Norton Secured">` onto any page; the chrome
+TLS UI, EV certificate organization name, and other trust signals a human
+would use to verify the claim are not reachable from a content script. The
+asymmetry the rule closes is the same one `link-spoof-annotate` closes for
+visible-text-vs-href: a vision-based or accessibility-tree-driven agent sees
+the badge as evidence of trustworthiness, with no way to check it.
+
+Prior art: [SusBench](https://arxiv.org/abs/2510.11035) (Guo et al., 2025) and
+[DECEPTICON](https://arxiv.org/abs/2512.22894) (Cuvin et al., 2025) both
+include trust-badge spoofing in their benchmark suites and document that
+current computer-use agents over-weight these badges as proof of legitimacy.
+The unverifiable-claim framing is the same one applied by
+`schema-trust-sanitize` to JSON-LD Organization claims and by
+`link-spoof-annotate` to anchor text — page-asserted authority that has no
+binding to the entity it names.
 
 ### Strip HTML Comments
 
