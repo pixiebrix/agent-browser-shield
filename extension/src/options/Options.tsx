@@ -227,6 +227,19 @@ export function Options() {
       </Section>
 
       <Section id="rules" title="Rules">
+        <p className="hint">
+          Grouped by the threat or pattern each rule defends against. The full
+          per-rule reference — what each rule does, defaults, and prior art —
+          lives on the{" "}
+          <a
+            href="https://pixiebrix.github.io/agent-browser-shield/rules/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Rules reference page
+          </a>
+          .
+        </p>
         <RuleList states={states} availability={availability} />
       </Section>
 
