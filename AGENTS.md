@@ -69,19 +69,20 @@ DOM. Five canonical verbs:
 - `annotate` — adds agent-readable info; page content unchanged
   (`cart-addon-annotate`, `roach-motel-annotate`)
 - `hide` — visually conceals via `display: none`; element stays in DOM
-  (`ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`)
-- `redact` — replaces content with a click-to-reveal placeholder
-  (`pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`)
+  (`ads-hide`, `cookie-banner-hide`, `chat-widget-hide`,
+  `newsletter-modal-hide`)
+- `redact` — replaces content with a click-to-reveal placeholder (`pii-redact`,
+  `secrets-redact`, `comments-redact`, `prompt-injection-redact`)
 - `sanitize` — keeps the element and cleans attributes/text/state
-  (`json-ld-sanitize`, `attribute-injection-sanitize`,
-  `confirmshame-sanitize`, `checkout-checkbox-sanitize`)
-- `strip` — removes the element/node from the DOM entirely
-  (`noscript-strip`, `html-comment-strip`, `hidden-text-strip`,
-  `svg-sprite-strip`, `meta-injection-strip`)
+  (`json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`,
+  `checkout-checkbox-sanitize`)
+- `strip` — removes the element/node from the DOM entirely (`noscript-strip`,
+  `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`,
+  `meta-injection-strip`)
 
-`-helper` is reserved for non-defensive agent affordances
-(`search-url-helper`). See CONTRIBUTING.md → *Adding a new rule* → *Rule ID
-naming* for the longer write-up and the hide-vs-redact decision rule.
+`-helper` is reserved for non-defensive agent affordances (`search-url-helper`).
+See CONTRIBUTING.md → *Adding a new rule* → *Rule ID naming* for the longer
+write-up and the hide-vs-redact decision rule.
 
 ## Rule authoring: re-scan SPA mutations
 

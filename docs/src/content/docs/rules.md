@@ -209,9 +209,9 @@ Walk every element and, for a small allowlist of agent-readable attributes —
 `aria-label`, `aria-description`, `alt`, `title`, `placeholder`, `data-tooltip`,
 and `value` on disabled `<input>` elements — remove the attribute outright when
 its value matches the prompt-injection pattern set (the same regex bundle used
-by `prompt-injection-redact`). Clean attributes are preserved. Attributes outside
-the allowlist are not inspected. We remove the whole attribute rather than blank
-it because an empty `aria-label` actively hides an element from
+by `prompt-injection-redact`). Clean attributes are preserved. Attributes
+outside the allowlist are not inspected. We remove the whole attribute rather
+than blank it because an empty `aria-label` actively hides an element from
 accessibility-tree consumers, whereas a missing `aria-label` lets fallback name
 computation (visible text, `alt`, associated label) proceed normally.
 
@@ -255,10 +255,10 @@ writing into the page) can poison `description`, `articleBody`, `name`, or
 
 Prior art: JSON-LD is the JSON serialization of the
 [schema.org vocabulary](https://schema.org/) (W3C JSON-LD 1.1 Recommendation,
-2020\) — the same vocabulary `reviews-redact` reads to find user-generated reviews.
-The non-rendered-but-agent-read carrier model comes from Greshake et al. (cited
-in the section preamble); JSON-LD is the schema.org-shaped instance of that
-carrier. Liao et al.,
+2020\) — the same vocabulary `reviews-redact` reads to find user-generated
+reviews. The non-rendered-but-agent-read carrier model comes from Greshake et
+al. (cited in the section preamble); JSON-LD is the schema.org-shaped instance
+of that carrier. Liao et al.,
 [*EIA: Environmental Injection Attack on Generalist Web Agents for Privacy Leakage*](https://arxiv.org/abs/2409.11295)
 (ICLR 2025), and Wu et al., [*WIPI*](https://arxiv.org/abs/2402.16965), both
 demonstrate that web agents read page metadata an end user never sees.

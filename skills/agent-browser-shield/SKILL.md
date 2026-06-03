@@ -24,10 +24,10 @@ surfaces **before you see the page**.
   options page; in the default "Icon only" display mode the button shows just a
   rule-specific shield-style SVG icon and the visible text is hidden by CSS, so
   always read the descriptor from `aria-label`, not `textContent`.
-- `.abs-cart-addon-annotate` — warning chip prepended into a cart line item flagged
-  as a likely sneak-into-basket add-on (protection plan, warranty, insurance,
-  donation, round-up, gift wrap, carbon offset, shipping protection, driver tip,
-  etc.). The line item itself is still in the cart.
+- `.abs-cart-addon-annotate` — warning chip prepended into a cart line item
+  flagged as a likely sneak-into-basket add-on (protection plan, warranty,
+  insurance, donation, round-up, gift wrap, carbon offset, shipping protection,
+  driver tip, etc.). The line item itself is still in the cart.
 - `data-abs-cleared` — a pre-checked checkbox the extension unchecked.
 - `data-abs-confirmshame-orig-text` / `…-orig-value` / `…-orig-aria` /
   `…-orig-title` — a decline button whose guilt-tripping copy ("No, I'd rather
