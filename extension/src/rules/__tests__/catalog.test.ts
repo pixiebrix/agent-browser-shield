@@ -24,6 +24,7 @@ jest.mock("abort-utils", () => ({
   },
 }));
 
+import { RULE_GROUPS } from "../../lib/rule-groups";
 import { RULE_IDS, RULES } from "..";
 import { RULE_DEFAULTS } from "../rule-defaults.generated";
 
@@ -81,6 +82,24 @@ describe("rule catalog invariants", () => {
           rule.unavailableReason.length === 0),
     ).map((rule) => rule.id);
     expect(offenders).toEqual([]);
+  });
+
+  // Group membership drives the popup and options-page rule-list layout.
+  // Every rule must appear in exactly one group so the UI doesn't drop or
+  // double-count any. RULE_GROUPS is the source for the H2 sections in
+  // docs/src/content/docs/rules.md; the same buckets are used in-product.
+  it("places every rule in exactly one group, with no unknown ids", () => {
+    const grouped = RULE_GROUPS.flatMap((group) => group.ruleIds);
+    const duplicates = grouped.filter(
+      (id, index) => grouped.indexOf(id) !== index,
+    );
+    expect(duplicates).toEqual([]);
+    expect([...grouped].toSorted()).toEqual([...RULE_IDS].toSorted());
+  });
+
+  it("group ids are unique", () => {
+    const ids = RULE_GROUPS.map((group) => group.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   // Reactive availability accessors must expose both `get` and `subscribe`
