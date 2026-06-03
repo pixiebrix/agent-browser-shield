@@ -38,4 +38,5 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "cross-origin-frame-redact": false,
   "schema-trust-sanitize": false,
   "disguised-ad-flag": true,
+  "encoded-payload-redact": true,
 };

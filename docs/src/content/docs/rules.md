@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 33 rules, each independently toggleable from the extension
+The extension ships 34 rules, each independently toggleable from the extension
 popup. Rules marked **default: on** are active on fresh install; **default:
 off** rules must be enabled manually.
 
@@ -43,6 +43,22 @@ delivery vector documented in those threat models.
 Hide page sections matching known prompt-injection patterns. The pattern set is
 intentionally not reproduced in docs — see the project README for how patterns
 are sourced and shipped.
+
+#### Redact Encoded Payloads
+
+- **ID:** `encoded-payload-redact`
+- **Default:** on
+
+Redact long base64, hex, or percent-encoded runs in page text whose decoded
+bytes are mostly printable ASCII. Defends against the "decode this and follow
+it" carrier — encoded text a human skims past as noise but an agent may
+helpfully decode and treat as content or as an instruction. Length floors sit
+above common hash sizes (SHA-256, SHA-512, Git commit SHAs), and a decoded
+printable-ratio filter discards hashes, fingerprints, and binary blobs whose
+bytes are not readable text. JWTs are left alone so `secrets-redact` can flag
+them with its more specific label. Encoded content is a non-rendered carrier in
+the same class as HTML comments and hidden text in Greshake et al.
+[[1]](#ref-greshake-2023).
 
 #### Hide Comments
 
