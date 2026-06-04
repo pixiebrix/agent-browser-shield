@@ -186,6 +186,86 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
   return true;
 }
 
+// True if the element's opacity is currently being animated — either via a
+// CSS transition whose property list includes `opacity` (or `all`), or via
+// a keyframe animation. Dialogs, popovers, and toasts routinely render at
+// opacity:0 for a single frame before transitioning to 1; the subtree
+// watcher catches them mid-animation and previously stripped the whole
+// subtree before the user ever saw it (#126). Animating opacity is also a
+// poor injection carrier: by definition the text will become visible to
+// sighted users when the animation completes, so the asymmetry the rule
+// defends against doesn't hold.
+// Match a single CSS time literal (`0`, `0.5`, `150` …) followed by `s` or
+// `ms`. Used to walk a shorthand string and pick out the numeric magnitude;
+// the caller decides whether the magnitude is non-zero.
+const DURATION_TOKEN_PATTERN = /\b(\d*\.?\d+)(ms|s)\b/g;
+
+function hasNonzeroDuration(value: string | null | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  const numeric = Number.parseFloat(value);
+  return Number.isFinite(numeric) && numeric > 0;
+}
+
+// True if any time literal in the shorthand string has a non-zero magnitude.
+// Reject the `transition: opacity 0s` bypass — a zero-duration transition is
+// instantaneous, so the text would remain permanently invisible to sighted
+// users and is still injection-shaped.
+function shorthandHasNonzeroDuration(shorthand: string): boolean {
+  DURATION_TOKEN_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null = DURATION_TOKEN_PATTERN.exec(shorthand);
+  while (match !== null) {
+    if (Number.parseFloat(match[1] ?? "") > 0) {
+      return true;
+    }
+    match = DURATION_TOKEN_PATTERN.exec(shorthand);
+  }
+  return false;
+}
+
+function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
+  // Production path: real browsers expand the `transition`/`animation`
+  // shorthand into the longhand getters, so `transitionProperty` is always
+  // populated (default `"all"`) and `transitionDuration` is always `"0s"` for
+  // unset transitions. The longhand check is canonical there.
+  //
+  // The shorthand check is a jsdom-only fallback: jsdom keeps the shorthand
+  // verbatim and leaves the longhand getters empty, so `!transitionProperty`
+  // distinguishes the test environment from production. Gating the fallback
+  // this way means the shorthand parser can never weaken the longhand
+  // check — `transition: opacity 0s` in a real browser fails the longhand
+  // duration check and the shorthand block is never reached.
+  if (style.transitionProperty) {
+    if (
+      /\b(?:opacity|all)\b/.test(style.transitionProperty) &&
+      hasNonzeroDuration(style.transitionDuration)
+    ) {
+      return true;
+    }
+  } else if (
+    style.transition &&
+    /\b(?:opacity|all)\b/.test(style.transition) &&
+    shorthandHasNonzeroDuration(style.transition)
+  ) {
+    return true;
+  }
+
+  if (style.animationName && style.animationName !== "none") {
+    if (hasNonzeroDuration(style.animationDuration)) {
+      return true;
+    }
+  } else if (
+    style.animation &&
+    style.animation !== "none" &&
+    shorthandHasNonzeroDuration(style.animation)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function detectHiddenByCss(
   element: Element,
   style: CSSStyleDeclaration,
@@ -196,7 +276,10 @@ function detectHiddenByCss(
       details: { visibility: style.visibility },
     };
   }
-  if (Number.parseFloat(style.opacity) === 0) {
+  if (
+    Number.parseFloat(style.opacity) === 0 &&
+    !hasOpacityAnimationInFlight(style)
+  ) {
     return { reason: "opacity-0", details: { opacity: style.opacity } };
   }
   // `font-size: 0` on a wrapper is the legacy layout trick to collapse
