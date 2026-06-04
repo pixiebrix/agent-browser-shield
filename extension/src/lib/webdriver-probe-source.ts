@@ -10,20 +10,24 @@
 //      probe runs before the page's own scripts and catches reads issued
 //      during initial parse.
 //
-//   2. Inline `<script>` injection from the rule's `apply` at
-//      `document_idle`. This is the fallback for the tab the user was
-//      already viewing when they toggled the rule on — dynamic
-//      registrations only take effect on subsequent navigations, so
-//      without this fallback the current tab would have to be reloaded
-//      to pick up the rule. The fallback misses early-parse reads, but
-//      reads from `DOMContentLoaded`/`load` handlers and polled
-//      fingerprinters are still caught.
+//   2. On-demand `chrome.scripting.executeScript` with `world: "MAIN"`,
+//      driven by the rule's `apply` sending an `inject-webdriver-probe`
+//      message to the background worker at `document_idle`. This is the
+//      fallback for the tab the user was already viewing when they
+//      toggled the rule on — dynamic registrations only take effect on
+//      subsequent navigations, so without this fallback the current tab
+//      would have to be reloaded to pick up the rule. `executeScript`
+//      with `world: "MAIN"` bypasses page CSP the same way the
+//      registered content script does, so strict `script-src` origins
+//      no longer block the fallback. The fallback misses early-parse
+//      reads, but reads from `DOMContentLoaded`/`load` handlers and
+//      polled fingerprinters are still caught.
 //
 // The function must not reference any module-scope identifiers — only
-// the function body's source crosses into the page world (either as a
-// serialized string for the inline fallback or via the bundled
-// `webdriver-probe.js` entry point). The event name is hard-coded as a
-// literal here and re-declared as a module constant in
+// the function body's source crosses into the page world (either via
+// `executeScript({ func })` from the background worker or via the
+// bundled `webdriver-probe.js` entry point). The event name is
+// hard-coded as a literal here and re-declared as a module constant in
 // `rules/webdriver-probe-annotate.ts` for the isolated-world listener;
 // the rule's tests assert the two agree.
 

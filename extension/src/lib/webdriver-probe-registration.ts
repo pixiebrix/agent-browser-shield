@@ -13,10 +13,12 @@
 // already-loaded tabs retain whatever wrap they had until the user
 // reloads — same constraint as static content_scripts.
 //
-// The rule's own `apply` still inline-injects the probe as a fallback for
-// the currently-open tab (since dynamic registrations only take effect on
-// subsequent navigations). This module is purely the registration
-// life-cycle for the standalone bundle.
+// The rule's own `apply` covers the currently-open tab by asking the
+// background worker (via an `inject-webdriver-probe` message) to run the
+// probe through `chrome.scripting.executeScript` — dynamic registrations
+// only take effect on subsequent navigations, so without that round-trip
+// the user would have to reload the active tab. This module is purely
+// the registration life-cycle for the standalone bundle.
 
 import {
   getEnforcementEnabled,
