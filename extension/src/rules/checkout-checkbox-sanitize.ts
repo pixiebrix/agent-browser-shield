@@ -24,16 +24,35 @@ const RULE_ID = "checkout-checkbox-sanitize" as const;
 // their value-tracker, so onChange handlers never fire and totals don't
 // recompute. Going through the prototype's native setter lets the framework
 // observe the change.
-// `set` is unbound here by design — we invoke it via `.call(checkbox, …)`
-// below so `this` is the input element, not the descriptor.
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const nativeCheckedSetter = Object.getOwnPropertyDescriptor(
-  HTMLInputElement.prototype,
-  "checked",
-)?.set;
+//
+// Resolved lazily on first `apply` so this module is safe to import in
+// DOM-less contexts (service worker, codegen). Touching
+// `HTMLInputElement.prototype` at module top level used to crash the
+// background worker bundle — see scripts/check-background-purity.ts.
+let cachedNativeCheckedSetter:
+  | ((this: HTMLInputElement, value: boolean) => void)
+  | null
+  | undefined;
+
+function getNativeCheckedSetter():
+  | ((this: HTMLInputElement, value: boolean) => void)
+  | null {
+  if (cachedNativeCheckedSetter !== undefined) {
+    return cachedNativeCheckedSetter;
+  }
+  // `set` is unbound here by design — we invoke it via `.call(checkbox, …)`
+  // below so `this` is the input element, not the descriptor.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const setter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "checked",
+  )?.set;
+  cachedNativeCheckedSetter = setter ?? null;
+  return cachedNativeCheckedSetter;
+}
 
 function uncheck(checkbox: HTMLInputElement): void {
-  nativeCheckedSetter?.call(checkbox, false);
+  getNativeCheckedSetter()?.call(checkbox, false);
   checkbox.dispatchEvent(new Event("input", { bubbles: true }));
   checkbox.dispatchEvent(new Event("change", { bubbles: true }));
   checkbox.setAttribute(CLEARED_ATTR, "");

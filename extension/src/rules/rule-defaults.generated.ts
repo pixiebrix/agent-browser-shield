@@ -2,9 +2,11 @@
 // Source: extension/data/rule-defaults.json
 // Regenerate with `bun run build-rule-defaults`.
 
-import type { RuleId } from "./index";
+// Source of truth for `RuleId` and `RULE_IDS`. Lives outside `rules/index.ts`
+// so service-worker code (`lib/storage.ts`, `background.ts`) can import the
+// id set without pulling in any rule file's top-level DOM access.
 
-export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
+export const RULE_DEFAULTS = {
   "pii-redact": true,
   "secrets-redact": true,
   "reviews-redact": true,
@@ -22,8 +24,8 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "unicode-invisibles-strip": true,
   "noscript-strip": true,
   "json-ld-sanitize": true,
-  "meta-injection-strip": true,
   "attribute-injection-sanitize": true,
+  "meta-injection-strip": true,
   "newsletter-modal-hide": true,
   "svg-sprite-strip": true,
   "svg-text-strip": true,
@@ -31,13 +33,17 @@ export const RULE_DEFAULTS: Readonly<Record<RuleId, boolean>> = {
   "ads-hide": true,
   "cart-addon-annotate": true,
   "link-spoof-annotate": true,
-  "trust-badge-annotate": false,
   "search-url-helper": true,
   "roach-motel-annotate": true,
   "irrelevant-sections-redact": false,
   "cross-origin-frame-redact": false,
   "schema-trust-sanitize": false,
+  "trust-badge-annotate": false,
   "disguised-ad-flag": true,
   "encoded-payload-redact": true,
   "webdriver-probe-annotate": false,
-};
+} as const satisfies Readonly<Record<string, boolean>>;
+
+export type RuleId = keyof typeof RULE_DEFAULTS;
+
+export const RULE_IDS = Object.keys(RULE_DEFAULTS) as readonly RuleId[];

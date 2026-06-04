@@ -38,11 +38,18 @@ import type { Rule } from "./types";
 import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
 import { webdriverProbeAnnotateRule } from "./webdriver-probe-annotate";
 
-// Single source of truth for the rule catalog. RULE_IDS, RuleId, defaults, and
-// availability are all derived from this array. Adding a rule: create the
-// file, add the import above, append below — no other registration needed.
+// Catalog of every rule's runtime (apply/teardown). Adding a rule: create the
+// file, add the import above, append below, then update
+// `data/rule-defaults.json` and rerun `bun run build-rule-defaults`.
 //
-// The inner tuple is `as const` so `RuleId` can be the union of literal ids;
+// `RuleId` and `RULE_IDS` are the canonical id set, and they live in
+// `rule-defaults.generated.ts` so service-worker consumers (`lib/storage.ts`,
+// `background.ts`) can import them without pulling any rule file's top-level
+// DOM access into the worker bundle. The catalog invariants test verifies
+// `RULES.map(r => r.id)` matches `RULE_IDS` exactly.
+//
+// The inner tuple is `as const` so TypeScript preserves each rule's literal
+// `id` for downstream consumers (`Map<RuleId, Rule>(RULES.map(...))` etc.);
 // the exported `RULES` is widened to `readonly Rule[]` so consumers see the
 // full Rule shape (optional `available`, `teardown`, `unavailableReason`).
 const RULES_TUPLE = [
