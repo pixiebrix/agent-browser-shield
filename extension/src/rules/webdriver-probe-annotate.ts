@@ -41,6 +41,7 @@
 // rule's `teardown` only removes the landmark and the isolated-world
 // listener so re-enabling on the same page still picks up later reads.
 
+import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
@@ -98,6 +99,21 @@ function ensureLandmark(): void {
   document.body.prepend(buildLandmark());
   log("webdriver-probe-annotate landmark added", {
     host: globalThis.location.hostname,
+  });
+  // Notify the background so the popup can show a human-visible entry.
+  // The line-88 landmark short-circuit above doubles as a per-document
+  // dedupe latch — we only get here once per document, no matter how
+  // many times navigator.webdriver gets read.
+  const message: RuleDetectionMessage = {
+    type: "rule-detection",
+    payload: {
+      kind: "webdriver-probe",
+      host: globalThis.location.hostname,
+      url: globalThis.location.href,
+    },
+  };
+  chrome.runtime.sendMessage(message).catch(() => {
+    // noop
   });
 }
 
