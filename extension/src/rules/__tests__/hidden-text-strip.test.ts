@@ -34,6 +34,56 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).toBeNull();
   });
 
+  // Regression for #126: Primer's <dialog> backdrop renders at opacity:0
+  // with an opacity transition, then animates to 1 once the dialog opens.
+  // The subtree watcher catches the wrapper mid-transition. The opacity:0
+  // is transient (the user will see it within ~150ms), not a hidden-text
+  // injection signal, so the rule must let transitioning elements through.
+  it("does not strip an element fading in via opacity transition", () => {
+    document.body.innerHTML = `
+      <div id="backdrop" style="opacity: 0; transition: opacity 150ms ease-out">
+        <h2>Create new issue</h2>
+        <p>Bug report</p>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#backdrop")).not.toBeNull();
+  });
+
+  it("does not strip an element fading in via a transition on `all`", () => {
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0; transition: all 200ms">
+        modal contents
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  it("does not strip an element with a running opacity keyframe animation", () => {
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0; animation: fadeIn 150ms ease-out">
+        modal contents
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  it("still strips opacity:0 when no transition or animation is set", () => {
+    // Guards against making the transition check too permissive — a plain
+    // opacity:0 with no animation is the classic hidden-injection signal.
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).toBeNull();
+  });
+
   it("removes text positioned off-screen", () => {
     document.body.innerHTML = `
       <div id="x" style="position: absolute; left: -10000px">hidden text</div>

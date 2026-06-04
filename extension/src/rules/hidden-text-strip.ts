@@ -186,6 +186,67 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
   return true;
 }
 
+// True if the element's opacity is currently being animated — either via a
+// CSS transition whose property list includes `opacity` (or `all`), or via
+// a keyframe animation. Dialogs, popovers, and toasts routinely render at
+// opacity:0 for a single frame before transitioning to 1; the subtree
+// watcher catches them mid-animation and previously stripped the whole
+// subtree before the user ever saw it (#126). Animating opacity is also a
+// poor injection carrier: by definition the text will become visible to
+// sighted users when the animation completes, so the asymmetry the rule
+// defends against doesn't hold.
+const NONZERO_DURATION_PATTERN = /\b\d*\.?\d+(?:m?s)\b/;
+
+function hasNonzeroDuration(value: string | null | undefined): boolean {
+  return (
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    value !== "0s" &&
+    value !== "0ms"
+  );
+}
+
+function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
+  // Real browsers expand the `transition`/`animation` shorthand into the
+  // longhand properties checked here. jsdom keeps only the shorthand, so we
+  // fall back to a substring scan on the shorthand string. Both paths matter:
+  // the longhand is the production check; the shorthand fallback keeps unit
+  // tests honest.
+  const transitionProperty = style.transitionProperty;
+  if (
+    hasNonzeroDuration(style.transitionDuration) &&
+    transitionProperty &&
+    /\b(?:opacity|all)\b/.test(transitionProperty)
+  ) {
+    return true;
+  }
+  const transitionShorthand = style.transition;
+  if (
+    transitionShorthand &&
+    /\b(?:opacity|all)\b/.test(transitionShorthand) &&
+    NONZERO_DURATION_PATTERN.test(transitionShorthand)
+  ) {
+    return true;
+  }
+  if (
+    style.animationName &&
+    style.animationName !== "none" &&
+    hasNonzeroDuration(style.animationDuration)
+  ) {
+    return true;
+  }
+  const animationShorthand = style.animation;
+  if (
+    animationShorthand &&
+    animationShorthand !== "none" &&
+    NONZERO_DURATION_PATTERN.test(animationShorthand)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function detectHiddenByCss(
   element: Element,
   style: CSSStyleDeclaration,
@@ -196,7 +257,10 @@ function detectHiddenByCss(
       details: { visibility: style.visibility },
     };
   }
-  if (Number.parseFloat(style.opacity) === 0) {
+  if (
+    Number.parseFloat(style.opacity) === 0 &&
+    !hasOpacityAnimationInFlight(style)
+  ) {
     return { reason: "opacity-0", details: { opacity: style.opacity } };
   }
   // `font-size: 0` on a wrapper is the legacy layout trick to collapse
