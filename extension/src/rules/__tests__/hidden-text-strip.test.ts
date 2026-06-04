@@ -84,6 +84,36 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).toBeNull();
   });
 
+  it("still strips opacity:0 when the transition duration is zero", () => {
+    // A `transition: opacity 0s` is instantaneous — the text never becomes
+    // visible. Without this case, an attacker could declare a zero-duration
+    // opacity transition to bypass the strip.
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0; transition: opacity 0s">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).toBeNull();
+  });
+
+  it("still strips opacity:0 when the animation duration is zero", () => {
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0; animation: fadeIn 0s">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).toBeNull();
+  });
+
+  it("still strips opacity:0 when the transition targets a non-opacity property", () => {
+    document.body.innerHTML = `
+      <div id="x" style="opacity: 0; transition: transform 150ms">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).toBeNull();
+  });
+
   it("removes text positioned off-screen", () => {
     document.body.innerHTML = `
       <div id="x" style="position: absolute; left: -10000px">hidden text</div>

@@ -195,55 +195,74 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
 // poor injection carrier: by definition the text will become visible to
 // sighted users when the animation completes, so the asymmetry the rule
 // defends against doesn't hold.
-const NONZERO_DURATION_PATTERN = /\b\d*\.?\d+(?:m?s)\b/;
+// Match a single CSS time literal (`0`, `0.5`, `150` …) followed by `s` or
+// `ms`. Used to walk a shorthand string and pick out the numeric magnitude;
+// the caller decides whether the magnitude is non-zero.
+const DURATION_TOKEN_PATTERN = /\b(\d*\.?\d+)(ms|s)\b/g;
 
 function hasNonzeroDuration(value: string | null | undefined): boolean {
-  return (
-    value !== null &&
-    value !== undefined &&
-    value !== "" &&
-    value !== "0s" &&
-    value !== "0ms"
-  );
+  if (!value) {
+    return false;
+  }
+  const numeric = Number.parseFloat(value);
+  return Number.isFinite(numeric) && numeric > 0;
+}
+
+// True if any time literal in the shorthand string has a non-zero magnitude.
+// Reject the `transition: opacity 0s` bypass — a zero-duration transition is
+// instantaneous, so the text would remain permanently invisible to sighted
+// users and is still injection-shaped.
+function shorthandHasNonzeroDuration(shorthand: string): boolean {
+  DURATION_TOKEN_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null = DURATION_TOKEN_PATTERN.exec(shorthand);
+  while (match !== null) {
+    if (Number.parseFloat(match[1] ?? "") > 0) {
+      return true;
+    }
+    match = DURATION_TOKEN_PATTERN.exec(shorthand);
+  }
+  return false;
 }
 
 function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
-  // Real browsers expand the `transition`/`animation` shorthand into the
-  // longhand properties checked here. jsdom keeps only the shorthand, so we
-  // fall back to a substring scan on the shorthand string. Both paths matter:
-  // the longhand is the production check; the shorthand fallback keeps unit
-  // tests honest.
-  const transitionProperty = style.transitionProperty;
-  if (
-    hasNonzeroDuration(style.transitionDuration) &&
-    transitionProperty &&
-    /\b(?:opacity|all)\b/.test(transitionProperty)
+  // Production path: real browsers expand the `transition`/`animation`
+  // shorthand into the longhand getters, so `transitionProperty` is always
+  // populated (default `"all"`) and `transitionDuration` is always `"0s"` for
+  // unset transitions. The longhand check is canonical there.
+  //
+  // The shorthand check is a jsdom-only fallback: jsdom keeps the shorthand
+  // verbatim and leaves the longhand getters empty, so `!transitionProperty`
+  // distinguishes the test environment from production. Gating the fallback
+  // this way means the shorthand parser can never weaken the longhand
+  // check — `transition: opacity 0s` in a real browser fails the longhand
+  // duration check and the shorthand block is never reached.
+  if (style.transitionProperty) {
+    if (
+      /\b(?:opacity|all)\b/.test(style.transitionProperty) &&
+      hasNonzeroDuration(style.transitionDuration)
+    ) {
+      return true;
+    }
+  } else if (
+    style.transition &&
+    /\b(?:opacity|all)\b/.test(style.transition) &&
+    shorthandHasNonzeroDuration(style.transition)
   ) {
     return true;
   }
-  const transitionShorthand = style.transition;
-  if (
-    transitionShorthand &&
-    /\b(?:opacity|all)\b/.test(transitionShorthand) &&
-    NONZERO_DURATION_PATTERN.test(transitionShorthand)
+
+  if (style.animationName && style.animationName !== "none") {
+    if (hasNonzeroDuration(style.animationDuration)) {
+      return true;
+    }
+  } else if (
+    style.animation &&
+    style.animation !== "none" &&
+    shorthandHasNonzeroDuration(style.animation)
   ) {
     return true;
   }
-  if (
-    style.animationName &&
-    style.animationName !== "none" &&
-    hasNonzeroDuration(style.animationDuration)
-  ) {
-    return true;
-  }
-  const animationShorthand = style.animation;
-  if (
-    animationShorthand &&
-    animationShorthand !== "none" &&
-    NONZERO_DURATION_PATTERN.test(animationShorthand)
-  ) {
-    return true;
-  }
+
   return false;
 }
 
