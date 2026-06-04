@@ -56,6 +56,17 @@ For the full project overview, see the
   discover it.
 </Aside>
 
+## Privacy
+
+The extension does not collect, store, or send any telemetry, analytics, or
+usage data. Rule processing runs locally in your browser; nothing is reported
+back to PixieBrix or any other server.
+
+The one outbound network call the extension can make is the optional
+[`irrelevant-sections-redact`](/agent-browser-shield/rules/#hide-irrelevant-sections-ai)
+rule (off by default), which sends a compressed page tree to OpenAI's API for
+classification when you enable the rule and configure an API key.
+
 <Aside type="caution" title="Disclaimer">
   `agent-browser-shield` reduces the threats a browser-use agent faces on a
   page, but it can't catch everything. Take precautions when using AI agents
