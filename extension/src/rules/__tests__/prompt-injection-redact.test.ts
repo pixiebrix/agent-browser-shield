@@ -113,6 +113,33 @@ describe("prompt-injection-redact", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });
 
+  it("does not redact the surrounding article when injection text lives inside an SVG", () => {
+    // svg-text-strip is the rule that scrubs SVG title/desc/text content.
+    // prompt-injection-redact must not fire on those text nodes — the SVG
+    // has no paragraph-like ancestor, so it would otherwise escalate the
+    // placeholder all the way up to the wrapping <article> and wipe out
+    // the whole section (#133).
+    document.body.innerHTML = `
+      <article>
+        <h1>Product title that stays visible.</h1>
+        <div>
+          <svg>
+            <title>${FIXTURES.IGNORE_HACKED}</title>
+            <desc>${FIXTURES.OVERRIDE_GUARDRAILS}</desc>
+            <text>${FIXTURES.DISREGARD}</text>
+          </svg>
+        </div>
+      </article>
+    `;
+    promptInjectionRedactRule.apply(document.body);
+
+    expect(document.querySelector("article")).not.toBeNull();
+    expect(document.querySelector("h1")?.textContent).toBe(
+      "Product title that stays visible.",
+    );
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
   it("does not process text inside SCRIPT or STYLE", () => {
     document.body.innerHTML = `
       <script>${FIXTURES.SCRIPT_STRING}</script>

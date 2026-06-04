@@ -54,7 +54,16 @@ function findContainer(textNode: Text): HTMLElement | null {
 
 function apply(root: ParentNode): void {
   const containers = new Set<HTMLElement>();
-  for (const node of walkTextNodes(root, { minLength: MIN_TEXT_LENGTH })) {
+  for (const node of walkTextNodes(root, {
+    minLength: MIN_TEXT_LENGTH,
+    // SVG <title>/<desc>/<text> are the injection carriers inside SVG, and
+    // `svg-text-strip` handles them by blanking the text in place. Letting
+    // prompt-injection-redact also fire on those text nodes is destructive:
+    // the SVG has no p/li/td ancestor, so `findContainer` escalates all the
+    // way up to the surrounding <article>/<section> and the entire product
+    // header gets replaced with a single placeholder (#133).
+    shouldSkipParent: (parent) => parent.closest("svg") !== null,
+  })) {
     if (!containsInjection(node.nodeValue ?? "")) {
       continue;
     }
