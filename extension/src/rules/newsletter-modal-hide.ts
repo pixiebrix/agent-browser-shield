@@ -10,8 +10,11 @@
 //   1. fixed/sticky positioning (real overlays, not in-flow forms)
 //   2. covers ≥25% of the viewport (filters out small toasts)
 //   3. contains signup-language ("subscribe", "newsletter", etc.)
-//   4. contains an <input type="email"> or a <form> descendant
-// The combination keeps login modals, paywalls, and age-gates visible.
+//   4. contains an <input type="email">
+// The combination keeps login modals, paywalls, age-gates, and application
+// dialogs (GitHub's issue-template chooser, search, command palette) visible
+// — they have forms but no email field, which the email-input gate filters
+// out cleanly.
 //
 // Newsletter modals commonly inject after a 5–30s timer or scroll-depth
 // trigger, so the rule subscribes to the subtree watcher to re-scan added
@@ -47,10 +50,7 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
     return false;
   }
 
-  if (
-    !element.querySelector('input[type="email"]') &&
-    !element.querySelector("form")
-  ) {
+  if (!element.querySelector('input[type="email"]')) {
     return false;
   }
   return true;
