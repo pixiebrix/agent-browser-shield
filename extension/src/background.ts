@@ -10,8 +10,10 @@ import type {
 } from "./lib/detection-messages";
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
+import { log } from "./lib/log";
 import { ruleStatesStorage } from "./lib/storage";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
+import { installProbe } from "./lib/webdriver-probe-source";
 
 // Per-tab, per-frame placeholder counts. Each content script reports its own
 // frame's tally; the badge shows the sum across frames for that tab.
@@ -204,6 +206,38 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ ok: true });
       });
       return true;
+    }
+
+    if (message.type === "inject-webdriver-probe") {
+      const tabId = sender.tab?.id;
+      if (typeof tabId !== "number") {
+        return undefined;
+      }
+      const frameId = sender.frameId;
+      // executeScript with world: "MAIN" is exempt from page CSP the same
+      // way the registered content script is, so this lands on strict
+      // `script-src` origins where the rule's previous inline-<script>
+      // fallback was blocked. Targeting the sender's specific frameId
+      // keeps subframes that already received the registered probe from
+      // being re-invoked. installProbe's `__abs_webdriver_probe_installed`
+      // guard makes a redundant call a no-op in the page world.
+      chrome.scripting
+        .executeScript({
+          target: {
+            tabId,
+            frameIds: typeof frameId === "number" ? [frameId] : undefined,
+          },
+          world: "MAIN",
+          func: installProbe,
+        })
+        .catch((error: unknown) => {
+          // Restricted URLs (chrome://, Web Store, view-source:, file: when
+          // disallowed) reject here. The primary registration silently
+          // skips these origins via match-pattern filtering; the fallback
+          // has to swallow the rejection explicitly.
+          log("inject-webdriver-probe executeScript failed", { error });
+        });
+      return undefined;
     }
 
     if (message.type === "placeholder-count") {

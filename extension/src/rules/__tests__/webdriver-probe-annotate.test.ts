@@ -5,7 +5,7 @@ import { installProbe } from "../../lib/webdriver-probe-source";
 import { hiddenTextStripRule } from "../hidden-text-strip";
 import {
   EVENT_NAME,
-  PROBE_SOURCE,
+  INJECT_PROBE_MESSAGE,
   webdriverProbeAnnotateRule,
 } from "../webdriver-probe-annotate";
 
@@ -15,26 +15,33 @@ function dispatchProbe(): void {
   document.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 
-const PROBE_FLAG = "__abs_webdriver_probe_installed";
+let sendMessageMock: jest.Mock;
 
-// The rule sends a runtime message on first landmark stamp; stub
-// `chrome.runtime.sendMessage` so apply() doesn't throw and so the
-// "emits to background" tests below can assert on it.
-const sendMessageMock = jest.fn().mockResolvedValue(undefined);
+// The rule fires two distinct sendMessage flows: `inject-webdriver-probe`
+// on every apply (background-side executeScript fallback) and
+// `rule-detection` after a landmark is stamped (popup detections panel).
+// Helpers below filter the mock's call log by type so the suites can
+// assert on each flow independently.
+function callsOfType(type: string): unknown[] {
+  return sendMessageMock.mock.calls
+    .map(([message]: [unknown]) => message)
+    .filter((message) => (message as { type?: string }).type === type);
+}
+
+function injectCalls(): unknown[] {
+  return callsOfType("inject-webdriver-probe");
+}
+
+function detectionCalls(): unknown[] {
+  return callsOfType("rule-detection");
+}
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock.mockClear();
+  sendMessageMock = jest.fn().mockResolvedValue(undefined);
   (globalThis as unknown as { chrome: unknown }).chrome = {
     runtime: { sendMessage: sendMessageMock },
   };
-  // jest-environment-jsdom DOES execute inline <script> textContent, so
-  // every apply() call really wraps Navigator.prototype.webdriver and
-  // the rule's teardown intentionally leaves it wrapped. Reset to a
-  // clean baseline between tests so neither suite picks up residue from
-  // the previous test's installed probe.
-  Reflect.deleteProperty(Navigator.prototype, "webdriver");
-  Reflect.deleteProperty(globalThis, PROBE_FLAG);
 });
 
 afterEach(() => {
@@ -121,18 +128,54 @@ describe("webdriverProbeAnnotateRule.apply", () => {
   });
 });
 
+describe("webdriverProbeAnnotateRule inject-probe message", () => {
+  // The rule's apply asks the background worker to run installProbe on
+  // the active frame via chrome.scripting.executeScript. The message is
+  // the only thing the rule controls; the actual injection is asserted
+  // by inspection at the background-side handler.
+  it("asks the background worker to inject the probe on apply", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    expect(injectCalls()).toHaveLength(1);
+    expect(injectCalls()[0]).toEqual(INJECT_PROBE_MESSAGE);
+  });
+
+  // Re-apply after teardown should ask again — the page-world probe is
+  // self-deduplicating via `__abs_webdriver_probe_installed`, so a
+  // redundant request is a no-op in the page world but still cheaper
+  // than tracking injection state across enable/disable cycles here.
+  it("re-requests injection on each apply", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    webdriverProbeAnnotateRule.teardown();
+    webdriverProbeAnnotateRule.apply(document.body);
+
+    expect(injectCalls()).toHaveLength(2);
+  });
+
+  // The service worker may be asleep when apply runs and reject with
+  // "Receiving end does not exist". The rule must swallow that so it
+  // doesn't surface as an unhandled-promise warning.
+  it("swallows sendMessage rejections", async () => {
+    sendMessageMock.mockRejectedValueOnce(new Error("no receiver"));
+    expect(() => {
+      webdriverProbeAnnotateRule.apply(document.body);
+    }).not.toThrow();
+    // Let the microtask flush so an unhandled rejection would surface.
+    await Promise.resolve();
+  });
+});
+
 describe("webdriverProbeAnnotateRule rule-detection emission", () => {
   it("does not emit on apply alone — only on observed reads", () => {
     webdriverProbeAnnotateRule.apply(document.body);
-    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(detectionCalls()).toHaveLength(0);
   });
 
   it("sends a rule-detection on the first probe event", () => {
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(1);
-    expect(sendMessageMock).toHaveBeenCalledWith({
+    expect(detectionCalls()).toHaveLength(1);
+    expect(detectionCalls()[0]).toEqual({
       type: "rule-detection",
       payload: {
         kind: "webdriver-probe",
@@ -148,23 +191,30 @@ describe("webdriverProbeAnnotateRule rule-detection emission", () => {
     dispatchProbe();
     dispatchProbe();
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(detectionCalls()).toHaveLength(1);
   });
 
   it("re-emits after teardown + re-apply on the same document", () => {
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
-    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(detectionCalls()).toHaveLength(1);
 
     webdriverProbeAnnotateRule.teardown();
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(2);
+    expect(detectionCalls()).toHaveLength(2);
   });
 });
 
 describe("page-world probe", () => {
+  const PROBE_FLAG = "__abs_webdriver_probe_installed";
+
+  beforeEach(() => {
+    Reflect.deleteProperty(Navigator.prototype, "webdriver");
+    Reflect.deleteProperty(globalThis, PROBE_FLAG);
+  });
+
   it("wraps Navigator.prototype.webdriver and fires on read", () => {
     installProbe.call(globalThis as unknown as Window);
 
@@ -203,6 +253,6 @@ describe("page-world probe", () => {
   // probe hard-codes it as a literal in installProbe. If the two ever
   // drift, the rule silently stops working.
   it("hard-codes the same event name the rule listens for", () => {
-    expect(PROBE_SOURCE).toContain(`"${EVENT_NAME}"`);
+    expect(installProbe.toString()).toContain(`"${EVENT_NAME}"`);
   });
 });
