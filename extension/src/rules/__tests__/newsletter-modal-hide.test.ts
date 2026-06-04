@@ -83,6 +83,40 @@ describe("newsletterModalHideRule", () => {
     expect(document.querySelector("section")).not.toBeNull();
   });
 
+  // Regression for #126: GitHub's "Create new issue" template chooser is a
+  // fixed-position dialog with a <form> wrapping the template-selection
+  // buttons, but no <input type="email">. Under the old filter, any
+  // newsletter-keyword text anywhere in the dialog (a "Sign up for GitHub"
+  // CTA, a "Subscribe to release notifications" template description, the
+  // contributor-prompt copy that GitHub appends to issue templates, etc.)
+  // was enough to trigger removal because the form-only branch admitted
+  // the dialog. Requiring a real email input keeps coverage on actual
+  // signup popups while letting application dialogs through.
+  it("leaves a template-chooser dialog alone when there is no email input", () => {
+    document.body.innerHTML = `
+      <div role="dialog" aria-label="Create new issue" style="position: fixed">
+        <header>
+          <h2>Create new issue</h2>
+          <button aria-label="Close">×</button>
+        </header>
+        <form>
+          <ul>
+            <li><a href="/o/r/issues/new?template=bug">Bug report — Report a defect</a></li>
+            <li><a href="/o/r/issues/new?template=feat">Feature request — Suggest a new capability</a></li>
+            <li><a href="/o/r/issues/new">Blank issue — Create a new issue from scratch</a></li>
+          </ul>
+          <footer>Sign up for release notifications to follow updates.</footer>
+        </form>
+      </div>
+    `;
+    newsletterModalHideRule.apply(document.body);
+
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog?.getAttribute(HIDDEN_ATTR)).toBeNull();
+    expect(dialog?.style.display).not.toBe("none");
+  });
+
   it("does not remove content nested inside an existing placeholder", () => {
     document.body.innerHTML = `
       <div class="${PLACEHOLDER_CLASS}">
