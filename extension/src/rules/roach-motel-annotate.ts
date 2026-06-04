@@ -27,12 +27,13 @@
 // sr-only class allowlist plus the 1×1 + overflow:hidden inline envelope.
 
 import { URLPattern } from "urlpattern-polyfill";
+import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import type { JustDeleteMeEntry } from "./justdeleteme.generated";
 import { JUSTDELETEME_ENTRIES } from "./justdeleteme.generated";
-import type { RoachMotelDifficulty, SiteWarning } from "./site-data.generated";
+import type { RoachMotelDifficulty } from "./site-data.generated";
 import { ROACH_MOTEL_WARNINGS } from "./site-data.generated";
 import type { Rule } from "./types";
 
@@ -90,12 +91,21 @@ export interface WarningPayload {
   difficulty: RoachMotelDifficulty;
   cancellationUrl: string | null;
   notes: string | null;
+  // Which data source the entry came from. Surfaced to the user in the
+  // popup so curated FTC-defendant entries read distinctly from the
+  // crowdsourced JustDeleteMe fallback.
+  source: "curated" | "justdeleteme";
 }
 
-function findCuratedWarning(url: string): SiteWarning | null {
+function findCuratedWarning(url: string): WarningPayload | null {
   for (const warning of ROACH_MOTEL_WARNINGS) {
     if (warning.patterns.some((pattern) => pattern.test(url))) {
-      return warning;
+      return {
+        difficulty: warning.difficulty,
+        cancellationUrl: warning.cancellationUrl,
+        notes: warning.notes,
+        source: "curated",
+      };
     }
   }
   return null;
@@ -133,6 +143,7 @@ function findJustDeleteMeWarning(url: string): WarningPayload | null {
     difficulty: entry.difficulty,
     cancellationUrl: entry.cancellationUrl,
     notes: noteLines.join("\n"),
+    source: "justdeleteme",
   };
 }
 
@@ -188,6 +199,24 @@ function apply(_root: ParentNode): void {
   log("roach-motel-annotate applied", {
     host: globalThis.location.hostname,
     difficulty: warning.difficulty,
+  });
+  // Tell the background so the popup can render a human-visible entry
+  // for this tab. The line-181 landmark short-circuit already guarantees
+  // we only get here once per document. Service worker may be asleep —
+  // swallow the rejection per the placeholder-count.ts pattern.
+  const message: RuleDetectionMessage = {
+    type: "rule-detection",
+    payload: {
+      kind: "roach-motel",
+      host: globalThis.location.hostname,
+      url: globalThis.location.href,
+      difficulty: warning.difficulty,
+      cancellationUrl: warning.cancellationUrl,
+      source: warning.source,
+    },
+  };
+  chrome.runtime.sendMessage(message).catch(() => {
+    // noop
   });
 }
 

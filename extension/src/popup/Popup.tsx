@@ -8,6 +8,7 @@ import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { RuleList } from "../lib/RuleList";
 import { ruleStatesStorage } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
+import { DetectionsSection } from "./DetectionsSection";
 
 export function Popup() {
   const states = useChromeStorageValue(ruleStatesStorage);
@@ -60,6 +61,7 @@ export function Popup() {
           </p>
         )}
       </div>
+      <DetectionsSection />
       <RuleList
         states={states}
         availability={availability}

@@ -110,6 +110,66 @@
         outline: 2px solid #2563eb;
         outline-offset: 2px;
       }
+      .detections {
+        margin: 0 0 12px;
+      }
+      .detections__heading {
+        margin: 0 0 6px;
+        padding-bottom: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #555;
+        border-bottom: 1px solid #e4e4e7;
+      }
+      .detections__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .detection {
+        padding: 8px 10px;
+        border: 1px solid #fde68a;
+        background: #fffbeb;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      .detection strong {
+        display: block;
+        font-weight: 600;
+        color: #92400e;
+      }
+      .detection__host {
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: #555;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .detection__detail {
+        margin: 4px 0 0;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.3;
+      }
+      .detection__cancel {
+        display: inline-block;
+        margin: 4px 0 0;
+        font-size: 11px;
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .detection__cancel:hover {
+        text-decoration: underline;
+      }
+      .detection__source {
+        margin: 4px 0 0;
+        font-size: 10px;
+        color: #888;
+      }
       .rule-groups {
         display: flex;
         flex-direction: column;

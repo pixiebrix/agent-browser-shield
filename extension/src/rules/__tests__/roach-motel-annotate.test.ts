@@ -7,13 +7,23 @@ import { findWarning, roachMotelAnnotateRule } from "../roach-motel-annotate";
 
 const LANDMARK_SELECTOR = 'section[data-abs-rule="roach-motel-annotate"]';
 
+// Rule's `apply` sends a `rule-detection` runtime message after landing
+// the landmark. `chrome.runtime.sendMessage` isn't present in jsdom, so
+// stub it here. Tests that assert call shape read from this mock.
+const sendMessageMock = jest.fn().mockResolvedValue(undefined);
+
 beforeEach(() => {
   document.body.innerHTML = "";
+  sendMessageMock.mockClear();
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    runtime: { sendMessage: sendMessageMock },
+  };
 });
 
 afterEach(() => {
   roachMotelAnnotateRule.teardown();
   hiddenTextStripRule.teardown();
+  delete (globalThis as unknown as { chrome?: unknown }).chrome;
 });
 
 describe("findWarning", () => {
@@ -110,6 +120,32 @@ describe("roachMotelAnnotateRule.apply (on nytimes.com/subscription/all-access)"
     expect(document.querySelectorAll(LANDMARK_SELECTOR)).toHaveLength(1);
   });
 
+  it("emits a rule-detection runtime message with the matched payload", () => {
+    roachMotelAnnotateRule.apply(document.body);
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(sendMessageMock).toHaveBeenCalledWith({
+      type: "rule-detection",
+      payload: {
+        kind: "roach-motel",
+        host: "www.nytimes.com",
+        url: "https://www.nytimes.com/subscription/all-access",
+        difficulty: "hard",
+        cancellationUrl:
+          "https://help.nytimes.com/hc/en-us/articles/115014679508",
+        source: "curated",
+      },
+    });
+  });
+
+  it("does not re-emit the runtime message on repeated apply", () => {
+    roachMotelAnnotateRule.apply(document.body);
+    roachMotelAnnotateRule.apply(document.body);
+    roachMotelAnnotateRule.apply(document.body);
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+  });
+
   it("teardown removes the landmark", () => {
     roachMotelAnnotateRule.apply(document.body);
     expect(document.querySelector(LANDMARK_SELECTOR)).not.toBeNull();
@@ -160,6 +196,7 @@ describe("JustDeleteMe fallback", () => {
     expect(warning?.notes ?? "").toContain(
       "Source: JustDeleteMe (justdelete.me)",
     );
+    expect(warning?.source).toBe("justdeleteme");
   });
 
   it("does not fire on a JDM host when path is not signup-y", () => {
@@ -185,6 +222,7 @@ describe("JustDeleteMe fallback", () => {
     expect(warning).not.toBeNull();
     expect(warning?.notes ?? "").toContain("FTC enforcement");
     expect(warning?.notes ?? "").not.toContain("JustDeleteMe");
+    expect(warning?.source).toBe("curated");
   });
 
   it("returns null when neither curated nor JDM matches", () => {

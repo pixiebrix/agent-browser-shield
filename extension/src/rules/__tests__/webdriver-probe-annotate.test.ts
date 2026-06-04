@@ -17,8 +17,17 @@ function dispatchProbe(): void {
 
 const PROBE_FLAG = "__abs_webdriver_probe_installed";
 
+// The rule sends a runtime message on first landmark stamp; stub
+// `chrome.runtime.sendMessage` so apply() doesn't throw and so the
+// "emits to background" tests below can assert on it.
+const sendMessageMock = jest.fn().mockResolvedValue(undefined);
+
 beforeEach(() => {
   document.body.innerHTML = "";
+  sendMessageMock.mockClear();
+  (globalThis as unknown as { chrome: unknown }).chrome = {
+    runtime: { sendMessage: sendMessageMock },
+  };
   // jest-environment-jsdom DOES execute inline <script> textContent, so
   // every apply() call really wraps Navigator.prototype.webdriver and
   // the rule's teardown intentionally leaves it wrapped. Reset to a
@@ -30,6 +39,7 @@ beforeEach(() => {
 
 afterEach(() => {
   webdriverProbeAnnotateRule.teardown();
+  delete (globalThis as unknown as { chrome?: unknown }).chrome;
 });
 
 describe("webdriverProbeAnnotateRule.apply", () => {
@@ -108,6 +118,49 @@ describe("webdriverProbeAnnotateRule.apply", () => {
     expect(landmark).not.toBeNull();
     expect(landmark?.textContent).toContain("navigator.webdriver");
     hiddenTextStripRule.teardown();
+  });
+});
+
+describe("webdriverProbeAnnotateRule rule-detection emission", () => {
+  it("does not emit on apply alone — only on observed reads", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    expect(sendMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a rule-detection on the first probe event", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    dispatchProbe();
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(sendMessageMock).toHaveBeenCalledWith({
+      type: "rule-detection",
+      payload: {
+        kind: "webdriver-probe",
+        host: globalThis.location.hostname,
+        url: globalThis.location.href,
+      },
+    });
+  });
+
+  it("does not re-emit on subsequent probe events for the same document", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    dispatchProbe();
+    dispatchProbe();
+    dispatchProbe();
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-emits after teardown + re-apply on the same document", () => {
+    webdriverProbeAnnotateRule.apply(document.body);
+    dispatchProbe();
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+
+    webdriverProbeAnnotateRule.teardown();
+    webdriverProbeAnnotateRule.apply(document.body);
+    dispatchProbe();
+
+    expect(sendMessageMock).toHaveBeenCalledTimes(2);
   });
 });
 
