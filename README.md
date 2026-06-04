@@ -250,6 +250,17 @@ Please report vulnerabilities privately via GitHub's
 ["Report a vulnerability"](https://github.com/pixiebrix/agent-browser-shield/security/advisories/new)
 form. Do **not** open a public issue for security problems.
 
+## Privacy
+
+The extension does not collect, store, or send any telemetry, analytics, or
+usage data. Rule processing runs locally in your browser; nothing is reported
+back to PixieBrix or any other server.
+
+The one outbound network call the extension can make is the optional
+`irrelevant-sections-redact` rule (off by default), which sends a compressed
+page tree to OpenAI's API for classification when you enable the rule and
+configure an API key.
+
 ## Disclaimer
 
 `agent-browser-shield` reduces the threats a browser-use agent faces on a page,
