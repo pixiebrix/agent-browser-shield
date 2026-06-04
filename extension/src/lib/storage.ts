@@ -1,9 +1,15 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+// `RuleId` is a TYPE-ONLY import from `../rules` so this module's compiled
+// JS has no dependency on the rule catalog — the rules index pulls in every
+// rule implementation file, some of which touch DOM constructors at top
+// level, which would crash the service-worker bundle. Runtime values
+// (RULE_IDS, RULE_DEFAULTS) come from the generated defaults module, which
+// is pure data. The post-build purity check
+// (`scripts/check-background-purity.ts`) guards against regressions.
 import type { RuleId } from "../rules";
-import { RULE_IDS } from "../rules";
-import { RULE_DEFAULTS } from "../rules/rule-defaults.generated";
+import { RULE_DEFAULTS, RULE_IDS } from "../rules/rule-defaults.generated";
 import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type RuleStates = Record<RuleId, boolean>;
@@ -50,7 +56,7 @@ const OVERRIDES: Partial<RuleStates> = parseOverrides();
 
 const DEFAULT_STATES: RuleStates = Object.fromEntries(
   RULE_IDS.map((id) => [id, OVERRIDES[id] ?? RULE_DEFAULTS[id]]),
-) as RuleStates;
+);
 
 function normalize(raw: unknown): RuleStates {
   const result: RuleStates = { ...DEFAULT_STATES };
@@ -89,4 +95,5 @@ export async function setAllRuleStates(
   await ruleStatesStorage.set(normalize(states));
 }
 
-export { RULE_IDS, type RuleId } from "../rules";
+export type { RuleId } from "../rules";
+export { RULE_IDS } from "../rules/rule-defaults.generated";

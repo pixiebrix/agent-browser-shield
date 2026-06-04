@@ -7,6 +7,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import { generateInjectionPatterns } from "./scripts/build-injection-patterns";
 import { generateRuleDefaults } from "./scripts/build-rule-defaults";
 import { generateSiteData } from "./scripts/build-site-data";
+import { checkBackgroundPurity } from "./scripts/check-background-purity";
 import { loadDefaultOverrides } from "./scripts/load-default-overrides";
 
 const ROOT = import.meta.dir;
@@ -88,7 +89,7 @@ async function build(): Promise<void> {
   // Cheap and idempotent; ensures dev never forgets to rerun codegen.
   generateSiteData();
   generateInjectionPatterns();
-  await generateRuleDefaults();
+  generateRuleDefaults();
 
   // Resolve the optional --defaults / EXTENSION_DEFAULTS_FILE override
   // against the codegen output's RULE_DEFAULTS so the validator knows the
@@ -168,6 +169,12 @@ async function build(): Promise<void> {
     recursive: true,
     filter: (src) => !src.endsWith(".svg"),
   });
+
+  // Fails the build if any rule implementation file leaks into the
+  // background bundle — the service worker can't execute DOM-touching rule
+  // code. See scripts/check-background-purity.ts.
+  checkBackgroundPurity();
+
   console.log(`Built extension to ${DIST}`);
 }
 

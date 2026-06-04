@@ -11,25 +11,6 @@
 // the freshly-derived defaults instead of any stale stored value from a
 // previous case.
 
-// Storage transitively pulls in the full rule catalog, which imports
-// `nanoid` and `abort-utils`. Both are pure-ESM; ts-jest with
-// `useESM: false` (jest.config.cjs) can't transform them. The catalog
-// invariants test mocks the same modules for the same reason.
-jest.mock("nanoid", () => ({ nanoid: () => "test-ref" }));
-jest.mock("abort-utils", () => ({
-  ReusableAbortController: class {
-    abort(): void {
-      // noop
-    }
-    get signal(): AbortSignal {
-      return new AbortController().signal;
-    }
-  },
-  onAbort: (): (() => void) => () => {
-    // noop
-  },
-}));
-
 import { RULE_DEFAULTS } from "../../rules/rule-defaults.generated";
 import type { getRuleStates as GetRuleStates } from "../storage";
 
