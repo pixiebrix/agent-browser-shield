@@ -17,24 +17,17 @@ const SOURCE_LABEL: Record<"curated" | "justdeleteme", string> = {
 
 export function DetectionsSection() {
   const detections = useTabDetections();
-  // Hold off on rendering until the runtime fetch resolves — otherwise
-  // the empty state flashes for one frame on tabs that do have
-  // detections.
-  if (detections === null) {
+  if (detections === null || detections.length === 0) {
     return null;
   }
   return (
     <section className="detections">
-      <h2 className="detections__heading">Detected on this page</h2>
-      {detections.length === 0 ? (
-        <p className="detections__empty">Nothing flagged on this page.</p>
-      ) : (
-        <ul className="detections__list">
-          {detections.map((detection) => (
-            <DetectionItem key={detection.kind} detection={detection} />
-          ))}
-        </ul>
-      )}
+      <h2 className="detections__heading">Heads up</h2>
+      <ul className="detections__list">
+        {detections.map((detection) => (
+          <DetectionItem key={detection.kind} detection={detection} />
+        ))}
+      </ul>
     </section>
   );
 }
