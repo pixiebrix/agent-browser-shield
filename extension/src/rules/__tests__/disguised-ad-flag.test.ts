@@ -294,3 +294,53 @@ describe("disguisedAdFlagRule false-positive guards", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 });
+
+describe("disguisedAdFlagRule reveal flow", () => {
+  it("does not re-hide an article the user revealed via click", () => {
+    document.body.innerHTML = articleCard({ label: "Sponsored" });
+    disguisedAdFlagRule.apply(document.body);
+
+    const placeholder = document.querySelector<HTMLElement>(
+      `.${PLACEHOLDER_CLASS}`,
+    );
+    expect(placeholder).not.toBeNull();
+
+    // attachReveal in lib/placeholder restores the original element with
+    // REVEALED_ATTR stamped on it. A subsequent scan (the second apply
+    // call here stands in for the mutation burst the subtree-watcher
+    // fans out when the original re-attaches) must not re-wrap the
+    // same article — otherwise the placeholder comes back the moment
+    // the user clicks reveal.
+    placeholder?.click();
+    expect(document.querySelector('[data-fixture="card"]')).not.toBeNull();
+
+    disguisedAdFlagRule.apply(document.body);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+    expect(document.querySelector('[data-fixture="card"]')).not.toBeNull();
+  });
+
+  it("re-hides a freshly-inserted advertorial card after a reveal elsewhere", () => {
+    // A reveal on one card must not desensitize the rule for unrelated
+    // siblings — only the revealed ancestor (and its descendants) are
+    // exempt.
+    document.body.innerHTML = `
+      ${articleCard({ label: "Sponsored", heading: "First card" })}
+      ${articleCard({ label: "Sponsored", heading: "Second card" })}
+    `;
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(2);
+
+    const [first] = document.querySelectorAll<HTMLElement>(
+      `.${PLACEHOLDER_CLASS}`,
+    );
+    first?.click();
+
+    disguisedAdFlagRule.apply(document.body);
+
+    // First card is revealed and stays revealed; second card stays hidden.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
+    const revealedCards = document.querySelectorAll('[data-fixture="card"]');
+    expect(revealedCards).toHaveLength(1);
+  });
+});
