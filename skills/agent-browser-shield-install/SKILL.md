@@ -199,6 +199,15 @@ JSON override file instead of using the hosted ZIP.
      and become a misleading "click me to make progress" target. Enable for
      human-facing deployments where on-page access to options is useful.
 
+   - `runOnInactiveTabs` (boolean, default **off**) — keep the shared subtree
+     watcher observing while the tab is hidden. Off by default because a hidden
+     tab gets no observer callbacks, which avoids work the user can't see.
+     Enable when something else reads the page while it's in the background — a
+     chat copilot, an accessibility-tree agent, or a sidebar extension that can
+     still consume the page's content after the user navigates away, and a page
+     that mutates while hidden (lazy widgets, periodic refreshes, late
+     prompt-injection payloads) would otherwise reach the consumer unredacted.
+
 2. Pass the path via CLI flag or env var to `bun run build`:
 
    ```sh

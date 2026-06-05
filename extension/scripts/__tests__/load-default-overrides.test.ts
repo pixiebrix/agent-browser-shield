@@ -80,6 +80,29 @@ describe("loadDefaultOverrides", () => {
     ).toThrow(/non-boolean values for: optionsButton/);
   });
 
+  it("extracts the runOnInactiveTabs reserved key alongside rules", () => {
+    const file = writeFile(
+      "with-run-on-inactive.json",
+      JSON.stringify({ "pii-redact": true, runOnInactiveTabs: true }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: { "pii-redact": true },
+      runOnInactiveTabs: true,
+    });
+  });
+
+  it("rejects a non-boolean runOnInactiveTabs value", () => {
+    const file = writeFile(
+      "bad-run-on-inactive.json",
+      JSON.stringify({ runOnInactiveTabs: "always" }),
+    );
+    expect(() =>
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toThrow(/non-boolean values for: runOnInactiveTabs/);
+  });
+
   it("throws when the file does not exist", () => {
     expect(() =>
       loadDefaultOverrides({

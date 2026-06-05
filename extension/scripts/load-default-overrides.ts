@@ -24,12 +24,13 @@ export interface LoadOverridesOptions {
 export interface DefaultOverrides {
   rules: Record<string, boolean>;
   optionsButton?: boolean;
+  runOnInactiveTabs?: boolean;
 }
 
 // Reserved top-level keys are not rule ids; the loader maps each one to a
 // typed field on `DefaultOverrides`. Add new build-time toggles here as they
 // appear.
-const RESERVED_KEYS = new Set<string>(["optionsButton"]);
+const RESERVED_KEYS = new Set<string>(["optionsButton", "runOnInactiveTabs"]);
 
 export function loadDefaultOverrides(
   options: LoadOverridesOptions,
@@ -78,6 +79,8 @@ export function loadDefaultOverrides(
       }
       if (key === "optionsButton") {
         result.optionsButton = value;
+      } else if (key === "runOnInactiveTabs") {
+        result.runOnInactiveTabs = value;
       }
       continue;
     }

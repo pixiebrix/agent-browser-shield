@@ -9,6 +9,7 @@ import { optionsButtonStorage } from "../lib/options-button-toggle";
 import type { PlaceholderDisplayMode } from "../lib/placeholder-display";
 import { placeholderDisplayStorage } from "../lib/placeholder-display";
 import { RuleList } from "../lib/RuleList";
+import { runOnInactiveTabsStorage } from "../lib/run-on-inactive-tabs";
 import { ruleStatesStorage, setAllRuleStates } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { useTransientStatus } from "../lib/use-transient-status";
@@ -21,6 +22,7 @@ export function Options() {
   const displayMode = useChromeStorageValue(placeholderDisplayStorage);
   const storedApiKey = useChromeStorageValue(apiKeyStorage);
   const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
+  const runOnInactiveTabs = useChromeStorageValue(runOnInactiveTabsStorage);
 
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,8 @@ export function Options() {
     !availability ||
     displayMode === null ||
     apiKeyDraft === null ||
-    optionsButtonEnabled === null
+    optionsButtonEnabled === null ||
+    runOnInactiveTabs === null
   ) {
     return <div className="loading">Loading…</div>;
   }
@@ -86,6 +89,7 @@ export function Options() {
         <a href="#export">Export configuration</a>
         <a href="#display">Placeholder display</a>
         <a href="#options-button">On-page options button</a>
+        <a href="#inactive-tabs">Inactive tabs</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
         <a href="#disclaimer">Disclaimer</a>
@@ -183,6 +187,38 @@ export function Options() {
                 void optionsButtonStorage.set(event.target.checked);
               }}
               aria-label="Show on-page options button"
+            />
+            <span className="switch__track" />
+          </span>
+        </label>
+      </Section>
+
+      <Section id="inactive-tabs" title="Inactive tabs">
+        <p className="hint">
+          When a tab isn't visible, the extension stops watching it for new
+          content — background tabs still fire DOM mutations, and ignoring them
+          saves work the user can't see. Turn this on if something else reads
+          the page while you're not looking at it: a chat copilot, an
+          accessibility-tree agent, or a sidebar extension can keep consuming a
+          page's content after you switch tabs, and a page that loads or
+          rewrites content while hidden would otherwise reach those consumers
+          unredacted.
+        </p>
+        <label className="switch-row">
+          <span className="switch-row__text">
+            <strong>Keep watching inactive tabs</strong>
+            <span className="switch-row__state">
+              {runOnInactiveTabs ? "On" : "Off"}
+            </span>
+          </span>
+          <span className="switch" role="presentation">
+            <input
+              type="checkbox"
+              checked={runOnInactiveTabs}
+              onChange={(event) => {
+                void runOnInactiveTabsStorage.set(event.target.checked);
+              }}
+              aria-label="Keep watching inactive tabs"
             />
             <span className="switch__track" />
           </span>
