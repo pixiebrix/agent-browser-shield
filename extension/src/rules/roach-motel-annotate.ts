@@ -203,7 +203,7 @@ function apply(_root: ParentNode): void {
   // Tell the background so the popup can render a human-visible entry
   // for this tab. The line-181 landmark short-circuit already guarantees
   // we only get here once per document. Service worker may be asleep —
-  // swallow the rejection per the placeholder-count.ts pattern.
+  // swallow the rejection per the rule-count.ts pattern.
   const message: RuleDetectionMessage = {
     type: "rule-detection",
     payload: {

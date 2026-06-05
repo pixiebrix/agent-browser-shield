@@ -2,7 +2,6 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import type { DetectionPayload } from "../lib/detection-messages";
-import { useTabDetections } from "./use-tab-detections";
 
 const DIFFICULTY_LABEL: Record<"hard" | "very-hard" | "impossible", string> = {
   hard: "hard",
@@ -15,9 +14,12 @@ const SOURCE_LABEL: Record<"curated" | "justdeleteme", string> = {
   justdeleteme: "JustDeleteMe directory",
 };
 
-export function DetectionsSection() {
-  const detections = useTabDetections();
-  if (detections === null || detections.length === 0) {
+export function DetectionsSection({
+  detections,
+}: {
+  detections: DetectionPayload[];
+}) {
+  if (detections.length === 0) {
     return null;
   }
   return (

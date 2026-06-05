@@ -19,7 +19,7 @@
 
 import type { HideStylesheet } from "../lib/css-hide-stylesheet";
 import { injectHideStylesheet } from "../lib/css-hide-stylesheet";
-import { registerCssFirstSelectors } from "../lib/placeholder-count";
+import { registerCssFirstSelectors } from "../lib/rule-count";
 import type { Rule } from "./types";
 
 const RULE_ID = "chat-widget-hide";
@@ -85,7 +85,7 @@ export const chatWidgetHideRule: Rule = {
       elementId: STYLE_ID,
       selectors: SELECTORS,
     });
-    unregisterCount ??= registerCssFirstSelectors(UNION_SELECTOR);
+    unregisterCount ??= registerCssFirstSelectors(RULE_ID, UNION_SELECTOR);
   },
   teardown() {
     stylesheet?.remove();

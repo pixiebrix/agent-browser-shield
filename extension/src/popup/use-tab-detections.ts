@@ -4,57 +4,63 @@
 import { useEffect, useState } from "react";
 import type {
   DetectionPayload,
-  GetTabDetectionsRequest,
-  GetTabDetectionsResponse,
+  GetTabRuleCountsRequest,
+  GetTabRuleCountsResponse,
+  RuleCountEntry,
 } from "../lib/detection-messages";
 
+export interface TabActivity {
+  entries: RuleCountEntry[];
+  detections: DetectionPayload[];
+}
+
 // One-shot fetch on popup mount. Returns `null` while the active-tab
-// lookup + runtime message is in flight so the section can hold off on
-// rendering its empty state until we actually know there are no
-// detections. Popups are short-lived — no subscription path needed; the
-// next open re-runs this.
-export function useTabDetections(): DetectionPayload[] | null {
-  const [detections, setDetections] = useState<DetectionPayload[] | null>(null);
+// lookup + runtime message is in flight so each section can hold off on
+// rendering its empty state until we actually know the page is quiet.
+// Popups are short-lived — no subscription path needed; the next open
+// re-runs this.
+export function useTabActivity(): TabActivity | null {
+  const [activity, setActivity] = useState<TabActivity | null>(null);
   useEffect(() => {
     let cancelled = false;
-    void fetchDetections()
+    void fetchActivity()
       .then((next) => {
         if (!cancelled) {
-          setDetections(next);
+          setActivity(next);
         }
       })
       .catch(() => {
         // Service worker may be asleep / restarting — surface the empty
         // state rather than hanging on `null`.
         if (!cancelled) {
-          setDetections([]);
+          setActivity({ entries: [], detections: [] });
         }
       });
     return () => {
       cancelled = true;
     };
   }, []);
-  return detections;
+  return activity;
 }
 
-async function fetchDetections(): Promise<DetectionPayload[]> {
+async function fetchActivity(): Promise<TabActivity> {
   const [tab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
   });
   if (typeof tab?.id !== "number") {
-    return [];
+    return { entries: [], detections: [] };
   }
-  const request: GetTabDetectionsRequest = {
-    type: "get-tab-detections",
+  const request: GetTabRuleCountsRequest = {
+    type: "get-tab-rule-counts",
     tabId: tab.id,
   };
-  // @types/chrome infers the response type from `sendMessage`'s second
-  // generic. Defend with optional chaining for the SW-restart edge where
-  // the response could come back undefined.
   const response = await chrome.runtime.sendMessage<
-    GetTabDetectionsRequest,
-    GetTabDetectionsResponse | undefined
+    GetTabRuleCountsRequest,
+    GetTabRuleCountsResponse | undefined
   >(request);
-  return response?.detections ?? [];
+  return {
+    entries: response?.entries ?? [],
+    detections: response?.detections ?? [],
+  };
 }

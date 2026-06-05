@@ -25,6 +25,7 @@ jest.mock("abort-utils", () => ({
 }));
 
 import { RULE_GROUPS } from "../../lib/rule-groups";
+import { RULE_LABELS } from "../../popup/rule-labels";
 import { RULE_IDS, RULES } from "..";
 import { RULE_DEFAULTS } from "../rule-defaults.generated";
 
@@ -100,6 +101,39 @@ describe("rule catalog invariants", () => {
   it("group ids are unique", () => {
     const ids = RULE_GROUPS.map((group) => group.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  // Popup's per-rule activity section looks up labels via RULE_LABELS. Keep
+  // it in lockstep with the rule catalog so a newly-added rule can't render
+  // as `undefined`. The labels file is hand-maintained (lives under popup/
+  // so background.js purity isn't violated by the strings) — this check is
+  // the canary for that drift.
+  it("every rule has a popup label", () => {
+    const labelIds = Object.keys(RULE_LABELS).toSorted();
+    expect(labelIds).toEqual([...RULE_IDS].toSorted());
+    const blank = Object.entries(RULE_LABELS).filter(
+      ([, value]) => typeof value !== "string" || value.length === 0,
+    );
+    expect(blank).toEqual([]);
+  });
+
+  // Popup label should match the rule's own user-facing `label` so the
+  // popup and the options-page rule list don't drift apart. Catches the
+  // case where a rule's wording is updated in its own file but the
+  // popup-side mirror is forgotten.
+  it("popup labels match each rule's own label", () => {
+    // `RULES: readonly Rule[]` widens `id` to `string`. The previous
+    // "exposes the same id set" invariant guarantees each id is a valid
+    // `RuleId`, so widening RULE_LABELS to a string-keyed view is safe.
+    const labels = RULE_LABELS as Record<string, string>;
+    const mismatches = RULES.filter(
+      (rule) => labels[rule.id] !== rule.label,
+    ).map((rule) => ({
+      ruleId: rule.id,
+      rule: rule.label,
+      popup: labels[rule.id],
+    }));
+    expect(mismatches).toEqual([]);
   });
 
   // Reactive availability accessors must expose both `get` and `subscribe`

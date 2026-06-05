@@ -6,10 +6,13 @@ import { HelpLinks } from "../lib/HelpLinks";
 import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DetectionsSection } from "./DetectionsSection";
+import { PerRuleCountsSection } from "./PerRuleCountsSection";
+import { useTabActivity } from "./use-tab-detections";
 
 export function Popup() {
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
   const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
+  const activity = useTabActivity();
 
   if (enforcementEnabled === null || optionsButtonEnabled === null) {
     return <div className="loading">Loading…</div>;
@@ -62,7 +65,8 @@ export function Popup() {
       >
         Configure rules
       </button>
-      <DetectionsSection />
+      <DetectionsSection detections={activity?.detections ?? []} />
+      <PerRuleCountsSection entries={activity?.entries ?? []} />
       <label className="options-button-toggle">
         <span className="options-button-toggle__text">
           <strong>On-page options button</strong>

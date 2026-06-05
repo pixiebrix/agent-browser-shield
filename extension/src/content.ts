@@ -3,7 +3,7 @@
 
 import { isTopFrame } from "./lib/frame";
 import { startOptionsBadge } from "./lib/options-badge";
-import { startPlaceholderCountReporter } from "./lib/placeholder-count";
+import { startRuleCountReporter } from "./lib/rule-count";
 import { start } from "./lib/rule-engine";
 import { installShadowRootHook } from "./lib/shadow-roots";
 
@@ -25,9 +25,9 @@ start().catch((error: unknown) => {
   console.error("[abs] failed to start rule engine", error);
 });
 
-// Per-frame placeholder reporter — background aggregates across frames into
-// the toolbar badge total.
-startPlaceholderCountReporter();
+// Per-frame, per-rule footprint reporter — background aggregates across
+// frames into the toolbar badge total and the popup's per-rule activity list.
+startRuleCountReporter();
 
 if (isTopFrame()) {
   startOptionsBadge();
