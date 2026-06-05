@@ -177,6 +177,60 @@ describe("prompt-injection-redact", () => {
     expect(document.body.textContent).toContain(FIXTURES.IGNORE_ALL);
   });
 
+  describe("reveal flow", () => {
+    // The container the rule hides is an ancestor of the matched text
+    // node, so the reveal stamp lands on the container — not on anything
+    // walkTextNodes returns. A second apply() stands in for the disable→
+    // enable cycle (and for the watcher-driven re-scan that would happen
+    // if a MutationObserver is ever wired in). Same shape as the
+    // disguised-ad-flag bug fixed in #160.
+    it("does not re-hide a container the user revealed", () => {
+      document.body.innerHTML = `<p>${FIXTURES.IGNORE_ALL}</p>`;
+      promptInjectionRedactRule.apply(document.body);
+
+      const placeholder = document.querySelector<HTMLElement>(
+        `.${PLACEHOLDER_CLASS}`,
+      );
+      placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(document.querySelector("p")).not.toBeNull();
+
+      promptInjectionRedactRule.apply(document.body);
+
+      expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+      expect(document.querySelector("p")).not.toBeNull();
+      expect(document.body.textContent).toContain(FIXTURES.IGNORE_ALL);
+    });
+
+    // Reveal exempts the revealed container (and its descendants) only —
+    // a sibling paragraph with its own injection must still be hidden.
+    it("still hides a sibling container after an unrelated reveal", () => {
+      document.body.innerHTML = `
+        <p id="first">${FIXTURES.IGNORE_ALL}</p>
+        <p id="second">${FIXTURES.DISREGARD}</p>
+      `;
+      promptInjectionRedactRule.apply(document.body);
+      expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+        2,
+      );
+
+      const [firstPlaceholder] = document.querySelectorAll<HTMLElement>(
+        `.${PLACEHOLDER_CLASS}`,
+      );
+      firstPlaceholder?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true }),
+      );
+
+      promptInjectionRedactRule.apply(document.body);
+
+      // First container revealed and stays revealed; second stays hidden.
+      expect(document.querySelector("p#first")).not.toBeNull();
+      expect(document.querySelector("p#second")).toBeNull();
+      expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+        1,
+      );
+    });
+  });
+
   describe("findContainer escalation", () => {
     // When injection text lives directly in <body> with no block-level
     // ancestor, the rule must not redact — wrapping <body> in a placeholder

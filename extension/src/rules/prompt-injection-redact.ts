@@ -13,6 +13,7 @@
 // shipped extension bundle therefore contains plaintext regexes, not
 // `atob` decoding (matters for Chrome Web Store review).
 
+import { REVEALED_ATTR } from "../lib/dom-markers";
 import {
   filterToOutermost,
   isInsidePlaceholder,
@@ -23,6 +24,7 @@ import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
 const RULE_ID = "prompt-injection-redact" as const;
+const REVEALED_SELECTOR = `[${REVEALED_ATTR}="${RULE_ID}"]`;
 const MIN_TEXT_LENGTH = 8;
 
 // Containers we consider a reasonable unit to hide. Walking up from the text
@@ -78,6 +80,15 @@ function apply(root: ParentNode): void {
       continue;
     }
     if (isInsidePlaceholder(element)) {
+      continue;
+    }
+    // The container is an ancestor of the matched text node, so the reveal
+    // stamp lands here — not on the text node we walked from. If a previous
+    // run hid this container and the user revealed it, a re-apply (rule
+    // disable→enable, or a future MutationObserver-driven re-scan) would
+    // otherwise re-hide the same block. Same shape as the disguised-ad-flag
+    // bug fixed in #160.
+    if (element.closest(REVEALED_SELECTOR)) {
       continue;
     }
     replaceWithBlockPlaceholder(
