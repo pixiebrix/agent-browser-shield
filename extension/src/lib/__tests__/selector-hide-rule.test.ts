@@ -11,14 +11,29 @@
 import { URLPattern } from "urlpattern-polyfill";
 import { HIDDEN_ATTR } from "../dom-markers";
 import { PLACEHOLDER_CLASS } from "../placeholder";
+import { __resetRouteChangeForTesting } from "../route-change";
 import { createSelectorHideRule } from "../selector-hide-rule";
+import { __resetSelectorTokenIndexForTesting } from "../selector-token-index";
 import type { RuleId } from "../storage";
+import { __resetSubtreeWatcherForTesting } from "../subtree-watcher";
 
 const RULE_ID = "footer-redact" as RuleId;
 const HIDE_LABEL = "[hidden — click to reveal]";
 
 beforeEach(() => {
   document.body.innerHTML = "";
+  // Reset the shared dispatcher / watcher / route-change subscription so
+  // tests that build watchSubtrees=true rules don't leak registrations
+  // across cases.
+  __resetSelectorTokenIndexForTesting();
+  __resetSubtreeWatcherForTesting();
+  __resetRouteChangeForTesting();
+});
+
+afterEach(() => {
+  __resetSelectorTokenIndexForTesting();
+  __resetSubtreeWatcherForTesting();
+  __resetRouteChangeForTesting();
 });
 
 describe("createSelectorHideRule constructor", () => {
@@ -495,5 +510,230 @@ describe("REVEALED_ATTR ancestor skip", () => {
 
     expect(document.querySelector("#inner")).not.toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+});
+
+describe("scan from inserted root", () => {
+  // Once the token-index dispatcher is online, the watcher hands each
+  // rule the added subtree root — not document.body. The scan has to
+  // match the root itself, not just its descendants; otherwise a
+  // widget whose top-level container is the match (HubSpot, OneTrust,
+  // Cookiebot) slips through every batch.
+
+  it("matches the root element itself when its id matches a selector", () => {
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#hubspot-messages-iframe-container"],
+      removeEntirely: true,
+    });
+    const widget = document.createElement("div");
+    widget.id = "hubspot-messages-iframe-container";
+    document.body.append(widget);
+
+    // Scan from the widget itself (the dispatcher's call shape).
+    rule.apply(widget);
+
+    expect(widget.style.display).toBe("none");
+    expect(widget.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
+  });
+
+  it("matches the root element itself when one of its classes matches", () => {
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: [".cookie-banner"],
+      removeEntirely: true,
+    });
+    const banner = document.createElement("div");
+    banner.className = "cookie-banner sticky";
+    document.body.append(banner);
+
+    rule.apply(banner);
+
+    expect(banner.style.display).toBe("none");
+  });
+
+  it("still matches descendants of the root", () => {
+    // The root itself doesn't match; a descendant does. The previous
+    // behavior (scan from document.body) handled this; the new behavior
+    // (scan from added root) must still walk descendants via QSA.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: [".inner-target"],
+      hideLabel: HIDE_LABEL,
+    });
+    const wrapper = document.createElement("section");
+    const inner = document.createElement("div");
+    inner.className = "inner-target";
+    inner.textContent = "x";
+    wrapper.append(inner);
+    document.body.append(wrapper);
+
+    rule.apply(wrapper);
+
+    expect(wrapper.querySelector(".inner-target")).toBeNull();
+    expect(wrapper.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("matches both root and a descendant when both qualify (outermost dedupe wins)", () => {
+    // The outermost-match filter must still apply when scanning from
+    // an added root that itself matches and contains a deeper match.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      hideLabel: HIDE_LABEL,
+    });
+    const outer = document.createElement("footer");
+    outer.id = "outer";
+    const inner = document.createElement("footer");
+    inner.id = "inner";
+    outer.append(inner);
+    document.body.append(outer);
+
+    rule.apply(outer);
+
+    // Only one placeholder lands — outer subsumed inner.
+    expect(document.querySelector("#outer")).toBeNull();
+    expect(document.querySelector("#inner")).toBeNull();
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
+  });
+});
+
+describe("subtree dispatcher integration", () => {
+  // Verifies the end-to-end path: watchSubtrees=true rule's apply
+  // registers with the token index, a mutation lands on document.body,
+  // the shared dispatcher routes to this rule, scan runs on the added
+  // root.
+
+  const THROTTLE_MS = 250;
+
+  async function flushMutations(): Promise<void> {
+    await Promise.resolve();
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("hides a top-level container injected after apply", async () => {
+    // The classic chat-widget shape: rule mounts first, then the
+    // vendor script injects the widget container as a direct child of
+    // document.body. With watchSubtrees=true the dispatcher catches it.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#late-widget"],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+
+    const widget = document.createElement("div");
+    widget.id = "late-widget";
+    document.body.append(widget);
+
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    expect(widget.style.display).toBe("none");
+
+    rule.teardown?.();
+  });
+
+  it("ignores additions whose tokens don't appear in this rule's selectors", async () => {
+    // Index dispatch means we shouldn't even run the rule's scan
+    // (no QSA on the added subtree) when no token matches.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#target"],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+
+    const unrelated = document.createElement("div");
+    unrelated.id = "something-else";
+    document.body.append(unrelated);
+
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    expect(unrelated.style.display).toBe("");
+
+    rule.teardown?.();
+  });
+
+  it("teardown unregisters from the dispatcher", async () => {
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#target"],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+    rule.teardown?.();
+
+    const widget = document.createElement("div");
+    widget.id = "target";
+    document.body.append(widget);
+
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    // Teardown ran — the dispatcher no longer routes to this rule,
+    // so the post-teardown injection stays untouched.
+    expect(widget.style.display).toBe("");
+  });
+
+  it("registers siteRule selectors in the token index too", async () => {
+    // Without this, a URL-gated selector would never be triggered by
+    // the dispatcher even when the URL matches — the rule's scan would
+    // run only via complex-fallback (if it landed there at all).
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: [],
+      siteRules: [
+        {
+          patterns: [new URLPattern({ pathname: "/*" })],
+          selectors: ["#site-specific"],
+        },
+      ],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+
+    const widget = document.createElement("div");
+    widget.id = "site-specific";
+    document.body.append(widget);
+
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    expect(widget.style.display).toBe("none");
+
+    rule.teardown?.();
   });
 });

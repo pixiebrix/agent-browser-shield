@@ -18,8 +18,8 @@ import type { Rule } from "../rules/types";
 import { HIDDEN_ATTR, REVEALED_ATTR } from "./dom-markers";
 import { filterToOutermost } from "./dom-utils";
 import { PLACEHOLDER_CLASS, replaceWithBlockPlaceholder } from "./placeholder";
+import { registerRule as registerWithTokenIndex } from "./selector-token-index";
 import type { RuleId } from "./storage";
-import { createSubtreeWatcher } from "./subtree-watcher";
 
 export interface SiteRule {
   patterns: URLPattern[];
@@ -116,7 +116,21 @@ export function createSelectorHideRule(
       return;
     }
 
-    let candidates = [...root.querySelectorAll<HTMLElement>(memoJoined)];
+    // Include `root` itself when it's an Element that matches — the
+    // shared dispatcher now hands us inserted subtree roots directly,
+    // and querySelectorAll only matches descendants. Without this,
+    // top-level container insertions (HubSpot's
+    // #hubspot-messages-iframe-container, OneTrust's
+    // #onetrust-banner-sdk) would slip through every batch where
+    // they're the added root.
+    let candidates: HTMLElement[] = [];
+    if (
+      root.nodeType === Node.ELEMENT_NODE &&
+      (root as Element).matches(memoJoined)
+    ) {
+      candidates.push(root as HTMLElement);
+    }
+    candidates.push(...root.querySelectorAll<HTMLElement>(memoJoined));
     if (candidateFilter) {
       candidates = candidates.filter(candidateFilter);
     }
@@ -165,29 +179,38 @@ export function createSelectorHideRule(
     }
   }
 
-  // When the watcher is enabled, rescan from document.body on every batch
-  // rather than from the added subtree roots. MutationObserver hands us the
-  // newly-inserted element itself, but querySelectorAll on that element does
-  // not match the element itself — so a widget whose top-level container is
-  // appended directly (e.g., HubSpot's #hubspot-messages-iframe-container)
-  // would be missed. Scanning from body is idempotent thanks to the
-  // placeholder-skip in `scan`, and the throttle inside the watcher coalesces
-  // bursts of mutations into a single pass.
-  const watcher = watchSubtrees
-    ? createSubtreeWatcher({
-        skipPlaceholderSubtrees: true,
-        onSubtrees: () => {
-          scan(document.body);
-        },
-      })
-    : null;
+  // Build the union selector list passed to the token index. Indexing
+  // siteRule selectors alongside alwaysOn means rules see no surprise
+  // misses when a URL-gated id/class appears on the current page —
+  // even though the rule's effective `memoJoined` for that URL may
+  // include only a subset. Over-trigger cost is bounded: the dispatch
+  // costs one no-op scan call against the added root, not a full-doc
+  // QSA against all selectors.
+  const allSelectors: string[] = [...alwaysOnSelectors];
+  for (const siteRule of siteRules) {
+    allSelectors.push(...siteRule.selectors);
+  }
+
+  let unregisterFromTokenIndex: (() => void) | null = null;
 
   function apply(root: ParentNode): void {
     scan(root);
-    watcher?.start(root);
+    if (watchSubtrees && !unregisterFromTokenIndex) {
+      // Lazy-register on first apply so module-load doesn't touch the
+      // document body before the rule engine asks for it. The shared
+      // dispatcher owns the watcher and fans out per added subtree
+      // root — this rule's dispatchScan only fires when the token
+      // index says one of `id` / `class` tokens appeared, or when the
+      // rule landed in complex-fallback.
+      unregisterFromTokenIndex = registerWithTokenIndex({
+        ruleId: id,
+        selectors: allSelectors,
+        dispatchScan: scan,
+      });
+    }
   }
 
-  const rule: Rule = watcher
+  const rule: Rule = watchSubtrees
     ? {
         id,
         label,
@@ -195,7 +218,8 @@ export function createSelectorHideRule(
         topFrameOnly,
         apply,
         teardown: () => {
-          watcher.stop();
+          unregisterFromTokenIndex?.();
+          unregisterFromTokenIndex = null;
         },
       }
     : { id, label, description, topFrameOnly, apply };
