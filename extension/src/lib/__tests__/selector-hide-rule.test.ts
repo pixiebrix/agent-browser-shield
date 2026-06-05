@@ -704,6 +704,66 @@ describe("subtree dispatcher integration", () => {
     expect(widget.style.display).toBe("");
   });
 
+  it("catches a post-insert id assignment (attribute-mutation dispatch)", async () => {
+    // jQuery-style pattern: page injects a generic <div>, then later
+    // sets the id that the rule targets. The token-index dispatcher
+    // opts into attribute observation so this no longer slips through.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#late-id"],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+
+    const widget = document.createElement("div");
+    document.body.append(widget);
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+    // No id at insertion time — the rule shouldn't have hidden it.
+    expect(widget.style.display).toBe("");
+
+    // The page sets the id afterward. With observeAttributes the
+    // dispatcher re-runs and hides the now-matching element.
+    widget.id = "late-id";
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    expect(widget.style.display).toBe("none");
+
+    rule.teardown?.();
+  });
+
+  it("catches a post-insert class assignment (attribute-mutation dispatch)", async () => {
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: [".late-class"],
+      removeEntirely: true,
+      watchSubtrees: true,
+    });
+
+    rule.apply(document.body);
+
+    const widget = document.createElement("div");
+    document.body.append(widget);
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+    expect(widget.style.display).toBe("");
+
+    widget.classList.add("late-class");
+    await flushMutations();
+    jest.advanceTimersByTime(THROTTLE_MS);
+
+    expect(widget.style.display).toBe("none");
+
+    rule.teardown?.();
+  });
+
   it("registers siteRule selectors in the token index too", async () => {
     // Without this, a URL-gated selector would never be triggered by
     // the dispatcher even when the URL matches — the rule's scan would

@@ -153,6 +153,11 @@ function ensureWatcherStarted(): void {
   }
   sharedWatcher = createSubtreeWatcher({
     skipPlaceholderSubtrees: true,
+    // Catch jQuery-style `element.id = 'foo'` / `classList.add('foo')`
+    // on already-inserted nodes — without this, the token dispatcher
+    // would silently miss any rule whose match was attached to a
+    // post-insert attribute change.
+    observeAttributes: true,
     onSubtrees: dispatchToRules,
   });
   sharedWatcher.start(document.body);

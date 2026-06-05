@@ -980,4 +980,246 @@ describe("createSubtreeWatcher", () => {
       watcherB.stop();
     });
   });
+
+  describe("observeAttributes", () => {
+    // Opt-in: only subscribers with observeAttributes:true hear about
+    // id/class mutations on already-inserted nodes. Other subscribers
+    // on the same router are unaffected.
+
+    it("delivers an attribute mutation as a subtree root", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({
+        onSubtrees,
+        observeAttributes: true,
+      });
+      watcher.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      // Initial drain from the addition itself.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      onSubtrees.mockClear();
+
+      // Mutate an observed attribute — should fire onSubtrees a second
+      // time with the same div as the root.
+      div.id = "now-i-have-an-id";
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([div]);
+      watcher.stop();
+    });
+
+    it("delivers a class mutation as a subtree root", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({
+        onSubtrees,
+        observeAttributes: true,
+      });
+      watcher.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      div.classList.add("late-class");
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([div]);
+      watcher.stop();
+    });
+
+    it("ignores attribute mutations for subscribers that did not opt in", async () => {
+      // Two subscribers on document.body: one opted in, one not. A
+      // post-insert attribute mutation fires only the opted-in one.
+      const optedIn = jest.fn();
+      const optedOut = jest.fn();
+      const watcherIn = createSubtreeWatcher({
+        onSubtrees: optedIn,
+        observeAttributes: true,
+      });
+      const watcherOut = createSubtreeWatcher({ onSubtrees: optedOut });
+      watcherIn.start(document.body);
+      watcherOut.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      optedIn.mockClear();
+      optedOut.mockClear();
+
+      div.id = "post-insert-id";
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(optedIn).toHaveBeenCalledTimes(1);
+      expect(optedOut).not.toHaveBeenCalled();
+
+      watcherIn.stop();
+      watcherOut.stop();
+    });
+
+    it("upgrades the shared MO when an attribute subscriber joins after a non-attribute one", async () => {
+      // Order matters: the first subscriber doesn't want attributes, so
+      // the router starts with childList+subtree only. When a second
+      // subscriber with observeAttributes joins, the MO must be
+      // re-configured so attribute mutations actually fire.
+      const optedOut = jest.fn();
+      const optedIn = jest.fn();
+      const watcherOut = createSubtreeWatcher({ onSubtrees: optedOut });
+      const watcherIn = createSubtreeWatcher({
+        onSubtrees: optedIn,
+        observeAttributes: true,
+      });
+
+      watcherOut.start(document.body);
+      watcherIn.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      optedIn.mockClear();
+      optedOut.mockClear();
+
+      div.classList.add("late-class");
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(optedIn).toHaveBeenCalledTimes(1);
+      expect(optedOut).not.toHaveBeenCalled();
+
+      watcherIn.stop();
+      watcherOut.stop();
+    });
+
+    it("downgrades the shared MO when the last attribute subscriber stops", async () => {
+      // The opted-in watcher leaves; the remaining (non-opted) watcher
+      // should no longer be re-routed attribute mutations.
+      const optedIn = jest.fn();
+      const optedOut = jest.fn();
+      const watcherIn = createSubtreeWatcher({
+        onSubtrees: optedIn,
+        observeAttributes: true,
+      });
+      const watcherOut = createSubtreeWatcher({ onSubtrees: optedOut });
+
+      watcherIn.start(document.body);
+      watcherOut.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // Verify the in watcher is actually getting attribute mutations
+      // while it's still subscribed.
+      optedIn.mockClear();
+      div.id = "first";
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(optedIn).toHaveBeenCalledTimes(1);
+
+      // Drop the opted-in watcher. The remaining opted-out watcher
+      // should not see subsequent attribute mutations even though it's
+      // still active on the same router.
+      watcherIn.stop();
+      optedOut.mockClear();
+
+      div.id = "second";
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(optedOut).not.toHaveBeenCalled();
+
+      watcherOut.stop();
+    });
+
+    it("drops attribute mutations on placeholder elements when skipPlaceholderSubtrees is on", async () => {
+      // Same gate as childList: a class change on a placeholder element
+      // doesn't surface to subscribers that asked to skip placeholders.
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({
+        onSubtrees,
+        observeAttributes: true,
+        skipPlaceholderSubtrees: true,
+      });
+
+      const placeholder = document.createElement("div");
+      placeholder.classList.add(PLACEHOLDER_CLASS);
+      document.body.append(placeholder);
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      // Add an unrelated id to the placeholder. The attribute mutation
+      // fires, but the placeholder gate filters it out.
+      placeholder.id = "x";
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("filters detached targets out of attribute-mutation drains", async () => {
+      // If the element is detached by the time the MO callback fires,
+      // the enqueue should drop it — same isConnected gate as childList.
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({
+        onSubtrees,
+        observeAttributes: true,
+      });
+      watcher.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      // Mutate attribute, then detach before the MO microtask runs.
+      div.id = "transient";
+      div.remove();
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("does not fire on attribute mutations when no subscriber opted in", async () => {
+      // Sanity check: pre-existing rules that don't opt in keep seeing
+      // exactly the childList shape they did before — even when an
+      // attribute mutates on the observed root.
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      div.id = "should-not-fire";
+      div.classList.add("also-should-not-fire");
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+  });
 });
