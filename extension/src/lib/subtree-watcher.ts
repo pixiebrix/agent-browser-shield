@@ -457,12 +457,14 @@ function handleRouteChange(router: Router): void {
     }
   };
   if (document.hidden) {
-    // Chromium pauses rAF callbacks for hidden tabs, so the sweep would never
-    // fire — the runOnInactive=true path explicitly wants this body re-scan
-    // to land while the tab is in the background. setTimeout still fires
-    // (clamped to ~1s by background-throttling, acceptable for a safety-net
-    // sweep), and the visible-tab path keeps using rAF to land after the
-    // framework's commit.
+    // Chrome documents rAF as paused for background tabs (developer.chrome
+    // .com/blog/background_tabs). Exemptions (audible audio, WebRTC,
+    // devtools attached) can keep it firing in practice, but the runOnInactive
+    // case is opt-in for hidden-tab coverage and should not depend on those
+    // exemptions being present. setTimeout is clamped to ~1s in background
+    // tabs but reliably fires, which is acceptable for the safety-net sweep.
+    // The visible-tab path keeps using rAF to land after the framework's
+    // commit.
     router.routeSweepHandle = setTimeout(sweep, 0) as unknown as number;
     router.routeSweepIsTimeout = true;
   } else {

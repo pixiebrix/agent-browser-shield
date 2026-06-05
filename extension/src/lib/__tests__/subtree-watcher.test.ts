@@ -1716,10 +1716,13 @@ describe("createSubtreeWatcher", () => {
     });
 
     it("uses setTimeout (not rAF) for the route sweep while hidden", async () => {
-      // Chromium pauses requestAnimationFrame entirely in background tabs,
-      // so the route-change body sweep has to schedule with setTimeout when
-      // the change arrives while hidden. Jest's fake-timer rAF does not
-      // simulate the pause, so spy on the real callable to assert directly.
+      // Chrome documents rAF as paused in background tabs (see
+      // developer.chrome.com/blog/background_tabs). Documented exemptions
+      // (audible audio, WebRTC) and devtools attachment can keep it firing,
+      // so the safety-net sweep can't rely on either outcome — fall back to
+      // setTimeout, which is clamped to ~1s in background tabs but does
+      // fire. Spy on both schedulers since Jest's fake timers don't
+      // simulate the visibility-based pause.
       await runOnInactiveTabsStorage.set(true);
 
       const onSubtrees = jest.fn();
