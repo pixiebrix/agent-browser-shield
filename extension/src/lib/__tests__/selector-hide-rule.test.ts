@@ -141,6 +141,95 @@ describe("selectorsFor URL composition", () => {
   });
 });
 
+describe("selectorsFor memoization", () => {
+  it("returns equal selector lists for repeated calls with the same URL", () => {
+    const { selectorsFor } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      siteRules: [
+        {
+          patterns: [new URLPattern({ hostname: "{*.}?amazon.{*}" })],
+          selectors: ["#navFooter"],
+        },
+      ],
+      hideLabel: HIDE_LABEL,
+    });
+
+    const first = selectorsFor("https://www.amazon.com/dp/X");
+    const second = selectorsFor("https://www.amazon.com/dp/X");
+    expect(second).toEqual(first);
+  });
+
+  it("recomputes the selector list when the URL changes (memo invalidation)", () => {
+    const { selectorsFor } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      siteRules: [
+        {
+          patterns: [new URLPattern({ hostname: "{*.}?amazon.{*}" })],
+          selectors: ["#navFooter"],
+        },
+      ],
+      hideLabel: HIDE_LABEL,
+    });
+
+    expect(selectorsFor("https://example.com/")).toEqual(["footer"]);
+    // Different URL — site rule must now apply.
+    expect(selectorsFor("https://www.amazon.com/dp/X")).toEqual([
+      "footer",
+      "#navFooter",
+    ]);
+    // And switching back returns the original shape.
+    expect(selectorsFor("https://example.com/")).toEqual(["footer"]);
+  });
+
+  it("returns a fresh array on each call — caller mutation does not poison the memo", () => {
+    const { selectorsFor } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer", "main"],
+      hideLabel: HIDE_LABEL,
+    });
+
+    const first = selectorsFor("https://example.com/");
+    first.push("INJECTED");
+    first.pop();
+    first.length = 0;
+
+    // Subsequent call must not see any of the prior caller's mutations.
+    expect(selectorsFor("https://example.com/")).toEqual(["footer", "main"]);
+  });
+
+  it("rules built from separate factory calls have independent memos", () => {
+    const ruleA = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      hideLabel: HIDE_LABEL,
+    });
+    const ruleB = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["aside"],
+      hideLabel: HIDE_LABEL,
+    });
+
+    // Same URL — but each rule's memo holds its own selector list.
+    expect(ruleA.selectorsFor("https://example.com/")).toEqual(["footer"]);
+    expect(ruleB.selectorsFor("https://example.com/")).toEqual(["aside"]);
+    // And the second access to each is still its own value.
+    expect(ruleA.selectorsFor("https://example.com/")).toEqual(["footer"]);
+    expect(ruleB.selectorsFor("https://example.com/")).toEqual(["aside"]);
+  });
+});
+
 describe("scan behavior", () => {
   it("short-circuits when the effective selector list is empty", () => {
     // No alwaysOnSelectors and no matching siteRules → empty list → no scan.
