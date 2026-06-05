@@ -10,6 +10,7 @@
 
 import throttle from "lodash/throttle";
 import { PLACEHOLDER_CLASS } from "./placeholder";
+import { subscribeRouteChange } from "./route-change";
 
 // Tags whose insertion is never interesting to any rule. Filtering at enqueue
 // keeps `pending` small during noisy bursts where a framework injects
@@ -58,6 +59,8 @@ export function createSubtreeWatcher(
   let throttledScan: ReturnType<typeof throttle> | null = null;
   let observedTarget: Node | null = null;
   let visibilityListener: (() => void) | null = null;
+  let unsubscribeRouteChange: (() => void) | null = null;
+  let routeSweepHandle: number | null = null;
   const pending = new Set<Element>();
 
   function drain(): void {
@@ -79,6 +82,15 @@ export function createSubtreeWatcher(
         }
         const element = added as Element;
         if (IGNORE_TAGS.has(element.tagName)) {
+          continue;
+        }
+        // React-style reconciliation routinely adds-then-removes a node in
+        // the same tick. By the time MutationObserver fires (microtask
+        // afterward), the addition record is still there but the node is
+        // already detached. drain() filters by isConnected too — checking
+        // at enqueue avoids buffering churn in pending during a 5k-node
+        // route swap with high in-tick removal rate.
+        if (!element.isConnected) {
           continue;
         }
         if (skipPlaceholderSubtrees) {
@@ -104,6 +116,40 @@ export function createSubtreeWatcher(
       return;
     }
     throttledScan?.();
+  }
+
+  function handleRouteChange(): void {
+    if (!observer) {
+      return;
+    }
+    // Cancel anything pending — the new route's content will arrive in the
+    // next render and we want the user-visible hide to happen against the
+    // new tree, not as a tail of the old throttle window. Discard buffered
+    // MutationRecords for the same reason: they describe the old route's
+    // teardown, which we're about to re-scan past anyway.
+    observer.takeRecords();
+    throttledScan?.cancel();
+    pending.clear();
+
+    // Wait one frame so React/Vue/Svelte can finish committing the new
+    // route's DOM, then sweep document.body once. Passing document.body
+    // makes rules that scan from their root argument do a full re-scan;
+    // selector-hide-rule's onSubtrees already scans from document.body
+    // regardless — both shapes end up doing the right thing.
+    if (routeSweepHandle !== null) {
+      cancelAnimationFrame(routeSweepHandle);
+    }
+    routeSweepHandle = requestAnimationFrame(() => {
+      routeSweepHandle = null;
+      if (!observer || document.hidden) {
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!document.body) {
+        return;
+      }
+      onSubtrees([document.body]);
+    });
   }
 
   function handleVisibilityChange(): void {
@@ -151,6 +197,7 @@ export function createSubtreeWatcher(
       }
       visibilityListener = handleVisibilityChange;
       document.addEventListener("visibilitychange", visibilityListener);
+      unsubscribeRouteChange = subscribeRouteChange(handleRouteChange);
     },
     stop(): void {
       observer?.disconnect();
@@ -162,6 +209,12 @@ export function createSubtreeWatcher(
       if (visibilityListener) {
         document.removeEventListener("visibilitychange", visibilityListener);
         visibilityListener = null;
+      }
+      unsubscribeRouteChange?.();
+      unsubscribeRouteChange = null;
+      if (routeSweepHandle !== null) {
+        cancelAnimationFrame(routeSweepHandle);
+        routeSweepHandle = null;
       }
     },
   };
