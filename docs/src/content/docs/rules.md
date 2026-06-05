@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 36 rules, each independently toggleable from the extension's
+The extension ships 37 rules, each independently toggleable from the extension's
 options page. Rules marked **default: on** are active on fresh install;
 **default: off** rules must be enabled manually.
 
@@ -601,7 +601,7 @@ generalized to the *Sneaking* family in Mathur et al.
 #### Annotate Drip-Pricing Fees (Experimental)
 
 - **ID:** `hidden-fee-annotate`
-- **Default:** off
+- **Default:** on
 
 On checkout-like URLs, prepend a visible `[abs: drip-pricing fee]` annotation to
 order-summary line items whose label matches a curated mandatory-fee phrase set
@@ -613,9 +613,10 @@ label, an order-summary ancestor (`<table>`, `[role="region"]` with
 order-summary labelling, `<aside>`/`<section>` with cart-shaped class or id, or
 schema.org `Order` microdata), an adjacent currency amount, and a
 single-item-cart skip so that flows where the fee itself is the product
-(utility-bill portals, court e-filing, DMV) are not annotated. Off by default
-while real-world per-rule activity counts (see the extension popup) establish
-the false-positive rate; posture mirrors `schema-trust-sanitize`.
+(utility-bill portals, court e-filing, DMV) are not annotated. The action is
+annotation-only, so a misfire is at worst an extra chip on a row; per-rule
+activity counts (in the extension popup) and an inline per-host denylist let us
+react quickly if live signal surfaces a false-positive cluster.
 
 Motivated by the FTC
 [Trade Regulation Rule on Unfair or Deceptive Fees](https://www.ftc.gov/news-events/news/press-releases/2024/12/federal-trade-commission-announces-bipartisan-rule-banning-junk-ticket-hotel-fees)

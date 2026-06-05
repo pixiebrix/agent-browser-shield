@@ -31,9 +31,10 @@
 //      shipping, tip, gratuity — those have their own disclosure regime).
 //   6. Per-host denylist for known false-positive hosts (empty at launch;
 //      populate via PR review as real-world counts identify them).
-// Ships default-off; promote to default-on after the per-rule activity
-// signal window (#174) shows the FP rate is acceptable, mirroring
-// `schema-trust-sanitize`'s rollout posture.
+// Ships default-on (Experimental tag retained) because the action is
+// annotate-only — worst case is an extra chip on a row, not a destructive
+// edit. Per-rule activity counts (#174) and the per-host denylist let us
+// react if live signal surfaces a false-positive cluster.
 
 import { isCheckoutUrl } from "../lib/checkout-url";
 import {
