@@ -189,6 +189,24 @@ describe("crossOriginFrameRedactRule", () => {
       expect(getPlaceholder()).not.toBeNull();
     });
 
+    // Regression: when an iframe is appended directly (no wrapper), the
+    // MutationObserver root *is* the iframe, and querySelectorAll on it
+    // returns nothing. The watcher must rescan from document.body to catch
+    // this case.
+    it("replaces a bare cross-origin iframe appended directly to body", async () => {
+      crossOriginFrameRedactRule.apply(document.body);
+
+      const iframe = document.createElement("iframe");
+      iframe.src = "https://example.com/widget";
+      document.body.append(iframe);
+
+      await flushMutations();
+      jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+      expect(document.querySelector("iframe")).toBeNull();
+      expect(getPlaceholder()).not.toBeNull();
+    });
+
     it("teardown stops the observer so later additions are ignored", async () => {
       crossOriginFrameRedactRule.apply(document.body);
       crossOriginFrameRedactRule.teardown();
