@@ -44,6 +44,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "link-spoof-annotate",
       "trust-badge-annotate",
       "webdriver-probe-annotate",
+      "closed-shadow-root-annotate",
     ],
   },
   {

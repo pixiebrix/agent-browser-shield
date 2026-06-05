@@ -33,6 +33,7 @@ const tabDetections = new Map<number, Map<DetectionKind, DetectionPayload>>();
 const DETECTION_KIND_TO_RULE_ID = {
   "roach-motel": "roach-motel-annotate",
   "webdriver-probe": "webdriver-probe-annotate",
+  "closed-shadow-root": "closed-shadow-root-annotate",
 } as const satisfies Record<DetectionKind, string>;
 
 // Pleasant blue — clearly an extension affordance, not a warning/error.

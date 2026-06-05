@@ -34,6 +34,7 @@
     "trust-badge-annotate": false,
     "disguised-ad-flag": true,
     "encoded-payload-redact": true,
-    "webdriver-probe-annotate": false
+    "webdriver-probe-annotate": false,
+    "closed-shadow-root-annotate": false
   }
 }

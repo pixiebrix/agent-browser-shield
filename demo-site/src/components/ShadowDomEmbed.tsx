@@ -20,9 +20,34 @@ import { INJECTIONS } from "../data/injection-fixtures";
 // second card exercises the Tier 3 adopted-stylesheet path: that
 // class only matches via the EasyList generic CSS sheet, which now
 // adopts into open shadow roots so the hide applies here too.
+//
+// A second host below mounts a custom element with a CLOSED shadow root
+// to exercise `closed-shadow-root-annotate`. By spec the rules cannot
+// see inside; the heuristic only confirms it's there.
+
+const CLOSED_TAG = "abs-closed-widget";
+
+if (typeof customElements !== "undefined" && !customElements.get(CLOSED_TAG)) {
+  customElements.define(
+    CLOSED_TAG,
+    class extends HTMLElement {
+      constructor() {
+        super();
+        const shadow = this.attachShadow({ mode: "closed" });
+        const inner = document.createElement("div");
+        inner.style.cssText =
+          "padding:6px 10px;border:1px solid #7c3aed;background:#f5f3ff;color:#4c1d95;font:13px system-ui;border-radius:4px;";
+        inner.textContent =
+          "Closed-shadow widget — contents are invisible to ABS by spec.";
+        shadow.append(inner);
+      }
+    },
+  );
+}
 
 export default function ShadowDomEmbed() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const closedHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -75,6 +100,18 @@ export default function ShadowDomEmbed() {
     };
   }, []);
 
+  useEffect(() => {
+    const host = closedHostRef.current;
+    if (!host || host.querySelector(CLOSED_TAG)) {
+      return;
+    }
+    const widget = document.createElement(CLOSED_TAG);
+    host.append(widget);
+    return () => {
+      widget.remove();
+    };
+  }, []);
+
   return (
     <section
       aria-label="Shadow-DOM third-party widgets"
@@ -97,6 +134,18 @@ export default function ShadowDomEmbed() {
       <div
         ref={hostRef}
         className="shadow-host mt-3 rounded border border-dashed border-slate-300 p-3"
+      />
+      <p className="mt-4 text-sm text-stone-700">
+        The widget below mounts inside a <em>closed</em> shadow root. ABS cannot
+        reach inside by spec — every rule passes its contents through untouched.
+        With <code>closed-shadow-root-annotate</code> enabled, a
+        screen-reader-only landmark is prepended to the document noting that the
+        page is using closed shadow roots and content here is invisible to the
+        extension.
+      </p>
+      <div
+        ref={closedHostRef}
+        className="closed-shadow-host mt-3 rounded border border-dashed border-slate-300 p-3"
       />
     </section>
   );

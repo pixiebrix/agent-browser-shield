@@ -12,7 +12,10 @@
 
 import type { RoachMotelDifficulty } from "../rules/site-data.generated";
 
-export type DetectionKind = "roach-motel" | "webdriver-probe";
+export type DetectionKind =
+  | "roach-motel"
+  | "webdriver-probe"
+  | "closed-shadow-root";
 
 export interface RoachMotelDetectionPayload {
   kind: "roach-motel";
@@ -29,9 +32,16 @@ export interface WebdriverProbeDetectionPayload {
   url: string;
 }
 
+export interface ClosedShadowRootDetectionPayload {
+  kind: "closed-shadow-root";
+  host: string;
+  url: string;
+}
+
 export type DetectionPayload =
   | RoachMotelDetectionPayload
-  | WebdriverProbeDetectionPayload;
+  | WebdriverProbeDetectionPayload
+  | ClosedShadowRootDetectionPayload;
 
 export interface RuleDetectionMessage {
   type: "rule-detection";
