@@ -54,4 +54,5 @@ export const RULE_LABELS: Readonly<Record<RuleId, string>> = {
   "encoded-payload-redact": "Redact Encoded Payloads",
   "webdriver-probe-annotate": "Flag navigator.webdriver Reads",
   "closed-shadow-root-annotate": "Flag Closed Shadow Roots",
+  "hidden-fee-annotate": "Annotate Drip-Pricing Fees (Experimental)",
 } as const satisfies Record<RuleId, string>;

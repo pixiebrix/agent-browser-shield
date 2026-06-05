@@ -15,6 +15,7 @@ import { crossOriginFrameRedactRule } from "./cross-origin-frame-redact";
 import { disguisedAdFlagRule } from "./disguised-ad-flag";
 import { encodedPayloadRedactRule } from "./encoded-payload-redact";
 import { footerRedactRule } from "./footer-redact";
+import { hiddenFeeAnnotateRule } from "./hidden-fee-annotate";
 import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
 import { irrelevantSectionsRedactRule } from "./irrelevant-sections-redact";
@@ -90,6 +91,7 @@ const RULES_TUPLE = [
   encodedPayloadRedactRule,
   webdriverProbeAnnotateRule,
   closedShadowRootAnnotateRule,
+  hiddenFeeAnnotateRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];
