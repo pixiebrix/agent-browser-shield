@@ -597,4 +597,122 @@ describe("createSubtreeWatcher", () => {
       watcher.stop();
     });
   });
+
+  describe("cross-state interactions", () => {
+    function setHidden(hidden: boolean): void {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    function fireRouteChange(toUrl: string): void {
+      history.replaceState(null, "", toUrl);
+      globalThis.dispatchEvent(new Event("popstate"));
+    }
+
+    it("cancels the scheduled rAF sweep when the tab hides between route change and frame", () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      fireRouteChange("/route-b");
+      // Tab goes hidden BEFORE the rAF fires — the scheduled sweep checks
+      // document.hidden inside the rAF and bails.
+      setHidden(true);
+
+      jest.advanceTimersToNextFrame();
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("burst flush followed by route change: each fires once", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // Burst above threshold drains immediately.
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < 600; i++) {
+        fragment.append(document.createElement("div"));
+      }
+      document.body.append(fragment);
+      await flushMutations();
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+
+      // Then a route change schedules its own rAF sweep.
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+      expect(onSubtrees).toHaveBeenCalledTimes(2);
+
+      const [secondCallRoots] = onSubtrees.mock.calls[1] as [Element[]];
+      expect(secondCallRoots).toEqual([document.body]);
+      watcher.stop();
+    });
+
+    it("mutations during the rAF wait drain on the next throttle window", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      fireRouteChange("/route-b");
+      // A mutation arrives between the route-change signal and the rAF.
+      document.body.append(document.createElement("article"));
+      await flushMutations();
+
+      jest.advanceTimersToNextFrame();
+      // Route sweep ran with document.body.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [firstCallRoots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(firstCallRoots).toEqual([document.body]);
+
+      // The mid-wait mutation still drains on its own throttle window
+      // — not swallowed by the route-change cancellation, since it
+      // arrived AFTER the cancel.
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(2);
+      watcher.stop();
+    });
+
+    it("visibility flushes pending and a route change while hidden does not sweep", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      // Hide → pending drains via flush.
+      setHidden(true);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+
+      // Route change while hidden — listener still fires (we subscribe in
+      // start, not start-when-visible), but the rAF guards on hidden.
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("route change after a normal drain still triggers the rAF sweep", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+
+      // Pending is empty when the route change comes in — the rAF still
+      // schedules and sweeps from document.body.
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+      expect(onSubtrees).toHaveBeenCalledTimes(2);
+      const [secondCallRoots] = onSubtrees.mock.calls[1] as [Element[]];
+      expect(secondCallRoots).toEqual([document.body]);
+      watcher.stop();
+    });
+  });
 });
