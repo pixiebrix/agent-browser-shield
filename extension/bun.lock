@@ -35,6 +35,7 @@
         "globals": "17.6.0",
         "jest": "^30",
         "jest-environment-jsdom": "^30",
+        "jest-webextension-mock": "^4.1.1",
         "js-yaml": "^4.1.0",
         "knip": "^6.15.0",
         "ts-jest": "^29",
@@ -796,6 +797,8 @@
     "jest-validate": ["jest-validate@30.4.1", "", { "dependencies": { "@jest/get-type": "30.1.0", "@jest/types": "30.4.1", "camelcase": "^6.3.0", "chalk": "^4.1.2", "leven": "^3.1.0", "pretty-format": "30.4.1" } }, "sha512-PDWi4SOwLnwqNDfHZjOcsEFyZ4fc/2W2gVL3DEoyqnB6jCQMLRtfBong8s6omIw3lI0HWOus12xfnFmQtjW3fw=="],
 
     "jest-watcher": ["jest-watcher@30.4.1", "", { "dependencies": { "@jest/test-result": "30.4.1", "@jest/types": "30.4.1", "@types/node": "*", "ansi-escapes": "^4.3.2", "chalk": "^4.1.2", "emittery": "^0.13.1", "jest-util": "30.4.1", "string-length": "^4.0.2" } }, "sha512-/l9UonmvCwjHH7d2h3iAwIloLc1H0S8mJZ/LNK3i86hqwPAz8otUJjP9MfYtz9Tt77Su5FD2xGjZn8d31IZHlw=="],
+
+    "jest-webextension-mock": ["jest-webextension-mock@4.1.1", "", {}, "sha512-smCGBtl+5MpjKnJhyjCeaL/ZtdUa0T41tbHsEdb1nY3UEVogbYvehVw2MuMSvysFD3wNv4iYSIEgAwnR3H0YIw=="],
 
     "jest-worker": ["jest-worker@30.4.1", "", { "dependencies": { "@types/node": "*", "@ungap/structured-clone": "^1.3.0", "jest-util": "30.4.1", "merge-stream": "^2.0.0", "supports-color": "^8.1.1" } }, "sha512-SHynN/q/QD++iNyvMdy+WMmbCGk8jIsNcRxycXbWubSOhvo6T+j2afcfUSl+3hYsiBebOTo0cT7c2H7CXugu1g=="],
 

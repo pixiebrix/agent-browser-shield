@@ -8,22 +8,21 @@ import { findWarning, roachMotelAnnotateRule } from "../roach-motel-annotate";
 const LANDMARK_SELECTOR = 'section[data-abs-rule="roach-motel-annotate"]';
 
 // Rule's `apply` sends a `rule-detection` runtime message after landing
-// the landmark. `chrome.runtime.sendMessage` isn't present in jsdom, so
-// stub it here. Tests that assert call shape read from this mock.
-const sendMessageMock = jest.fn().mockResolvedValue(undefined);
+// the landmark. jest-webextension-mock provides chrome.runtime.sendMessage
+// as a jest.fn() on globalThis.chrome; cast to jest.Mock to expose the
+// mock-control surface (assertion against typeof's overloaded signature
+// resolves to `never`-arg, which blocks .mockResolvedValue).
+const sendMessageMock = chrome.runtime.sendMessage as unknown as jest.Mock;
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock.mockClear();
-  (globalThis as unknown as { chrome: unknown }).chrome = {
-    runtime: { sendMessage: sendMessageMock },
-  };
+  sendMessageMock.mockReset();
+  sendMessageMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   roachMotelAnnotateRule.teardown();
   hiddenTextStripRule.teardown();
-  delete (globalThis as unknown as { chrome?: unknown }).chrome;
 });
 
 describe("findWarning", () => {

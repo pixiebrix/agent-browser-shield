@@ -64,7 +64,6 @@ jest.mock("../availability", () => ({
 // the real implementation walking the DOM for placeholder elements that
 // don't exist in these unit tests.
 jest.mock("../placeholder", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: jest.requireActual returns any
   const actual = jest.requireActual<Record<string, unknown>>("../placeholder");
   return {
     ...actual,
