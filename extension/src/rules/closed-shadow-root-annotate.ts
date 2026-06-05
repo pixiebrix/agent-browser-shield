@@ -120,9 +120,9 @@ function looksLikeClosedShadowHost(element: Element): boolean {
 
 function findClosedShadowHosts(root: ParentNode): Element[] {
   const hosts: Element[] = [];
-  // Custom elements always have a hyphen, so the attribute selector
-  // narrows the scan to a small candidate set without walking every
-  // element on the page.
+  // No CSS selector matches "tag name contains a hyphen", so we iterate
+  // every descendant and let `looksLikeClosedShadowHost`'s hyphen check
+  // short-circuit the non-custom cases on the first conjunct.
   const candidates = root.querySelectorAll("*");
   for (const candidate of candidates) {
     if (looksLikeClosedShadowHost(candidate)) {
@@ -172,6 +172,11 @@ function ensureLandmark(): void {
 }
 
 function scan(root: ParentNode): void {
+  // The landmark is per-document and idempotent; once it's stamped, every
+  // subsequent mutation can skip the descendant walk and rect query.
+  if (document.querySelector(LANDMARK_SELECTOR)) {
+    return;
+  }
   if (findClosedShadowHosts(root).length > 0) {
     ensureLandmark();
   }

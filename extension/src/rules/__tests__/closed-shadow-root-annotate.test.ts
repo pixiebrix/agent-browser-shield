@@ -259,6 +259,24 @@ describe("closedShadowRootAnnotateRule.apply", () => {
     expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
   });
 
+  it("skips the descendant walk once the landmark exists", () => {
+    // Once stamped, scan() should short-circuit before walking descendants
+    // — there's no second landmark to add and the rect/qsa work is wasted
+    // on every subsequent mutation tick for the page's lifetime.
+    const tag = nextTagName();
+    defineClosedShadowElement(tag);
+    document.body.append(document.createElement(tag));
+    closedShadowRootAnnotateRule.apply(document.body);
+    expect(document.querySelector(LANDMARK_SELECTOR)).not.toBeNull();
+
+    const qsaSpy = jest.spyOn(document.body, "querySelectorAll");
+    // Re-applying without teardown is the cheapest way to drive scan()
+    // again on the already-stamped document.
+    closedShadowRootAnnotateRule.apply(document.body);
+    expect(qsaSpy).not.toHaveBeenCalled();
+    qsaSpy.mockRestore();
+  });
+
   it("re-apply after teardown re-stamps on the same document", () => {
     const tag = nextTagName();
     defineClosedShadowElement(tag);
