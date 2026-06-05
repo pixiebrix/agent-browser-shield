@@ -14,11 +14,12 @@ import { INJECTIONS } from "../data/injection-fixtures";
 // matching rules already target in the light tree (`#intercom-frame`,
 // `ins.adsbygoogle`) so the demo doesn't depend on any per-shadow
 // special-casing in the rules themselves — only on the dispatcher
-// actually reaching the content. The injection paragraph at the bottom
-// exercises the Tier 2 shadow-piercing text walker
-// (`prompt-injection-redact` / `pii-redact` / `secrets-redact`): a
-// reachable instruction-shaped block that a light-DOM-only walker
-// would have missed entirely.
+// actually reaching the content. The injection paragraph exercises
+// the Tier 2 shadow-piercing text walker (prompt-injection-redact /
+// pii-redact / secrets-redact). The EasyList-style class on the
+// second card exercises the Tier 3 adopted-stylesheet path: that
+// class only matches via the EasyList generic CSS sheet, which now
+// adopts into open shadow roots so the hide applies here too.
 
 export default function ShadowDomEmbed() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -86,9 +87,12 @@ export default function ShadowDomEmbed() {
         The items below are appended into <code>this.attachShadow()</code> — the
         same way modern chat, consent, and ad SDKs ship their UI to keep their
         styles isolated from the host page. With shadow-aware rules enabled, the
-        chat launcher should be removed, the sponsored block replaced, and the
-        prompt-injection paragraph hidden behind a reveal placeholder. Without
-        shadow piercing every item would survive untouched.
+        chat launcher should be removed (selector dispatch reaches into the
+        shadow), the sponsored block replaced (curated ads-hide selector +
+        EasyList stylesheet now adopted into shadow roots), and the
+        prompt-injection paragraph hidden behind a reveal placeholder (text
+        walker descends through open shadows). Without shadow piercing every
+        item would survive untouched.
       </p>
       <div
         ref={hostRef}

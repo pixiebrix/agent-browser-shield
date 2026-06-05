@@ -28,6 +28,7 @@ import {
   PLACEHOLDER_DISPLAY_MODE_DEFAULT,
   subscribePlaceholderDisplayMode,
 } from "./placeholder-display";
+import { adoptStylesheetIntoShadowRoots } from "./shadow-stylesheets";
 import type { RuleStates } from "./storage";
 import { getRuleStates, subscribe } from "./storage";
 
@@ -117,6 +118,14 @@ function injectStyles(): void {
   style.dataset.absStyles = "";
   style.textContent = PLACEHOLDER_STYLES;
   document.documentElement.append(style);
+  // Also adopt the same rules into every open shadow root so a
+  // placeholder rendered inside a web-component shadow tree
+  // (irrelevant-sections-redact resolves refs through page-tree
+  // and can land a placeholder there) renders with its stripes,
+  // border, and reveal-button chrome instead of as a bare <div>.
+  // Document stylesheets don't cross shadow boundaries; the
+  // adoptedStyleSheets primitive does.
+  adoptStylesheetIntoShadowRoots(PLACEHOLDER_STYLES);
 }
 
 function isApplicableHere(
