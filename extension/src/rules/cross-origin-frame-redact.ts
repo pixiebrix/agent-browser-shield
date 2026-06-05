@@ -77,10 +77,13 @@ function scan(root: ParentNode): void {
 }
 
 const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scan(root);
-    }
+  // MutationObserver hands us the newly-inserted element itself, but
+  // querySelectorAll on that element does not match the element itself —
+  // so a bare cross-origin <iframe> appended directly to document.body
+  // would be missed. Rescan from document.body on every batch; the
+  // is-connected / is-revealed checks in scan() keep it idempotent.
+  onSubtrees: () => {
+    scan(document.body);
   },
   skipPlaceholderSubtrees: true,
 });
