@@ -44,56 +44,63 @@ afterEach(() => {
 });
 
 describe("meta-injection-strip meta tags", () => {
-  it("removes <meta name=description> when content matches", () => {
-    appendMetaToHead({ name: "description", content: FIXTURES.IGNORE_HACKED });
+  it("blanks the content attribute on a poisoned <meta name=description>", () => {
+    const meta = appendMetaToHead({
+      name: "description",
+      content: FIXTURES.IGNORE_HACKED,
+    });
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(document.head.querySelector("meta[name=description]")).toBeNull();
+    // Element stays attached so framework reconciliation (React 19 hoisted
+    // metadata etc.) can still unmount it cleanly on route change.
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
   });
 
-  it("removes <meta property=og:description> when content matches", () => {
-    appendMetaToHead({
+  it("blanks <meta property=og:description> when content matches", () => {
+    const meta = appendMetaToHead({
       property: "og:description",
       content: FIXTURES.NEW_INSTRUCTIONS,
     });
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(
-      document.head.querySelector('meta[property="og:description"]'),
-    ).toBeNull();
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
   });
 
-  it("removes <meta name=twitter:title> when content matches", () => {
-    appendMetaToHead({
+  it("blanks <meta name=twitter:title> when content matches", () => {
+    const meta = appendMetaToHead({
       name: "twitter:title",
       content: FIXTURES.OVERRIDE_GUARDRAILS,
     });
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(
-      document.head.querySelector('meta[name="twitter:title"]'),
-    ).toBeNull();
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
   });
 
   it("preserves clean meta tags", () => {
-    appendMetaToHead({
+    const description = appendMetaToHead({
       name: "description",
       content: "Quality kitchenware at fair prices.",
     });
-    appendMetaToHead({ name: "viewport", content: "width=device-width" });
+    const viewport = appendMetaToHead({
+      name: "viewport",
+      content: "width=device-width",
+    });
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(
-      document.head.querySelector('meta[name="description"]'),
-    ).not.toBeNull();
-    expect(document.head.querySelector('meta[name="viewport"]')).not.toBeNull();
+    expect(description.getAttribute("content")).toBe(
+      "Quality kitchenware at fair prices.",
+    );
+    expect(viewport.getAttribute("content")).toBe("width=device-width");
   });
 
-  it("removes a poisoned meta but keeps siblings", () => {
+  it("blanks a poisoned meta but leaves siblings untouched", () => {
     const poisoned = appendMetaToHead({
       name: "description",
       content: FIXTURES.DAN,
@@ -105,8 +112,9 @@ describe("meta-injection-strip meta tags", () => {
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(poisoned.isConnected).toBe(false);
-    expect(clean.isConnected).toBe(true);
+    expect(poisoned.isConnected).toBe(true);
+    expect(poisoned.getAttribute("content")).toBe("");
+    expect(clean.getAttribute("content")).toBe("RiverMart Skillet");
   });
 
   it("does not touch meta tags without a content attribute", () => {
@@ -117,6 +125,7 @@ describe("meta-injection-strip meta tags", () => {
     metaInjectionStripRule.apply(document.body);
 
     expect(meta.isConnected).toBe(true);
+    expect(meta.hasAttribute("content")).toBe(false);
   });
 
   it("processes meta tags in document.body", () => {
@@ -126,7 +135,9 @@ describe("meta-injection-strip meta tags", () => {
 
     metaInjectionStripRule.apply(document.body);
 
-    expect(document.body.querySelector("meta")).toBeNull();
+    const meta = document.body.querySelector("meta");
+    expect(meta).not.toBeNull();
+    expect(meta?.getAttribute("content")).toBe("");
   });
 });
 
@@ -161,7 +172,8 @@ describe("meta-injection-strip lazy subtrees", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(meta.isConnected).toBe(false);
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
   });
 
   it("scrubs a meta tag added to body after apply", async () => {
@@ -177,7 +189,8 @@ describe("meta-injection-strip lazy subtrees", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(route.querySelector("meta")).toBeNull();
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
   });
 
   it("teardown stops both watchers", async () => {
@@ -192,19 +205,22 @@ describe("meta-injection-strip lazy subtrees", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe(FIXTURES.IGNORE_HACKED);
   });
 });
 
 describe("meta-injection-strip idempotency", () => {
   it("is idempotent on a second apply", () => {
-    appendMetaToHead({ name: "description", content: FIXTURES.IGNORE_HACKED });
+    const meta = appendMetaToHead({
+      name: "description",
+      content: FIXTURES.IGNORE_HACKED,
+    });
     const title = appendTitleToHead(FIXTURES.DAN);
 
     metaInjectionStripRule.apply(document.body);
     metaInjectionStripRule.apply(document.body);
 
-    expect(document.head.querySelector("meta[name=description]")).toBeNull();
+    expect(meta.getAttribute("content")).toBe("");
     expect(title.textContent).toBe("");
   });
 });

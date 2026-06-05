@@ -76,9 +76,15 @@ DOM. Five canonical verbs:
 - `sanitize` — keeps the element and cleans attributes/text/state
   (`json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`,
   `checkout-checkbox-sanitize`)
-- `strip` — removes the element/node from the DOM entirely (`noscript-strip`,
-  `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`,
-  `svg-text-strip`, `meta-injection-strip`)
+- `strip` — removes the agent-readable content from the DOM. Most strip rules
+  blank the data carrier (attribute value, text node, comment data) rather than
+  detach the element, so SPA frameworks (React 19 metadata, Vue Teleport, Astro
+  view transitions) keep live references to the rendered node and reconcile
+  cleanly on route change. `svg-sprite-strip` is the exception — its targets are
+  inline sprite definitions the page framework does not own, so it detaches the
+  element outright. (`noscript-strip`, `html-comment-strip`,
+  `hidden-text-strip`, `svg-sprite-strip`, `svg-text-strip`,
+  `meta-injection-strip`)
 
 `-helper` is reserved for non-defensive agent affordances (`search-url-helper`).
 See CONTRIBUTING.md → *Adding a new rule* → *Rule ID naming* for the longer

@@ -1,11 +1,12 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Property-based tests for `meta-injection-strip`. Confirms that the
-// remove-vs-blank asymmetry holds across the injection fixture set:
-// `<meta>` is removed entirely (a content-less meta has no value), while
-// `<title>` is kept as an element with empty text (so `document.title`
-// returns "" rather than the payload — code reading title still works).
+// Property-based tests for `meta-injection-strip`. Confirms that both
+// `<meta>` and `<title>` are blanked rather than detached across the
+// injection fixture set: the element stays attached (so framework
+// reconciliation does not crash on a now-detached node when the route
+// unmounts) and an agent reading `content` / `document.title` sees an
+// empty string instead of the payload.
 
 import fc from "fast-check";
 
@@ -25,7 +26,7 @@ const ADVERSARIAL = fc.constantFrom(
 
 // Common meta naming conventions — `name=` (HTML), `property=` (OG /
 // Twitter), `itemprop=` (schema.org), `http-equiv=` (legacy). The rule
-// must remove the meta regardless of which attribute names it.
+// must scrub the meta regardless of which attribute names it.
 const NAME_ATTRS = fc.constantFrom(
   "name",
   "property",
@@ -57,7 +58,7 @@ afterEach(() => {
 });
 
 describe("meta-injection-strip (property)", () => {
-  it("removes any <meta content> carrying injection text regardless of name attribute", () => {
+  it("blanks the content of any <meta> carrying injection text regardless of name attribute", () => {
     fc.assert(
       fc.property(
         ADVERSARIAL,
@@ -75,7 +76,8 @@ describe("meta-injection-strip (property)", () => {
           const remaining = document.head.querySelector(
             `meta[${nameAttribute}="${nameValue}"]`,
           );
-          expect(remaining).toBeNull();
+          expect(remaining).not.toBeNull();
+          expect(remaining?.getAttribute("content")).toBe("");
         },
       ),
     );

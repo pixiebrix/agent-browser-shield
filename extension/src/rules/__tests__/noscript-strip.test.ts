@@ -20,15 +20,20 @@ afterEach(() => {
 });
 
 describe("noscript-strip", () => {
-  it("removes a top-level noscript element from the body", () => {
+  it("blanks a top-level noscript element from the body", () => {
     document.body.innerHTML = `<noscript>fallback</noscript><p>real</p>`;
     noscriptStripRule.apply(document.body);
 
-    expect(document.body.querySelector("noscript")).toBeNull();
+    const noscript = document.body.querySelector("noscript");
+    // Element stays attached so framework reconciliation (React unmount
+    // on route change, Vue/Svelte teardown, etc.) does not crash on a
+    // detached parent.
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("");
     expect(document.body.textContent).toBe("real");
   });
 
-  it("removes nested noscript elements", () => {
+  it("blanks nested noscript elements", () => {
     document.body.innerHTML = `
       <article>
         <p>visible</p>
@@ -38,18 +43,23 @@ describe("noscript-strip", () => {
     `;
     noscriptStripRule.apply(document.body);
 
-    expect(document.body.querySelectorAll("noscript")).toHaveLength(0);
+    const noscripts = document.body.querySelectorAll("noscript");
+    expect(noscripts).toHaveLength(2);
+    for (const noscript of noscripts) {
+      expect(noscript.textContent).toBe("");
+    }
     expect(document.body.querySelector("article")).not.toBeNull();
   });
 
-  it("removes a noscript element in <head>", () => {
-    const head = document.createElement("noscript");
-    head.textContent = "head fallback";
-    document.head.append(head);
+  it("blanks a noscript element in <head>", () => {
+    const noscript = document.createElement("noscript");
+    noscript.textContent = "head fallback";
+    document.head.append(noscript);
 
     noscriptStripRule.apply(document);
 
-    expect(document.head.querySelector("noscript")).toBeNull();
+    expect(noscript.isConnected).toBe(true);
+    expect(noscript.textContent).toBe("");
   });
 
   it("is idempotent on a second apply", () => {
@@ -57,7 +67,9 @@ describe("noscript-strip", () => {
     noscriptStripRule.apply(document.body);
     noscriptStripRule.apply(document.body);
 
-    expect(document.body.querySelector("noscript")).toBeNull();
+    const noscript = document.body.querySelector("noscript");
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("");
     expect(document.body.textContent).toBe("y");
   });
 
@@ -69,7 +81,7 @@ describe("noscript-strip", () => {
     expect(document.body.innerHTML).toBe(before);
   });
 
-  it("strips a noscript injected after apply", async () => {
+  it("blanks a noscript injected after apply", async () => {
     noscriptStripRule.apply(document.body);
 
     const route = document.createElement("section");
@@ -79,11 +91,13 @@ describe("noscript-strip", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(route.querySelector("noscript")).toBeNull();
+    const noscript = route.querySelector("noscript");
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("");
     expect(route.textContent).toBe("visible");
   });
 
-  it("strips a noscript that is itself the added subtree root", async () => {
+  it("blanks a noscript that is itself the added subtree root", async () => {
     noscriptStripRule.apply(document.body);
 
     const root = document.createElement("noscript");
@@ -93,7 +107,9 @@ describe("noscript-strip", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(document.body.querySelector("noscript")).toBeNull();
+    const noscript = document.body.querySelector("noscript");
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("");
   });
 
   it("teardown stops the observer", async () => {
@@ -107,6 +123,8 @@ describe("noscript-strip", () => {
     await flushMutations();
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
-    expect(document.body.querySelector("noscript")).not.toBeNull();
+    const noscript = document.body.querySelector("noscript");
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("after teardown");
   });
 });

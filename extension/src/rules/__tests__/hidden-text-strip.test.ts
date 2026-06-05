@@ -10,28 +10,39 @@ afterEach(() => {
   hiddenTextStripRule.teardown();
 });
 
+function expectScrubbed(selector: string): void {
+  const element = document.querySelector(selector);
+  // The element itself stays attached so framework reconciliation can
+  // unmount it cleanly on the next route change.
+  expect(element).not.toBeNull();
+  expect(element?.textContent).toBe("");
+}
+
 describe("hiddenTextStripRule", () => {
-  it("removes text with visibility:hidden", () => {
+  it("scrubs text with visibility:hidden", () => {
     document.body.innerHTML = `
       <p id="visible">visible content</p>
       <p id="hidden" style="visibility: hidden">${FIXTURES.HIDDEN_IGNORE_PRIOR}</p>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#hidden")).toBeNull();
+    expectScrubbed("#hidden");
     expect(document.querySelector("#visible")).not.toBeNull();
-    // Hidden-text removal does not insert a placeholder — the element is
-    // gone from the DOM so DOM-scraping agents can't read it.
+    expect(document.querySelector("#visible")?.textContent).toContain(
+      "visible content",
+    );
+    // Hidden-text scrub does not insert a placeholder — the contents are
+    // by construction invisible to sighted users.
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
-  it("removes text with opacity:0", () => {
+  it("scrubs text with opacity:0", () => {
     document.body.innerHTML = `
       <span id="x" style="opacity: 0">invisible payload</span>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
   // Regression for #126: Primer's <dialog> backdrop renders at opacity:0
@@ -73,7 +84,7 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).not.toBeNull();
   });
 
-  it("still strips opacity:0 when no transition or animation is set", () => {
+  it("still scrubs opacity:0 when no transition or animation is set", () => {
     // Guards against making the transition check too permissive — a plain
     // opacity:0 with no animation is the classic hidden-injection signal.
     document.body.innerHTML = `
@@ -81,10 +92,10 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("still strips opacity:0 when the transition duration is zero", () => {
+  it("still scrubs opacity:0 when the transition duration is zero", () => {
     // A `transition: opacity 0s` is instantaneous — the text never becomes
     // visible. Without this case, an attacker could declare a zero-duration
     // opacity transition to bypass the strip.
@@ -93,52 +104,52 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("still strips opacity:0 when the animation duration is zero", () => {
+  it("still scrubs opacity:0 when the animation duration is zero", () => {
     document.body.innerHTML = `
       <div id="x" style="opacity: 0; animation: fadeIn 0s">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("still strips opacity:0 when the transition targets a non-opacity property", () => {
+  it("still scrubs opacity:0 when the transition targets a non-opacity property", () => {
     document.body.innerHTML = `
       <div id="x" style="opacity: 0; transition: transform 150ms">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("removes text positioned off-screen", () => {
+  it("scrubs text positioned off-screen", () => {
     document.body.innerHTML = `
       <div id="x" style="position: absolute; left: -10000px">hidden text</div>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("removes text clipped to zero area via clip-path", () => {
+  it("scrubs text clipped to zero area via clip-path", () => {
     document.body.innerHTML = `
       <div id="x" style="clip-path: inset(100%)">clipped text</div>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("removes text with font-size:0", () => {
+  it("scrubs text with font-size:0", () => {
     document.body.innerHTML = `
       <span id="x" style="font-size: 0">zero font</span>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
   // Amazon's #nav-belt / #nav-search and many legacy layouts set `font-size:
@@ -305,7 +316,7 @@ describe("hiddenTextStripRule", () => {
 
   // Landmark preservation is per-element, not per-subtree — an injection
   // shaped descendant inside a NAV is still strippable.
-  it("still strips an injection-shaped descendant inside a landmark", () => {
+  it("still scrubs an injection-shaped descendant inside a landmark", () => {
     document.body.innerHTML = `
       <nav id="nav">
         <a href="/home">Home</a>
@@ -317,7 +328,7 @@ describe("hiddenTextStripRule", () => {
     hiddenTextStripRule.apply(document.body);
 
     expect(document.querySelector("#nav")).not.toBeNull();
-    expect(document.querySelector("#payload")).toBeNull();
+    expectScrubbed("#payload");
   });
 
   // Amazon's #navbar wrapper has `color: rgb(15,17,17)` against the dark nav
@@ -354,7 +365,7 @@ describe("hiddenTextStripRule", () => {
 
   // An offscreen element that's large enough to carry prose is not an
   // SR-only label — it's the injection shape we exist to strip.
-  it("still removes large off-left blocks (no 1×1 envelope = not SR-only)", () => {
+  it("still scrubs large off-left blocks (no 1×1 envelope = not SR-only)", () => {
     document.body.innerHTML = `
       <div id="x" style="
         position: absolute;
@@ -366,23 +377,23 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
-  it("removes text whose foreground color matches the page background", () => {
+  it("scrubs text whose foreground color matches the page background", () => {
     document.body.setAttribute("style", "background-color: rgb(255, 255, 255)");
     document.body.innerHTML = `
       <p id="x" style="color: rgb(255, 255, 255)">${FIXTURES.HIDDEN_WHITE_ON_WHITE}</p>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
   // Effective background comes from an ancestor, not the element itself.
   // Common in injections where the attacker sets color on a span but the
   // background lives on a wrapper div.
-  it("removes text whose color matches an ancestor's background", () => {
+  it("scrubs text whose color matches an ancestor's background", () => {
     document.body.innerHTML = `
       <section style="background-color: rgb(20, 20, 20)">
         <span id="x" style="color: rgb(22, 22, 22)">${FIXTURES.HIDDEN_SMUGGLED}</span>
@@ -390,7 +401,7 @@ describe("hiddenTextStripRule", () => {
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).toBeNull();
+    expectScrubbed("#x");
   });
 
   // Tailwind v4 (and any modern stylesheet using CSS Color Level 4)

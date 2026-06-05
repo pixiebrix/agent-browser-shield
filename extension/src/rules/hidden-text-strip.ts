@@ -45,10 +45,17 @@
 // and dropdowns commonly toggle display, and stripping their text content
 // would corrupt the underlying app state once the user/agent expands them.
 //
-// When a non-allowlisted match is found, the element is removed from the
-// DOM entirely (no placeholder). The contents are by construction invisible
-// to sighted users, and a placeholder would only re-leak the data to
-// DOM-scraping agents.
+// When a non-allowlisted match is found, we blank every text node inside
+// the element rather than detaching the element itself. Frameworks
+// (React 19, Vue, Svelte, Astro) keep live references to the elements
+// they rendered and reach for them on route unmount or partial swap —
+// detaching the element makes `removeChild` throw inside their commit
+// phase and strands the route. Blanking the descendant text nodes
+// preserves the DOM shape (so the framework can clean up cleanly) while
+// removing what an agent walking textContent / the a11y tree can read.
+// The contents are by construction invisible to sighted users — an empty
+// hidden box looks the same as the original — and a placeholder would
+// only re-leak the data to DOM-scraping agents.
 
 import {
   filterToOutermost,
@@ -497,6 +504,22 @@ function textPreview(text: string): string {
     : normalized;
 }
 
+function blankDescendantText(element: Element): void {
+  // SHOW_TEXT visits Text nodes only, leaving element / comment / processing
+  // instruction nodes in place. After this walk every readable character
+  // (textContent, innerText, a11y name) under `element` is empty, but the
+  // DOM tree structure that the page framework rendered is untouched.
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let current = walker.nextNode();
+  while (current) {
+    const text = current as Text;
+    current = walker.nextNode();
+    if (text.data.length > 0) {
+      text.data = "";
+    }
+  }
+}
+
 function scanAndStrip(root: ParentNode): void {
   for (const candidate of findCandidates(root)) {
     const { element, reason, details } = candidate;
@@ -504,7 +527,7 @@ function scanAndStrip(root: ParentNode): void {
       continue;
     }
     const visible = visibleTextContent(element);
-    log("hidden text removed", {
+    log("hidden text scrubbed", {
       ruleId: RULE_ID,
       reason,
       details,
@@ -514,7 +537,7 @@ function scanAndStrip(root: ParentNode): void {
       textLength: visible.length,
       textPreview: textPreview(visible),
     });
-    element.remove();
+    blankDescendantText(element);
   }
 }
 
@@ -536,7 +559,7 @@ export const hiddenTextStripRule = {
   id: RULE_ID,
   label: "Strip Hidden Text",
   description:
-    'Remove text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
+    'Blank text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
   apply,
   teardown: () => {
     watcher.stop();

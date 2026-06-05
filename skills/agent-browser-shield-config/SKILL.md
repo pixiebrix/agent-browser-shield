@@ -68,7 +68,8 @@ for the build-time workflow.
 - `checkout-checkbox-sanitize` — uncheck pre-checked checkout boxes
 - `cookie-banner-hide` — strip cookie consent banners
 - `chat-widget-hide` — strip live-chat widgets
-- `html-comment-strip` — strip HTML comments
+- `html-comment-strip` — blank HTML comments whose data carries prompt-injection
+  text; benign comments and framework markers are left alone
 - `hidden-text-strip` — strip text that's invisible to humans but readable by
   agents (color matched to background, opacity:0, visibility:hidden,
   font-size:0, off-screen blocks). Preserves SR-only text
