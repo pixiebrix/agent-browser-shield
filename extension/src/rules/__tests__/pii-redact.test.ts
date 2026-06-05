@@ -139,6 +139,37 @@ describe("pii-redact lazy-loaded subtrees", () => {
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
 
+  it("masks every match when the tree spans multiple chunks", async () => {
+    // Tree exceeds chunkSize=100 so the walker yields mid-scan. Without
+    // the resume-anchor in walkSync, the walker's currentNode points to
+    // the (now-detached) last node of chunk 1 after replaceMatchesInTextNode
+    // runs — and nextNode() returns null, silently dropping every match
+    // past the first 100. This test runs the rule end-to-end and
+    // confirms all 200 SSNs get hidden, not just the first chunk.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    // Chunk 1 (100 nodes) runs synchronously.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    // Drain the chunked walk's yields. Each yield is a setTimeout(0)
+    // whose `.then()` callback schedules the next chunk via microtask;
+    // alternating timer + microtask drains the queue.
+    for (let i = 0; i < 5; i++) {
+      jest.advanceTimersByTime(0);
+      await flushMutations();
+    }
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      200,
+    );
+  });
+
   it("teardown aborts the in-flight chunked walk", () => {
     // 200 text nodes — exceeds the 100-node chunkSize default, so the
     // walk yields after chunk 1. teardown fires before the yield's

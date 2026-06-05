@@ -68,6 +68,56 @@ describe("walkTextNodesChunked — sync fast path", () => {
   });
 });
 
+describe("walkTextNodesChunked — chunked path with DOM-mutating process", () => {
+  // Regression for a bug where `process(chunk)` detached the chunk's
+  // text nodes (the consumer rules call replaceMatchesInTextNode) but
+  // walker.currentNode was still pointing at the now-detached last
+  // node of the chunk. The next walkSync entry called walker.nextNode()
+  // off the detached node, got null, and silently ended the walk —
+  // dropping every text node past the first chunk. The fix pre-fetches
+  // a resume node before process() and re-anchors walker.currentNode
+  // to it before yielding.
+
+  it("continues walking across chunks when process detaches each text node", async () => {
+    // Five text nodes, chunkSize 2 → chunks of 2, 2, 1.
+    document.body.innerHTML = Array.from(
+      { length: 5 },
+      (_, i) => `<p>text-${i}</p>`,
+    ).join("");
+    const seen: string[] = [];
+    let completed = false;
+
+    walkTextNodesChunked(document.body, {
+      chunkSize: 2,
+      yieldStrategy: () => Promise.resolve(),
+      process: (chunk) => {
+        for (const node of chunk) {
+          seen.push(node.nodeValue ?? "");
+          // Simulate replaceMatchesInTextNode — detach the text node.
+          node.remove();
+        }
+      },
+      onComplete: () => {
+        completed = true;
+      },
+    });
+
+    for (let i = 0; i < 10; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (completed) {
+        break;
+      }
+      await Promise.resolve();
+    }
+
+    // Without the fix, the walk silently ended after the first chunk
+    // and `seen` only had ["text-0", "text-1"]. With the fix, all
+    // five text nodes get visited exactly once.
+    expect(seen).toEqual(["text-0", "text-1", "text-2", "text-3", "text-4"]);
+    expect(completed).toBe(true);
+  });
+});
+
 describe("walkTextNodesChunked — chunked path", () => {
   it("fires process once per filled chunk and onComplete after the last", async () => {
     // 5 text nodes, chunkSize 2 → chunks of 2, 2, 1.

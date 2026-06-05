@@ -109,6 +109,13 @@ export function walkTextNodesChunked(
   });
 
   let chunk: Text[] = [];
+  // Holds a node we pre-fetched before yielding (to keep walker.currentNode
+  // anchored to a still-connected node across the boundary). Consumed
+  // as the first node on the next walkSync entry — we can't let
+  // walker.nextNode() consume it because we'd want to revisit it
+  // ourselves, and the chunk-size invariant breaks if we seed it
+  // straight into `chunk` and then push another node on top.
+  let pendingResume: Text | null = null;
 
   function runFinalize(): void {
     if (signal?.aborted) {
@@ -122,12 +129,27 @@ export function walkTextNodesChunked(
   // after a scheduler yield; "done" when the walker has no more nodes
   // and the trailing partial chunk (if any) has been processed.
   function walkSync(): "yield" | "done" {
-    let next = walker.nextNode();
+    let next: Node | null = pendingResume ?? walker.nextNode();
+    pendingResume = null;
     while (next) {
       chunk.push(next as Text);
       if (chunk.length >= chunkSize) {
+        // Pre-fetch the resume point BEFORE process() runs. The
+        // consumer rules call replaceMatchesInTextNode in `process`,
+        // which detaches every text node in the chunk — including
+        // the one currently held in walker.currentNode. nextNode()
+        // off a detached node returns null and the walk silently
+        // ends after the first chunk. Grabbing the next node up
+        // front and re-anchoring walker.currentNode to it after
+        // process keeps the traversal valid across the boundary.
+        const resume = walker.nextNode();
         process(chunk);
         chunk = [];
+        if (!resume) {
+          return "done";
+        }
+        walker.currentNode = resume;
+        pendingResume = resume as Text;
         return "yield";
       }
       next = walker.nextNode();
