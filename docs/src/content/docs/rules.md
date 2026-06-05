@@ -40,7 +40,9 @@ Any content a page renders inside a closed shadow root — whether ads, chat
 widgets, hidden text, or prompt-injection payloads — is invisible to every rule
 and will be passed through to the agent untouched. Closed shadow roots are
 uncommon outside browser UA shadows and a handful of hardened embeds, but they
-are a known gap.
+are a known gap. The optional
+[Flag Closed Shadow Roots](#flag-closed-shadow-roots-experimental) rule can
+heuristically warn the agent at read-time when this gap is in use.
 
 ## Indirect prompt injection
 
@@ -425,6 +427,35 @@ that human reviewers never see, turning the page itself into an
 indirect-prompt-injection delivery surface. Search-engine cloaking has a long
 lineage [[19]](#ref-wu-cloaking); the same primitive aimed at LLM crawlers is
 the new threat.
+
+#### Flag Closed Shadow Roots (Experimental)
+
+- **ID:** `closed-shadow-root-annotate`
+- **Default:** off
+- **Top frame only**
+
+Heuristically detect pages that render content inside closed shadow roots and
+prepend a screen-reader-only landmark noting that the extension cannot see
+inside those shadow trees. Complements the open-shadow-root coverage described
+in [Coverage scope](#coverage-scope) above by giving the agent a positive
+signal at read-time that a known blind spot is in use on this page.
+
+Detection is necessarily heuristic: by spec, an element with `mode: "closed"`
+is indistinguishable from an element with no shadow root at all from outside
+JavaScript. The rule looks for the structural shape strongly correlated with
+"closed shadow host": an upgraded custom element (hyphenated tag name, defined
+in `customElements`) with no light-DOM children, no `host.shadowRoot`, and a
+non-zero rendered box. Built-in elements with UA shadow roots (`<input>`,
+`<details>`, `<video>`) are filtered out for free — their tag names contain
+no hyphen. Declarative shadow DOM (`<template shadowrootmode="closed">`) is
+indistinguishable from imperative closed shadows after parsing and is not
+separately surfaced.
+
+The landmark says "may contain content ABS cannot see," not "this is
+definitely a closed shadow root" — a custom element that renders via canvas,
+WebGL, or `::before` background-image with no actual shadow root will trip
+the heuristic too. Off by default while the false-positive rate is
+characterized.
 
 ### Visual identity spoofing
 

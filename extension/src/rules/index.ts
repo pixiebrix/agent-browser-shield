@@ -6,6 +6,7 @@ import { attributeInjectionSanitizeRule } from "./attribute-injection-sanitize";
 import { cartAddonAnnotateRule } from "./cart-addon-annotate";
 import { chatWidgetHideRule } from "./chat-widget-hide";
 import { checkoutCheckboxSanitizeRule } from "./checkout-checkbox-sanitize";
+import { closedShadowRootAnnotateRule } from "./closed-shadow-root-annotate";
 import { commentsRedactRule } from "./comments-redact";
 import { confirmshameSanitizeRule } from "./confirmshame-sanitize";
 import { cookieBannerHideRule } from "./cookie-banner-hide";
@@ -88,6 +89,7 @@ const RULES_TUPLE = [
   disguisedAdFlagRule,
   encodedPayloadRedactRule,
   webdriverProbeAnnotateRule,
+  closedShadowRootAnnotateRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];

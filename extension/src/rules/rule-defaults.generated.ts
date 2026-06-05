@@ -42,6 +42,7 @@ export const RULE_DEFAULTS = {
   "disguised-ad-flag": true,
   "encoded-payload-redact": true,
   "webdriver-probe-annotate": false,
+  "closed-shadow-root-annotate": false,
 } as const satisfies Readonly<Record<string, boolean>>;
 
 export type RuleId = keyof typeof RULE_DEFAULTS;
