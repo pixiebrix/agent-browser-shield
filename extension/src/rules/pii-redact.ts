@@ -1,10 +1,12 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { walkTextNodes } from "../lib/dom-utils";
+import { ReusableAbortController } from "abort-utils";
 import type { InlineMatch } from "../lib/placeholder";
 import { replaceMatchesInTextNode } from "../lib/placeholder";
+import { subscribeRouteChange } from "../lib/route-change";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { walkTextNodesChunked } from "../lib/yielding-text-walk";
 import type { Rule } from "./types";
 
 const RULE_ID = "pii-redact" as const;
@@ -76,13 +78,29 @@ function collectMatches(text: string): InlineMatch[] {
   return merged;
 }
 
+// Lifecycle controller covers every async scan kicked off by apply
+// and the watcher. abortAndReset on route change cancels any in-flight
+// chunked walk so a scan started against the old tree can't keep
+// mutating the new one; abortAndReset on teardown stops everything.
+// Incremental subtree-watcher batches do NOT abort — they target their
+// own scoped root and don't conflict with the previous scan.
+const lifecycle = new ReusableAbortController();
+let unsubscribeRouteChange: (() => void) | null = null;
+
 function scanAndMask(root: ParentNode): void {
-  for (const node of walkTextNodes(root, { minLength: MIN_TEXT_LENGTH })) {
-    const matches = collectMatches(node.nodeValue ?? "");
-    if (matches.length > 0) {
-      replaceMatchesInTextNode(node, matches, RULE_ID);
-    }
-  }
+  const signal = lifecycle.signal;
+  walkTextNodesChunked(root, {
+    signal,
+    minLength: MIN_TEXT_LENGTH,
+    process: (chunk) => {
+      for (const node of chunk) {
+        const matches = collectMatches(node.nodeValue ?? "");
+        if (matches.length > 0) {
+          replaceMatchesInTextNode(node, matches, RULE_ID);
+        }
+      }
+    },
+  });
 }
 
 const watcher = createSubtreeWatcher({
@@ -95,6 +113,9 @@ const watcher = createSubtreeWatcher({
 });
 
 function apply(root: ParentNode): void {
+  unsubscribeRouteChange ??= subscribeRouteChange(() => {
+    lifecycle.abortAndReset();
+  });
   scanAndMask(root);
   watcher.start(root);
 }
@@ -106,5 +127,8 @@ export const piiRedactRule = {
   apply,
   teardown: () => {
     watcher.stop();
+    lifecycle.abortAndReset();
+    unsubscribeRouteChange?.();
+    unsubscribeRouteChange = null;
   },
 } satisfies Rule;

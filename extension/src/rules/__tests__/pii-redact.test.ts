@@ -1,4 +1,5 @@
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { __resetRouteChangeForTesting } from "../../lib/route-change";
 import { piiRedactRule } from "../pii-redact";
 
 const VALID_CARD = "4111 1111 1111 1111"; // Visa test number, Luhn-valid.
@@ -15,10 +16,13 @@ async function flushMutations(): Promise<void> {
 beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
+  history.replaceState(null, "", "/initial");
+  __resetRouteChangeForTesting();
 });
 
 afterEach(() => {
   piiRedactRule.teardown();
+  __resetRouteChangeForTesting();
   jest.useRealTimers();
 });
 
@@ -137,5 +141,87 @@ describe("pii-redact lazy-loaded subtrees", () => {
     jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
+  });
+
+  it("masks every match when the tree spans multiple chunks", async () => {
+    // Tree exceeds chunkSize=100 so the walker yields mid-scan. Without
+    // the resume-anchor in walkSync, the walker's currentNode points to
+    // the (now-detached) last node of chunk 1 after replaceMatchesInTextNode
+    // runs — and nextNode() returns null, silently dropping every match
+    // past the first 100. This test runs the rule end-to-end and
+    // confirms all 200 SSNs get hidden, not just the first chunk.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    // Chunk 1 (100 nodes) runs synchronously.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    // Drain the chunked walk's yields. Each yield is a setTimeout(0)
+    // whose `.then()` callback schedules the next chunk via microtask;
+    // alternating timer + microtask drains the queue.
+    for (let i = 0; i < 5; i++) {
+      jest.advanceTimersByTime(0);
+      await flushMutations();
+    }
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      200,
+    );
+  });
+
+  it("route change aborts the in-flight chunked walk", () => {
+    // Same shape as the teardown abort test, but the cancellation
+    // signal is a route-change event (the rule subscribes to
+    // subscribeRouteChange on first apply). Confirms the
+    // route-change → abortAndReset wiring fires.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    history.replaceState(null, "", "/new-route");
+    globalThis.dispatchEvent(new Event("popstate"));
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
+
+  it("teardown aborts the in-flight chunked walk", () => {
+    // 200 text nodes — exceeds the 100-node chunkSize default, so the
+    // walk yields after chunk 1. teardown fires before the yield's
+    // setTimeout(0) resolves; the continuation sees the aborted signal
+    // and bails, leaving only the first chunk's matches masked.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    // Sync chunk 1: 100 placeholders.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    piiRedactRule.teardown();
+    // Fire the yield's setTimeout(0). The continuation checks the
+    // signal first — aborted — and returns without processing
+    // chunk 2.
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
   });
 });
