@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { __resetRouteChangeForTesting } from "../../lib/route-change";
 import { encodedPayloadRedactRule } from "../encoded-payload-redact";
 
 // Benign English sentences padded to a length whose base64 encoding
@@ -53,10 +54,13 @@ async function flushMutations(): Promise<void> {
 beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
+  history.replaceState(null, "", "/initial");
+  __resetRouteChangeForTesting();
 });
 
 afterEach(() => {
   encodedPayloadRedactRule.teardown();
+  __resetRouteChangeForTesting();
   jest.useRealTimers();
 });
 
@@ -237,6 +241,27 @@ describe("encoded-payload-redact teardown", () => {
     );
 
     encodedPayloadRedactRule.teardown();
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
+
+  it("route change aborts the in-flight chunked walk", () => {
+    const payload = base64Encode(LONG_PROSE);
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>blob-${i}: ${payload}</p>`,
+    ).join("");
+
+    encodedPayloadRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    history.replaceState(null, "", "/new-route");
+    globalThis.dispatchEvent(new Event("popstate"));
     jest.advanceTimersByTime(0);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(

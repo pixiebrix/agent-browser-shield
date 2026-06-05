@@ -1,4 +1,5 @@
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { __resetRouteChangeForTesting } from "../../lib/route-change";
 import { promptInjectionRedactRule } from "../prompt-injection-redact";
 import { FIXTURES } from "./injection-fixtures";
 
@@ -271,9 +272,12 @@ describe("prompt-injection-redact", () => {
 describe("prompt-injection-redact abort", () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    history.replaceState(null, "", "/initial");
+    __resetRouteChangeForTesting();
   });
   afterEach(() => {
     promptInjectionRedactRule.teardown();
+    __resetRouteChangeForTesting();
     jest.useRealTimers();
   });
 
@@ -300,6 +304,26 @@ describe("prompt-injection-redact abort", () => {
     jest.advanceTimersByTime(0);
 
     // Aborted before onComplete: no placeholders ever installed.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+    expect(document.querySelectorAll("p")).toHaveLength(200);
+  });
+
+  it("route change aborts the in-flight chunked walk before onComplete", () => {
+    // Mirror of the teardown test, but the cancellation signal is a
+    // route-change event. Verifies the subscribeRouteChange wiring.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>${FIXTURES.IGNORE_HACKED} ${i}</p>`,
+    ).join("");
+
+    promptInjectionRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+    expect(document.querySelectorAll("p")).toHaveLength(200);
+
+    history.replaceState(null, "", "/new-route");
+    globalThis.dispatchEvent(new Event("popstate"));
+    jest.advanceTimersByTime(0);
+
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
     expect(document.querySelectorAll("p")).toHaveLength(200);
   });

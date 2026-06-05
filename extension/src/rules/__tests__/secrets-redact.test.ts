@@ -1,4 +1,5 @@
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { __resetRouteChangeForTesting } from "../../lib/route-change";
 import { secretsRedactRule } from "../secrets-redact";
 
 const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
@@ -27,10 +28,13 @@ async function flushMutations(): Promise<void> {
 beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
+  history.replaceState(null, "", "/initial");
+  __resetRouteChangeForTesting();
 });
 
 afterEach(() => {
   secretsRedactRule.teardown();
+  __resetRouteChangeForTesting();
   jest.useRealTimers();
 });
 
@@ -244,6 +248,27 @@ describe("secrets-redact lazy-loaded subtrees", () => {
     );
 
     secretsRedactRule.teardown();
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
+
+  it("route change aborts the in-flight chunked walk", () => {
+    // Mirrors the teardown abort test but via the route-change wiring.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>key-${i}: ${AWS_KEY}</p>`,
+    ).join("");
+
+    secretsRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    history.replaceState(null, "", "/new-route");
+    globalThis.dispatchEvent(new Event("popstate"));
     jest.advanceTimersByTime(0);
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(

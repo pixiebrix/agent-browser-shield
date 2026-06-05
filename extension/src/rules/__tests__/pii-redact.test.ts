@@ -1,4 +1,5 @@
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import { __resetRouteChangeForTesting } from "../../lib/route-change";
 import { piiRedactRule } from "../pii-redact";
 
 const VALID_CARD = "4111 1111 1111 1111"; // Visa test number, Luhn-valid.
@@ -15,10 +16,13 @@ async function flushMutations(): Promise<void> {
 beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
+  history.replaceState(null, "", "/initial");
+  __resetRouteChangeForTesting();
 });
 
 afterEach(() => {
   piiRedactRule.teardown();
+  __resetRouteChangeForTesting();
   jest.useRealTimers();
 });
 
@@ -167,6 +171,30 @@ describe("pii-redact lazy-loaded subtrees", () => {
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
       200,
+    );
+  });
+
+  it("route change aborts the in-flight chunked walk", () => {
+    // Same shape as the teardown abort test, but the cancellation
+    // signal is a route-change event (the rule subscribes to
+    // subscribeRouteChange on first apply). Confirms the
+    // route-change → abortAndReset wiring fires.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    history.replaceState(null, "", "/new-route");
+    globalThis.dispatchEvent(new Event("popstate"));
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
     );
   });
 
