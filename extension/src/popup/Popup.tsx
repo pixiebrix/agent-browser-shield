@@ -51,6 +51,17 @@ export function Popup() {
           </p>
         )}
       </div>
+      <button
+        type="button"
+        className="open-options"
+        onClick={() => {
+          chrome.runtime.openOptionsPage(() => {
+            window.close();
+          });
+        }}
+      >
+        Configure rules
+      </button>
       <DetectionsSection />
       <label className="options-button-toggle">
         <span className="options-button-toggle__text">
