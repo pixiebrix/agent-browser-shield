@@ -24,6 +24,11 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers();
+  // Some tests flip document.hidden; restore so they don't leak state.
+  Object.defineProperty(document, "hidden", {
+    configurable: true,
+    value: false,
+  });
 });
 
 describe("createSubtreeWatcher", () => {
@@ -59,11 +64,27 @@ describe("createSubtreeWatcher", () => {
     await flushMutations();
     jest.advanceTimersByTime(THROTTLE_MS);
 
-    // lodash throttle with leading + trailing → one call on the leading
-    // edge; the burst within the window collapses into that single call.
+    // Trailing-only throttle: the burst collapses into a single drain at
+    // the end of the window.
     expect(onSubtrees).toHaveBeenCalledTimes(1);
     const [roots] = onSubtrees.mock.calls[0] as [Element[]];
     expect(roots).toHaveLength(5);
+    watcher.stop();
+  });
+
+  it("does not fire on the leading edge — single call after one window", async () => {
+    const onSubtrees = jest.fn();
+    const watcher = createSubtreeWatcher({ onSubtrees });
+    watcher.start(document.body);
+
+    document.body.append(document.createElement("div"));
+    await flushMutations();
+    // Pre-window: nothing has fired yet.
+    expect(onSubtrees).not.toHaveBeenCalled();
+
+    // After the window closes: one drain.
+    jest.advanceTimersByTime(THROTTLE_MS);
+    expect(onSubtrees).toHaveBeenCalledTimes(1);
     watcher.stop();
   });
 
@@ -256,7 +277,7 @@ describe("createSubtreeWatcher", () => {
   });
 
   describe("custom throttle", () => {
-    it("respects an explicit throttleMs", async () => {
+    it("respects an explicit throttleMs (trailing-only)", async () => {
       const onSubtrees = jest.fn();
       const watcher = createSubtreeWatcher({
         onSubtrees,
@@ -264,24 +285,170 @@ describe("createSubtreeWatcher", () => {
       });
       watcher.start(document.body);
 
-      const div = document.createElement("div");
-      document.body.append(div);
-
-      // leading-edge fires immediately on the first addition.
+      document.body.append(document.createElement("div"));
       await flushMutations();
-      expect(onSubtrees).toHaveBeenCalledTimes(1);
 
-      const div2 = document.createElement("div");
-      document.body.append(div2);
-      await flushMutations();
-      // Within the 1000ms window — the trailing call hasn't fired yet.
+      // Within the window — no drain yet.
       jest.advanceTimersByTime(500);
-      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      expect(onSubtrees).not.toHaveBeenCalled();
 
-      // Cross the window — the trailing call drains the pending element.
+      // Cross the window — trailing call fires once.
       jest.advanceTimersByTime(600);
       await flushMutations();
-      expect(onSubtrees).toHaveBeenCalledTimes(2);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+  });
+
+  describe("ignored tags", () => {
+    it("drops <style> and <br> additions at enqueue", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      document.body.append(document.createElement("style"));
+      document.body.append(document.createElement("br"));
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("still surfaces <script> additions (json-ld rules need them)", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      document.body.append(document.createElement("script"));
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("still surfaces real-content additions alongside ignored ones", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      document.body.append(document.createElement("style"));
+      const real = document.createElement("article");
+      document.body.append(real);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([real]);
+      watcher.stop();
+    });
+  });
+
+  describe("burst-size flush", () => {
+    it("drains immediately once pending crosses the threshold", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // 600 > BURST_FLUSH_THRESHOLD (512). Append synchronously so the
+      // MutationObserver gets them all in one callback.
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < 600; i++) {
+        fragment.append(document.createElement("div"));
+      }
+      document.body.append(fragment);
+
+      await flushMutations();
+      // No timer advancement — the burst threshold should have flushed.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toHaveLength(600);
+      watcher.stop();
+    });
+
+    it("does not flush before the threshold (waits for the throttle)", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // 100 < threshold — should wait out the throttle window.
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < 100; i++) {
+        fragment.append(document.createElement("div"));
+      }
+      document.body.append(fragment);
+
+      await flushMutations();
+      expect(onSubtrees).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+  });
+
+  describe("visibilitychange pause", () => {
+    function setHidden(hidden: boolean): void {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("stops delivering callbacks while document.hidden is true", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      setHidden(true);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("flushes the pending set when going hidden", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // Enqueue while visible — no drain yet.
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      expect(onSubtrees).not.toHaveBeenCalled();
+
+      // Going hidden drains immediately so we don't sit on stale state.
+      setHidden(true);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("resumes observing when the tab becomes visible again", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      setHidden(true);
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).not.toHaveBeenCalled();
+
+      setHidden(false);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
       watcher.stop();
     });
   });
