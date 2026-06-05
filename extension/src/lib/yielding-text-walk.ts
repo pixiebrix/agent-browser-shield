@@ -20,8 +20,13 @@
 // The filter (NON_CONTENT_TAGS skip, isInsidePlaceholder skip,
 // minLength, optional shouldSkipParent) mirrors `walkTextNodes` in
 // dom-utils — same predicates, different consumer shape.
+//
+// Collection phase descends into open shadow roots so the
+// injection-defense rules (the primary consumers of this walker)
+// catch payloads rendered inside web-component shadow trees. Closed
+// shadow roots are opaque by design and not visited.
 
-import { isInsidePlaceholder, isNonContentTag } from "./dom-utils";
+import { collectTextNodesShadowPiercing } from "./dom-utils";
 
 export interface WalkTextNodesChunkedOptions {
   // Aborts the walk at the next chunk boundary. Already-processed
@@ -85,37 +90,25 @@ export function walkTextNodesChunked(
     return;
   }
 
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      const parent = node.parentElement;
-      if (!parent) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (isNonContentTag(parent.tagName)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (isInsidePlaceholder(parent)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (shouldSkipParent?.(parent)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      const value = node.nodeValue;
-      if (!value || value.length < minLength) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
+  // Pre-collect every matching text node in one pass. The original
+  // implementation interleaved a TreeWalker with chunked processing
+  // and had to dance around walker.currentNode resume across the
+  // boundary where the consumer detached nodes. Pre-collection makes
+  // the resume problem disappear (the array holds direct refs) and
+  // unlocks shadow-piercing — TreeWalker doesn't cross shadow
+  // boundaries, but the recursive collector does. Memory cost is one
+  // Text reference per qualifying node; CPU cost is one O(n) walk
+  // up-front instead of an O(n) walk interleaved with processing.
+  const texts = collectTextNodesShadowPiercing(
+    root,
+    shouldSkipParent ? { minLength, shouldSkipParent } : { minLength },
+  );
 
-  let chunk: Text[] = [];
-  // Holds a node we pre-fetched before yielding (to keep walker.currentNode
-  // anchored to a still-connected node across the boundary). Consumed
-  // as the first node on the next walkSync entry — we can't let
-  // walker.nextNode() consume it because we'd want to revisit it
-  // ourselves, and the chunk-size invariant breaks if we seed it
-  // straight into `chunk` and then push another node on top.
-  let pendingResume: Text | null = null;
+  if (signal?.aborted) {
+    return;
+  }
+
+  let index = 0;
 
   function runFinalize(): void {
     if (signal?.aborted) {
@@ -124,41 +117,16 @@ export function walkTextNodesChunked(
     onComplete?.();
   }
 
-  // Walks until the chunk fills or the tree is exhausted. Returns
-  // "yield" when a chunk was just flushed and walking should continue
-  // after a scheduler yield; "done" when the walker has no more nodes
-  // and the trailing partial chunk (if any) has been processed.
-  function walkSync(): "yield" | "done" {
-    let next: Node | null = pendingResume ?? walker.nextNode();
-    pendingResume = null;
-    while (next) {
-      chunk.push(next as Text);
-      if (chunk.length >= chunkSize) {
-        // Pre-fetch the resume point BEFORE process() runs. The
-        // consumer rules call replaceMatchesInTextNode in `process`,
-        // which detaches every text node in the chunk — including
-        // the one currently held in walker.currentNode. nextNode()
-        // off a detached node returns null and the walk silently
-        // ends after the first chunk. Grabbing the next node up
-        // front and re-anchoring walker.currentNode to it after
-        // process keeps the traversal valid across the boundary.
-        const resume = walker.nextNode();
-        process(chunk);
-        chunk = [];
-        if (!resume) {
-          return "done";
-        }
-        walker.currentNode = resume;
-        pendingResume = resume as Text;
-        return "yield";
-      }
-      next = walker.nextNode();
+  // Process up to `chunkSize` text nodes; returns "yield" when there's
+  // more to do (consumer must await a scheduler yield before calling
+  // again) or "done" when the array is exhausted.
+  function runChunkSync(): "yield" | "done" {
+    const end = Math.min(index + chunkSize, texts.length);
+    if (end > index) {
+      process(texts.slice(index, end));
+      index = end;
     }
-    if (chunk.length > 0) {
-      process(chunk);
-      chunk = [];
-    }
-    return "done";
+    return index < texts.length ? "yield" : "done";
   }
 
   function continueAsync(): void {
@@ -166,7 +134,7 @@ export function walkTextNodesChunked(
       if (signal?.aborted) {
         return;
       }
-      if (walkSync() === "done") {
+      if (runChunkSync() === "done") {
         runFinalize();
       } else {
         continueAsync();
@@ -174,7 +142,7 @@ export function walkTextNodesChunked(
     });
   }
 
-  if (walkSync() === "done") {
+  if (runChunkSync() === "done") {
     runFinalize();
   } else {
     continueAsync();

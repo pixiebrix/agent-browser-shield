@@ -21,34 +21,44 @@ export function isNonContentTag(tagName: string): boolean {
 }
 
 // Text that a sighted user could perceive — like `Node.textContent` but with
-// `NON_CONTENT_TAGS` subtrees (SCRIPT/STYLE/NOSCRIPT/TEMPLATE) excluded.
-// `Node.textContent` happily serializes inline script source as if it were
-// prose, which is misleading for any check keyed on "does this element show
-// text" (e.g., color-match on a wrapper whose only `textContent` is a JSON
-// blob inside a <script>).
+// `NON_CONTENT_TAGS` subtrees (SCRIPT/STYLE/NOSCRIPT/TEMPLATE) excluded and
+// open shadow roots descended into. `Node.textContent` happily serializes
+// inline script source as if it were prose (misleading for any check keyed on
+// "does this element show text" — e.g., color-match on a wrapper whose only
+// `textContent` is a JSON blob inside a <script>) and ignores shadow trees
+// entirely (which is the wrong default for the rules that consume this —
+// hidden-text-strip, color-match heuristics, etc. need to see the text the
+// user / a11y tree would render, including from web components).
 export function visibleTextContent(element: Element): string {
-  const walker = globalThis.document.createTreeWalker(
-    element,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (node) => {
-        let parent: Node | null = node.parentNode;
-        while (parent && parent !== element) {
-          if (
-            parent.nodeType === Node.ELEMENT_NODE &&
-            NON_CONTENT_TAGS.has((parent as Element).tagName)
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          parent = parent.parentNode;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    },
-  );
   let out = "";
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    out += node.textContent ?? "";
+  const visit = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      out += node.textContent ?? "";
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+    const childElement = node as Element;
+    if (NON_CONTENT_TAGS.has(childElement.tagName)) {
+      return;
+    }
+    for (const child of childElement.childNodes) {
+      visit(child);
+    }
+    if (childElement.shadowRoot) {
+      for (const child of childElement.shadowRoot.childNodes) {
+        visit(child);
+      }
+    }
+  };
+  for (const child of element.childNodes) {
+    visit(child);
+  }
+  if (element.shadowRoot) {
+    for (const child of element.shadowRoot.childNodes) {
+      visit(child);
+    }
   }
   return out;
 }
@@ -178,39 +188,91 @@ interface WalkTextNodesOptions {
 // Walk every text node under `root` whose parent is a content element (not
 // SCRIPT/STYLE/NOSCRIPT, not inside an existing placeholder) and is at least
 // `minLength` characters. Replaces the hand-rolled TreeWalker + collection
-// loop in pii-redact / secrets-redact / prompt-injection-redact.
+// loop in pii-redact / secrets-redact / prompt-injection-redact. Open shadow
+// roots are descended into so injection-defense rules catch payloads
+// rendered inside web-component shadow trees; closed shadow roots are
+// opaque by design and skipped.
 export function walkTextNodes(
   root: ParentNode,
   options: WalkTextNodesOptions = {},
 ): Text[] {
+  return collectTextNodesShadowPiercing(root, options);
+}
+
+// Shared core for `walkTextNodes` and the chunked walker in
+// `yielding-text-walk.ts`. Pre-collects every text node under `root`
+// matching the same filter both APIs expose, descending through open
+// shadow roots so the injection-defense rules don't have a free
+// bypass via `attachShadow`. Pre-collection (vs an interleaved
+// TreeWalker) is what makes shadow piercing tractable — TreeWalker
+// can't cross shadow boundaries, and a custom iterator with the same
+// chunked-resume semantics would have to dance around consumer
+// detachment. A static array side-steps both problems.
+export function collectTextNodesShadowPiercing(
+  root: ParentNode,
+  options: WalkTextNodesOptions = {},
+): Text[] {
   const { minLength = 0, shouldSkipParent } = options;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      const parent = node.parentElement;
-      if (!parent) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (isNonContentTag(parent.tagName)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (isInsidePlaceholder(parent)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (shouldSkipParent?.(parent)) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      const value = node.nodeValue;
-      if (!value || value.length < minLength) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
   const out: Text[] = [];
-  let current = walker.nextNode();
-  while (current) {
-    out.push(current as Text);
-    current = walker.nextNode();
+
+  function accept(text: Text): boolean {
+    const parent = text.parentElement;
+    if (!parent) {
+      return false;
+    }
+    if (isNonContentTag(parent.tagName)) {
+      return false;
+    }
+    if (isInsidePlaceholder(parent)) {
+      return false;
+    }
+    if (shouldSkipParent?.(parent)) {
+      return false;
+    }
+    const value = text.nodeValue;
+    if (!value || value.length < minLength) {
+      return false;
+    }
+    return true;
+  }
+
+  function visit(node: Node): void {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node as Text;
+      if (accept(text)) {
+        out.push(text);
+      }
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+    const element = node as Element;
+    // Prune NON_CONTENT_TAGS at the subtree boundary — saves the
+    // per-text-node parent check on the (rare) case where a content
+    // element has many text descendants under a script/style. Equivalent
+    // result either way; the filter at `accept` is the source of truth.
+    if (isNonContentTag(element.tagName)) {
+      return;
+    }
+    for (const child of element.childNodes) {
+      visit(child);
+    }
+    if (element.shadowRoot) {
+      for (const child of element.shadowRoot.childNodes) {
+        visit(child);
+      }
+    }
+  }
+
+  // ParentNode covers Element, Document, DocumentFragment, ShadowRoot.
+  // For an Element root, also descend into its own shadow.
+  if (root.nodeType === Node.ELEMENT_NODE) {
+    visit(root);
+  } else {
+    for (const child of root.childNodes) {
+      visit(child);
+    }
   }
   return out;
 }

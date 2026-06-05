@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { useEffect, useRef } from "react";
+import { INJECTIONS } from "../data/injection-fixtures";
 
 // Mounts third-party-style widget markup INSIDE an open shadow root so
 // reviewers can confirm the extension's rules see past the shadow
@@ -13,7 +14,11 @@ import { useEffect, useRef } from "react";
 // matching rules already target in the light tree (`#intercom-frame`,
 // `ins.adsbygoogle`) so the demo doesn't depend on any per-shadow
 // special-casing in the rules themselves — only on the dispatcher
-// actually reaching the content.
+// actually reaching the content. The injection paragraph at the bottom
+// exercises the Tier 2 shadow-piercing text walker
+// (`prompt-injection-redact` / `pii-redact` / `secrets-redact`): a
+// reachable instruction-shaped block that a light-DOM-only walker
+// would have missed entirely.
 
 export default function ShadowDomEmbed() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -47,6 +52,18 @@ export default function ShadowDomEmbed() {
     ad.textContent = "Sponsored — limited-time offer from a partner brand";
     shadow.append(ad);
 
+    // Injection-shaped paragraph for the text-walk rules. The fixture
+    // is reused from the product detail page so we don't ship a new
+    // plaintext payload in source — the existing base64 encoding in
+    // `injection-fixtures.ts` is the convention. Wrapped in a <p>
+    // because `prompt-injection-redact` looks for a block-level
+    // ancestor (`p, li, blockquote, …`) to scope the placeholder.
+    const injection = document.createElement("p");
+    injection.style.cssText =
+      "margin:8px 0 0;padding:6px 10px;border:1px solid #b91c1c;background:#fef2f2;color:#7f1d1d;font:13px system-ui;";
+    injection.textContent = INJECTIONS.PRODUCT_DETAIL_HIDDEN_SYSTEM;
+    shadow.append(injection);
+
     return () => {
       // React StrictMode runs effects twice in dev. Leaving the shadow
       // root behind on unmount would let it accumulate across reloads;
@@ -66,12 +83,12 @@ export default function ShadowDomEmbed() {
         Third-party widgets mounted inside an open shadow root
       </h2>
       <p className="mt-2 text-sm text-stone-700">
-        The two items below are appended into <code>this.attachShadow()</code> —
-        the same way modern chat, consent, and ad SDKs ship their UI to keep
-        their styles isolated from the host page. Without the shadow-aware
-        subtree watcher the extension's rules would walk right past them; with
-        it, the chat launcher should be removed and the sponsored block
-        replaced.
+        The items below are appended into <code>this.attachShadow()</code> — the
+        same way modern chat, consent, and ad SDKs ship their UI to keep their
+        styles isolated from the host page. With shadow-aware rules enabled, the
+        chat launcher should be removed, the sponsored block replaced, and the
+        prompt-injection paragraph hidden behind a reveal placeholder. Without
+        shadow piercing every item would survive untouched.
       </p>
       <div
         ref={hostRef}
