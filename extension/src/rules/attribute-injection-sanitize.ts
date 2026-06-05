@@ -17,6 +17,15 @@
 // would use to plant a "pre-confirmed" instruction that the agent
 // treats as load-bearing while the user has no chance to clear it.
 //
+// Accepted limitation: an enabled `<input value="…">` sitting inside a
+// CSS-hidden wrapper (`visibility:hidden`, off-left, opacity:0) is not
+// scrubbed. The same asymmetry as the disabled case applies — the user
+// can't see or edit the value — but matching it would require a
+// computed-style check at scrub time, which conflicts with this rule's
+// lightweight attribute-driven watcher. Pre-#176 these were caught when
+// `hidden-text-strip` detached the wrapper; the regression is accepted
+// because the trigger surface is narrow (enabled input + hidden wrapper).
+//
 // On a match we remove the whole attribute rather than blanking its
 // value. An empty `aria-label` actively hides an element from
 // accessibility-tree consumers (which is worse than no aria-label,
