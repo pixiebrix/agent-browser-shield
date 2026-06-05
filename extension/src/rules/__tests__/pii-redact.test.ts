@@ -138,4 +138,31 @@ describe("pii-redact lazy-loaded subtrees", () => {
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
+
+  it("teardown aborts the in-flight chunked walk", () => {
+    // 200 text nodes — exceeds the 100-node chunkSize default, so the
+    // walk yields after chunk 1. teardown fires before the yield's
+    // setTimeout(0) resolves; the continuation sees the aborted signal
+    // and bails, leaving only the first chunk's matches masked.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>node-${i}: ${SSN}</p>`,
+    ).join("");
+
+    piiRedactRule.apply(document.body);
+    // Sync chunk 1: 100 placeholders.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    piiRedactRule.teardown();
+    // Fire the yield's setTimeout(0). The continuation checks the
+    // signal first — aborted — and returns without processing
+    // chunk 2.
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
 });

@@ -223,4 +223,24 @@ describe("encoded-payload-redact teardown", () => {
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
+
+  it("teardown aborts the in-flight chunked walk", () => {
+    const payload = base64Encode(LONG_PROSE);
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>blob-${i}: ${payload}</p>`,
+    ).join("");
+
+    encodedPayloadRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    encodedPayloadRedactRule.teardown();
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
 });

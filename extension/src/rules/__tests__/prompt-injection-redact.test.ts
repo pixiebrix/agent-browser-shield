@@ -267,3 +267,40 @@ describe("prompt-injection-redact", () => {
     });
   });
 });
+
+describe("prompt-injection-redact abort", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    promptInjectionRedactRule.teardown();
+    jest.useRealTimers();
+  });
+
+  it("teardown aborts the in-flight chunked walk before the hide pass runs", () => {
+    // 200 paragraphs, each with an injection phrase. The chunked walk
+    // fills chunk 1 (100 nodes), yields, and only schedules the second
+    // pass (filterToOutermost + hide) via onComplete after the LAST
+    // chunk. teardown's abortAndReset fires before the yield resolves
+    // — so the continuation bails, onComplete never runs, and nothing
+    // gets hidden. The collected first-chunk containers stay in the
+    // DOM unchanged.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>${FIXTURES.IGNORE_HACKED} ${i}</p>`,
+    ).join("");
+
+    promptInjectionRedactRule.apply(document.body);
+    // Chunk 1 processed synchronously: collects containers but does
+    // NOT yet hide (onComplete is gated to the end of the walk).
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+    expect(document.querySelectorAll("p")).toHaveLength(200);
+
+    promptInjectionRedactRule.teardown();
+    jest.advanceTimersByTime(0);
+
+    // Aborted before onComplete: no placeholders ever installed.
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+    expect(document.querySelectorAll("p")).toHaveLength(200);
+  });
+});

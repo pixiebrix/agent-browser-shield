@@ -229,4 +229,25 @@ describe("secrets-redact lazy-loaded subtrees", () => {
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
   });
+
+  it("teardown aborts the in-flight chunked walk", () => {
+    // Tree exceeds the 100-node chunkSize so the walk yields after
+    // chunk 1; teardown's abortAndReset bails the continuation.
+    document.body.innerHTML = Array.from(
+      { length: 200 },
+      (_, i) => `<p>key-${i}: ${AWS_KEY}</p>`,
+    ).join("");
+
+    secretsRedactRule.apply(document.body);
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+
+    secretsRedactRule.teardown();
+    jest.advanceTimersByTime(0);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(
+      100,
+    );
+  });
 });

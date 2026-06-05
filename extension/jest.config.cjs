@@ -29,12 +29,16 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-  // `webext-storage` is published as ESM-only and our ts-jest config emits
-  // CommonJS, so importing it directly trips a `SyntaxError: Unexpected token
-  // 'export'`. None of our tests exercise the real storage flow (they mock the
-  // storage modules wholesale), so route the import to a small CJS stub.
+  // `webext-storage` and `abort-utils` are published as ESM-only and our
+  // ts-jest config emits CommonJS, so importing them directly trips a
+  // `SyntaxError: Unexpected token 'export'`. None of our tests exercise
+  // the real storage flow (they mock the storage modules wholesale), and
+  // the abort-utils stub is a faithful enough subset for the lifecycle
+  // semantics the rules depend on (signal flip on abortAndReset, onAbort
+  // dispatch).
   moduleNameMapper: {
     "^webext-storage$": "<rootDir>/src/__test-mocks__/webext-storage.ts",
+    "^abort-utils$": "<rootDir>/src/__test-mocks__/abort-utils.ts",
   },
   // - jest-webextension-mock: installs globalThis.chrome + browser with
   //   jest.fn() stubs for MV2/MV3 APIs the extension uses (runtime, storage,

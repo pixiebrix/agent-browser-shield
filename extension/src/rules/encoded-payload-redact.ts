@@ -19,10 +19,12 @@
 // Matches are replaced inline with a click-to-reveal placeholder. False
 // positives cost one click, not lost data.
 
-import { walkTextNodes } from "../lib/dom-utils";
+import { ReusableAbortController } from "abort-utils";
 import type { InlineMatch } from "../lib/placeholder";
 import { replaceMatchesInTextNode } from "../lib/placeholder";
+import { subscribeRouteChange } from "../lib/route-change";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { walkTextNodesChunked } from "../lib/yielding-text-walk";
 import type { Rule } from "./types";
 
 const RULE_ID = "encoded-payload-redact" as const;
@@ -296,13 +298,24 @@ function collectMatches(text: string): InlineMatch[] {
   return merged;
 }
 
+// See pii-redact for lifecycle rationale.
+const lifecycle = new ReusableAbortController();
+let unsubscribeRouteChange: (() => void) | null = null;
+
 function scanAndMask(root: ParentNode): void {
-  for (const node of walkTextNodes(root, { minLength: MIN_TEXT_LENGTH })) {
-    const matches = collectMatches(node.nodeValue ?? "");
-    if (matches.length > 0) {
-      replaceMatchesInTextNode(node, matches, RULE_ID);
-    }
-  }
+  const signal = lifecycle.signal;
+  walkTextNodesChunked(root, {
+    signal,
+    minLength: MIN_TEXT_LENGTH,
+    process: (chunk) => {
+      for (const node of chunk) {
+        const matches = collectMatches(node.nodeValue ?? "");
+        if (matches.length > 0) {
+          replaceMatchesInTextNode(node, matches, RULE_ID);
+        }
+      }
+    },
+  });
 }
 
 const watcher = createSubtreeWatcher({
@@ -315,6 +328,9 @@ const watcher = createSubtreeWatcher({
 });
 
 function apply(root: ParentNode): void {
+  unsubscribeRouteChange ??= subscribeRouteChange(() => {
+    lifecycle.abortAndReset();
+  });
   scanAndMask(root);
   watcher.start(root);
 }
@@ -327,5 +343,8 @@ export const encodedPayloadRedactRule = {
   apply,
   teardown: () => {
     watcher.stop();
+    lifecycle.abortAndReset();
+    unsubscribeRouteChange?.();
+    unsubscribeRouteChange = null;
   },
 } satisfies Rule;
