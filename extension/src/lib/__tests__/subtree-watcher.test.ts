@@ -10,7 +10,10 @@
 
 import { PLACEHOLDER_CLASS } from "../placeholder";
 import { __resetRouteChangeForTesting } from "../route-change";
-import { createSubtreeWatcher } from "../subtree-watcher";
+import {
+  __resetSubtreeWatcherForTesting,
+  createSubtreeWatcher,
+} from "../subtree-watcher";
 
 const THROTTLE_MS = 250;
 
@@ -22,6 +25,7 @@ beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
   __resetRouteChangeForTesting();
+  __resetSubtreeWatcherForTesting();
   history.replaceState(null, "", "/initial");
 });
 
@@ -33,6 +37,7 @@ afterEach(() => {
     value: false,
   });
   __resetRouteChangeForTesting();
+  __resetSubtreeWatcherForTesting();
 });
 
 describe("createSubtreeWatcher", () => {
@@ -713,6 +718,266 @@ describe("createSubtreeWatcher", () => {
       const [secondCallRoots] = onSubtrees.mock.calls[1] as [Element[]];
       expect(secondCallRoots).toEqual([document.body]);
       watcher.stop();
+    });
+  });
+
+  describe("shared mutation router", () => {
+    // The router collapses N watchers on the same root into one
+    // MutationObserver. These tests pin down that the fan-out preserves
+    // per-subscriber options and that router lifecycle tracks the last
+    // subscriber.
+
+    function setHidden(hidden: boolean): void {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("fans out a single mutation to every watcher on the same root", async () => {
+      const a = jest.fn();
+      const b = jest.fn();
+      const watcherA = createSubtreeWatcher({ onSubtrees: a });
+      const watcherB = createSubtreeWatcher({ onSubtrees: b });
+      watcherA.start(document.body);
+      watcherB.start(document.body);
+
+      const div = document.createElement("div");
+      document.body.append(div);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(a).toHaveBeenCalledTimes(1);
+      expect(b).toHaveBeenCalledTimes(1);
+      const [aRoots] = a.mock.calls[0] as [Element[]];
+      const [bRoots] = b.mock.calls[0] as [Element[]];
+      expect(aRoots).toEqual([div]);
+      expect(bRoots).toEqual([div]);
+
+      watcherA.stop();
+      watcherB.stop();
+    });
+
+    it("instantiates one MutationObserver for two watchers on the same root", () => {
+      const constructorSpy = jest.fn();
+      const RealMutationObserver = globalThis.MutationObserver;
+      class CountingObserver extends RealMutationObserver {
+        constructor(callback: MutationCallback) {
+          super(callback);
+          constructorSpy();
+        }
+      }
+      globalThis.MutationObserver = CountingObserver;
+
+      try {
+        const watcherA = createSubtreeWatcher({ onSubtrees: jest.fn() });
+        const watcherB = createSubtreeWatcher({ onSubtrees: jest.fn() });
+        watcherA.start(document.body);
+        watcherB.start(document.body);
+
+        expect(constructorSpy).toHaveBeenCalledTimes(1);
+
+        watcherA.stop();
+        watcherB.stop();
+      } finally {
+        globalThis.MutationObserver = RealMutationObserver;
+      }
+    });
+
+    it("keeps per-subscriber skipPlaceholderSubtrees independent", async () => {
+      const skipping = jest.fn();
+      const seeing = jest.fn();
+      const watcherSkip = createSubtreeWatcher({
+        onSubtrees: skipping,
+        skipPlaceholderSubtrees: true,
+      });
+      const watcherSee = createSubtreeWatcher({ onSubtrees: seeing });
+      watcherSkip.start(document.body);
+      watcherSee.start(document.body);
+
+      const placeholder = document.createElement("div");
+      placeholder.classList.add(PLACEHOLDER_CLASS);
+      document.body.append(placeholder);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // Skipping subscriber drops the placeholder; the other still gets it.
+      expect(skipping).not.toHaveBeenCalled();
+      expect(seeing).toHaveBeenCalledTimes(1);
+
+      watcherSkip.stop();
+      watcherSee.stop();
+    });
+
+    it("respects independent throttleMs per subscriber", async () => {
+      const fast = jest.fn();
+      const slow = jest.fn();
+      const watcherFast = createSubtreeWatcher({
+        onSubtrees: fast,
+        throttleMs: 100,
+      });
+      const watcherSlow = createSubtreeWatcher({
+        onSubtrees: slow,
+        throttleMs: 1000,
+      });
+      watcherFast.start(document.body);
+      watcherSlow.start(document.body);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+
+      jest.advanceTimersByTime(150);
+      // Fast window closed; slow one still open.
+      expect(fast).toHaveBeenCalledTimes(1);
+      expect(slow).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1000);
+      expect(slow).toHaveBeenCalledTimes(1);
+
+      watcherFast.stop();
+      watcherSlow.stop();
+    });
+
+    it("keeps observing after one of two watchers on a root stops", async () => {
+      const a = jest.fn();
+      const b = jest.fn();
+      const watcherA = createSubtreeWatcher({ onSubtrees: a });
+      const watcherB = createSubtreeWatcher({ onSubtrees: b });
+      watcherA.start(document.body);
+      watcherB.start(document.body);
+
+      watcherA.stop();
+
+      const div = document.createElement("div");
+      document.body.append(div);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(a).not.toHaveBeenCalled();
+      expect(b).toHaveBeenCalledTimes(1);
+      watcherB.stop();
+    });
+
+    it("stops observing once the last watcher on a root stops", async () => {
+      const a = jest.fn();
+      const b = jest.fn();
+      const watcherA = createSubtreeWatcher({ onSubtrees: a });
+      const watcherB = createSubtreeWatcher({ onSubtrees: b });
+      watcherA.start(document.body);
+      watcherB.start(document.body);
+      watcherA.stop();
+      watcherB.stop();
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(a).not.toHaveBeenCalled();
+      expect(b).not.toHaveBeenCalled();
+    });
+
+    it("treats Document and document.body as the same router target", async () => {
+      // Both call sites should share one observer because resolveTarget
+      // collapses Document → its body.
+      const constructorSpy = jest.fn();
+      const RealMutationObserver = globalThis.MutationObserver;
+      class CountingObserver extends RealMutationObserver {
+        constructor(callback: MutationCallback) {
+          super(callback);
+          constructorSpy();
+        }
+      }
+      globalThis.MutationObserver = CountingObserver;
+
+      try {
+        const a = jest.fn();
+        const b = jest.fn();
+        const watcherA = createSubtreeWatcher({ onSubtrees: a });
+        const watcherB = createSubtreeWatcher({ onSubtrees: b });
+        watcherA.start(document);
+        watcherB.start(document.body);
+
+        expect(constructorSpy).toHaveBeenCalledTimes(1);
+
+        document.body.append(document.createElement("div"));
+        await flushMutations();
+        jest.advanceTimersByTime(THROTTLE_MS);
+        expect(a).toHaveBeenCalledTimes(1);
+        expect(b).toHaveBeenCalledTimes(1);
+
+        watcherA.stop();
+        watcherB.stop();
+      } finally {
+        globalThis.MutationObserver = RealMutationObserver;
+      }
+    });
+
+    it("uses separate routers for distinct roots (body vs. head)", async () => {
+      const bodyCallback = jest.fn();
+      const headCallback = jest.fn();
+      const bodyWatcher = createSubtreeWatcher({ onSubtrees: bodyCallback });
+      const headWatcher = createSubtreeWatcher({ onSubtrees: headCallback });
+      bodyWatcher.start(document.body);
+      headWatcher.start(document.head);
+
+      const meta = document.createElement("meta");
+      document.head.append(meta);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(headCallback).toHaveBeenCalledTimes(1);
+      expect(bodyCallback).not.toHaveBeenCalled();
+
+      bodyWatcher.stop();
+      headWatcher.stop();
+    });
+
+    it("fans out a route-change sweep to every subscriber on the same root", () => {
+      const a = jest.fn();
+      const b = jest.fn();
+      const watcherA = createSubtreeWatcher({ onSubtrees: a });
+      const watcherB = createSubtreeWatcher({ onSubtrees: b });
+      watcherA.start(document.body);
+      watcherB.start(document.body);
+
+      history.replaceState(null, "", "/route-b");
+      globalThis.dispatchEvent(new Event("popstate"));
+      jest.advanceTimersToNextFrame();
+
+      expect(a).toHaveBeenCalledTimes(1);
+      expect(b).toHaveBeenCalledTimes(1);
+      const [aRoots] = a.mock.calls[0] as [Element[]];
+      const [bRoots] = b.mock.calls[0] as [Element[]];
+      expect(aRoots).toEqual([document.body]);
+      expect(bRoots).toEqual([document.body]);
+
+      watcherA.stop();
+      watcherB.stop();
+    });
+
+    it("flushes every subscriber's pending on visibilitychange to hidden", async () => {
+      const a = jest.fn();
+      const b = jest.fn();
+      const watcherA = createSubtreeWatcher({ onSubtrees: a });
+      const watcherB = createSubtreeWatcher({ onSubtrees: b });
+      watcherA.start(document.body);
+      watcherB.start(document.body);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      expect(a).not.toHaveBeenCalled();
+      expect(b).not.toHaveBeenCalled();
+
+      setHidden(true);
+      expect(a).toHaveBeenCalledTimes(1);
+      expect(b).toHaveBeenCalledTimes(1);
+
+      watcherA.stop();
+      watcherB.stop();
     });
   });
 });
