@@ -6,6 +6,7 @@ import AdvertorialCard from "../components/AdvertorialCard";
 import BotDetectorProbe from "../components/BotDetectorProbe";
 import CountdownBadge from "../components/CountdownBadge";
 import ProductCard from "../components/ProductCard";
+import ShadowDomEmbed from "../components/ShadowDomEmbed";
 import { products } from "../data/products";
 
 export default function Home() {
@@ -104,6 +105,8 @@ export default function Home() {
           />
         </div>
       </section>
+
+      <ShadowDomEmbed />
 
       <BotDetectorProbe />
 
