@@ -6,8 +6,8 @@
 // random benign prefix/suffix noise to confirm the regex set still fires
 // when the payload is embedded inside surrounding text. A negative
 // property covers attributes outside the allowlist (the rule must not
-// touch them) and another covers enabled-input `value` (only `disabled`
-// inputs get their value stripped).
+// touch them) and another covers enabled visible-input `value` (only
+// `disabled` or `type="hidden"` inputs get their value stripped).
 
 import fc from "fast-check";
 
@@ -115,20 +115,24 @@ describe("attribute-injection-sanitize (property)", () => {
     );
   });
 
-  it("strips value on a disabled input carrying injection, leaves enabled inputs alone", () => {
+  it("strips value on disabled and hidden inputs, leaves enabled visible inputs alone", () => {
     fc.assert(
       fc.property(ADVERSARIAL, (payload) => {
         document.body.innerHTML = "";
         const disabled = document.createElement("input");
         disabled.setAttribute("disabled", "");
         disabled.setAttribute("value", payload);
+        const hidden = document.createElement("input");
+        hidden.setAttribute("type", "hidden");
+        hidden.setAttribute("value", payload);
         const enabled = document.createElement("input");
         enabled.setAttribute("value", payload);
-        document.body.append(disabled, enabled);
+        document.body.append(disabled, hidden, enabled);
 
         attributeInjectionSanitizeRule.apply(document.body);
 
         expect(disabled.hasAttribute("value")).toBe(false);
+        expect(hidden.hasAttribute("value")).toBe(false);
         expect(enabled.getAttribute("value")).toBe(payload);
       }),
     );
