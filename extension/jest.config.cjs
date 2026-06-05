@@ -80,20 +80,22 @@ module.exports = {
   // path-specific thresholds (./src/rules/) are evaluated against those files
   // only; "global" applies to the rest (lib/, options/parse-config, scripts/,
   // data/). The two ranges differ because src/rules/ is the security surface
-  // and held to a higher bar. Ratchet up as untested rules
-  // (cross-origin-frame-hide, irrelevant-sections-hide) get tests.
+  // and held to a higher bar. Ratchet up as `irrelevant-sections-redact` (the
+  // last untested rule) gets tests. Note: scripts/ is mostly codegen with
+  // ~0% coverage and drags the global average down; that's why global sits
+  // well below the all-files summary number.
   coverageThreshold: {
     global: {
-      statements: 60,
-      branches: 50,
-      functions: 55,
-      lines: 60,
+      statements: 62,
+      branches: 58,
+      functions: 58,
+      lines: 61,
     },
     "./src/rules/": {
-      statements: 75,
-      branches: 58,
-      functions: 75,
-      lines: 75,
+      statements: 84,
+      branches: 71,
+      functions: 88,
+      lines: 84,
     },
   },
 };
