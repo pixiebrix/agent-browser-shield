@@ -15,7 +15,9 @@ function dispatchProbe(): void {
   document.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 
-let sendMessageMock: jest.Mock;
+// chrome.runtime.sendMessage is installed as jest.fn() on globalThis by
+// jest-webextension-mock. Cast to jest.Mock for the control surface.
+const sendMessageMock = chrome.runtime.sendMessage as unknown as jest.Mock;
 
 // The rule fires two distinct sendMessage flows: `inject-webdriver-probe`
 // on every apply (background-side executeScript fallback) and
@@ -38,15 +40,12 @@ function detectionCalls(): unknown[] {
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock = jest.fn().mockResolvedValue(undefined);
-  (globalThis as unknown as { chrome: unknown }).chrome = {
-    runtime: { sendMessage: sendMessageMock },
-  };
+  sendMessageMock.mockReset();
+  sendMessageMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   webdriverProbeAnnotateRule.teardown();
-  delete (globalThis as unknown as { chrome?: unknown }).chrome;
 });
 
 describe("webdriverProbeAnnotateRule.apply", () => {

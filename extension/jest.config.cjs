@@ -36,10 +36,20 @@ module.exports = {
   moduleNameMapper: {
     "^webext-storage$": "<rootDir>/src/__test-mocks__/webext-storage.ts",
   },
-  // Polyfills/stubs for browser APIs jsdom omits (Element.checkVisibility) or
-  // returns degenerate values for (offsetWidth/offsetHeight). Centralized so
-  // tests don't redo the same Object.defineProperty dance.
-  setupFiles: ["<rootDir>/src/__test-mocks__/jsdom-extras.ts"],
+  // - jest-webextension-mock: installs globalThis.chrome + browser with
+  //   jest.fn() stubs for MV2/MV3 APIs the extension uses (runtime, storage,
+  //   tabs, action, browserAction). Tests reference `chrome.*` directly.
+  // - chrome-mv3-extras: adds chrome.scripting (MV3 content-script
+  //   registration), which jest-webextension-mock 4.1 does not include.
+  // - jsdom-extras: polyfills/stubs for browser APIs jsdom omits
+  //   (Element.checkVisibility) or returns degenerate values for
+  //   (offsetWidth/offsetHeight). Centralized so tests don't redo the same
+  //   Object.defineProperty dance.
+  setupFiles: [
+    "jest-webextension-mock",
+    "<rootDir>/src/__test-mocks__/chrome-mv3-extras.ts",
+    "<rootDir>/src/__test-mocks__/jsdom-extras.ts",
+  ],
   clearMocks: true,
   collectCoverageFrom: [
     "src/lib/**/*.ts",
