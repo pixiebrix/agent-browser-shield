@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 35 rules, each independently toggleable from the extension's
+The extension ships 36 rules, each independently toggleable from the extension's
 options page. Rules marked **default: on** are active on fresh install;
 **default: off** rules must be enabled manually.
 
