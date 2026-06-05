@@ -10,6 +10,7 @@
 // the popup — keep this file dependency-free so it stays trivially
 // bundleable into each of those three entry points.
 
+import type { RuleId } from "../rules/rule-defaults.generated";
 import type { RoachMotelDifficulty } from "../rules/site-data.generated";
 
 export type DetectionKind =
@@ -54,5 +55,34 @@ export interface GetTabDetectionsRequest {
 }
 
 export interface GetTabDetectionsResponse {
+  detections: DetectionPayload[];
+}
+
+// Per-frame, per-rule footprint reported by the content script. The shape is
+// a partial record so a frame with no activity sends an empty object — the
+// background uses that as the cue to drop the frame's entry, mirroring the
+// `count <= 0` cleanup the previous single-number reporter used. Keys are
+// `RuleId` values; bad keys are filtered by the background.
+export interface RuleCountMessage {
+  type: "rule-count";
+  counts: Partial<Record<RuleId, number>>;
+}
+
+export interface GetTabRuleCountsRequest {
+  type: "get-tab-rule-counts";
+  tabId: number;
+}
+
+export interface RuleCountEntry {
+  ruleId: RuleId;
+  count: number;
+}
+
+// Combined snapshot for the popup. Folds frame-summed redaction/annotation
+// counts (`entries`, sorted by count desc) with the existing one-shot
+// detection payloads (`detections`) so the popup makes a single round-trip
+// to render both the per-rule list and the rich "Heads up" cards.
+export interface GetTabRuleCountsResponse {
+  entries: RuleCountEntry[];
   detections: DetectionPayload[];
 }

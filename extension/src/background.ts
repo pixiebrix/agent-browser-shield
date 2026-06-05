@@ -6,6 +6,9 @@ import type {
   DetectionPayload,
   GetTabDetectionsRequest,
   GetTabDetectionsResponse,
+  GetTabRuleCountsRequest,
+  GetTabRuleCountsResponse,
+  RuleCountEntry,
   RuleDetectionMessage,
 } from "./lib/detection-messages";
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
@@ -14,18 +17,25 @@ import { log } from "./lib/log";
 import { ruleStatesStorage } from "./lib/storage";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 import { installProbe } from "./lib/webdriver-probe-source";
+import type { RuleId } from "./rules/rule-defaults.generated";
+import { RULE_IDS } from "./rules/rule-defaults.generated";
 
-// Per-tab, per-frame placeholder counts. Each content script reports its own
-// frame's tally; the badge shows the sum across frames for that tab.
-const tabCounts = new Map<number, Map<number, number>>();
+// Per-tab, per-frame, per-rule footprint counts. Each content script reports
+// its own frame's tally grouped by rule id; the badge shows the cross-frame
+// sum across all rules, and the popup renders per-rule entries derived from
+// the same map.
+type RuleCountMap = Partial<Record<RuleId, number>>;
+const tabRuleCounts = new Map<number, Map<number, RuleCountMap>>();
+const KNOWN_RULE_IDS = new Set<string>(RULE_IDS);
 
 // Per-tab record of rule detections surfaced to the popup. One entry per
 // kind per tab — both contributing rules are topFrameOnly and self-dedupe
 // per document, so a single payload per kind is the natural shape. Held in
 // memory, cleared on top-level navigation and tab close, same posture as
-// `tabCounts`. A service-worker restart drops it; the popup briefly shows
-// "Nothing flagged" on a page that did have detections until the next
-// re-apply. Promote to chrome.storage.session if that becomes a problem.
+// `tabRuleCounts`. A service-worker restart drops it; the popup briefly
+// shows "Nothing flagged" on a page that did have detections until the
+// next re-apply. Promote to chrome.storage.session if that becomes a
+// problem.
 const tabDetections = new Map<number, Map<DetectionKind, DetectionPayload>>();
 
 // Maps each detection kind to the rule id that produces it. Used to clear
@@ -43,16 +53,33 @@ const BADGE_COLOR_DEFAULT = "#2563eb";
 // "something to look at" signal is visually consistent across surfaces.
 const BADGE_COLOR_DETECTION = "#f59e0b";
 
-function totalForTab(tabId: number): number {
-  const frames = tabCounts.get(tabId);
+// Cross-frame sum per rule for a tab. Frames may overlap on rule ids when
+// the same rule fires in multiple frames (subframes, shadow trees) — we
+// add their contributions. Returned object only contains rules with a
+// non-zero footprint.
+function summedCountsForTab(tabId: number): RuleCountMap {
+  const frames = tabRuleCounts.get(tabId);
+  const summed: RuleCountMap = {};
   if (!frames) {
-    return 0;
+    return summed;
   }
-  let sum = 0;
-  for (const value of frames.values()) {
-    sum += value;
+  for (const frameCounts of frames.values()) {
+    for (const [ruleId, count] of Object.entries(frameCounts) as [
+      RuleId,
+      number,
+    ][]) {
+      summed[ruleId] = (summed[ruleId] ?? 0) + count;
+    }
   }
-  return sum;
+  return summed;
+}
+
+function totalForTab(tabId: number): number {
+  let total = 0;
+  for (const count of Object.values(summedCountsForTab(tabId))) {
+    total += count;
+  }
+  return total;
 }
 
 function formatBadge(total: number): string {
@@ -87,20 +114,30 @@ function refreshBadge(tabId: number): void {
   }
 }
 
-function recordFrameCount(tabId: number, frameId: number, count: number): void {
-  let frames = tabCounts.get(tabId);
-  if (!frames) {
-    frames = new Map();
-    tabCounts.set(tabId, frames);
-  }
-  if (count <= 0) {
+function recordFrameRuleCounts(
+  tabId: number,
+  frameId: number,
+  counts: RuleCountMap,
+): void {
+  let frames = tabRuleCounts.get(tabId);
+  const hasAnyCount = Object.values(counts).some((value) => value > 0);
+  if (!hasAnyCount) {
+    if (!frames) {
+      refreshBadge(tabId);
+      return;
+    }
     frames.delete(frameId);
     if (frames.size === 0) {
-      tabCounts.delete(tabId);
+      tabRuleCounts.delete(tabId);
     }
-  } else {
-    frames.set(frameId, count);
+    refreshBadge(tabId);
+    return;
   }
+  if (!frames) {
+    frames = new Map();
+    tabRuleCounts.set(tabId, frames);
+  }
+  frames.set(frameId, counts);
   refreshBadge(tabId);
 }
 
@@ -115,7 +152,7 @@ function recordDetection(tabId: number, payload: DetectionPayload): void {
 }
 
 function clearTab(tabId: number): void {
-  tabCounts.delete(tabId);
+  tabRuleCounts.delete(tabId);
   tabDetections.delete(tabId);
   refreshBadge(tabId);
 }
@@ -132,7 +169,7 @@ function clearDetectionsOfKind(kind: DetectionKind): void {
 }
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  tabCounts.delete(tabId);
+  tabRuleCounts.delete(tabId);
   tabDetections.delete(tabId);
 });
 
@@ -156,10 +193,10 @@ subscribeEnforcementEnabled((enabled) => {
   // for each needs to refresh, and we don't want to iterate a map we're
   // mutating.
   const affected = new Set<number>([
-    ...tabCounts.keys(),
+    ...tabRuleCounts.keys(),
     ...tabDetections.keys(),
   ]);
-  tabCounts.clear();
+  tabRuleCounts.clear();
   tabDetections.clear();
   for (const tabId of affected) {
     refreshBadge(tabId);
@@ -200,7 +237,10 @@ chrome.runtime.onMessage.addListener(
     if (!rawMessage || typeof rawMessage !== "object") {
       return undefined;
     }
-    const message = rawMessage as { type?: unknown; count?: unknown };
+    const message = rawMessage as {
+      type?: unknown;
+      counts?: unknown;
+    };
 
     if (message.type === "open-options") {
       chrome.runtime.openOptionsPage(() => {
@@ -241,17 +281,32 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
 
-    if (message.type === "placeholder-count") {
+    if (message.type === "rule-count") {
       const tabId = sender.tab?.id;
       const frameId = sender.frameId;
-      const raw = message.count;
+      const raw = message.counts;
       if (
         typeof tabId === "number" &&
         typeof frameId === "number" &&
-        typeof raw === "number" &&
-        Number.isFinite(raw)
+        typeof raw === "object" &&
+        raw !== null
       ) {
-        recordFrameCount(tabId, frameId, Math.max(0, Math.floor(raw)));
+        // Sanitize: drop unknown rule ids and non-positive counts so a
+        // misbehaving content script can't poison the popup or badge.
+        const sanitized: RuleCountMap = {};
+        for (const [key, value] of Object.entries(
+          raw as Record<string, unknown>,
+        )) {
+          if (
+            KNOWN_RULE_IDS.has(key) &&
+            typeof value === "number" &&
+            Number.isFinite(value) &&
+            value > 0
+          ) {
+            sanitized[key as RuleId] = Math.floor(value);
+          }
+        }
+        recordFrameRuleCounts(tabId, frameId, sanitized);
       }
       return undefined;
     }
@@ -277,9 +332,45 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
 
+    if (message.type === "get-tab-rule-counts") {
+      const request = message as unknown as GetTabRuleCountsRequest;
+      const response: GetTabRuleCountsResponse =
+        typeof request.tabId === "number"
+          ? buildRuleCountsResponse(request.tabId)
+          : { entries: [], detections: [] };
+      sendResponse(response);
+      return undefined;
+    }
+
     return undefined;
   },
 );
+
+// Build the combined per-rule + detection snapshot the popup renders.
+// Entries are sorted by count desc, breaking ties by rule id for a stable
+// render across reopens. Detection-producing rules contribute the rich
+// payload to `detections` and (when their landmark-stamped node carries a
+// RULE_ATTR/HIDDEN_ATTR) also surface in `entries` via the per-frame
+// reporter — the popup is free to render them in both surfaces, since the
+// "Heads up" cards convey site-level context the bare count can't.
+function buildRuleCountsResponse(tabId: number): GetTabRuleCountsResponse {
+  const summed = summedCountsForTab(tabId);
+  const entries: RuleCountEntry[] = [];
+  for (const [ruleId, count] of Object.entries(summed) as [RuleId, number][]) {
+    if (count > 0) {
+      entries.push({ ruleId, count });
+    }
+  }
+  entries.sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+    return a.ruleId.localeCompare(b.ruleId);
+  });
+  const detectionEntries = tabDetections.get(tabId);
+  const detections = detectionEntries ? [...detectionEntries.values()] : [];
+  return { entries, detections };
+}
 
 // Classify requests use a long-lived port instead of sendMessage so the
 // content-side abort can propagate to the background's fetch. See
