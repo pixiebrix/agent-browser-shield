@@ -19,6 +19,10 @@ import throttle from "lodash/throttle";
 import { PLACEHOLDER_CLASS } from "./placeholder";
 import { subscribeRouteChange } from "./route-change";
 import {
+  RUN_ON_INACTIVE_TABS_DEFAULT,
+  runOnInactiveTabsStorage,
+} from "./run-on-inactive-tabs";
+import {
   discoverShadowRootsIn,
   subscribeShadowRootAttached,
 } from "./shadow-roots";
@@ -100,6 +104,17 @@ interface Router {
 // One router per observed root. document.body is the common case; the head
 // gets its own entry because meta-injection-strip observes it separately.
 const routersByTarget = new Map<Node, Router>();
+
+// Cached value of the runOnInactiveTabs setting. Seeded with the build-time
+// default so the sync startRouter() path has something to read before storage
+// resolves. Updated by the async get() and by the subscribe() listener for
+// cross-tab changes; reconciles every active router on change.
+let runOnInactive = RUN_ON_INACTIVE_TABS_DEFAULT;
+let unsubscribeRunOnInactive: (() => void) | null = null;
+
+function shouldPauseForHidden(): boolean {
+  return document.hidden && !runOnInactive;
+}
 
 function resolveTarget(root: ParentNode): Node | null {
   // rule-engine always passes document.body, but accept Document for
@@ -233,7 +248,7 @@ function observerInit(router: Router): MutationObserverInit {
 }
 
 function refreshObservation(router: Router): void {
-  if (!router.observer || document.hidden) {
+  if (!router.observer || shouldPauseForHidden()) {
     return;
   }
   // observe() on an already-observed MO replaces the existing options
@@ -285,7 +300,7 @@ function adoptShadowRoot(router: Router, shadowRoot: ShadowRoot): void {
     fanOut(router, mutations);
   });
   router.shadowObservers.set(shadowRoot, observer);
-  if (!document.hidden) {
+  if (!shouldPauseForHidden()) {
     observer.observe(shadowRoot, observerInit(router));
   }
 
@@ -364,21 +379,25 @@ function isUnderRouterTarget(router: Router, node: Node): boolean {
   return router.target.contains(node);
 }
 
+function detachRouterObserver(router: Router): void {
+  // Flush whatever's pending so we don't sit on a stale snapshot until
+  // observation resumes, then stop receiving mutations. Background tabs
+  // keep firing observer callbacks; disconnecting is the cheap way to
+  // opt out for the duration. Shadow observers need the same treatment —
+  // they have their own MO instances and would otherwise keep delivering
+  // mutations in the background.
+  for (const subscriber of router.subscribers) {
+    subscriber.throttledScan.flush();
+  }
+  router.observer?.disconnect();
+  for (const observer of router.shadowObservers.values()) {
+    observer.disconnect();
+  }
+}
+
 function handleVisibilityChange(router: Router): void {
-  if (document.hidden) {
-    // Flush whatever's pending so we don't sit on a stale snapshot until
-    // the user returns, then stop receiving mutations. Background tabs
-    // keep firing observer callbacks; disconnecting is the cheap way to
-    // opt out for the duration. Shadow observers need the same
-    // treatment — they have their own MO instances and would otherwise
-    // keep delivering mutations in the background.
-    for (const subscriber of router.subscribers) {
-      subscriber.throttledScan.flush();
-    }
-    router.observer?.disconnect();
-    for (const observer of router.shadowObservers.values()) {
-      observer.disconnect();
-    }
+  if (shouldPauseForHidden()) {
+    detachRouterObserver(router);
   } else if (router.observer) {
     refreshObservation(router);
   }
@@ -409,7 +428,7 @@ function handleRouteChange(router: Router): void {
   }
   router.routeSweepHandle = requestAnimationFrame(() => {
     router.routeSweepHandle = null;
-    if (!router.observer || document.hidden) {
+    if (!router.observer || shouldPauseForHidden()) {
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -422,15 +441,51 @@ function handleRouteChange(router: Router): void {
   });
 }
 
+function handleRunOnInactiveChange(next: boolean): void {
+  if (next === runOnInactive) {
+    return;
+  }
+  runOnInactive = next;
+  // Only the hidden case can change behavior — visible tabs always observe.
+  // Reconcile every active router to whichever state the new setting implies.
+  if (!document.hidden) {
+    return;
+  }
+  for (const router of routersByTarget.values()) {
+    if (!router.observer) {
+      continue;
+    }
+    if (runOnInactive) {
+      refreshObservation(router);
+    } else {
+      detachRouterObserver(router);
+    }
+  }
+}
+
+function ensureRunOnInactiveSubscription(): void {
+  if (unsubscribeRunOnInactive) {
+    return;
+  }
+  // Resolve the persisted setting and listen for cross-tab edits. The first
+  // sync window uses the build-time default, which matches what we'd observe
+  // in a typical fresh-load active tab anyway.
+  unsubscribeRunOnInactive = runOnInactiveTabsStorage.subscribe(
+    handleRunOnInactiveChange,
+  );
+  void runOnInactiveTabsStorage.get().then(handleRunOnInactiveChange);
+}
+
 function startRouter(router: Router): void {
   if (router.observer) {
     return;
   }
+  ensureRunOnInactiveSubscription();
   const observer = new MutationObserver((mutations) => {
     fanOut(router, mutations);
   });
   router.observer = observer;
-  if (!document.hidden) {
+  if (!shouldPauseForHidden()) {
     observer.observe(router.target, observerInit(router));
   }
   router.visibilityListener = () => {
@@ -482,6 +537,10 @@ function stopRouter(router: Router): void {
     router.routeSweepHandle = null;
   }
   routersByTarget.delete(router.target);
+  if (routersByTarget.size === 0) {
+    unsubscribeRunOnInactive?.();
+    unsubscribeRunOnInactive = null;
+  }
 }
 
 function getOrCreateRouter(target: Node): Router {
@@ -624,4 +683,7 @@ export function __resetSubtreeWatcherForTesting(): void {
     }
   }
   routersByTarget.clear();
+  unsubscribeRunOnInactive?.();
+  unsubscribeRunOnInactive = null;
+  runOnInactive = RUN_ON_INACTIVE_TABS_DEFAULT;
 }

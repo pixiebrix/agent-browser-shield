@@ -108,7 +108,8 @@ async function build(): Promise<void> {
   if (defaultsPath) {
     const changed =
       Object.keys(overrides.rules).length +
-      (overrides.optionsButton === undefined ? 0 : 1);
+      (overrides.optionsButton === undefined ? 0 : 1) +
+      (overrides.runOnInactiveTabs === undefined ? 0 : 1);
     console.log(
       `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
     );
@@ -151,6 +152,11 @@ async function build(): Promise<void> {
         overrides.optionsButton === undefined
           ? ""
           : String(overrides.optionsButton),
+      ),
+      "process.env.EXTENSION_RUN_ON_INACTIVE_TABS_DEFAULT": JSON.stringify(
+        overrides.runOnInactiveTabs === undefined
+          ? ""
+          : String(overrides.runOnInactiveTabs),
       ),
     },
   });

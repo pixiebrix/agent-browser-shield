@@ -10,6 +10,7 @@
 
 import { PLACEHOLDER_CLASS } from "../placeholder";
 import { __resetRouteChangeForTesting } from "../route-change";
+import { runOnInactiveTabsStorage } from "../run-on-inactive-tabs";
 import {
   __resetShadowRootsForTesting,
   installShadowRootHook,
@@ -25,7 +26,15 @@ async function flushMutations(): Promise<void> {
   await Promise.resolve();
 }
 
-beforeEach(() => {
+// The watcher reads runOnInactiveTabsStorage asynchronously on start(). Tests
+// that depend on the resolved value (or that flipped it) need to drain the
+// chained microtasks before observing behavior.
+async function flushStorageReads(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+beforeEach(async () => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
   __resetRouteChangeForTesting();
@@ -36,6 +45,9 @@ beforeEach(() => {
   // behavior run regardless of whether content.ts has been imported.
   installShadowRootHook();
   history.replaceState(null, "", "/initial");
+  // The in-memory webext-storage mock persists across tests; reset to the
+  // committed default so each test starts from a known state.
+  await runOnInactiveTabsStorage.set(false);
 });
 
 afterEach(() => {
@@ -737,14 +749,6 @@ describe("createSubtreeWatcher", () => {
     // per-subscriber options and that router lifecycle tracks the last
     // subscriber.
 
-    function setHidden(hidden: boolean): void {
-      Object.defineProperty(document, "hidden", {
-        configurable: true,
-        value: hidden,
-      });
-      document.dispatchEvent(new Event("visibilitychange"));
-    }
-
     it("fans out a single mutation to every watcher on the same root", async () => {
       const a = jest.fn();
       const b = jest.fn();
@@ -970,6 +974,14 @@ describe("createSubtreeWatcher", () => {
     });
 
     it("flushes every subscriber's pending on visibilitychange to hidden", async () => {
+      function setHidden(hidden: boolean): void {
+        Object.defineProperty(document, "hidden", {
+          configurable: true,
+          value: hidden,
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+
       const a = jest.fn();
       const b = jest.fn();
       const watcherA = createSubtreeWatcher({ onSubtrees: a });
@@ -1575,6 +1587,131 @@ describe("createSubtreeWatcher", () => {
       expect(onSubtrees).toHaveBeenCalledTimes(1);
       const [roots] = onSubtrees.mock.calls[0] as [Element[]];
       expect(roots.filter((r) => r === added)).toHaveLength(1);
+      watcher.stop();
+    });
+  });
+
+  describe("runOnInactiveTabs option", () => {
+    function setHidden(hidden: boolean): void {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    function fireRouteChange(toUrl: string): void {
+      history.replaceState(null, "", toUrl);
+      globalThis.dispatchEvent(new Event("popstate"));
+    }
+
+    it("keeps delivering callbacks while hidden when enabled at start", async () => {
+      await runOnInactiveTabsStorage.set(true);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      // Wait out the storage read so the watcher latches the stored value
+      // before we hide the tab.
+      await flushStorageReads();
+
+      setHidden(true);
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("reattaches when the option flips on while the tab is hidden", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushStorageReads();
+
+      setHidden(true);
+      // Default-off: a mid-hidden mutation is ignored.
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).not.toHaveBeenCalled();
+
+      await runOnInactiveTabsStorage.set(true);
+      await flushMutations();
+
+      document.body.append(document.createElement("section"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("detaches when the option flips off while the tab is hidden", async () => {
+      await runOnInactiveTabsStorage.set(true);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushStorageReads();
+
+      setHidden(true);
+      // Sanity: with the option on, a hidden mutation surfaces.
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+
+      await runOnInactiveTabsStorage.set(false);
+      await flushMutations();
+
+      document.body.append(document.createElement("section"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // No additional call: the watcher detached when the option flipped off.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("does not change behavior while the tab is visible", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushStorageReads();
+
+      // Visible the whole time; flipping the option must not double-attach
+      // or otherwise duplicate callbacks.
+      await runOnInactiveTabsStorage.set(true);
+      await flushMutations();
+      await runOnInactiveTabsStorage.set(false);
+      await flushMutations();
+
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("sweeps document.body on route change while hidden when enabled", async () => {
+      await runOnInactiveTabsStorage.set(true);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushStorageReads();
+
+      setHidden(true);
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([document.body]);
       watcher.stop();
     });
   });
