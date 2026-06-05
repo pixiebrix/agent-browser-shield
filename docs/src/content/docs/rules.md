@@ -437,25 +437,24 @@ the new threat.
 Heuristically detect pages that render content inside closed shadow roots and
 prepend a screen-reader-only landmark noting that the extension cannot see
 inside those shadow trees. Complements the open-shadow-root coverage described
-in [Coverage scope](#coverage-scope) above by giving the agent a positive
-signal at read-time that a known blind spot is in use on this page.
+in [Coverage scope](#coverage-scope) above by giving the agent a positive signal
+at read-time that a known blind spot is in use on this page.
 
-Detection is necessarily heuristic: by spec, an element with `mode: "closed"`
-is indistinguishable from an element with no shadow root at all from outside
+Detection is necessarily heuristic: by spec, an element with `mode: "closed"` is
+indistinguishable from an element with no shadow root at all from outside
 JavaScript. The rule looks for the structural shape strongly correlated with
 "closed shadow host": an upgraded custom element (hyphenated tag name, defined
 in `customElements`) with no light-DOM children, no `host.shadowRoot`, and a
 non-zero rendered box. Built-in elements with UA shadow roots (`<input>`,
-`<details>`, `<video>`) are filtered out for free — their tag names contain
-no hyphen. Declarative shadow DOM (`<template shadowrootmode="closed">`) is
+`<details>`, `<video>`) are filtered out for free — their tag names contain no
+hyphen. Declarative shadow DOM (`<template shadowrootmode="closed">`) is
 indistinguishable from imperative closed shadows after parsing and is not
 separately surfaced.
 
-The landmark says "may contain content ABS cannot see," not "this is
-definitely a closed shadow root" — a custom element that renders via canvas,
-WebGL, or `::before` background-image with no actual shadow root will trip
-the heuristic too. Off by default while the false-positive rate is
-characterized.
+The landmark says "may contain content ABS cannot see," not "this is definitely
+a closed shadow root" — a custom element that renders via canvas, WebGL, or
+`::before` background-image with no actual shadow root will trip the heuristic
+too. Off by default while the false-positive rate is characterized.
 
 ### Visual identity spoofing
 

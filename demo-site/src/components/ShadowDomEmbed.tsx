@@ -27,10 +27,7 @@ import { INJECTIONS } from "../data/injection-fixtures";
 
 const CLOSED_TAG = "abs-closed-widget";
 
-if (
-  typeof customElements !== "undefined" &&
-  !customElements.get(CLOSED_TAG)
-) {
+if (typeof customElements !== "undefined" && !customElements.get(CLOSED_TAG)) {
   customElements.define(
     CLOSED_TAG,
     class extends HTMLElement {
@@ -139,12 +136,12 @@ export default function ShadowDomEmbed() {
         className="shadow-host mt-3 rounded border border-dashed border-slate-300 p-3"
       />
       <p className="mt-4 text-sm text-stone-700">
-        The widget below mounts inside a <em>closed</em> shadow root. ABS
-        cannot reach inside by spec — every rule passes its contents through
-        untouched. With <code>closed-shadow-root-annotate</code> enabled, a
-        screen-reader-only landmark is prepended to the document noting that
-        the page is using closed shadow roots and content here is invisible
-        to the extension.
+        The widget below mounts inside a <em>closed</em> shadow root. ABS cannot
+        reach inside by spec — every rule passes its contents through untouched.
+        With <code>closed-shadow-root-annotate</code> enabled, a
+        screen-reader-only landmark is prepended to the document noting that the
+        page is using closed shadow roots and content here is invisible to the
+        extension.
       </p>
       <div
         ref={closedHostRef}
