@@ -80,27 +80,60 @@ export function createSelectorHideRule(
     );
   }
 
-  function selectorsFor(url: string): string[] {
+  // Single-entry memo keyed by URL. selectorsFor is hot — scan() calls it on
+  // every drain, and the URLPattern.test cost scales with siteRules.length.
+  // Invalidates on SPA route change because globalThis.location.href changes
+  // — no manual cache-bust needed.
+  let memoUrl: string | null = null;
+  let memoSelectors: readonly string[] = [];
+  let memoJoined = "";
+
+  function refreshMemo(url: string): void {
+    if (url === memoUrl) {
+      return;
+    }
     const selectors = [...alwaysOnSelectors];
     for (const rule of siteRules) {
       if (rule.patterns.some((pattern) => pattern.test(url))) {
         selectors.push(...rule.selectors);
       }
     }
-    return selectors;
+    memoUrl = url;
+    memoSelectors = selectors;
+    memoJoined = selectors.join(",");
+  }
+
+  function selectorsFor(url: string): string[] {
+    refreshMemo(url);
+    // Defensive copy — public function, callers shouldn't share the memo.
+    return [...memoSelectors];
   }
 
   function scan(root: ParentNode): void {
-    const selectors = selectorsFor(globalThis.location.href);
-    if (selectors.length === 0) {
+    refreshMemo(globalThis.location.href);
+    if (memoJoined.length === 0) {
       return;
     }
 
-    let candidates = [
-      ...root.querySelectorAll<HTMLElement>(selectors.join(",")),
-    ];
+    let candidates = [...root.querySelectorAll<HTMLElement>(memoJoined)];
     if (candidateFilter) {
       candidates = candidates.filter(candidateFilter);
+    }
+
+    // Outermost-match dedupe: build a Set once, then for each candidate walk
+    // parentElement up to body. O(C·D) instead of the prior O(C²)
+    // `candidates.some(other.contains(element))` — matters on feeds where C
+    // grows into the hundreds over a scroll session.
+    const candidateSet = new Set<HTMLElement>(candidates);
+    function hasCandidateAncestor(element: HTMLElement): boolean {
+      let parent = element.parentElement;
+      while (parent) {
+        if (candidateSet.has(parent)) {
+          return true;
+        }
+        parent = parent.parentElement;
+      }
+      return false;
     }
 
     for (const element of candidates) {
@@ -122,11 +155,7 @@ export function createSelectorHideRule(
       if (element.getAttribute(HIDDEN_ATTR) === id) {
         continue;
       }
-      // Outermost-match only — if a parent is also a candidate, skip this
-      // nested one so we don't double-hide.
-      if (
-        candidates.some((other) => other !== element && other.contains(element))
-      ) {
+      if (hasCandidateAncestor(element)) {
         continue;
       }
       if (removeEntirely) {
