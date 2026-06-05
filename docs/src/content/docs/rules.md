@@ -122,17 +122,17 @@ content surface whose text the host page does not control.
 - **ID:** `html-comment-strip`
 - **Default:** on
 
-Walk every HTML comment in the page and blank its data when the value
-matches the prompt-injection pattern set (the same regex bundle used by
+Walk every HTML comment in the page and blank its data when the value matches
+the prompt-injection pattern set (the same regex bundle used by
 `prompt-injection-redact`). Comments are invisible to humans but readable by
 agents and can carry prompt-injection payloads; the scrub neutralizes the
 matching carrier while leaving the Comment node attached. Comments inside
-`<script>`/`<style>`/`<noscript>` are preserved verbatim. Off-pattern
-comments — license headers, build stamps, dev notes — are left alone, as
-are framework-marker comments that SPA renderers use as Suspense or
-hydration boundaries. The scrub is not reversible within the current page
-load. HTML comments are explicitly enumerated as a non-rendered carrier in
-Greshake et al. [[1]](#ref-greshake-2023).
+`<script>`/`<style>`/`<noscript>` are preserved verbatim. Off-pattern comments —
+license headers, build stamps, dev notes — are left alone, as are
+framework-marker comments that SPA renderers use as Suspense or hydration
+boundaries. The scrub is not reversible within the current page load. HTML
+comments are explicitly enumerated as a non-rendered carrier in Greshake et al.
+[[1]](#ref-greshake-2023).
 
 #### Strip Noscript
 
@@ -140,18 +140,17 @@ Greshake et al. [[1]](#ref-greshake-2023).
 - **Default:** on
 
 Walk every `<noscript>` element in the page and blank its children. A
-browser-use agent runs in a browser at all precisely because the site
-requires JavaScript — an operator who could read the same data from the
-server directly would do that and skip the browser entirely. With JS
-enabled, `<noscript>` content is, by definition, never rendered to a human,
-but the markup still sits in the DOM and is still walked by
-accessibility-tree and `innerText` consumers. That makes it a clean carrier
-for prompt-injection payloads, fabricated authority claims, or fallback
-chrome the agent may treat as load-bearing. The `<noscript>` element itself
-stays attached so SPA frameworks (React 19 native head metadata, Vue
-Teleport-to-head, etc.) that hold a live reference to the node can still
-reconcile it on route change. `html-comment-strip` previously preserved
-Comment nodes inside `<noscript>` so that SSR hydration markers and
+browser-use agent runs in a browser at all precisely because the site requires
+JavaScript — an operator who could read the same data from the server directly
+would do that and skip the browser entirely. With JS enabled, `<noscript>`
+content is, by definition, never rendered to a human, but the markup still sits
+in the DOM and is still walked by accessibility-tree and `innerText` consumers.
+That makes it a clean carrier for prompt-injection payloads, fabricated
+authority claims, or fallback chrome the agent may treat as load-bearing. The
+`<noscript>` element itself stays attached so SPA frameworks (React 19 native
+head metadata, Vue Teleport-to-head, etc.) that hold a live reference to the
+node can still reconcile it on route change. `html-comment-strip` previously
+preserved Comment nodes inside `<noscript>` so that SSR hydration markers and
 conditional-CSS fragments survived; with this rule on, the surrounding
 noscript's contents are blanked, taking those comments with them.
 
@@ -168,16 +167,15 @@ formalized for zero-width characters in Boucher et al.
 
 Walk every element matching a hidden-CSS trigger (foreground matching
 background, `visibility:hidden`, `opacity:0`, `font-size:0`, off-screen
-positioning, zero-area clipping) and blank every text node inside it.
-Defends against "unseeable" prompt injection. The element and its
-descendant element nodes stay attached so SPA frameworks (React, Vue,
-Svelte, Astro) that hold live references to the rendered nodes can still
-reconcile them on route change. Screen-reader-only text is preserved (via
-`.sr-only`, `.visually-hidden`, `.a-offscreen`, `.aok-offscreen`, MUI
-`visuallyHidden`, and the 1×1 + `overflow:hidden` + `position:absolute`
-envelope) so a11y-tree affordances like Amazon SERP prices stay intact.
-`display:none` is left alone so collapsed menus and tab panels keep
-working.
+positioning, zero-area clipping) and blank every text node inside it. Defends
+against "unseeable" prompt injection. The element and its descendant element
+nodes stay attached so SPA frameworks (React, Vue, Svelte, Astro) that hold live
+references to the rendered nodes can still reconcile them on route change.
+Screen-reader-only text is preserved (via `.sr-only`, `.visually-hidden`,
+`.a-offscreen`, `.aok-offscreen`, MUI `visuallyHidden`, and the 1×1 +
+`overflow:hidden` + `position:absolute` envelope) so a11y-tree affordances like
+Amazon SERP prices stay intact. `display:none` is left alone so collapsed menus
+and tab panels keep working.
 
 Liao et al. (EIA) [[3]](#ref-liao-eia) demonstrates that web elements made
 invisible via CSS — opacity, off-screen positioning, zero-area clipping — are
@@ -217,21 +215,19 @@ in the indirect-injection benchmarks.
 - **Default:** on
 
 Walk every `<meta>` element with a `content` attribute and every `<title>`
-element. When the value matches the prompt-injection pattern set (the same
-regex bundle as `prompt-injection-redact`), blank the `<meta>` element's
-`content` attribute and blank the `<title>` text. Both elements stay
-attached so SPA frameworks (React 19 native head metadata, react-helmet,
-Vue Teleport-to-head, Astro view transitions) that hold a live reference to
-the hoisted node can still reconcile it on route change. The rule does not
-gate on specific `name=` / `property=` values — any meta whose content
-carries instruction-shaped text is scrubbed, covering
-`name="description"`, `name="keywords"`, `property="og:title"`,
-`property="og:description"`, `name="twitter:title"`,
-`name="twitter:description"`, `name="twitter:image:alt"`, and the
-`article:*` family. Meta tags without a content attribute are left alone.
-The rule scans `document.head` in addition to the engine's `apply` root,
-since meta and title normally live in `<head>` and SPA frameworks mutate
-`<head>` on route changes.
+element. When the value matches the prompt-injection pattern set (the same regex
+bundle as `prompt-injection-redact`), blank the `<meta>` element's `content`
+attribute and blank the `<title>` text. Both elements stay attached so SPA
+frameworks (React 19 native head metadata, react-helmet, Vue Teleport-to-head,
+Astro view transitions) that hold a live reference to the hoisted node can still
+reconcile it on route change. The rule does not gate on specific `name=` /
+`property=` values — any meta whose content carries instruction-shaped text is
+scrubbed, covering `name="description"`, `name="keywords"`,
+`property="og:title"`, `property="og:description"`, `name="twitter:title"`,
+`name="twitter:description"`, `name="twitter:image:alt"`, and the `article:*`
+family. Meta tags without a content attribute are left alone. The rule scans
+`document.head` in addition to the engine's `apply` root, since meta and title
+normally live in `<head>` and SPA frameworks mutate `<head>` on route changes.
 
 Page metadata is invisible to a sighted human (it surfaces in the browser tab,
 social-share unfurls, and search-result snippets, not in the rendered article

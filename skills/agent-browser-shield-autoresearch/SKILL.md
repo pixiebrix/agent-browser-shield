@@ -237,12 +237,12 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   Rule IDs are `<target>-<verb>`. Pick the verb by what the rule does to the
   DOM, not the threat:
 
-  | Verb       | Use when the rule…                                                   |
-  | ---------- | -------------------------------------------------------------------- |
-  | `annotate` | adds an agent-readable warning or affordance; page content unchanged |
-  | `hide`     | visually conceals with `display: none`; element stays in the DOM     |
-  | `redact`   | replaces content with a click-to-reveal placeholder                  |
-  | `sanitize` | keeps the element and cleans its attributes / text / form state      |
+  | Verb       | Use when the rule…                                                                                                                                                                              |
+  | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `annotate` | adds an agent-readable warning or affordance; page content unchanged                                                                                                                            |
+  | `hide`     | visually conceals with `display: none`; element stays in the DOM                                                                                                                                |
+  | `redact`   | replaces content with a click-to-reveal placeholder                                                                                                                                             |
+  | `sanitize` | keeps the element and cleans its attributes / text / form state                                                                                                                                 |
   | `strip`    | removes the agent-readable content from the DOM (usually by blanking the data carrier so SPA framework references stay valid; the `svg-sprite-strip` rule detaches the sprite element outright) |
 
   Pick `hide` over `redact` only when the element is a floating overlay the user
