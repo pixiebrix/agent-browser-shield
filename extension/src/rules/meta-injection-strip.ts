@@ -8,12 +8,16 @@
 // or `<meta property="og:description">` reaches the agent without ever
 // appearing in the rendered page body.
 //
-// On a match we remove the whole `<meta>` element (a meta tag with no
-// content is useless and the agent should fall through to other signals)
-// and blank the `<title>` text content (kept as an element so callers that
-// read `document.title` get an empty string rather than the original
-// payload). We do not gate on specific `name=` / `property=` values: any
-// meta content that matches the prompt-injection pattern set is removed.
+// On a match we blank the `content` attribute on the `<meta>` and the text
+// content of the `<title>`. The element itself stays attached: frameworks
+// that rendered it (React 19's metadata hoisting, react-helmet, Vue's
+// Teleport-to-head, Astro's `<head>` swaps, htmx head-merge) keep a live
+// reference to the node and walk back to it on route unmount or partial
+// swap — detaching it ourselves makes their next `removeChild` throw and
+// strands the route mid-render. An emptied `content=""` value is just as
+// useless to an agent as a missing tag. We do not gate on specific `name=` /
+// `property=` values: any meta content that matches the prompt-injection
+// pattern set is scrubbed.
 //
 // Coverage extends to `document.head`, not just the engine's `apply` root
 // (typically `document.body`), since meta and title elements normally live
@@ -34,8 +38,8 @@ function containsInjection(value: string): boolean {
 
 function scrubMeta(element: Element): void {
   const content = element.getAttribute("content");
-  if (content !== null && containsInjection(content)) {
-    element.remove();
+  if (content !== null && content.length > 0 && containsInjection(content)) {
+    element.setAttribute("content", "");
   }
 }
 

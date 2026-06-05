@@ -117,7 +117,7 @@ actually does to the DOM, not the threat it addresses:
 | `hide`     | visually conceals with `display: none`; element stays in the DOM     | `ads-hide`, `cookie-banner-hide`, `chat-widget-hide`, `newsletter-modal-hide`                                             |
 | `redact`   | replaces content with a click-to-reveal placeholder                  | `pii-redact`, `secrets-redact`, `comments-redact`, `prompt-injection-redact`                                              |
 | `sanitize` | keeps the element and cleans its attributes / text / form state      | `json-ld-sanitize`, `attribute-injection-sanitize`, `confirmshame-sanitize`, `checkout-checkbox-sanitize`                 |
-| `strip`    | removes the element/node from the DOM entirely                       | `noscript-strip`, `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`, `svg-text-strip`, `meta-injection-strip` |
+| `strip`    | removes the agent-readable content from the DOM (usually by blanking the data carrier — attribute value, text node, comment data — so SPA framework references stay valid; `svg-sprite-strip` detaches the sprite element outright) | `noscript-strip`, `html-comment-strip`, `hidden-text-strip`, `svg-sprite-strip`, `svg-text-strip`, `meta-injection-strip` |
 
 Picking between `hide` and `redact`: if the user can still meaningfully act on
 the element when it's gone (e.g. a floating overlay they would never read),

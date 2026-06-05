@@ -243,7 +243,7 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   | `hide`     | visually conceals with `display: none`; element stays in the DOM     |
   | `redact`   | replaces content with a click-to-reveal placeholder                  |
   | `sanitize` | keeps the element and cleans its attributes / text / form state      |
-  | `strip`    | removes the element/node from the DOM entirely                       |
+  | `strip`    | removes the agent-readable content from the DOM (usually by blanking the data carrier so SPA framework references stay valid; the `svg-sprite-strip` rule detaches the sprite element outright) |
 
   Pick `hide` over `redact` only when the element is a floating overlay the user
   would never want back; for in-flow content prefer `redact` so the agent can
