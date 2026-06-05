@@ -61,6 +61,13 @@ function injectEasyListStylesheet(): void {
   // shares one CSSStyleSheet across every open shadow root (existing
   // + future), so the hide is applied uniformly without a second
   // parse per root.
+  //
+  // The `injectedStyle?.isConnected` guard above allows re-entry when
+  // page JS removed our <style> element, so the prior adoptedSheet
+  // can still be active here. Tear it down before re-adopting — its
+  // subscribeShadowRootAttached listener and its CSSStyleSheet
+  // adoption in every shadow root would otherwise leak.
+  adoptedSheet?.remove();
   adoptedSheet = adoptStylesheetIntoShadowRoots(EASYLIST_STYLESHEET_TEXT);
 }
 

@@ -1,5 +1,9 @@
 import { HIDDEN_ATTR } from "../../lib/dom-markers";
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
+import {
+  __resetShadowRootsForTesting,
+  installShadowRootHook,
+} from "../../lib/shadow-roots";
 import { adsHideRule } from "../ads-hide";
 
 const RULE_ID = "ads-hide";
@@ -146,6 +150,32 @@ describe("adsHideRule EasyList stylesheet", () => {
     adsHideRule.apply(document.body);
     adsHideRule.apply(document.body);
     expect(document.querySelectorAll(`#${EASYLIST_STYLE_ID}`).length).toBe(1);
+  });
+
+  it("does not leak the adopted shadow sheet when the <style> is externally removed and apply re-runs", () => {
+    // Regression for unblocked review on #167: the apply() re-entry
+    // guard is `injectedStyle?.isConnected`, so if page JS removes
+    // our <style> element, the next apply() reinjects it. The shadow
+    // adoption handle was overwritten without calling .remove(),
+    // leaving the prior CSSStyleSheet adopted in every shadow root.
+    __resetShadowRootsForTesting();
+    installShadowRootHook();
+
+    const host = document.createElement("div");
+    const root = host.attachShadow({ mode: "open" });
+    document.body.append(host);
+
+    adsHideRule.apply(document.body);
+    expect(root.adoptedStyleSheets).toHaveLength(1);
+    const firstSheet = root.adoptedStyleSheets[0];
+
+    // Page JS rips out the <style> element.
+    document.querySelector(`#${EASYLIST_STYLE_ID}`)?.remove();
+
+    // Re-entry — should NOT accumulate a second adopted sheet.
+    adsHideRule.apply(document.body);
+    expect(root.adoptedStyleSheets).toHaveLength(1);
+    expect(root.adoptedStyleSheets[0]).not.toBe(firstSheet);
   });
 });
 
