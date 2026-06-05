@@ -112,6 +112,29 @@ describe("noscript-strip", () => {
     expect(noscript?.textContent).toBe("");
   });
 
+  it("re-blanks a noscript when a child is later rendered into it", async () => {
+    // After initial blanking the <noscript> is kept attached. If a
+    // framework re-renders content INTO it, the watcher delivers the new
+    // child as the added subtree root — closest("noscript") walks back up
+    // to the kept wrapper so the new fallback gets blanked too.
+    document.body.innerHTML = `<noscript>initial</noscript>`;
+    noscriptStripRule.apply(document.body);
+
+    const noscript = document.body.querySelector("noscript");
+    expect(noscript).not.toBeNull();
+    expect(noscript?.textContent).toBe("");
+
+    const lateChild = document.createElement("span");
+    lateChild.textContent = "re-rendered fallback";
+    noscript?.append(lateChild);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(noscript?.isConnected).toBe(true);
+    expect(noscript?.textContent).toBe("");
+  });
+
   it("teardown stops the observer", async () => {
     noscriptStripRule.apply(document.body);
     noscriptStripRule.teardown();

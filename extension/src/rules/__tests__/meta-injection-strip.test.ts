@@ -193,6 +193,46 @@ describe("meta-injection-strip lazy subtrees", () => {
     expect(meta.getAttribute("content")).toBe("");
   });
 
+  it("re-scrubs a meta whose content is overwritten in place after blanking", async () => {
+    // Initial scrub blanks the existing payload but leaves the element
+    // attached. A subsequent framework / page-script write to `content=`
+    // would, pre-fix, sit visible until the next route change. With
+    // `content` in OBSERVED_ATTRIBUTES + observeAttributes on the watcher,
+    // the rewrite reaches scrubMeta and the new payload is blanked too.
+    const meta = appendMetaToHead({
+      name: "description",
+      content: FIXTURES.IGNORE_HACKED,
+    });
+
+    metaInjectionStripRule.apply(document.body);
+    expect(meta.getAttribute("content")).toBe("");
+
+    meta.setAttribute("content", FIXTURES.DAN);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(meta.isConnected).toBe(true);
+    expect(meta.getAttribute("content")).toBe("");
+  });
+
+  it("leaves a meta with a clean in-place content rewrite alone", async () => {
+    // The attribute-mutation hook is opt-in for the rule, not for the
+    // page — a benign rewrite stays exactly as the page wrote it.
+    const meta = appendMetaToHead({
+      name: "description",
+      content: "RiverMart skillets",
+    });
+
+    metaInjectionStripRule.apply(document.body);
+    meta.setAttribute("content", "RiverMart cookware");
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(meta.getAttribute("content")).toBe("RiverMart cookware");
+  });
+
   it("teardown stops both watchers", async () => {
     metaInjectionStripRule.apply(document.body);
     metaInjectionStripRule.teardown();
