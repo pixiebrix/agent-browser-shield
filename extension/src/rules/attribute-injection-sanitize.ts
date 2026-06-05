@@ -3,13 +3,15 @@
 
 // Apply the prompt-injection pattern set to a small allowlist of
 // agent-readable element attributes. Sighted users typically don't see
-// these strings — `aria-label`, `aria-description`, `title`,
-// `placeholder`, `alt`, and `data-tooltip` surface in screen readers,
-// hover popups, or empty-state hints, not as the main visible label.
-// Browser-use agents, in contrast, read the accessibility tree where
-// these values are first-class names and descriptions for every
-// element. That asymmetry makes attributes a clean carrier for
-// instruction-shaped text the page operator never has to render.
+// these strings — `aria-label`, `aria-description`,
+// `aria-roledescription`, `aria-placeholder`, `aria-valuetext`,
+// `aria-keyshortcuts`, `title`, `placeholder`, `alt`, and `data-tooltip`
+// surface in screen readers, hover popups, or empty-state hints, not as
+// the main visible label. Browser-use agents, in contrast, read the
+// accessibility tree where these values are first-class names,
+// descriptions, value text, and shortcut hints for every element. That
+// asymmetry makes attributes a clean carrier for instruction-shaped
+// text the page operator never has to render.
 //
 // We also scrub `value` on `<input>` elements the user cannot reach:
 // `disabled` inputs render to humans but cannot be edited, and
@@ -44,6 +46,10 @@ const RULE_ID = "attribute-injection-sanitize" as const;
 const CANDIDATE_ATTRIBUTES = [
   "aria-label",
   "aria-description",
+  "aria-roledescription",
+  "aria-placeholder",
+  "aria-valuetext",
+  "aria-keyshortcuts",
   "alt",
   "title",
   "placeholder",
