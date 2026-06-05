@@ -3,16 +3,16 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 35 rules, each independently toggleable from the extension
-popup. Rules marked **default: on** are active on fresh install; **default:
-off** rules must be enabled manually.
+The extension ships 35 rules, each independently toggleable from the extension's
+options page. Rules marked **default: on** are active on fresh install;
+**default: off** rules must be enabled manually.
 
 Rules marked **top frame only** never run inside iframes — useful for page-wide
 targets (footers, cookie overlays, URL recipes) so they don't fire pointlessly
 in every embedded frame.
 
-This page groups rules by the threat or pattern they defend against. The popup
-itself shows a flat list; rule IDs here match the filenames in
+This page groups rules by the threat or pattern they defend against, the same
+grouping the options page uses; rule IDs here match the filenames in
 [`extension/src/rules/`](https://github.com/pixiebrix/agent-browser-shield/tree/main/extension/src/rules),
 which is the authoritative source for behavior. Initial enabled/disabled state
 for each rule lives in
@@ -847,7 +847,7 @@ reaches — applied to SVG `<symbol>` definitions at runtime.
 - **Scope:** top frame only
 - **Availability:** requires an OpenAI API key — either bundled at build time
   via `OPENAI_API_KEY`, or saved on the extension's options page. Until a key is
-  configured the rule shows as Unavailable in the popup and options.
+  configured the rule shows as Unavailable on the options page.
 
 Use a small LLM to identify engagement/exploration rails (related products, "you
 might also like", recommended articles, trending now, etc.) and replace them

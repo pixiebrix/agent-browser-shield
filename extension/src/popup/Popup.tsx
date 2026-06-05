@@ -1,27 +1,17 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { availabilitySource } from "../lib/availability";
 import { enforcementStorage } from "../lib/enforcement";
 import { HelpLinks } from "../lib/HelpLinks";
 import { optionsButtonStorage } from "../lib/options-button-toggle";
-import { RuleList } from "../lib/RuleList";
-import { ruleStatesStorage } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DetectionsSection } from "./DetectionsSection";
 
 export function Popup() {
-  const states = useChromeStorageValue(ruleStatesStorage);
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
-  const availability = useChromeStorageValue(availabilitySource);
   const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
 
-  if (
-    !states ||
-    enforcementEnabled === null ||
-    !availability ||
-    optionsButtonEnabled === null
-  ) {
+  if (enforcementEnabled === null || optionsButtonEnabled === null) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -56,17 +46,12 @@ export function Popup() {
         </label>
         {!enforcementEnabled && (
           <p className="enforcement__hint">
-            All rules are paused for every tab. Your per-rule selection below is
+            All rules are paused for every tab. Your per-rule selection is
             preserved and restored when you turn enforcement back on.
           </p>
         )}
       </div>
       <DetectionsSection />
-      <RuleList
-        states={states}
-        availability={availability}
-        disabledByEnforcement={!enforcementEnabled}
-      />
       <label className="options-button-toggle">
         <span className="options-button-toggle__text">
           <strong>On-page options button</strong>
