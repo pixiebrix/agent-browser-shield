@@ -44,15 +44,16 @@ function blankNoscript(element: Element): void {
 }
 
 function stripNoscript(root: ParentNode): void {
-  // We grab from the root rather than rely on `root.querySelectorAll` alone
-  // because a watcher subtree may *be* a noscript element rather than
-  // contain one.
-  if (
-    root.nodeType === Node.ELEMENT_NODE &&
-    (root as Element).tagName === "NOSCRIPT"
-  ) {
-    blankNoscript(root as Element);
-    return;
+  // A watcher subtree may BE a `<noscript>`, CONTAIN one, or be a
+  // descendant of one we already blanked (e.g., a framework re-rendered
+  // children into a kept noscript). `closest()` handles self/ancestor;
+  // `querySelectorAll` handles descendants.
+  if (root.nodeType === Node.ELEMENT_NODE) {
+    const ancestorOrSelf = (root as Element).closest("noscript");
+    if (ancestorOrSelf) {
+      blankNoscript(ancestorOrSelf);
+      return;
+    }
   }
   for (const element of root.querySelectorAll("noscript")) {
     blankNoscript(element);

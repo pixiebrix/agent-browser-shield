@@ -43,11 +43,14 @@ const IGNORE_TAGS: ReadonlySet<string> = new Set(["STYLE", "BR"]);
 // (Pattern from Ghostery's adblocker DOMMonitor.)
 const BURST_FLUSH_THRESHOLD = 512;
 
-// `id` and `class` are the only attributes the selector-token-index
-// dispatcher keys on. Limiting the filter at the MO level keeps the
-// burst from page JS toggling unrelated attributes (style, data-*,
-// aria-*) off the hot path.
-const OBSERVED_ATTRIBUTES = ["id", "class"];
+// `id` and `class` drive the selector-token-index dispatcher; `content`
+// drives meta-injection-strip's in-place re-scrub when a framework or
+// page script overwrites a `<meta>`'s `content=` after we blanked it
+// (since #176 stopped detaching the meta, an unobserved overwrite would
+// leave the new payload visible until the next route change). Limiting
+// the filter at the MO level keeps the burst from page JS toggling
+// unrelated attributes (style, data-*, aria-*) off the hot path.
+const OBSERVED_ATTRIBUTES = ["id", "class", "content"];
 
 interface SubtreeWatcherOptions {
   // Called once per throttle window with all the (still-connected) subtree

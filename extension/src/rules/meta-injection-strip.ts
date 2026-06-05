@@ -67,12 +67,18 @@ function scrub(root: ParentNode): void {
   }
 }
 
+// observeAttributes catches in-place `content=` rewrites on a meta we
+// already blanked. Without it, a framework or page script that later
+// overwrites `content=` lands a new payload that stays visible until the
+// next subtree addition or route change re-triggers a scan. `content` is
+// in `OBSERVED_ATTRIBUTES` so the shared MO actually delivers the records.
 const bodyWatcher = createSubtreeWatcher({
   onSubtrees: (roots) => {
     for (const root of roots) {
       scrub(root);
     }
   },
+  observeAttributes: true,
 });
 
 const headWatcher = createSubtreeWatcher({
@@ -81,6 +87,7 @@ const headWatcher = createSubtreeWatcher({
       scrub(root);
     }
   },
+  observeAttributes: true,
 });
 
 function apply(root: ParentNode): void {
