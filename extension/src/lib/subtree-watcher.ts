@@ -18,6 +18,10 @@
 import throttle from "lodash/throttle";
 import { PLACEHOLDER_CLASS } from "./placeholder";
 import { subscribeRouteChange } from "./route-change";
+import {
+  discoverShadowRootsIn,
+  subscribeShadowRootAttached,
+} from "./shadow-roots";
 
 // Tags whose insertion is never interesting to any rule. Filtering at enqueue
 // keeps `pending` small during noisy bursts where a framework injects
@@ -83,6 +87,14 @@ interface Router {
   visibilityListener: (() => void) | null;
   unsubscribeRouteChange: (() => void) | null;
   routeSweepHandle: number | null;
+  // Per-router map of observed shadow roots. Each shadow root gets its
+  // own MutationObserver because MO does not cross shadow boundaries —
+  // an observer on document.body misses every mutation inside a shadow
+  // tree even with subtree:true. Mutations fan into the same `fanOut`
+  // callback so subscribers don't know or care which tree a record
+  // came from.
+  shadowObservers: Map<ShadowRoot, MutationObserver>;
+  unsubscribeShadowAttach: (() => void) | null;
 }
 
 // One router per observed root. document.body is the common case; the head
@@ -177,16 +189,15 @@ function fanOut(router: Router, mutations: MutationRecord[]): void {
       if (!element.isConnected) {
         continue;
       }
-      for (const subscriber of router.subscribers) {
-        if (subscriber.skipPlaceholderSubtrees) {
-          if (element.classList.contains(PLACEHOLDER_CLASS)) {
-            continue;
-          }
-          if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
-            continue;
-          }
-        }
-        subscriber.pending.add(element);
+      enqueueForAllSubscribers(router, element);
+      // A freshly-inserted host element may already have a populated
+      // open shadow root (custom elements that build their shadow in
+      // the constructor, lit/stencil components, etc.). adoptShadowRoot
+      // observes the root and dispatches its initial children — without
+      // this, mutation observation would only catch FUTURE additions
+      // into the shadow, never the content present at insertion time.
+      for (const shadow of discoverShadowRootsIn(element)) {
+        adoptShadowRoot(router, shadow);
       }
     }
   }
@@ -228,6 +239,124 @@ function refreshObservation(router: Router): void {
   // observe() on an already-observed MO replaces the existing options
   // without re-emitting historical records.
   router.observer.observe(router.target, observerInit(router));
+  // Same options apply to each shadow-root observer — keep them in sync
+  // when the router's observingAttributes flag toggles.
+  for (const observer of router.shadowObservers.values()) {
+    observer.observe(router.target, observerInit(router));
+  }
+}
+
+// Add `element` to every subscriber's pending set, respecting each
+// subscriber's per-subscriber filters (skipPlaceholderSubtrees). The
+// shared filters (IGNORE_TAGS, isConnected) are applied by the caller.
+function enqueueForAllSubscribers(router: Router, element: Element): void {
+  for (const subscriber of router.subscribers) {
+    if (subscriber.skipPlaceholderSubtrees) {
+      if (element.classList.contains(PLACEHOLDER_CLASS)) {
+        continue;
+      }
+      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+        continue;
+      }
+    }
+    subscriber.pending.add(element);
+  }
+}
+
+// Add a shadow root's existing element children (and any nested shadow
+// roots within them) to every subscriber's pending set, observe the
+// shadow root for future mutations, and trigger drains. Called both at
+// router startup (for shadow roots discovered on `target`) and at runtime
+// (for shadows on hosts inserted later, or attached via the
+// attachShadow hook).
+function adoptShadowRoot(router: Router, shadowRoot: ShadowRoot): void {
+  if (router.shadowObservers.has(shadowRoot)) {
+    return;
+  }
+  // Each shadow root gets its own MO. MO can target multiple nodes via
+  // separate `observe()` calls, but one-observer-per-root keeps
+  // disconnect bookkeeping straightforward.
+  const observer = new MutationObserver((mutations) => {
+    fanOut(router, mutations);
+  });
+  router.shadowObservers.set(shadowRoot, observer);
+  if (!document.hidden) {
+    observer.observe(shadowRoot, observerInit(router));
+  }
+
+  // Pre-existing shadow content (the common case when a host attached
+  // its shadow before our content script loaded) is dispatched as if it
+  // had just been inserted — push each element child into pending and
+  // recurse into any nested shadow roots.
+  for (const child of shadowRoot.childNodes) {
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      continue;
+    }
+    const element = child as Element;
+    if (IGNORE_TAGS.has(element.tagName)) {
+      continue;
+    }
+    if (!element.isConnected) {
+      continue;
+    }
+    enqueueForAllSubscribers(router, element);
+    // A pre-populated shadow may itself contain hosts with shadows.
+    for (const nested of discoverShadowRootsIn(element)) {
+      adoptShadowRoot(router, nested);
+    }
+  }
+
+  for (const subscriber of router.subscribers) {
+    if (subscriber.pending.size > 0) {
+      subscriber.throttledScan();
+    }
+  }
+}
+
+// Seed a single subscriber's pending set from one shadow root's element
+// children. Used when a subscriber joins a running router and needs to
+// be brought up to the same starting state as subscribers that were
+// present when the shadow root was first adopted.
+function seedSubscriberFromShadowRoot(
+  subscriber: Subscriber,
+  shadowRoot: ShadowRoot,
+): void {
+  for (const child of shadowRoot.childNodes) {
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      continue;
+    }
+    const element = child as Element;
+    if (IGNORE_TAGS.has(element.tagName)) {
+      continue;
+    }
+    if (!element.isConnected) {
+      continue;
+    }
+    if (subscriber.skipPlaceholderSubtrees) {
+      if (element.classList.contains(PLACEHOLDER_CLASS)) {
+        continue;
+      }
+      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+        continue;
+      }
+    }
+    subscriber.pending.add(element);
+  }
+}
+
+function isUnderRouterTarget(router: Router, node: Node): boolean {
+  // The router's target is document.body for the main router and
+  // document.head for meta-injection-strip's secondary one. A shadow
+  // root's host can live in either tree (or in neither, if the host
+  // is detached). Filter so the head router doesn't pick up shadows
+  // attached to body-tree hosts.
+  if (router.target === document) {
+    return node.isConnected;
+  }
+  if (!(router.target instanceof Node)) {
+    return false;
+  }
+  return router.target.contains(node);
 }
 
 function handleVisibilityChange(router: Router): void {
@@ -301,11 +430,37 @@ function startRouter(router: Router): void {
   router.unsubscribeRouteChange = subscribeRouteChange(() => {
     handleRouteChange(router);
   });
+
+  // Discover any open shadow roots that already live under this router's
+  // target — page scripts that ran before document_idle and built their
+  // shadow trees during parsing produce these. adoptShadowRoot observes
+  // each and dispatches its existing children to subscribers.
+  for (const shadow of discoverShadowRootsIn(router.target)) {
+    adoptShadowRoot(router, shadow);
+  }
+  // Future attachShadow calls land here; we observe the new root if its
+  // host lives under our target. Routers that target document.head can
+  // skip body-tree shadows and vice versa.
+  router.unsubscribeShadowAttach = subscribeShadowRootAttached((shadow) => {
+    if (!router.observer) {
+      return;
+    }
+    if (!isUnderRouterTarget(router, shadow.host)) {
+      return;
+    }
+    adoptShadowRoot(router, shadow);
+  });
 }
 
 function stopRouter(router: Router): void {
   router.observer?.disconnect();
   router.observer = null;
+  for (const observer of router.shadowObservers.values()) {
+    observer.disconnect();
+  }
+  router.shadowObservers.clear();
+  router.unsubscribeShadowAttach?.();
+  router.unsubscribeShadowAttach = null;
   if (router.visibilityListener) {
     document.removeEventListener("visibilitychange", router.visibilityListener);
     router.visibilityListener = null;
@@ -330,6 +485,8 @@ function getOrCreateRouter(target: Node): Router {
       visibilityListener: null,
       unsubscribeRouteChange: null,
       routeSweepHandle: null,
+      shadowObservers: new Map(),
+      unsubscribeShadowAttach: null,
     };
     routersByTarget.set(target, router);
   }
@@ -385,11 +542,24 @@ export function createSubtreeWatcher(
       }
       if (router.observer === null) {
         startRouter(router);
-      } else if (needsAttributeUpgrade) {
-        // Re-observe with the upgraded options. Calling observe() on an
-        // already-active MO with the same target merges configurations
-        // without re-emitting historical mutations.
-        refreshObservation(router);
+      } else {
+        // A late subscriber joining a running router missed the initial
+        // shadow-root bootstrap that startRouter ran when the first
+        // subscriber arrived. Seed this subscriber's pending with every
+        // known shadow root's current children so it sees the same
+        // starting state as the originals.
+        for (const shadow of router.shadowObservers.keys()) {
+          seedSubscriberFromShadowRoot(ownSubscriber, shadow);
+        }
+        if (ownSubscriber.pending.size > 0) {
+          ownSubscriber.throttledScan();
+        }
+        if (needsAttributeUpgrade) {
+          // Re-observe with the upgraded options. Calling observe() on an
+          // already-active MO with the same target merges configurations
+          // without re-emitting historical mutations.
+          refreshObservation(router);
+        }
       }
     },
     stop(): void {
@@ -425,6 +595,10 @@ export function createSubtreeWatcher(
 export function __resetSubtreeWatcherForTesting(): void {
   for (const router of routersByTarget.values()) {
     router.observer?.disconnect();
+    for (const observer of router.shadowObservers.values()) {
+      observer.disconnect();
+    }
+    router.unsubscribeShadowAttach?.();
     if (router.visibilityListener) {
       document.removeEventListener(
         "visibilitychange",

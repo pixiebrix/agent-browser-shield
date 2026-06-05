@@ -11,6 +11,10 @@
 import { PLACEHOLDER_CLASS } from "../placeholder";
 import { __resetRouteChangeForTesting } from "../route-change";
 import {
+  __resetShadowRootsForTesting,
+  installShadowRootHook,
+} from "../shadow-roots";
+import {
   __resetSubtreeWatcherForTesting,
   createSubtreeWatcher,
 } from "../subtree-watcher";
@@ -26,6 +30,11 @@ beforeEach(() => {
   jest.useFakeTimers();
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();
+  __resetShadowRootsForTesting();
+  // The attachShadow patch itself is idempotent and persists across tests,
+  // but installing it inside beforeEach lets tests that exercise shadow
+  // behavior run regardless of whether content.ts has been imported.
+  installShadowRootHook();
   history.replaceState(null, "", "/initial");
 });
 
@@ -38,6 +47,7 @@ afterEach(() => {
   });
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();
+  __resetShadowRootsForTesting();
 });
 
 describe("createSubtreeWatcher", () => {
@@ -1220,6 +1230,273 @@ describe("createSubtreeWatcher", () => {
 
       expect(onSubtrees).not.toHaveBeenCalled();
       watcher.stop();
+    });
+  });
+
+  describe("shadow DOM", () => {
+    it("dispatches existing open-shadow children when the watcher starts", async () => {
+      // Page script attaches a shadow root and populates it before our
+      // content script (and therefore the watcher) starts — the
+      // discovery walk at startRouter time should pick the contents up.
+      const host = document.createElement("div");
+      host.id = "host";
+      const shadow = host.attachShadow({ mode: "open" });
+      const inner = document.createElement("section");
+      inner.id = "in-shadow";
+      shadow.append(inner);
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toContain(inner);
+      watcher.stop();
+    });
+
+    it("does not look into closed shadow roots", async () => {
+      // Closed shadow roots are opt-out by design — the host's
+      // .shadowRoot property is null to external code, and we
+      // deliberately don't register them in the tracker.
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "closed" });
+      const inner = document.createElement("section");
+      inner.id = "in-closed-shadow";
+      shadow.append(inner);
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // host itself wasn't observed as an addition (watcher started
+      // after the host was already in the body), and the closed shadow
+      // is invisible — no subtree should surface.
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("observes mutations inside open shadow roots after start", async () => {
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // Flush the empty-shadow bootstrap so the mutation below is the
+      // only thing the next drain will surface.
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      const inner = document.createElement("article");
+      shadow.append(inner);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toContain(inner);
+      watcher.stop();
+    });
+
+    it("observes shadow roots attached AFTER the watcher started", async () => {
+      // Custom elements often call attachShadow inside connectedCallback,
+      // which fires after the host is in the DOM. The patched
+      // attachShadow notifies the router so the new root is observed.
+      const host = document.createElement("div");
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      const shadow = host.attachShadow({ mode: "open" });
+      const inner = document.createElement("section");
+      shadow.append(inner);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toContain(inner);
+      watcher.stop();
+    });
+
+    it("dispatches a pre-populated shadow on a freshly inserted host", async () => {
+      // Web components built in a constructor or upgrade callback ship
+      // their shadow tree at insertion time. Discovery during the host's
+      // light-tree dispatch catches the shadow contents in the same
+      // drain — without it, those would be silently missed.
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      const inner = document.createElement("section");
+      inner.id = "lazy-shadow";
+      shadow.append(inner);
+
+      // attachShadow + populate happened before the host was connected;
+      // dispatch should surface both the host (light) and the shadow
+      // child when the host is appended.
+      document.body.append(host);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toContain(host);
+      expect(roots).toContain(inner);
+      watcher.stop();
+    });
+
+    it("recurses through nested shadow roots", async () => {
+      const outerHost = document.createElement("div");
+      const outerShadow = outerHost.attachShadow({ mode: "open" });
+      const innerHost = document.createElement("section");
+      const innerShadow = innerHost.attachShadow({ mode: "open" });
+      const leaf = document.createElement("article");
+      leaf.id = "deep";
+      innerShadow.append(leaf);
+      outerShadow.append(innerHost);
+      document.body.append(outerHost);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      const allRoots = (onSubtrees.mock.calls as Array<[Element[]]>).flatMap(
+        (call) => call[0],
+      );
+      expect(allRoots).toContain(innerHost);
+      expect(allRoots).toContain(leaf);
+      watcher.stop();
+    });
+
+    it("seeds a late-joining subscriber from existing shadow content", async () => {
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      const inner = document.createElement("section");
+      shadow.append(inner);
+      document.body.append(host);
+
+      const firstOnSubtrees = jest.fn();
+      const first = createSubtreeWatcher({ onSubtrees: firstOnSubtrees });
+      first.start(document.body);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // Second subscriber joins after the router has already adopted the
+      // shadow root. It should still receive the existing children.
+      const secondOnSubtrees = jest.fn();
+      const second = createSubtreeWatcher({ onSubtrees: secondOnSubtrees });
+      second.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(secondOnSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = secondOnSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toContain(inner);
+      first.stop();
+      second.stop();
+    });
+
+    it("respects skipPlaceholderSubtrees inside shadow roots", async () => {
+      // A rule that injected a placeholder into a shadow tree shouldn't
+      // re-trigger itself on the next sweep.
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      const placeholder = document.createElement("div");
+      placeholder.classList.add(PLACEHOLDER_CLASS);
+      shadow.append(placeholder);
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({
+        onSubtrees,
+        skipPlaceholderSubtrees: true,
+      });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("does not adopt shadows attached to nodes outside the router target", async () => {
+      // A router targeting document.head shouldn't end up observing a
+      // shadow whose host lives in document.body. Two routers run side
+      // by side so we can confirm only the body-rooted one fires.
+      const bodyOnSubtrees = jest.fn();
+      const headOnSubtrees = jest.fn();
+      const bodyWatcher = createSubtreeWatcher({ onSubtrees: bodyOnSubtrees });
+      const headWatcher = createSubtreeWatcher({ onSubtrees: headOnSubtrees });
+      bodyWatcher.start(document.body);
+      headWatcher.start(document.head);
+
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      const inner = document.createElement("section");
+      shadow.append(inner);
+      document.body.append(host);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      const bodyRoots = (
+        bodyOnSubtrees.mock.calls as Array<[Element[]]>
+      ).flatMap((call) => call[0]);
+      expect(bodyRoots).toContain(inner);
+      expect(headOnSubtrees).not.toHaveBeenCalled();
+
+      bodyWatcher.stop();
+      headWatcher.stop();
+    });
+
+    it("stops observing shadow roots after the watcher stops", async () => {
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      watcher.stop();
+      onSubtrees.mockClear();
+
+      shadow.append(document.createElement("article"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
     });
   });
 });

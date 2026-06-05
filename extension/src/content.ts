@@ -5,6 +5,15 @@ import { isTopFrame } from "./lib/frame";
 import { startOptionsBadge } from "./lib/options-badge";
 import { startPlaceholderCountReporter } from "./lib/placeholder-count";
 import { start } from "./lib/rule-engine";
+import { installShadowRootHook } from "./lib/shadow-roots";
+
+// Install the attachShadow patch as early as possible. The content script
+// runs at document_idle so page scripts that built shadow trees during
+// parsing already ran — those are caught by the subtree watcher's
+// initial walk at startup. The hook here covers every subsequent attach,
+// including custom elements that defer attachShadow into a connected
+// callback, lit-element upgrades, etc.
+installShadowRootHook();
 
 // Content script runs in every frame (`all_frames: true`). The rule engine
 // applies frame-appropriate rules in each; the badge is a single UI affordance
