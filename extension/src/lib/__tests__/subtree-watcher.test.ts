@@ -9,6 +9,7 @@
 // skipPlaceholderSubtrees gating, and the start/stop lifecycle.
 
 import { PLACEHOLDER_CLASS } from "../placeholder";
+import { __resetRouteChangeForTesting } from "../route-change";
 import { createSubtreeWatcher } from "../subtree-watcher";
 
 const THROTTLE_MS = 250;
@@ -20,6 +21,8 @@ async function flushMutations(): Promise<void> {
 beforeEach(() => {
   document.body.innerHTML = "";
   jest.useFakeTimers();
+  __resetRouteChangeForTesting();
+  history.replaceState(null, "", "/initial");
 });
 
 afterEach(() => {
@@ -29,6 +32,7 @@ afterEach(() => {
     configurable: true,
     value: false,
   });
+  __resetRouteChangeForTesting();
 });
 
 describe("createSubtreeWatcher", () => {
@@ -448,6 +452,147 @@ describe("createSubtreeWatcher", () => {
       document.body.append(document.createElement("div"));
       await flushMutations();
       jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+  });
+
+  describe("detached-subtree fast-path", () => {
+    it("drops elements detached before the MO callback fires", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // React-style reconciliation: add then remove inside one synchronous
+      // block. The MutationObserver callback fires later in a microtask and
+      // sees the addition record, but the element is already detached.
+      const transient = document.createElement("div");
+      document.body.append(transient);
+      transient.remove();
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("still surfaces connected siblings of detached additions", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      const transient = document.createElement("div");
+      document.body.append(transient);
+      transient.remove();
+
+      const stay = document.createElement("section");
+      document.body.append(stay);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([stay]);
+      watcher.stop();
+    });
+  });
+
+  describe("route-change re-sweep", () => {
+    function fireRouteChange(toUrl: string): void {
+      history.replaceState(null, "", toUrl);
+      globalThis.dispatchEvent(new Event("popstate"));
+    }
+
+    it("sweeps document.body on the next animation frame after a route change", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // Seed some content so document.body has something to scan.
+      document.body.append(document.createElement("article"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      // One drain from the seeded addition.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      onSubtrees.mockClear();
+
+      fireRouteChange("/route-b");
+
+      // Sweep is deferred to rAF — nothing fires synchronously.
+      expect(onSubtrees).not.toHaveBeenCalled();
+      jest.advanceTimersToNextFrame();
+
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([document.body]);
+      watcher.stop();
+    });
+
+    it("cancels pending throttled drains so the rAF sweep is the only call", async () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      // Add a node but don't advance past the throttle window — pending is
+      // non-empty when the route change comes in.
+      document.body.append(document.createElement("div"));
+      await flushMutations();
+      expect(onSubtrees).not.toHaveBeenCalled();
+
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+      // Single call: the rAF sweep with document.body. The throttle window's
+      // drain of the in-flight addition must have been cancelled.
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots).toEqual([document.body]);
+
+      // Even after the throttle window would have fired, no second call.
+      jest.advanceTimersByTime(THROTTLE_MS);
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      watcher.stop();
+    });
+
+    it("does not sweep when the watcher is stopped before the rAF fires", () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      fireRouteChange("/route-b");
+      watcher.stop();
+      jest.advanceTimersToNextFrame();
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+    });
+
+    it("does not sweep while the tab is hidden", () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: true,
+      });
+      fireRouteChange("/route-b");
+      jest.advanceTimersToNextFrame();
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("coalesces consecutive route changes into a single rAF sweep", () => {
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      fireRouteChange("/route-b");
+      fireRouteChange("/route-c");
+      fireRouteChange("/route-d");
+
+      jest.advanceTimersToNextFrame();
       expect(onSubtrees).toHaveBeenCalledTimes(1);
       watcher.stop();
     });
