@@ -45,6 +45,12 @@ export const CHECKOUT_CHECKBOX_CLEARED_ATTR = "data-abs-cleared";
 // already badged, so the watcher doesn't double-badge on re-scan.
 export const CART_ADDON_ANNOTATED_ATTR = "data-abs-cart-addon-annotated";
 
+// `hidden-fee-annotate`: marks a drip-pricing fee row the rule has already
+// badged so the watcher doesn't append a second chip on the next mutation
+// pass. Also stamped on labels that were rejected by the shape gates so
+// re-scans don't re-evaluate the same negative case on every burst.
+export const HIDDEN_FEE_ANNOTATED_ATTR = "data-abs-hidden-fee-annotated";
+
 // `link-spoof-annotate`: marks an <a> the rule has badged so the watcher
 // doesn't append a second chip on the next mutation pass.
 export const LINK_SPOOF_ANNOTATED_ATTR = "data-abs-link-spoof-annotated";

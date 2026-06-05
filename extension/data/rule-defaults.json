@@ -35,6 +35,7 @@
     "disguised-ad-flag": true,
     "encoded-payload-redact": true,
     "webdriver-probe-annotate": false,
-    "closed-shadow-root-annotate": false
+    "closed-shadow-root-annotate": false,
+    "hidden-fee-annotate": true
   }
 }

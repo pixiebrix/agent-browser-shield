@@ -54,6 +54,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "countdown-timer-redact",
       "scarcity-redact",
       "cart-addon-annotate",
+      "hidden-fee-annotate",
       "checkout-checkbox-sanitize",
       "confirmshame-sanitize",
       "roach-motel-annotate",

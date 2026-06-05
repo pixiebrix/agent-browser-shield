@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 36 rules, each independently toggleable from the extension's
+The extension ships 37 rules, each independently toggleable from the extension's
 options page. Rules marked **default: on** are active on fresh install;
 **default: off** rules must be enabled manually.
 
@@ -610,6 +610,33 @@ the annotation and decides whether to click the line's remove control.
 
 Brignull's original 2010 *Sneak into Basket* pattern [[10]](#ref-brignull),
 generalized to the *Sneaking* family in Mathur et al.
+[[9]](#ref-mathur-dark-patterns).
+
+#### Annotate Drip-Pricing Fees (Experimental)
+
+- **ID:** `hidden-fee-annotate`
+- **Default:** on
+
+On checkout-like URLs, prepend a visible `[abs: drip-pricing fee]` annotation to
+order-summary line items whose label matches a curated mandatory-fee phrase set
+and that sit beside a currency amount. The row is **not** removed — many of
+these charges are legally required to be surfaced, and silently hiding the line
+would both desync the displayed total and risk wiping a disclosure the operator
+must show. Match precision is layered: a whole-string regex on a small leaf-ish
+label, an order-summary ancestor (`<table>`, `[role="region"]` with
+order-summary labelling, `<aside>`/`<section>` with cart-shaped class or id, or
+schema.org `Order` microdata), an adjacent currency amount, and a
+single-item-cart skip so that flows where the fee itself is the product
+(utility-bill portals, court e-filing, DMV) are not annotated. The action is
+annotation-only, so a misfire is at worst an extra chip on a row; per-rule
+activity counts (in the extension popup) and an inline per-host denylist let us
+react quickly if live signal surfaces a false-positive cluster.
+
+Motivated by the FTC
+[Trade Regulation Rule on Unfair or Deceptive Fees](https://www.ftc.gov/news-events/news/press-releases/2024/12/federal-trade-commission-announces-bipartisan-rule-banning-junk-ticket-hotel-fees)
+(effective 2025-05-12), which bans drip pricing for live-event tickets and
+short-term lodging. Cataloged as *Hidden Costs* in Brignull's deceptive.design
+[[10]](#ref-brignull) and part of the *Sneaking* family in Mathur et al.
 [[9]](#ref-mathur-dark-patterns).
 
 ### Preselection
