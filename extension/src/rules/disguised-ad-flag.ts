@@ -266,7 +266,12 @@ function isCandidateSkipped(element: HTMLElement): boolean {
   if (element.hasAttribute(CONSIDERED_ATTR)) {
     return true;
   }
-  if (element.hasAttribute(REVEALED_ATTR)) {
+  // Skip if the label sits inside (or is) an element this rule already
+  // hid and the user then revealed. The reveal stamp lives on the article
+  // ancestor — not on the label — so checking only `element.hasAttribute`
+  // missed the common case and let a post-reveal mutation burst re-wrap
+  // the same article into an unrevealable loop.
+  if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) {
     return true;
   }
   if (isInsidePlaceholder(element)) {
