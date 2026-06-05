@@ -89,6 +89,23 @@ export function createSelectorHideRule(
   let memoSelectors: readonly string[] = [];
   let memoJoined = "";
 
+  // Per-rule cache of elements this scan has already concluded a skip
+  // (or hide) for. Bypasses the 5 marker reads (PLACEHOLDER_CLASS check,
+  // 2 closest() walks, 2 getAttribute calls) on subsequent scans where
+  // the same element keeps surfacing — typical on infinite-scroll feeds
+  // and SPA route sweeps where the dispatcher's QSA re-finds every
+  // already-processed candidate.
+  //
+  // Markers stay in the DOM so other rules and reveal-click handlers
+  // can read them; the WeakSet is purely a hot-loop perf bypass for
+  // this rule's own re-scans. Membership is only added when the skip
+  // reason is the element's *own* state (its own classList /
+  // attribute marker) — ancestor-relative checks (`closest(.placeholder)`
+  // / `closest([REVEALED_ATTR=id])`) intentionally do NOT add to the
+  // set, because the element could later move out from under the
+  // matched ancestor.
+  const processed = new WeakSet<HTMLElement>();
+
   function refreshMemo(url: string): void {
     if (url === memoUrl) {
       return;
@@ -148,19 +165,32 @@ export function createSelectorHideRule(
       if (!element.isConnected) {
         continue;
       }
+      // Fast path: a previous scan already concluded this element should
+      // be skipped (or hid it). Saves the 5 marker reads below.
+      if (processed.has(element)) {
+        continue;
+      }
       if (element.classList.contains(PLACEHOLDER_CLASS)) {
+        processed.add(element);
         continue;
       }
       if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+        // Ancestor-relative — don't memoize. If the placeholder is
+        // later revealed (its click handler swaps the placeholder back
+        // out), this element's "inside a placeholder" status flips and
+        // we want the next scan to re-evaluate.
         continue;
       }
       if (element.getAttribute(REVEALED_ATTR) === id) {
+        processed.add(element);
         continue;
       }
       if (element.closest(`[${REVEALED_ATTR}="${id}"]`)) {
+        // Same reason as above: ancestor-relative, don't memoize.
         continue;
       }
       if (element.getAttribute(HIDDEN_ATTR) === id) {
+        processed.add(element);
         continue;
       }
       if (removeEntirely) {
@@ -176,6 +206,7 @@ export function createSelectorHideRule(
         // hideLabel is guaranteed non-undefined by the constructor check above.
         replaceWithBlockPlaceholder(element, id, hideLabel as string);
       }
+      processed.add(element);
     }
   }
 

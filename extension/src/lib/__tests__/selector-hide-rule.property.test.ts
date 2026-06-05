@@ -14,12 +14,14 @@
 
 import fc from "fast-check";
 
+import { HIDDEN_ATTR, REVEALED_ATTR } from "../dom-markers";
 import { filterToOutermost } from "../dom-utils";
 import { PLACEHOLDER_CLASS } from "../placeholder";
 import { createSelectorHideRule } from "../selector-hide-rule";
 import type { RuleId } from "../storage";
 
 const RULE_ID = "footer-redact" as RuleId;
+const OTHER_RULE_ID = "comments-redact" as RuleId;
 const HIDE_LABEL = "[hidden]";
 const TARGET_ATTR = "data-target";
 const TARGET_SELECTOR = "[data-target]";
@@ -196,6 +198,151 @@ describe("scan() outermost-match (property)", () => {
         ).length;
 
         expect(after_second).toBe(after_first);
+      }),
+    );
+  });
+});
+
+describe("processed-WeakSet idempotence under apply N times (property)", () => {
+  // The strongest property the WeakSet must satisfy: with the DOM held
+  // fixed between calls, apply 1 must produce the same DOM as apply N.
+  // Fuzzes over random tree shape + random pre-existing markers
+  // (PLACEHOLDER_CLASS, HIDDEN_ATTR for this rule, HIDDEN_ATTR for
+  // another rule, REVEALED_ATTR for this rule, REVEALED_ATTR for
+  // another rule) so the test covers every shape the rule's marker-
+  // skip ladder can encounter. A regression in WeakSet membership
+  // (added when it shouldn't be, OR not added when it should be)
+  // surfaces as innerHTML divergence between the first and N-th apply.
+
+  // Marker kind labels:
+  //   0 = no marker
+  //   1 = PLACEHOLDER_CLASS
+  //   2 = HIDDEN_ATTR for this rule (already hidden)
+  //   3 = HIDDEN_ATTR for some other rule (we should overwrite per spec)
+  //   4 = REVEALED_ATTR for this rule (skip)
+  //   5 = REVEALED_ATTR for some other rule (don't skip)
+  const markerArb = fc.integer({ min: 0, max: 5 });
+
+  interface MarkedScenario {
+    tree: FlatTree;
+    targetMask: boolean[];
+    markers: number[];
+    extraApplies: number;
+    removeEntirely: boolean;
+  }
+
+  const scenarioArb: fc.Arbitrary<MarkedScenario> = flatTreeArb.chain((tree) =>
+    fc
+      .tuple(
+        fc.array(fc.boolean(), { minLength: tree.size, maxLength: tree.size }),
+        fc.array(markerArb, { minLength: tree.size, maxLength: tree.size }),
+        fc.integer({ min: 1, max: 5 }),
+        fc.boolean(),
+      )
+      .map(([targetMask, markers, extraApplies, removeEntirely]) => ({
+        tree,
+        targetMask,
+        markers,
+        extraApplies,
+        removeEntirely,
+      })),
+  );
+
+  function applyMarker(element: HTMLElement, kind: number): void {
+    switch (kind) {
+      case 1: {
+        element.classList.add(PLACEHOLDER_CLASS);
+        break;
+      }
+      case 2: {
+        element.setAttribute(HIDDEN_ATTR, RULE_ID);
+        break;
+      }
+      case 3: {
+        element.setAttribute(HIDDEN_ATTR, OTHER_RULE_ID);
+        break;
+      }
+      case 4: {
+        element.setAttribute(REVEALED_ATTR, RULE_ID);
+        break;
+      }
+      case 5: {
+        element.setAttribute(REVEALED_ATTR, OTHER_RULE_ID);
+        break;
+      }
+      default: {
+        // 0 — no marker.
+      }
+    }
+  }
+
+  function buildMarkedTree(scenario: MarkedScenario): {
+    root: HTMLElement;
+    all: HTMLElement[];
+  } {
+    const all: HTMLElement[] = [];
+    const root = buildFlatTree(scenario.tree, all);
+    for (const [i, node] of all.entries()) {
+      if (scenario.targetMask[i]) {
+        node.setAttribute(TARGET_ATTR, "");
+      }
+      applyMarker(node, scenario.markers[i] as number);
+    }
+    return { root, all };
+  }
+
+  it("DOM after apply once == DOM after apply N (placeholder mode)", () => {
+    fc.assert(
+      fc.property(scenarioArb, (scenario) => {
+        document.body.innerHTML = "";
+        const { root } = buildMarkedTree(scenario);
+        document.body.append(root);
+
+        const { rule } = createSelectorHideRule({
+          id: RULE_ID,
+          label: "test",
+          description: "test",
+          alwaysOnSelectors: [TARGET_SELECTOR],
+          hideLabel: HIDE_LABEL,
+        });
+
+        rule.apply(document.body);
+        const afterFirst = document.body.innerHTML;
+
+        for (let i = 0; i < scenario.extraApplies; i++) {
+          rule.apply(document.body);
+        }
+        const afterNth = document.body.innerHTML;
+
+        expect(afterNth).toBe(afterFirst);
+      }),
+    );
+  });
+
+  it("DOM after apply once == DOM after apply N (removeEntirely mode)", () => {
+    fc.assert(
+      fc.property(scenarioArb, (scenario) => {
+        document.body.innerHTML = "";
+        const { root } = buildMarkedTree(scenario);
+        document.body.append(root);
+
+        const { rule } = createSelectorHideRule({
+          id: RULE_ID,
+          label: "test",
+          description: "test",
+          alwaysOnSelectors: [TARGET_SELECTOR],
+          removeEntirely: true,
+        });
+
+        rule.apply(document.body);
+        const afterFirst = document.body.innerHTML;
+
+        for (let i = 0; i < scenario.extraApplies; i++) {
+          rule.apply(document.body);
+        }
+        const afterNth = document.body.innerHTML;
+
+        expect(afterNth).toBe(afterFirst);
       }),
     );
   });

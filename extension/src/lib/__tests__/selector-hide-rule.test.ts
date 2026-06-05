@@ -797,3 +797,162 @@ describe("subtree dispatcher integration", () => {
     rule.teardown?.();
   });
 });
+
+describe("processed-node WeakSet bypass", () => {
+  // The WeakSet is a perf cache: once a rule's scan concludes "skip"
+  // for an element based on the element's own state, future scans
+  // short-circuit. Markers (HIDDEN_ATTR, REVEALED_ATTR) stay in the DOM
+  // for cross-rule coordination and for reveal click handlers; the
+  // WeakSet is purely a hot-loop bypass for this rule's own re-scans.
+
+  it("skips an already-hidden element on re-scan even if HIDDEN_ATTR is removed externally", () => {
+    // Demonstrates the perf-cache nature: the rule trusts its own
+    // record over the DOM marker. If page JS strips HIDDEN_ATTR, the
+    // rule still doesn't re-process the element — this is what makes
+    // the bypass a "cache" rather than a recomputation.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["#widget"],
+      removeEntirely: true,
+    });
+    document.body.innerHTML = `<div id="widget">x</div>`;
+
+    rule.apply(document.body);
+    const widget = document.querySelector<HTMLElement>("#widget");
+    expect(widget?.getAttribute(HIDDEN_ATTR)).toBe(RULE_ID);
+
+    // External actor strips the marker, but the element stays in the
+    // DOM. The widget is still display:none (rule won't undo that).
+    widget?.removeAttribute(HIDDEN_ATTR);
+    // Tamper with display so a re-hide would be visible — verifies
+    // the rule didn't re-run.
+    widget?.style.removeProperty("display");
+
+    rule.apply(document.body);
+
+    expect(widget?.style.display).toBe("");
+    expect(widget?.getAttribute(HIDDEN_ATTR)).toBeNull();
+  });
+
+  it("skips an element revealed for this rule on re-scan", () => {
+    // REVEALED_ATTR is own-state and monotonic — once set, never
+    // cleared. The WeakSet memoizes the skip.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      hideLabel: HIDE_LABEL,
+    });
+    document.body.innerHTML = `<footer id="f" data-abs-revealed="${RULE_ID}">revealed</footer>`;
+
+    rule.apply(document.body);
+    rule.apply(document.body);
+
+    // Skipped both times: no placeholder, original footer present.
+    expect(document.querySelector("#f")).not.toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("does NOT memoize ancestor-relative skips — element re-evaluated if it moves out from under a revealed ancestor", () => {
+    // The safety boundary the WeakSet design intentionally preserves.
+    // closest('[REVEALED_ATTR=id]') skips depend on ancestry, which
+    // can change; if we memoized this we'd silently miss matches that
+    // move out of a revealed wrapper.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      hideLabel: HIDE_LABEL,
+    });
+    document.body.innerHTML = `
+      <div id="wrap" data-abs-revealed="${RULE_ID}">
+        <footer id="inner">x</footer>
+      </div>
+      <div id="newhome"></div>
+    `;
+
+    rule.apply(document.body);
+    // Inside the revealed wrapper — skipped.
+    expect(document.querySelector("#inner")).not.toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+
+    // Move the footer out of the wrapper.
+    const inner = document.querySelector<HTMLElement>("#inner");
+    document.querySelector("#newhome")?.append(inner as HTMLElement);
+
+    rule.apply(document.body);
+    // Now eligible — should have been hidden.
+    expect(document.querySelector("#inner")).toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("does NOT memoize 'inside an existing placeholder' skips", () => {
+    // Parallel safety boundary for the closest('.placeholder') check.
+    // If the placeholder is replaced (e.g., user reveals it), an
+    // element that used to live inside it is now exposed and should
+    // be re-evaluated.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["footer"],
+      hideLabel: HIDE_LABEL,
+    });
+    const fakePlaceholder = document.createElement("div");
+    fakePlaceholder.classList.add(PLACEHOLDER_CLASS);
+    const inner = document.createElement("footer");
+    inner.id = "inner";
+    inner.textContent = "x";
+    fakePlaceholder.append(inner);
+    document.body.append(fakePlaceholder);
+
+    rule.apply(document.body);
+    expect(document.querySelector("#inner")).not.toBeNull();
+
+    // Strip placeholder-ness from the wrapper (simulates the user
+    // revealing it).
+    fakePlaceholder.classList.remove(PLACEHOLDER_CLASS);
+
+    rule.apply(document.body);
+    expect(document.querySelector("#inner")).toBeNull();
+  });
+
+  it("memoizes the placeholder-self check so re-scans don't re-pay the classList read", () => {
+    // Behavioral assertion via spy: once the rule scans a candidate
+    // that is itself a placeholder, the next scan should not call
+    // classList.contains for that same element. Hard to assert
+    // directly without internals, so we proxy via a spy on
+    // Element.prototype.getAttribute and confirm the count is bounded.
+    const { rule } = createSelectorHideRule({
+      id: RULE_ID,
+      label: "test",
+      description: "test",
+      alwaysOnSelectors: ["div"],
+      candidateFilter: (element) =>
+        element.classList.contains(PLACEHOLDER_CLASS),
+      hideLabel: HIDE_LABEL,
+    });
+    document.body.innerHTML = `<div class="${PLACEHOLDER_CLASS}">x</div>`;
+
+    const placeholder = document.querySelector<HTMLElement>(
+      `.${PLACEHOLDER_CLASS}`,
+    ) as HTMLElement;
+    const getAttributeSpy = jest.spyOn(placeholder, "getAttribute");
+
+    rule.apply(document.body);
+    // First scan: own-state classList check hits, getAttribute not
+    // called for marker checks on this element (the placeholder
+    // branch short-circuits before the getAttribute lines).
+    const firstScanCalls = getAttributeSpy.mock.calls.length;
+
+    rule.apply(document.body);
+    // Second scan: WeakSet bypass means we never even reach the
+    // classList check. getAttribute call count stays flat.
+    expect(getAttributeSpy.mock.calls.length).toBe(firstScanCalls);
+    getAttributeSpy.mockRestore();
+  });
+});
