@@ -105,10 +105,10 @@ module.exports = {
       lines: 68,
     },
     "./src/rules/": {
-      statements: 90,
-      branches: 77,
-      functions: 95,
-      lines: 90,
+      statements: 91,
+      branches: 78,
+      functions: 96,
+      lines: 91,
     },
   },
 };
