@@ -99,8 +99,8 @@ module.exports = {
   // below the all-files summary number.
   coverageThreshold: {
     global: {
-      statements: 68,
-      branches: 63,
+      statements: 69,
+      branches: 64,
       functions: 67,
       lines: 68,
     },
