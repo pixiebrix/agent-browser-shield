@@ -91,6 +91,11 @@ interface Router {
   visibilityListener: (() => void) | null;
   unsubscribeRouteChange: (() => void) | null;
   routeSweepHandle: number | null;
+  // Whether routeSweepHandle came from setTimeout vs requestAnimationFrame.
+  // Chromium pauses rAF entirely in hidden tabs, so handleRouteChange falls
+  // back to setTimeout when the route change arrives while hidden — and the
+  // cancellation path needs to call the matching teardown API.
+  routeSweepIsTimeout: boolean;
   // Per-router map of observed shadow roots. Each shadow root gets its
   // own MutationObserver because MO does not cross shadow boundaries —
   // an observer on document.body misses every mutation inside a shadow
@@ -403,6 +408,19 @@ function handleVisibilityChange(router: Router): void {
   }
 }
 
+function cancelRouteSweep(router: Router): void {
+  if (router.routeSweepHandle === null) {
+    return;
+  }
+  if (router.routeSweepIsTimeout) {
+    clearTimeout(router.routeSweepHandle);
+  } else {
+    cancelAnimationFrame(router.routeSweepHandle);
+  }
+  router.routeSweepHandle = null;
+  router.routeSweepIsTimeout = false;
+}
+
 function handleRouteChange(router: Router): void {
   if (!router.observer) {
     return;
@@ -423,11 +441,10 @@ function handleRouteChange(router: Router): void {
   // makes rules that scan from their root argument do a full re-scan;
   // selector-hide-rule's onSubtrees already scans from document.body
   // regardless — both shapes end up doing the right thing.
-  if (router.routeSweepHandle !== null) {
-    cancelAnimationFrame(router.routeSweepHandle);
-  }
-  router.routeSweepHandle = requestAnimationFrame(() => {
+  cancelRouteSweep(router);
+  const sweep = (): void => {
     router.routeSweepHandle = null;
+    router.routeSweepIsTimeout = false;
     if (!router.observer || shouldPauseForHidden()) {
       return;
     }
@@ -438,7 +455,20 @@ function handleRouteChange(router: Router): void {
     for (const subscriber of router.subscribers) {
       subscriber.onSubtrees([document.body]);
     }
-  });
+  };
+  if (document.hidden) {
+    // Chromium pauses rAF callbacks for hidden tabs, so the sweep would never
+    // fire — the runOnInactive=true path explicitly wants this body re-scan
+    // to land while the tab is in the background. setTimeout still fires
+    // (clamped to ~1s by background-throttling, acceptable for a safety-net
+    // sweep), and the visible-tab path keeps using rAF to land after the
+    // framework's commit.
+    router.routeSweepHandle = setTimeout(sweep, 0) as unknown as number;
+    router.routeSweepIsTimeout = true;
+  } else {
+    router.routeSweepHandle = requestAnimationFrame(sweep);
+    router.routeSweepIsTimeout = false;
+  }
 }
 
 function handleRunOnInactiveChange(next: boolean): void {
@@ -532,10 +562,7 @@ function stopRouter(router: Router): void {
   }
   router.unsubscribeRouteChange?.();
   router.unsubscribeRouteChange = null;
-  if (router.routeSweepHandle !== null) {
-    cancelAnimationFrame(router.routeSweepHandle);
-    router.routeSweepHandle = null;
-  }
+  cancelRouteSweep(router);
   routersByTarget.delete(router.target);
   if (routersByTarget.size === 0) {
     unsubscribeRunOnInactive?.();
@@ -554,6 +581,7 @@ function getOrCreateRouter(target: Node): Router {
       visibilityListener: null,
       unsubscribeRouteChange: null,
       routeSweepHandle: null,
+      routeSweepIsTimeout: false,
       shadowObservers: new Map(),
       unsubscribeShadowAttach: null,
     };
@@ -675,9 +703,7 @@ export function __resetSubtreeWatcherForTesting(): void {
       );
     }
     router.unsubscribeRouteChange?.();
-    if (router.routeSweepHandle !== null) {
-      cancelAnimationFrame(router.routeSweepHandle);
-    }
+    cancelRouteSweep(router);
     for (const subscriber of router.subscribers) {
       subscriber.throttledScan.cancel();
     }

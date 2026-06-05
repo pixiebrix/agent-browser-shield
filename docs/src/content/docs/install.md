@@ -95,6 +95,13 @@ set of reserved keys is also accepted for non-rule build-time toggles:
   target for browser-use agents. Enable for human-facing deployments where
   on-page access to options is useful.
 
+- `runOnInactiveTabs` (boolean, default **off**) — keep the shared subtree
+  watcher observing while the tab is hidden. Off by default because a hidden
+  tab gets no observer callbacks, which avoids work the user can't see. Enable
+  when something else reads the page while it's in the background (chat
+  copilots, accessibility-tree agents, sidebar extensions) — without this, a
+  page that mutates while hidden could reach the consumer unredacted.
+
 The file may be partial; rules not listed keep the committed default. Unknown
 keys (neither a registered rule id nor a reserved key) and non-boolean values
 fail the build with a message naming them.
