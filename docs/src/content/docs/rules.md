@@ -24,6 +24,24 @@ override defaults at build time without forking the repo.
 Numbered citations like [[1]](#ref-greshake-2023) link to the
 [References](#references) section at the bottom.
 
+## Coverage scope
+
+All rules run against the page's light DOM and any **open shadow roots** the
+page builds via `element.attachShadow({ mode: "open" })`. That covers the way
+most chat widgets, consent banners, ad SDKs, and custom elements ship UI today —
+the host element lives in the light tree, the rendered content lives one
+boundary inside.
+
+**Closed shadow roots** (`{ mode: "closed" }`) are not reached. The Web
+Components spec makes closed mode opt-out of all external JavaScript access —
+`host.shadowRoot` is `null`, `document.adoptedStyleSheets` and
+`MutationObserver` do not cross the boundary, and no supported API undoes that.
+Any content a page renders inside a closed shadow root — whether ads, chat
+widgets, hidden text, or prompt-injection payloads — is invisible to every rule
+and will be passed through to the agent untouched. Closed shadow roots are
+uncommon outside browser UA shadows and a handful of hardened embeds, but they
+are a known gap.
+
 ## Indirect prompt injection
 
 Remove or neutralize content that could carry attacker-controlled instructions
