@@ -16,6 +16,7 @@
 import type { URLPattern } from "urlpattern-polyfill";
 import type { Rule } from "../rules/types";
 import { HIDDEN_ATTR, REVEALED_ATTR } from "./dom-markers";
+import { filterToOutermost } from "./dom-utils";
 import { PLACEHOLDER_CLASS, replaceWithBlockPlaceholder } from "./placeholder";
 import type { RuleId } from "./storage";
 import { createSubtreeWatcher } from "./subtree-watcher";
@@ -120,23 +121,16 @@ export function createSelectorHideRule(
       candidates = candidates.filter(candidateFilter);
     }
 
-    // Outermost-match dedupe: build a Set once, then for each candidate walk
-    // parentElement up to body. O(C·D) instead of the prior O(C²)
-    // `candidates.some(other.contains(element))` — matters on feeds where C
-    // grows into the hundreds over a scroll session.
-    const candidateSet = new Set<HTMLElement>(candidates);
-    function hasCandidateAncestor(element: HTMLElement): boolean {
-      let parent = element.parentElement;
-      while (parent) {
-        if (candidateSet.has(parent)) {
-          return true;
-        }
-        parent = parent.parentElement;
-      }
-      return false;
-    }
+    // Outermost-match dedupe via the shared helper. Pre-filtering up front
+    // (instead of an inline ancestor check inside the loop) keeps the loop
+    // body focused on the placeholder/marker skips, and means only one
+    // implementation of "outermost" exists across the codebase.
+    const outermost = new Set<HTMLElement>(filterToOutermost(candidates));
 
     for (const element of candidates) {
+      if (!outermost.has(element)) {
+        continue;
+      }
       if (!element.isConnected) {
         continue;
       }
@@ -153,9 +147,6 @@ export function createSelectorHideRule(
         continue;
       }
       if (element.getAttribute(HIDDEN_ATTR) === id) {
-        continue;
-      }
-      if (hasCandidateAncestor(element)) {
         continue;
       }
       if (removeEntirely) {

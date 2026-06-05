@@ -63,51 +63,58 @@ export function isInsidePlaceholder(element: Element): boolean {
   return element.closest(`.${PLACEHOLDER_CLASS}`) !== null;
 }
 
-// True if any element in the candidate list is an ancestor of `element`.
-// Used to dedupe to the outermost match when multiple nested candidates all
-// satisfy a rule.
-function hasAncestorIn<T>(
-  candidate: T,
-  candidates: readonly T[],
-  getElement: (item: T) => Element,
-): boolean {
-  const element = getElement(candidate);
-  return candidates.some(
-    (other) => other !== candidate && getElement(other).contains(element),
-  );
-}
-
-// True if any element in the candidate list is a descendant of `element`.
-function hasDescendantIn<T>(
-  candidate: T,
-  candidates: readonly T[],
-  getElement: (item: T) => Element,
-): boolean {
-  const element = getElement(candidate);
-  return candidates.some(
-    (other) => other !== candidate && element.contains(getElement(other)),
-  );
-}
-
 // Keep only candidates that have no candidate ancestor — the outermost
 // match of each nested group. Use when hiding a wrapper should subsume its
 // nested matches (prompt injection, irrelevant sections).
+//
+// O(C·D) where D is the maximum depth: build a Set of candidate elements
+// once, then walk each candidate's parent chain checking Set membership.
+// The naive `candidates.some(other.contains(element))` shape was O(C²·D),
+// which matters on feeds where the same rule sees hundreds of candidates
+// accumulate across a scroll session.
 export function filterToOutermost<T>(
   candidates: readonly T[],
   getElement: (item: T) => Element = (item) => item as unknown as Element,
 ): T[] {
-  return candidates.filter((c) => !hasAncestorIn(c, candidates, getElement));
+  const elementSet = new Set<Element>(candidates.map(getElement));
+  return candidates.filter((candidate) => {
+    let parent = getElement(candidate).parentElement;
+    while (parent) {
+      if (elementSet.has(parent)) {
+        return false;
+      }
+      parent = parent.parentElement;
+    }
+    return true;
+  });
 }
 
 // Keep only candidates that have no candidate descendant — the innermost
 // match of each nested group. Use when the urgency/scarcity/match lives on
 // a small leaf inside a larger card we shouldn't black out (countdown,
 // scarcity, cart-addon).
+//
+// Computed as the dual of filterToOutermost: for each candidate, walk up
+// and mark any candidate-ancestors encountered as "has descendant." Anything
+// not marked is innermost. O(C·D) total.
 export function filterToInnermost<T>(
   candidates: readonly T[],
   getElement: (item: T) => Element = (item) => item as unknown as Element,
 ): T[] {
-  return candidates.filter((c) => !hasDescendantIn(c, candidates, getElement));
+  const elementSet = new Set<Element>(candidates.map(getElement));
+  const hasCandidateDescendant = new Set<Element>();
+  for (const candidate of candidates) {
+    let parent = getElement(candidate).parentElement;
+    while (parent) {
+      if (elementSet.has(parent)) {
+        hasCandidateDescendant.add(parent);
+      }
+      parent = parent.parentElement;
+    }
+  }
+  return candidates.filter(
+    (candidate) => !hasCandidateDescendant.has(getElement(candidate)),
+  );
 }
 
 interface FindInnermostMatchesOptions<T> {
