@@ -1498,5 +1498,84 @@ describe("createSubtreeWatcher", () => {
 
       expect(onSubtrees).not.toHaveBeenCalled();
     });
+
+    it("disconnects shadow observers when the tab goes hidden", async () => {
+      // Regression for unblocked review: handleVisibilityChange used
+      // to only disconnect the main observer, leaving per-shadow
+      // observers firing fanOut callbacks in background tabs and
+      // defeating the optimization.
+      function setHidden(hidden: boolean): void {
+        Object.defineProperty(document, "hidden", {
+          configurable: true,
+          value: hidden,
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+
+      const host = document.createElement("div");
+      const shadow = host.attachShadow({ mode: "open" });
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      setHidden(true);
+
+      shadow.append(document.createElement("article"));
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      expect(onSubtrees).not.toHaveBeenCalled();
+      watcher.stop();
+    });
+
+    it("re-observes each shadow root on its own target after refreshObservation", async () => {
+      // Regression for unblocked review: refreshObservation iterated
+      // shadowObservers.values() and re-observed each one on
+      // router.target, which (per the DOM spec) appends a second
+      // registration on body without removing the shadow-root one.
+      // After visibility restore, body mutations would double-fire
+      // through fanOut. Assert exactly one dispatch per body
+      // addition.
+      function setHidden(hidden: boolean): void {
+        Object.defineProperty(document, "hidden", {
+          configurable: true,
+          value: hidden,
+        });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+
+      const host = document.createElement("div");
+      host.attachShadow({ mode: "open" });
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      setHidden(true);
+      setHidden(false);
+      onSubtrees.mockClear();
+
+      const added = document.createElement("section");
+      document.body.append(added);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      // One drain, one root — not two copies (which is what a
+      // double-registration on body would have produced via the
+      // shadow observer also firing for body mutations).
+      expect(onSubtrees).toHaveBeenCalledTimes(1);
+      const [roots] = onSubtrees.mock.calls[0] as [Element[]];
+      expect(roots.filter((r) => r === added)).toHaveLength(1);
+      watcher.stop();
+    });
   });
 });

@@ -240,9 +240,14 @@ function refreshObservation(router: Router): void {
   // without re-emitting historical records.
   router.observer.observe(router.target, observerInit(router));
   // Same options apply to each shadow-root observer — keep them in sync
-  // when the router's observingAttributes flag toggles.
-  for (const observer of router.shadowObservers.values()) {
-    observer.observe(router.target, observerInit(router));
+  // when the router's observingAttributes flag toggles. Each observer
+  // must re-observe its OWN shadow root: per the DOM spec, observe()
+  // with a different target appends a new registration on that target
+  // rather than replacing the original, so passing router.target here
+  // would leave the shadow observer double-watching body alongside its
+  // shadow root (silently doubling every body mutation through fanOut).
+  for (const [shadowRoot, observer] of router.shadowObservers) {
+    observer.observe(shadowRoot, observerInit(router));
   }
 }
 
@@ -364,11 +369,16 @@ function handleVisibilityChange(router: Router): void {
     // Flush whatever's pending so we don't sit on a stale snapshot until
     // the user returns, then stop receiving mutations. Background tabs
     // keep firing observer callbacks; disconnecting is the cheap way to
-    // opt out for the duration.
+    // opt out for the duration. Shadow observers need the same
+    // treatment — they have their own MO instances and would otherwise
+    // keep delivering mutations in the background.
     for (const subscriber of router.subscribers) {
       subscriber.throttledScan.flush();
     }
     router.observer?.disconnect();
+    for (const observer of router.shadowObservers.values()) {
+      observer.disconnect();
+    }
   } else if (router.observer) {
     refreshObservation(router);
   }
