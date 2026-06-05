@@ -29,6 +29,8 @@
 // patterns would have been needed.
 
 import { createSelectorHideRule } from "../lib/selector-hide-rule";
+import type { AdoptedShadowSheet } from "../lib/shadow-stylesheets";
+import { adoptStylesheetIntoShadowRoots } from "../lib/shadow-stylesheets";
 import { EASYLIST_GENERIC_SELECTORS } from "./easylist-generic.generated";
 import type { Rule } from "./types";
 
@@ -42,6 +44,7 @@ const EASYLIST_STYLESHEET_TEXT = EASYLIST_GENERIC_SELECTORS.map(
 ).join("\n");
 
 let injectedStyle: HTMLStyleElement | null = null;
+let adoptedSheet: AdoptedShadowSheet | null = null;
 
 function injectEasyListStylesheet(): void {
   if (injectedStyle?.isConnected) {
@@ -52,11 +55,20 @@ function injectEasyListStylesheet(): void {
   style.textContent = EASYLIST_STYLESHEET_TEXT;
   document.head.append(style);
   injectedStyle = style;
+  // Document stylesheets don't cross shadow boundaries, so the
+  // EasyList sheet would otherwise leave every ad rendered inside a
+  // web-component shadow tree visible. The adopted-shadow-sheet path
+  // shares one CSSStyleSheet across every open shadow root (existing
+  // + future), so the hide is applied uniformly without a second
+  // parse per root.
+  adoptedSheet = adoptStylesheetIntoShadowRoots(EASYLIST_STYLESHEET_TEXT);
 }
 
 function removeEasyListStylesheet(): void {
   injectedStyle?.remove();
   injectedStyle = null;
+  adoptedSheet?.remove();
+  adoptedSheet = null;
   // Defensive: also drop any orphaned stylesheet from a prior apply that
   // wasn't cleaned up (e.g., page navigated without teardown firing).
   for (const element of document.querySelectorAll(`#${EASYLIST_STYLE_ID}`)) {

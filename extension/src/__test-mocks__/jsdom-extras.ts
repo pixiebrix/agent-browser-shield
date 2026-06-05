@@ -35,3 +35,63 @@ Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
   configurable: true,
   get: () => 100,
 });
+
+// Constructable stylesheets + adoptedStyleSheets — Baseline 2023, fully
+// supported in the Chrome MV3 versions we target. jsdom has not shipped
+// them. The minimum surface the extension actually uses:
+//   - new CSSStyleSheet()
+//   - sheet.replaceSync(cssText)
+//   - document.adoptedStyleSheets  (array of CSSStyleSheet)
+//   - shadowRoot.adoptedStyleSheets
+//
+// We polyfill just enough for tests to introspect adoption (was this
+// sheet added to that root?) and to read back the text the production
+// code passed to replaceSync. We don't parse the CSS — no consumer
+// reads `cssRules` or matches against the DOM through it.
+interface GlobalWithSheet {
+  CSSStyleSheet: typeof CSSStyleSheet;
+}
+const globalWithSheet = globalThis as unknown as GlobalWithSheet;
+interface ReplaceSyncCapable {
+  replaceSync?: (text: string) => void;
+}
+// jsdom may expose the constructor without `replaceSync` on its
+// prototype — gate the polyfill on the method, which is what
+// production code calls.
+const existingProto = globalWithSheet.CSSStyleSheet
+  .prototype as ReplaceSyncCapable;
+if (typeof existingProto.replaceSync !== "function") {
+  class PolyfillCSSStyleSheet {
+    cssText = "";
+    replaceSync(text: string): void {
+      this.cssText = text;
+    }
+    replace(text: string): Promise<void> {
+      this.cssText = text;
+      return Promise.resolve();
+    }
+  }
+  globalWithSheet.CSSStyleSheet =
+    PolyfillCSSStyleSheet as unknown as typeof CSSStyleSheet;
+}
+
+const adoptedStyleSheetsByOwner = new WeakMap<object, unknown[]>();
+
+function defineAdoptedStyleSheets(target: object): void {
+  Object.defineProperty(target, "adoptedStyleSheets", {
+    configurable: true,
+    get(this: object) {
+      return adoptedStyleSheetsByOwner.get(this) ?? [];
+    },
+    set(this: object, value: unknown[]) {
+      adoptedStyleSheetsByOwner.set(this, [...value]);
+    },
+  });
+}
+
+if (!("adoptedStyleSheets" in Document.prototype)) {
+  defineAdoptedStyleSheets(Document.prototype);
+}
+if (!("adoptedStyleSheets" in ShadowRoot.prototype)) {
+  defineAdoptedStyleSheets(ShadowRoot.prototype);
+}
