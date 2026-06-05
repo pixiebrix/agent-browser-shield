@@ -7,6 +7,13 @@
 //
 // Each rule constructs one watcher at module scope and toggles it on/off via
 // start() / stop() from its apply / teardown.
+//
+// All watchers that observe the same root share one MutationObserver, one
+// visibilitychange listener, and one route-change subscription via a
+// module-level router keyed by the observed node. With 24 rules all watching
+// document.body, the browser fires one mutation callback that fans out to 24
+// subscribers — instead of 24 separate observers each running the same
+// `IGNORE_TAGS` / `isConnected` filtering for every record.
 
 import throttle from "lodash/throttle";
 import { PLACEHOLDER_CLASS } from "./placeholder";
@@ -46,6 +53,210 @@ export interface SubtreeWatcher {
   stop(): void;
 }
 
+interface Subscriber {
+  onSubtrees: (roots: Element[]) => void;
+  skipPlaceholderSubtrees: boolean;
+  throttledScan: ReturnType<typeof throttle>;
+  pending: Set<Element>;
+}
+
+interface Router {
+  target: Node;
+  observer: MutationObserver | null;
+  subscribers: Set<Subscriber>;
+  visibilityListener: (() => void) | null;
+  unsubscribeRouteChange: (() => void) | null;
+  routeSweepHandle: number | null;
+}
+
+// One router per observed root. document.body is the common case; the head
+// gets its own entry because meta-injection-strip observes it separately.
+const routersByTarget = new Map<Node, Router>();
+
+function resolveTarget(root: ParentNode): Node | null {
+  // rule-engine always passes document.body, but accept Document for
+  // robustness and resolve to its body. `Document.body` is typed as
+  // non-null, but iframe edge cases at document_idle can leave it
+  // missing — guard rather than trust the type.
+  const node = root as Node;
+  if (node.nodeType === Node.DOCUMENT_NODE) {
+    const body = (root as Document).body;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return body ?? null;
+  }
+  return node;
+}
+
+function drainSubscriber(subscriber: Subscriber): void {
+  if (subscriber.pending.size === 0) {
+    return;
+  }
+  const roots = [...subscriber.pending].filter((root) => root.isConnected);
+  subscriber.pending.clear();
+  if (roots.length > 0) {
+    subscriber.onSubtrees(roots);
+  }
+}
+
+function fanOut(router: Router, mutations: MutationRecord[]): void {
+  // Walk every added node once and dispatch into each subscriber's pending
+  // set. The shared filters (nodeType, IGNORE_TAGS, isConnected) run once
+  // per node regardless of subscriber count — the whole point of the
+  // router. Per-subscriber filters (skipPlaceholderSubtrees) still run
+  // per (node, subscriber) pair, but they're cheap classlist reads.
+  for (const mutation of mutations) {
+    for (const added of mutation.addedNodes) {
+      if (added.nodeType !== Node.ELEMENT_NODE) {
+        continue;
+      }
+      const element = added as Element;
+      if (IGNORE_TAGS.has(element.tagName)) {
+        continue;
+      }
+      // React-style reconciliation routinely adds-then-removes a node in
+      // the same tick. By the time MutationObserver fires (microtask
+      // afterward), the addition record is still there but the node is
+      // already detached. drainSubscriber() filters by isConnected too —
+      // checking at enqueue avoids buffering churn in pending during a
+      // 5k-node route swap with high in-tick removal rate.
+      if (!element.isConnected) {
+        continue;
+      }
+      for (const subscriber of router.subscribers) {
+        if (subscriber.skipPlaceholderSubtrees) {
+          if (element.classList.contains(PLACEHOLDER_CLASS)) {
+            continue;
+          }
+          if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+            continue;
+          }
+        }
+        subscriber.pending.add(element);
+      }
+    }
+  }
+
+  for (const subscriber of router.subscribers) {
+    if (subscriber.pending.size === 0) {
+      continue;
+    }
+    if (subscriber.pending.size >= BURST_FLUSH_THRESHOLD) {
+      // Cancel the trailing throttle call and drain right now. drainSubscriber()
+      // guards its own empty case, so an in-flight throttle that fires later
+      // is a no-op.
+      subscriber.throttledScan.cancel();
+      drainSubscriber(subscriber);
+    } else {
+      subscriber.throttledScan();
+    }
+  }
+}
+
+function handleVisibilityChange(router: Router): void {
+  if (document.hidden) {
+    // Flush whatever's pending so we don't sit on a stale snapshot until
+    // the user returns, then stop receiving mutations. Background tabs
+    // keep firing observer callbacks; disconnecting is the cheap way to
+    // opt out for the duration.
+    for (const subscriber of router.subscribers) {
+      subscriber.throttledScan.flush();
+    }
+    router.observer?.disconnect();
+  } else if (router.observer) {
+    router.observer.observe(router.target, { childList: true, subtree: true });
+  }
+}
+
+function handleRouteChange(router: Router): void {
+  if (!router.observer) {
+    return;
+  }
+  // Cancel anything pending — the new route's content will arrive in the
+  // next render and we want the user-visible hide to happen against the
+  // new tree, not as a tail of the old throttle window. Discard buffered
+  // MutationRecords for the same reason: they describe the old route's
+  // teardown, which we're about to re-scan past anyway.
+  router.observer.takeRecords();
+  for (const subscriber of router.subscribers) {
+    subscriber.throttledScan.cancel();
+    subscriber.pending.clear();
+  }
+
+  // Wait one frame so React/Vue/Svelte can finish committing the new
+  // route's DOM, then sweep document.body once. Passing document.body
+  // makes rules that scan from their root argument do a full re-scan;
+  // selector-hide-rule's onSubtrees already scans from document.body
+  // regardless — both shapes end up doing the right thing.
+  if (router.routeSweepHandle !== null) {
+    cancelAnimationFrame(router.routeSweepHandle);
+  }
+  router.routeSweepHandle = requestAnimationFrame(() => {
+    router.routeSweepHandle = null;
+    if (!router.observer || document.hidden) {
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!document.body) {
+      return;
+    }
+    for (const subscriber of router.subscribers) {
+      subscriber.onSubtrees([document.body]);
+    }
+  });
+}
+
+function startRouter(router: Router): void {
+  if (router.observer) {
+    return;
+  }
+  const observer = new MutationObserver((mutations) => {
+    fanOut(router, mutations);
+  });
+  router.observer = observer;
+  if (!document.hidden) {
+    observer.observe(router.target, { childList: true, subtree: true });
+  }
+  router.visibilityListener = () => {
+    handleVisibilityChange(router);
+  };
+  document.addEventListener("visibilitychange", router.visibilityListener);
+  router.unsubscribeRouteChange = subscribeRouteChange(() => {
+    handleRouteChange(router);
+  });
+}
+
+function stopRouter(router: Router): void {
+  router.observer?.disconnect();
+  router.observer = null;
+  if (router.visibilityListener) {
+    document.removeEventListener("visibilitychange", router.visibilityListener);
+    router.visibilityListener = null;
+  }
+  router.unsubscribeRouteChange?.();
+  router.unsubscribeRouteChange = null;
+  if (router.routeSweepHandle !== null) {
+    cancelAnimationFrame(router.routeSweepHandle);
+    router.routeSweepHandle = null;
+  }
+  routersByTarget.delete(router.target);
+}
+
+function getOrCreateRouter(target: Node): Router {
+  let router = routersByTarget.get(target);
+  if (!router) {
+    router = {
+      target,
+      observer: null,
+      subscribers: new Set(),
+      visibilityListener: null,
+      unsubscribeRouteChange: null,
+      routeSweepHandle: null,
+    };
+    routersByTarget.set(target, router);
+  }
+  return router;
+}
+
 export function createSubtreeWatcher(
   options: SubtreeWatcherOptions,
 ): SubtreeWatcher {
@@ -55,167 +266,75 @@ export function createSubtreeWatcher(
     skipPlaceholderSubtrees = false,
   } = options;
 
-  let observer: MutationObserver | null = null;
-  let throttledScan: ReturnType<typeof throttle> | null = null;
-  let observedTarget: Node | null = null;
-  let visibilityListener: (() => void) | null = null;
-  let unsubscribeRouteChange: (() => void) | null = null;
-  let routeSweepHandle: number | null = null;
-  const pending = new Set<Element>();
-
-  function drain(): void {
-    if (pending.size === 0) {
-      return;
-    }
-    const roots = [...pending].filter((root) => root.isConnected);
-    pending.clear();
-    if (roots.length > 0) {
-      onSubtrees(roots);
-    }
-  }
-
-  function enqueue(mutations: MutationRecord[]): void {
-    for (const mutation of mutations) {
-      for (const added of mutation.addedNodes) {
-        if (added.nodeType !== Node.ELEMENT_NODE) {
-          continue;
-        }
-        const element = added as Element;
-        if (IGNORE_TAGS.has(element.tagName)) {
-          continue;
-        }
-        // React-style reconciliation routinely adds-then-removes a node in
-        // the same tick. By the time MutationObserver fires (microtask
-        // afterward), the addition record is still there but the node is
-        // already detached. drain() filters by isConnected too — checking
-        // at enqueue avoids buffering churn in pending during a 5k-node
-        // route swap with high in-tick removal rate.
-        if (!element.isConnected) {
-          continue;
-        }
-        if (skipPlaceholderSubtrees) {
-          if (element.classList.contains(PLACEHOLDER_CLASS)) {
-            continue;
-          }
-          if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
-            continue;
-          }
-        }
-        pending.add(element);
-      }
-    }
-    if (pending.size === 0) {
-      return;
-    }
-    if (pending.size >= BURST_FLUSH_THRESHOLD) {
-      // Cancel the pending trailing call and drain right now. drain() guards
-      // its own empty case, so an in-flight throttle that fires later is a
-      // no-op.
-      throttledScan?.cancel();
-      drain();
-      return;
-    }
-    throttledScan?.();
-  }
-
-  function handleRouteChange(): void {
-    if (!observer) {
-      return;
-    }
-    // Cancel anything pending — the new route's content will arrive in the
-    // next render and we want the user-visible hide to happen against the
-    // new tree, not as a tail of the old throttle window. Discard buffered
-    // MutationRecords for the same reason: they describe the old route's
-    // teardown, which we're about to re-scan past anyway.
-    observer.takeRecords();
-    throttledScan?.cancel();
-    pending.clear();
-
-    // Wait one frame so React/Vue/Svelte can finish committing the new
-    // route's DOM, then sweep document.body once. Passing document.body
-    // makes rules that scan from their root argument do a full re-scan;
-    // selector-hide-rule's onSubtrees already scans from document.body
-    // regardless — both shapes end up doing the right thing.
-    if (routeSweepHandle !== null) {
-      cancelAnimationFrame(routeSweepHandle);
-    }
-    routeSweepHandle = requestAnimationFrame(() => {
-      routeSweepHandle = null;
-      if (!observer || document.hidden) {
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!document.body) {
-        return;
-      }
-      onSubtrees([document.body]);
-    });
-  }
-
-  function handleVisibilityChange(): void {
-    if (document.hidden) {
-      // Flush whatever's pending so we don't sit on a stale snapshot until
-      // the user returns, then stop receiving mutations. Background tabs
-      // keep firing observer callbacks; disconnecting is the cheap way to
-      // opt out for the duration.
-      throttledScan?.flush();
-      observer?.disconnect();
-    } else if (observer && observedTarget) {
-      observer.observe(observedTarget, { childList: true, subtree: true });
-    }
-  }
+  let subscriber: Subscriber | null = null;
+  let router: Router | null = null;
 
   return {
     start(root: ParentNode): void {
-      if (observer) {
+      if (subscriber) {
         return;
       }
-      // Trailing-only: a burst of additions inside one window collapses to a
-      // single drain at the end of it, instead of one drain at the leading
-      // edge plus another at the trailing edge (which is what leading+trailing
-      // produced — every burst scanned twice).
-      throttledScan = throttle(drain, throttleMs, {
-        leading: false,
-        trailing: true,
-      });
-      observer = new MutationObserver(enqueue);
-      // rule-engine always passes document.body, but accept Document for
-      // robustness and resolve to its body. `Document.body` is typed as
-      // non-null, but iframe edge cases at document_idle can leave it
-      // missing — guard rather than trust the type.
-      const target =
-        (root as Node).nodeType === Node.DOCUMENT_NODE
-          ? (root as Document).body
-          : (root as Node);
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      const target = resolveTarget(root);
       if (!target) {
         return;
       }
-      observedTarget = target;
-      if (!document.hidden) {
-        observer.observe(target, { childList: true, subtree: true });
-      }
-      visibilityListener = handleVisibilityChange;
-      document.addEventListener("visibilitychange", visibilityListener);
-      unsubscribeRouteChange = subscribeRouteChange(handleRouteChange);
+      router = getOrCreateRouter(target);
+      const ownSubscriber: Subscriber = {
+        onSubtrees,
+        skipPlaceholderSubtrees,
+        pending: new Set(),
+        // Trailing-only: a burst of additions inside one window collapses
+        // to a single drain at the end of it, instead of one drain at the
+        // leading edge plus another at the trailing edge (which is what
+        // leading+trailing produced — every burst scanned twice).
+        throttledScan: throttle(
+          () => {
+            drainSubscriber(ownSubscriber);
+          },
+          throttleMs,
+          { leading: false, trailing: true },
+        ),
+      };
+      subscriber = ownSubscriber;
+      router.subscribers.add(ownSubscriber);
+      startRouter(router);
     },
     stop(): void {
-      observer?.disconnect();
-      observer = null;
-      throttledScan?.cancel();
-      throttledScan = null;
-      pending.clear();
-      observedTarget = null;
-      if (visibilityListener) {
-        document.removeEventListener("visibilitychange", visibilityListener);
-        visibilityListener = null;
+      if (!subscriber || !router) {
+        return;
       }
-      unsubscribeRouteChange?.();
-      unsubscribeRouteChange = null;
-      if (routeSweepHandle !== null) {
-        cancelAnimationFrame(routeSweepHandle);
-        routeSweepHandle = null;
+      router.subscribers.delete(subscriber);
+      subscriber.throttledScan.cancel();
+      subscriber.pending.clear();
+      if (router.subscribers.size === 0) {
+        stopRouter(router);
       }
+      subscriber = null;
+      router = null;
     },
   };
+}
+
+// Test-only: tear down every shared router and clear the registry. Tests
+// that exercise the route-change / visibility paths can leak router state
+// across cases if a watcher's stop() is missed; this restores the module
+// to the same shape as a fresh import.
+export function __resetSubtreeWatcherForTesting(): void {
+  for (const router of routersByTarget.values()) {
+    router.observer?.disconnect();
+    if (router.visibilityListener) {
+      document.removeEventListener(
+        "visibilitychange",
+        router.visibilityListener,
+      );
+    }
+    router.unsubscribeRouteChange?.();
+    if (router.routeSweepHandle !== null) {
+      cancelAnimationFrame(router.routeSweepHandle);
+    }
+    for (const subscriber of router.subscribers) {
+      subscriber.throttledScan.cancel();
+    }
+  }
+  routersByTarget.clear();
 }
