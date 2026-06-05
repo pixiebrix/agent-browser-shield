@@ -226,9 +226,16 @@ function readAriaLabel(element: Element): string {
     return "";
   }
   // aria-labelledby can list multiple IDs; concatenate their visible text.
+  // Leading/trailing whitespace on the attribute would otherwise yield empty
+  // string IDs from the split — `CSS.escape("")` is `""`, and
+  // `querySelector("#")` throws. Same guard pattern as `readAccessibleName`
+  // in `trust-badge-annotate.ts`.
   const document_ = element.ownerDocument;
   const parts: string[] = [];
   for (const id of labelledby.split(/\s+/)) {
+    if (id === "") {
+      continue;
+    }
     const labelElement = document_.querySelector(`#${CSS.escape(id)}`);
     if (labelElement !== null) {
       parts.push(labelElement.textContent.trim());

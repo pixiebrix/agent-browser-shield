@@ -291,6 +291,36 @@ describe("findOrderSummaryAncestor", () => {
     );
   });
 
+  it("tolerates aria-labelledby with leading/trailing whitespace", () => {
+    // jsdom in this project does not expose the `CSS` global; polyfill so
+    // the labelledby resolution path can execute. Identity escape is fine
+    // here — the test only inserts known-safe id values.
+    const previousCss = (globalThis as { CSS?: unknown }).CSS;
+    (globalThis as { CSS?: { escape: (input: string) => string } }).CSS = {
+      escape: (input: string) => input,
+    };
+    try {
+      document.body.innerHTML = `
+        <h2 id="heading-a">Order</h2>
+        <h2 id="heading-b">Summary</h2>
+        <section role="region" aria-labelledby="  heading-a heading-b  ">
+          <div><span id="label">Service Fee</span><span>$2.00</span></div>
+        </section>
+      `;
+      const label = document.querySelector("#label") as HTMLElement;
+      // Splitting "  heading-a heading-b  " on \s+ yields empty-string IDs.
+      // `CSS.escape("")` is "", so `querySelector("#")` would throw with a
+      // DOMException if we didn't skip empty ids. The region must still
+      // resolve as an order-summary container.
+      expect(() => findOrderSummaryAncestor(label)).not.toThrow();
+      expect(findOrderSummaryAncestor(label)?.getAttribute("role")).toBe(
+        "region",
+      );
+    } finally {
+      (globalThis as { CSS?: unknown }).CSS = previousCss;
+    }
+  });
+
   it("returns null when label is inside a <nav>", () => {
     document.body.innerHTML = `
       <nav><a><span id="label">Service Fee FAQ</span></a></nav>
