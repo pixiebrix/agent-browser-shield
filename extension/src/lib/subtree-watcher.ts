@@ -35,6 +35,12 @@ const IGNORE_TAGS: ReadonlySet<string> = new Set(["STYLE", "BR"]);
 // (Pattern from Ghostery's adblocker DOMMonitor.)
 const BURST_FLUSH_THRESHOLD = 512;
 
+// `id` and `class` are the only attributes the selector-token-index
+// dispatcher keys on. Limiting the filter at the MO level keeps the
+// burst from page JS toggling unrelated attributes (style, data-*,
+// aria-*) off the hot path.
+const OBSERVED_ATTRIBUTES = ["id", "class"];
+
 interface SubtreeWatcherOptions {
   // Called once per throttle window with all the (still-connected) subtree
   // roots that were added since the previous drain. Batched together so
@@ -46,6 +52,14 @@ interface SubtreeWatcherOptions {
   // inside one are dropped during enqueue. Rules whose own placeholder
   // insertions would otherwise re-trigger them want this on.
   skipPlaceholderSubtrees?: boolean;
+  // When true, this subscriber also receives elements whose `id` or
+  // `class` attribute changed in place — surfaced through the same
+  // onSubtrees callback as freshly-added subtrees. The shared router
+  // upgrades the MO config when any subscriber asks; other subscribers
+  // are unaffected. Use this for token-index-style dispatch where a
+  // jQuery-style `addClass` on an existing node would otherwise be
+  // silently missed.
+  observeAttributes?: boolean;
 }
 
 export interface SubtreeWatcher {
@@ -56,6 +70,7 @@ export interface SubtreeWatcher {
 interface Subscriber {
   onSubtrees: (roots: Element[]) => void;
   skipPlaceholderSubtrees: boolean;
+  observeAttributes: boolean;
   throttledScan: ReturnType<typeof throttle>;
   pending: Set<Element>;
 }
@@ -63,6 +78,7 @@ interface Subscriber {
 interface Router {
   target: Node;
   observer: MutationObserver | null;
+  observingAttributes: boolean;
   subscribers: Set<Subscriber>;
   visibilityListener: (() => void) | null;
   unsubscribeRouteChange: (() => void) | null;
@@ -98,6 +114,37 @@ function drainSubscriber(subscriber: Subscriber): void {
   }
 }
 
+function enqueueAttributeMutation(
+  router: Router,
+  mutation: MutationRecord,
+): void {
+  const target = mutation.target;
+  if (target.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+  const element = target as Element;
+  if (IGNORE_TAGS.has(element.tagName)) {
+    return;
+  }
+  if (!element.isConnected) {
+    return;
+  }
+  for (const subscriber of router.subscribers) {
+    if (!subscriber.observeAttributes) {
+      continue;
+    }
+    if (subscriber.skipPlaceholderSubtrees) {
+      if (element.classList.contains(PLACEHOLDER_CLASS)) {
+        continue;
+      }
+      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
+        continue;
+      }
+    }
+    subscriber.pending.add(element);
+  }
+}
+
 function fanOut(router: Router, mutations: MutationRecord[]): void {
   // Walk every added node once and dispatch into each subscriber's pending
   // set. The shared filters (nodeType, IGNORE_TAGS, isConnected) run once
@@ -105,6 +152,14 @@ function fanOut(router: Router, mutations: MutationRecord[]): void {
   // router. Per-subscriber filters (skipPlaceholderSubtrees) still run
   // per (node, subscriber) pair, but they're cheap classlist reads.
   for (const mutation of mutations) {
+    if (mutation.type === "attributes") {
+      // id/class changed on an existing element. Only subscribers that
+      // opted into observeAttributes hear about it — other rules don't
+      // benefit from re-scanning the same node just because a class
+      // toggled.
+      enqueueAttributeMutation(router, mutation);
+      continue;
+    }
     for (const added of mutation.addedNodes) {
       if (added.nodeType !== Node.ELEMENT_NODE) {
         continue;
@@ -152,6 +207,29 @@ function fanOut(router: Router, mutations: MutationRecord[]): void {
   }
 }
 
+function observerInit(router: Router): MutationObserverInit {
+  // Attribute observation rides on the same MO. We attach it whenever
+  // any current subscriber wants attribute mutations; the per-subscriber
+  // gate in fanOut keeps non-opted-in subscribers from seeing them.
+  const wantsAttributes = router.observingAttributes;
+  return {
+    childList: true,
+    subtree: true,
+    ...(wantsAttributes
+      ? { attributes: true, attributeFilter: OBSERVED_ATTRIBUTES }
+      : {}),
+  };
+}
+
+function refreshObservation(router: Router): void {
+  if (!router.observer || document.hidden) {
+    return;
+  }
+  // observe() on an already-observed MO replaces the existing options
+  // without re-emitting historical records.
+  router.observer.observe(router.target, observerInit(router));
+}
+
 function handleVisibilityChange(router: Router): void {
   if (document.hidden) {
     // Flush whatever's pending so we don't sit on a stale snapshot until
@@ -163,7 +241,7 @@ function handleVisibilityChange(router: Router): void {
     }
     router.observer?.disconnect();
   } else if (router.observer) {
-    router.observer.observe(router.target, { childList: true, subtree: true });
+    refreshObservation(router);
   }
 }
 
@@ -214,7 +292,7 @@ function startRouter(router: Router): void {
   });
   router.observer = observer;
   if (!document.hidden) {
-    observer.observe(router.target, { childList: true, subtree: true });
+    observer.observe(router.target, observerInit(router));
   }
   router.visibilityListener = () => {
     handleVisibilityChange(router);
@@ -247,6 +325,7 @@ function getOrCreateRouter(target: Node): Router {
     router = {
       target,
       observer: null,
+      observingAttributes: false,
       subscribers: new Set(),
       visibilityListener: null,
       unsubscribeRouteChange: null,
@@ -264,6 +343,7 @@ export function createSubtreeWatcher(
     onSubtrees,
     throttleMs = 250,
     skipPlaceholderSubtrees = false,
+    observeAttributes = false,
   } = options;
 
   let subscriber: Subscriber | null = null;
@@ -282,6 +362,7 @@ export function createSubtreeWatcher(
       const ownSubscriber: Subscriber = {
         onSubtrees,
         skipPlaceholderSubtrees,
+        observeAttributes,
         pending: new Set(),
         // Trailing-only: a burst of additions inside one window collapses
         // to a single drain at the end of it, instead of one drain at the
@@ -297,7 +378,19 @@ export function createSubtreeWatcher(
       };
       subscriber = ownSubscriber;
       router.subscribers.add(ownSubscriber);
-      startRouter(router);
+      const needsAttributeUpgrade =
+        observeAttributes && !router.observingAttributes;
+      if (needsAttributeUpgrade) {
+        router.observingAttributes = true;
+      }
+      if (router.observer === null) {
+        startRouter(router);
+      } else if (needsAttributeUpgrade) {
+        // Re-observe with the upgraded options. Calling observe() on an
+        // already-active MO with the same target merges configurations
+        // without re-emitting historical mutations.
+        refreshObservation(router);
+      }
     },
     stop(): void {
       if (!subscriber || !router) {
@@ -308,6 +401,16 @@ export function createSubtreeWatcher(
       subscriber.pending.clear();
       if (router.subscribers.size === 0) {
         stopRouter(router);
+      } else if (subscriber.observeAttributes) {
+        // Downgrade if this was the last attribute-observing subscriber.
+        // We leave the MO connected — only the option set narrows.
+        const stillWantsAttributes = [...router.subscribers].some(
+          (s) => s.observeAttributes,
+        );
+        if (!stillWantsAttributes && router.observingAttributes) {
+          router.observingAttributes = false;
+          refreshObservation(router);
+        }
       }
       subscriber = null;
       router = null;
