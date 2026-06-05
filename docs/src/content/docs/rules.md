@@ -252,11 +252,12 @@ HTML metadata is enumerated among the non-rendered carriers in Greshake et al.
 
 Walk every element and, for a small allowlist of agent-readable attributes —
 `aria-label`, `aria-description`, `alt`, `title`, `placeholder`, `data-tooltip`,
-and `value` on disabled `<input>` elements — remove the attribute outright when
-its value matches the prompt-injection pattern set (the same regex bundle used
-by `prompt-injection-redact`). Clean attributes are preserved. Attributes
-outside the allowlist are not inspected. We remove the whole attribute rather
-than blank it because an empty `aria-label` actively hides an element from
+and `value` on `<input>` elements the user cannot reach (`disabled` or
+`type="hidden"`) — remove the attribute outright when its value matches the
+prompt-injection pattern set (the same regex bundle used by
+`prompt-injection-redact`). Clean attributes are preserved. Attributes outside
+the allowlist are not inspected. We remove the whole attribute rather than blank
+it because an empty `aria-label` actively hides an element from
 accessibility-tree consumers, whereas a missing `aria-label` lets fallback name
 computation (visible text, `alt`, associated label) proceed normally.
 

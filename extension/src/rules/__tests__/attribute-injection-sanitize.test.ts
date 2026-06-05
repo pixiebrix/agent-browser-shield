@@ -111,6 +111,50 @@ describe("attribute-injection-sanitize disabled input value", () => {
   });
 });
 
+describe("attribute-injection-sanitize hidden input value", () => {
+  it("removes a poisoned value on input[type=hidden]", () => {
+    document.body.innerHTML = `<input type="hidden" value="${FIXTURES.NEW_INSTRUCTIONS}">`;
+
+    attributeInjectionSanitizeRule.apply(document.body);
+
+    const input = document.body.querySelector("input");
+    expect(input?.hasAttribute("value")).toBe(false);
+  });
+
+  it("treats Type='HIDDEN' case-insensitively", () => {
+    document.body.innerHTML = `<input type="HIDDEN" value="${FIXTURES.DISREGARD}">`;
+
+    attributeInjectionSanitizeRule.apply(document.body);
+
+    expect(document.body.querySelector("input")?.hasAttribute("value")).toBe(
+      false,
+    );
+  });
+
+  it("leaves a clean hidden input value alone", () => {
+    document.body.innerHTML = `<input type="hidden" name="csrf" value="abc123">`;
+
+    attributeInjectionSanitizeRule.apply(document.body);
+
+    expect(document.body.querySelector("input")?.getAttribute("value")).toBe(
+      "abc123",
+    );
+  });
+
+  it("scrubs a hidden input added in a lazy subtree", async () => {
+    attributeInjectionSanitizeRule.apply(document.body);
+
+    const route = document.createElement("section");
+    route.innerHTML = `<input type="hidden" value="${FIXTURES.IGNORE_HACKED}">`;
+    document.body.append(route);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(route.querySelector("input")?.hasAttribute("value")).toBe(false);
+  });
+});
+
 describe("attribute-injection-sanitize lazy subtrees", () => {
   it("scrubs an attribute on a subtree added after apply", async () => {
     attributeInjectionSanitizeRule.apply(document.body);
