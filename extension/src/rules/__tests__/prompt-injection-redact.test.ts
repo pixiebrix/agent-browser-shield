@@ -176,4 +176,40 @@ describe("prompt-injection-redact", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
     expect(document.body.textContent).toContain(FIXTURES.IGNORE_ALL);
   });
+
+  describe("findContainer escalation", () => {
+    // When injection text lives directly in <body> with no block-level
+    // ancestor, the rule must not redact — wrapping <body> in a placeholder
+    // would black out the whole page. findContainer returns null on the
+    // BODY/HTML guard.
+    it("does not redact text that is a direct child of <body>", () => {
+      document.body.innerHTML = "";
+      document.body.append(document.createTextNode(FIXTURES.IGNORE_ALL));
+
+      promptInjectionRedactRule.apply(document.body);
+
+      expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+      expect(document.body.textContent).toContain(FIXTURES.IGNORE_ALL);
+    });
+
+    // When the only ancestor is a non-block element (a bare <div>/<span>/etc.
+    // not in BLOCK_CONTAINER_SELECTOR), the rule falls back to that direct
+    // parent rather than escalating. Confirms the "return parent" branch.
+    it("wraps the direct parent when no block-level ancestor matches", () => {
+      document.body.innerHTML = `<div id="wrap"><span id="leaf">${FIXTURES.IGNORE_ALL}</span></div>`;
+
+      promptInjectionRedactRule.apply(document.body);
+
+      // The <span> is the direct parent of the text node and not in the
+      // block selector — it gets replaced rather than escalating to <body>.
+      expect(document.querySelector("#leaf")).toBeNull();
+      expect(document.querySelector("#wrap")).not.toBeNull();
+      const placeholder = document.querySelector(`.${PLACEHOLDER_CLASS}`);
+      expect(placeholder).not.toBeNull();
+      // Placeholder sits inside the wrapper, not in place of the wrapper.
+      expect(
+        document.querySelector("#wrap")?.contains(placeholder ?? null),
+      ).toBe(true);
+    });
+  });
 });
