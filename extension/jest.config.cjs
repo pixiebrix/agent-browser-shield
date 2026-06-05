@@ -89,10 +89,10 @@ module.exports = {
   // below the all-files summary number.
   coverageThreshold: {
     global: {
-      statements: 62,
-      branches: 58,
-      functions: 58,
-      lines: 61,
+      statements: 65,
+      branches: 60,
+      functions: 61,
+      lines: 65,
     },
     "./src/rules/": {
       statements: 90,
