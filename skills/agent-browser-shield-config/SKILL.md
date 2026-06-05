@@ -11,8 +11,9 @@ on the next page load.
 ## Opening the options page
 
 Humans: right-click the toolbar icon → *Options*, or go to `chrome://extensions`
-→ *Details* → *Extension options*. The popup (toolbar icon click) exposes the
-same per-rule toggles.
+→ *Details* → *Extension options*. The popup (toolbar icon click) shows the
+enforcement switch, per-rule activity counts, and a *Configure rules* button
+that opens the options page — per-rule toggles live only on the options page.
 
 Builds may also enable a floating **shield-icon badge** in the bottom-right
 corner of every page — a circular button with `[data-abs="open-options"]` and
