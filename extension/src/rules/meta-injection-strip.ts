@@ -96,7 +96,7 @@ export const metaInjectionStripRule = {
   id: RULE_ID,
   label: "Strip Meta Injection",
   description:
-    "Remove <meta> tags and clear <title> text whose content carries prompt-injection patterns.",
+    "Blank <meta> content and <title> text whose value carries prompt-injection patterns.",
   apply,
   teardown: () => {
     bodyWatcher.stop();
