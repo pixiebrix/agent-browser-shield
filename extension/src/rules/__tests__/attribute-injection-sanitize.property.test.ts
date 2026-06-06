@@ -17,6 +17,10 @@ import { FIXTURES } from "./injection-fixtures";
 const ALLOWLISTED_ATTRS = [
   "aria-label",
   "aria-description",
+  "aria-roledescription",
+  "aria-placeholder",
+  "aria-valuetext",
+  "aria-keyshortcuts",
   "alt",
   "title",
   "placeholder",
@@ -26,6 +30,10 @@ const ALLOWLISTED_ATTRS = [
 const TAG_FOR_ATTR: Record<(typeof ALLOWLISTED_ATTRS)[number], string> = {
   "aria-label": "button",
   "aria-description": "div",
+  "aria-roledescription": "div",
+  "aria-placeholder": "input",
+  "aria-valuetext": "div",
+  "aria-keyshortcuts": "button",
   alt: "img",
   title: "span",
   placeholder: "input",

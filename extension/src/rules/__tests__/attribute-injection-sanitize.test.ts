@@ -21,6 +21,10 @@ describe("attribute-injection-sanitize candidate attributes", () => {
   it.each([
     ["aria-label", "button"],
     ["aria-description", "div"],
+    ["aria-roledescription", "div"],
+    ["aria-placeholder", "input"],
+    ["aria-valuetext", "div"],
+    ["aria-keyshortcuts", "button"],
     ["alt", "img"],
     ["title", "span"],
     ["placeholder", "input"],
@@ -39,6 +43,10 @@ describe("attribute-injection-sanitize candidate attributes", () => {
     ["alt", "img", "Product photo"],
     ["title", "span", "Posted 3 days ago"],
     ["placeholder", "input", "Search products"],
+    ["aria-roledescription", "div", "carousel"],
+    ["aria-valuetext", "div", "$129.99"],
+    ["aria-keyshortcuts", "button", "Control+S"],
+    ["aria-placeholder", "input", "Search products"],
   ])("preserves clean %s values", (attribute, tag, value) => {
     document.body.innerHTML = `<${tag} ${attribute}="${value}"></${tag}>`;
 
