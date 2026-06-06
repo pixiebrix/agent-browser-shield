@@ -47,6 +47,28 @@ export default function Checkout() {
               4. Shipping & contact
             </h2>
             <form className="space-y-3 text-sm text-stone-700">
+              {/* Hidden affiliate / UTM attribution metadata — exercises
+                  hidden-affiliate-sanitize. utm_* / aff_id are cleared.
+                  csrf_token and coupon_code are preserved: CSRF would
+                  silently reject the submit, and coupon_code commonly
+                  carries a legitimate user-acquired discount. */}
+              <input
+                type="hidden"
+                name="utm_source"
+                defaultValue="email-newsletter"
+              />
+              <input
+                type="hidden"
+                name="utm_campaign"
+                defaultValue="winter25"
+              />
+              <input type="hidden" name="aff_id" defaultValue="affsite-42" />
+              <input type="hidden" name="coupon_code" defaultValue="SAVE10" />
+              <input
+                type="hidden"
+                name="csrf_token"
+                defaultValue="9f7d3c2a-CSRF"
+              />
               <label className="block">
                 <span className="block font-medium text-stone-800">
                   Marketing email

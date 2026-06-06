@@ -85,3 +85,11 @@ export const CONFIRMSHAME_ORIGINAL_TITLE_ATTR =
 // stamped on controls that were considered and rejected by the FP-control
 // gates so re-scans skip them on every burst.
 export const FORM_PREFILL_ANNOTATED_ATTR = "data-abs-form-prefill-annotated";
+
+// `hidden-affiliate-sanitize`: marks a hidden input whose value the rule has
+// already cleared (or considered and rejected via denylist / per-host kill-
+// switch). Stamped on both outcomes so re-scans don't re-evaluate the same
+// node every mutation burst, and so a later page-script value-write doesn't
+// drive an infinite re-clear loop.
+export const HIDDEN_AFFILIATE_CLEARED_ATTR =
+  "data-abs-hidden-affiliate-cleared";
