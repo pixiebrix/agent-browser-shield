@@ -261,6 +261,28 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
     expect(node.value).toBe("");
   });
 
+  it("clears a hidden input that is itself the subtree root (appended directly into an existing form)", async () => {
+    // querySelectorAll only walks descendants — a single input appended
+    // straight into an existing form is delivered to the watcher as the
+    // root element, not as a descendant of a larger subtree. The rule
+    // must check the root itself or the input slips through unscrubbed.
+    document.body.innerHTML = `<form id="checkout"></form>`;
+    hiddenAffiliateSanitizeRule.apply(document.body);
+
+    const form = document.querySelector("#checkout") as HTMLFormElement;
+    const late = document.createElement("input");
+    late.type = "hidden";
+    late.name = "utm_source";
+    late.value = "email";
+    form.append(late);
+
+    await flushMutations();
+    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
+
+    expect(late.value).toBe("");
+    expect(late.hasAttribute(CLEARED_ATTR)).toBe(true);
+  });
+
   it("does not run on a non-checkout URL", () => {
     const originalHref = globalThis.location.href;
     globalThis.history.replaceState({}, "", "/blog/post");

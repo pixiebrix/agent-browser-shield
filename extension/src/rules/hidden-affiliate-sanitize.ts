@@ -241,6 +241,41 @@ function isFormScopedHidden(input: HTMLInputElement): boolean {
   return input.form !== null;
 }
 
+function tryClearInput(
+  input: HTMLInputElement,
+  outcome: { cleared: number; names: string[] },
+): void {
+  if (input.hasAttribute(CLEARED_ATTR)) {
+    return;
+  }
+  if (!input.isConnected) {
+    return;
+  }
+  if (!isFormScopedHidden(input)) {
+    return;
+  }
+  const name = input.name;
+  if (!shouldClearName(name)) {
+    // Stamp non-empty-name rejections so re-scans don't re-check the
+    // same node. Unnamed hidden inputs we leave unstamped since
+    // they're rare and the next scan's no-op cost is negligible.
+    if (name.length > 0) {
+      input.setAttribute(CLEARED_ATTR, "skipped");
+    }
+    return;
+  }
+  // Use the attribute value, not just live `.value`, to detect the
+  // "value never set" case where there's nothing to clear and we
+  // can short-circuit.
+  if (input.value.length === 0) {
+    input.setAttribute(CLEARED_ATTR, "already-empty");
+    return;
+  }
+  clearValue(input);
+  outcome.cleared++;
+  outcome.names.push(name);
+}
+
 function scanAndClear(root: ParentNode): void {
   if (!isCheckoutUrl(globalThis.location.href)) {
     return;
@@ -248,46 +283,28 @@ function scanAndClear(root: ParentNode): void {
   if (isKillSwitchedHost(globalThis.location.href)) {
     return;
   }
+  const outcome = { cleared: 0, names: [] as string[] };
+  // querySelectorAll only walks descendants. When the subtree watcher
+  // delivers a single `<input type="hidden">` appended directly to an
+  // existing form, the input itself is the root and would slip past
+  // the loop below. Check the root explicitly first — same pattern as
+  // `attribute-injection-sanitize` and `confirmshame-sanitize`.
+  if (root instanceof HTMLInputElement) {
+    tryClearInput(root, outcome);
+  }
   // The selector keeps the loop body tight by pre-filtering type and
-  // FLAGGED_ATTR. We still need to re-verify name/denylist/form-scope
-  // per element below — those don't translate cleanly to CSS.
+  // CLEARED_ATTR. We still need to re-verify form-scope / denylist /
+  // allowlist per element below — those don't translate cleanly to CSS.
   const candidates = root.querySelectorAll<HTMLInputElement>(
     `input[type="hidden"]:not([${CLEARED_ATTR}])`,
   );
-  let cleared = 0;
-  const names: string[] = [];
   for (const input of candidates) {
-    if (!input.isConnected) {
-      continue;
-    }
-    if (!isFormScopedHidden(input)) {
-      continue;
-    }
-    const name = input.name;
-    if (!shouldClearName(name)) {
-      // Stamp non-empty-name rejections so re-scans don't re-check the
-      // same node. Unnamed hidden inputs we leave unstamped since
-      // they're rare and the next scan's no-op cost is negligible.
-      if (name.length > 0) {
-        input.setAttribute(CLEARED_ATTR, "skipped");
-      }
-      continue;
-    }
-    // Use the attribute value, not just live `.value`, to detect the
-    // "value never set" case where there's nothing to clear and we
-    // can short-circuit.
-    if (input.value.length === 0) {
-      input.setAttribute(CLEARED_ATTR, "already-empty");
-      continue;
-    }
-    clearValue(input);
-    cleared++;
-    names.push(name);
+    tryClearInput(input, outcome);
   }
-  if (cleared > 0) {
+  if (outcome.cleared > 0) {
     log("hidden affiliate values cleared", {
-      count: cleared,
-      names,
+      count: outcome.cleared,
+      names: outcome.names,
       url: globalThis.location.href,
     });
   }
