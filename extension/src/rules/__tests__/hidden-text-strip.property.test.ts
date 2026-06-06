@@ -258,6 +258,73 @@ describe("hidden-text-strip (property)", () => {
     );
   });
 
+  // Animation-in-flight property-name boundary. The guard pattern is
+  // `(?<![a-z-])<name>(?![a-z-])` precisely to keep `\bfilter\b` from
+  // matching `backdrop-filter`, `\bheight\b` from matching `line-height`,
+  // etc. — those would let an attacker declare a long transition on the
+  // adjacent property and trip the guard, bypassing the strip. The unit
+  // tests pin the two known concrete cases; the property pins the class
+  // so any CSS property name that *contains* a guard keyword but isn't
+  // the keyword itself still strips the hidden text.
+  //
+  // Each trigger is paired with a transition on a "trap" property name
+  // that shares a substring with the guard keyword. `transition: <trap>
+  // 999s` MUST NOT suppress the strip of the trigger.
+  const TRIGGER_AND_TRAP_TRANSITION = fc.constantFrom(
+    // filter:opacity(0) bypass via backdrop-filter / -webkit-filter
+    {
+      style: "filter: opacity(0); transition: backdrop-filter 999s",
+    },
+    {
+      style: "filter: opacity(0); transition: -webkit-filter 999s",
+    },
+    // max-height:0 bypass via line-height / min-height
+    {
+      style:
+        "max-height: 0; overflow: hidden; width: 600px; transition: line-height 999s",
+    },
+    {
+      style:
+        "max-height: 0; overflow: hidden; width: 600px; transition: min-height 999s",
+    },
+    // transform:scale(0) bypass via transform-origin / transform-style
+    {
+      style: "transform: scale(0); transition: transform-origin 999s",
+    },
+    {
+      style: "transform: scale(0); transition: transform-style 999s",
+    },
+    // opacity:0 bypass via fill-opacity / stroke-opacity (SVG)
+    {
+      style: "opacity: 0; transition: fill-opacity 999s",
+    },
+    {
+      style: "opacity: 0; transition: stroke-opacity 999s",
+    },
+  );
+
+  it("still strips when a transition targets a property whose name only contains the guard keyword", () => {
+    fc.assert(
+      fc.property(
+        TRIGGER_AND_TRAP_TRANSITION,
+        PAYLOAD,
+        ({ style }, payload) => {
+          document.body.innerHTML = "";
+          const target = document.createElement("div");
+          target.id = "target";
+          target.setAttribute("style", style);
+          target.append(document.createTextNode(payload));
+          document.body.append(target);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.isConnected).toBe(true);
+          expect(target.textContent).toBe("");
+        },
+      ),
+    );
+  });
+
   // Cross-product invariant for #203 item #10: landmark + aria-hidden
   // allowlists kick in only for positional hide reasons. A future tweak
   // that moves a check back into the unconditional skip block (or adds
