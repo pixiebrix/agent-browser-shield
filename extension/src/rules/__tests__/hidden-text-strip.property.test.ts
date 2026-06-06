@@ -22,6 +22,12 @@ const HIDDEN_STYLE = fc.constantFrom(
   "font-size: 0",
   "position: absolute; left: -10000px",
   "clip-path: inset(100%)",
+  "-webkit-text-fill-color: transparent",
+  "filter: opacity(0)",
+  "mask-image: linear-gradient(transparent, transparent)",
+  "transform: scale(0)",
+  "content-visibility: hidden",
+  "max-height: 0; overflow: hidden; width: 600px",
 );
 
 const PAYLOAD = fc.constantFrom(
@@ -89,6 +95,164 @@ describe("hidden-text-strip (property)", () => {
             expect(marker.isConnected).toBe(true);
             expect(marker.parentElement).toBe(target);
           }
+        },
+      ),
+    );
+  });
+
+  // Every shape the matrix → scale check is supposed to recognize as
+  // "x or y axis collapsed to zero". Unit tests pin one example each;
+  // the property test pins the whole class so a future tweak to the
+  // matrix parser doesn't quietly miss `scale3d(_,0,_)` or
+  // `matrix(_,_,0,0,_,_)` (y-axis zero) and re-open the bypass.
+  const COLLAPSING_TRANSFORM = fc.oneof(
+    fc.constant("scale(0)"),
+    fc.constant("scale(0, 0)"),
+    fc.constant("scaleX(0)"),
+    fc.constant("scaleY(0)"),
+    fc.constant("scale3d(0, 1, 1)"),
+    fc.constant("scale3d(1, 0, 1)"),
+    fc.constant("matrix(0, 0, 0, 0, 0, 0)"),
+    // x-axis zero, y-axis non-zero (non-uniform collapse)
+    fc.constant("matrix(0, 0, 0, 1, 10, 20)"),
+    // y-axis zero, x-axis non-zero
+    fc.constant("matrix(1, 0, 0, 0, 10, 20)"),
+    // matrix3d with x-axis zero (m11 == 0)
+    fc.constant("matrix3d(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"),
+    // matrix3d with y-axis zero (m22 == 0)
+    fc.constant("matrix3d(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"),
+  );
+
+  it("strips text under any transform whose x or y scale collapses to zero", () => {
+    fc.assert(
+      fc.property(COLLAPSING_TRANSFORM, PAYLOAD, (transform, payload) => {
+        document.body.innerHTML = "";
+        const target = document.createElement("div");
+        target.id = "target";
+        target.setAttribute("style", `transform: ${transform}`);
+        target.append(document.createTextNode(payload));
+        document.body.append(target);
+
+        hiddenTextStripRule.apply(document.body);
+
+        expect(target.isConnected).toBe(true);
+        expect(target.textContent).toBe("");
+      }),
+    );
+  });
+
+  // The negative half of the same invariant: any transform that leaves
+  // both x and y scale non-zero must preserve the text. Without this,
+  // a too-eager matrix parser could regress `transform: scale(0.5)`
+  // into a strip and corrupt every transformed element on a page.
+  const NON_COLLAPSING_TRANSFORM = fc.oneof(
+    fc.constant("none"),
+    fc.constant("scale(1)"),
+    fc.constant("scale(0.5)"),
+    fc.constant("scale(2, 0.5)"),
+    fc.constant("scaleX(1.5)"),
+    fc.constant("scaleY(0.25)"),
+    fc.constant("scale3d(1, 0.5, 1)"),
+    fc.constant("matrix(1, 0, 0, 1, 0, 0)"),
+    fc.constant("matrix(0.5, 0, 0, 0.5, 100, 200)"),
+    fc.constant("rotate(45deg)"),
+    fc.constant("translate(10px, 20px)"),
+  );
+
+  it("preserves text whose transform leaves both axes non-zero", () => {
+    fc.assert(
+      fc.property(NON_COLLAPSING_TRANSFORM, (transform) => {
+        document.body.innerHTML = "";
+        const target = document.createElement("div");
+        target.id = "target";
+        target.setAttribute("style", `transform: ${transform}`);
+        target.append(document.createTextNode("visible body text"));
+        document.body.append(target);
+
+        hiddenTextStripRule.apply(document.body);
+
+        expect(target.textContent).toBe("visible body text");
+      }),
+    );
+  });
+
+  // Mask transparency parser must accept any gradient whose color stops
+  // are all transparent, and reject any gradient with at least one
+  // opaque stop. The unit tests fix one example each; the property
+  // tests pin the class so a tightened regex doesn't quietly miss
+  // `linear-gradient(rgba(0,0,0,0), transparent)` (mixed transparent
+  // forms) or accept `linear-gradient(transparent, black)` (mixed
+  // alpha) and either re-open a bypass or strip every fade overlay
+  // on the page.
+  const TRANSPARENT_COLOR = fc.constantFrom(
+    "transparent",
+    "rgba(0, 0, 0, 0)",
+    "rgba(255, 255, 255, 0)",
+    "rgba(128, 64, 200, 0)",
+  );
+  const OPAQUE_COLOR = fc.constantFrom(
+    "black",
+    "white",
+    "red",
+    "rgba(0, 0, 0, 1)",
+    "rgb(50, 100, 150)",
+    "#abcdef",
+  );
+  const GRADIENT_KIND = fc.constantFrom("linear-gradient", "radial-gradient");
+
+  it("strips text under any gradient mask composed entirely of transparent stops", () => {
+    fc.assert(
+      fc.property(
+        GRADIENT_KIND,
+        fc.array(TRANSPARENT_COLOR, { minLength: 2, maxLength: 5 }),
+        PAYLOAD,
+        (kind, stops, payload) => {
+          document.body.innerHTML = "";
+          const target = document.createElement("div");
+          target.id = "target";
+          target.setAttribute(
+            "style",
+            `mask-image: ${kind}(${stops.join(", ")})`,
+          );
+          target.append(document.createTextNode(payload));
+          document.body.append(target);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.textContent).toBe("");
+        },
+      ),
+    );
+  });
+
+  it("preserves text under a gradient mask containing any opaque stop", () => {
+    fc.assert(
+      fc.property(
+        GRADIENT_KIND,
+        fc.array(TRANSPARENT_COLOR, { minLength: 0, maxLength: 3 }),
+        fc.array(OPAQUE_COLOR, { minLength: 1, maxLength: 3 }),
+        fc.boolean(),
+        (kind, transparentStops, opaqueStops, opaqueFirst) => {
+          const stops = opaqueFirst
+            ? [...opaqueStops, ...transparentStops]
+            : [...transparentStops, ...opaqueStops];
+          // A gradient must have at least 2 stops to be valid; pad if needed.
+          if (stops.length < 2) {
+            stops.push(opaqueStops[0] ?? "black");
+          }
+          document.body.innerHTML = "";
+          const target = document.createElement("div");
+          target.id = "target";
+          target.setAttribute(
+            "style",
+            `mask-image: ${kind}(${stops.join(", ")})`,
+          );
+          target.append(document.createTextNode("visible fade-overlay text"));
+          document.body.append(target);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.textContent).toBe("visible fade-overlay text");
         },
       ),
     );

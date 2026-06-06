@@ -152,11 +152,32 @@ const POSITIONAL_HIDE_REASONS: ReadonlySet<string> = new Set([
 ]);
 
 function parsePixelLength(value: string): number | null {
+  // Computed values normally come back with the `px` suffix, but the
+  // bare literal `0` is what real browsers (and jsdom under Jest) return
+  // for any length set to zero — `0`, `0px`, even `0%` — because zero
+  // is the one length that's unit-independent.
+  if (value === "0") {
+    return 0;
+  }
   const match = /^(-?\d+(?:\.\d+)?)px$/.exec(value);
   if (!match?.[1]) {
     return null;
   }
   return Number.parseFloat(match[1]);
+}
+
+// Pick the first non-empty value from a list of computed-style reads.
+// Vendor-prefix variants (`-webkit-mask-image` vs `mask-image`, the
+// `WebkitTextFillColor` capitalization variant, the `mask:` shorthand)
+// each return `""` when the spec form isn't set on this element; falling
+// through empty strings is the desired behavior, so `??` won't do.
+function firstNonEmpty(...values: ReadonlyArray<string | undefined>): string {
+  for (const value of values) {
+    if (value) {
+      return value;
+    }
+  }
+  return "";
 }
 
 function isClippedToZero(style: CSSStyleDeclaration): boolean {
@@ -254,7 +275,10 @@ function shorthandHasNonzeroDuration(shorthand: string): boolean {
   return false;
 }
 
-function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
+function hasPropertyAnimationInFlight(
+  style: CSSStyleDeclaration,
+  propertyPattern: RegExp,
+): boolean {
   // Production path: real browsers expand the `transition`/`animation`
   // shorthand into the longhand getters, so `transitionProperty` is always
   // populated (default `"all"`) and `transitionDuration` is always `"0s"` for
@@ -268,14 +292,14 @@ function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
   // duration check and the shorthand block is never reached.
   if (style.transitionProperty) {
     if (
-      /\b(?:opacity|all)\b/.test(style.transitionProperty) &&
+      propertyPattern.test(style.transitionProperty) &&
       hasNonzeroDuration(style.transitionDuration)
     ) {
       return true;
     }
   } else if (
     style.transition &&
-    /\b(?:opacity|all)\b/.test(style.transition) &&
+    propertyPattern.test(style.transition) &&
     shorthandHasNonzeroDuration(style.transition)
   ) {
     return true;
@@ -293,6 +317,105 @@ function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
     return true;
   }
 
+  return false;
+}
+
+const OPACITY_PROPERTY_PATTERN = /\b(?:opacity|all)\b/;
+const FILTER_PROPERTY_PATTERN = /\b(?:filter|all)\b/;
+const TRANSFORM_PROPERTY_PATTERN = /\b(?:transform|all)\b/;
+const COLLAPSE_PROPERTY_PATTERN = /\b(?:max-height|height|all)\b/;
+
+function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
+  return hasPropertyAnimationInFlight(style, OPACITY_PROPERTY_PATTERN);
+}
+
+// `filter: opacity(N)` is animatable via the `filter` property even though
+// the visual effect is identical to `opacity: N`. Skip when there's a
+// transition or animation on filter for the same reason `opacity: 0` skips
+// when opacity is animating — the text will become visible mid-animation.
+const FILTER_OPACITY_ZERO_PATTERN = /\bopacity\(\s*\.?0+(?:\.0+)?%?\s*\)/i;
+
+function hasZeroOpacityFilter(filter: string): boolean {
+  if (!filter || filter === "none") {
+    return false;
+  }
+  return FILTER_OPACITY_ZERO_PATTERN.test(filter);
+}
+
+// Treat a mask-image as fully transparent when every color literal in
+// the gradient string is `transparent` or an rgba/hsla with alpha 0.
+// Strict — the spec for mask-image is large and we'd rather false-negative
+// (miss a partial-transparent mask the attacker hand-shaped to hide text)
+// than false-positive on a decorative mask with one transparent stop.
+const TRANSPARENT_RGBA_PATTERN =
+  /rgba?\(\s*\d+(?:\.\d+)?\s*,\s*\d+(?:\.\d+)?\s*,\s*\d+(?:\.\d+)?\s*[,/]\s*0(?:\.0+)?\s*\)/gi;
+const TRANSPARENT_HSLA_PATTERN = /hsla?\(\s*[^)]*[,/]\s*0(?:\.0+)?\s*\)/gi;
+const OPAQUE_COLOR_RESIDUAL_PATTERN =
+  /rgba?\(|hsla?\(|hwb\(|lab\(|lch\(|oklab\(|oklch\(|color\(|color-mix\(|#[0-9a-f]{3,8}\b|\b(?:white|black|red|green|blue|yellow|cyan|magenta|grey|gray|orange|purple|pink|brown|currentcolor)\b/i;
+
+function isFullyTransparentMask(value: string): boolean {
+  if (!value || value === "none") {
+    return false;
+  }
+  if (!/-gradient\(/i.test(value)) {
+    return false;
+  }
+  const residual = value
+    .replaceAll(TRANSPARENT_RGBA_PATTERN, "")
+    .replaceAll(TRANSPARENT_HSLA_PATTERN, "")
+    .replaceAll(/\btransparent\b/gi, "");
+  return !OPAQUE_COLOR_RESIDUAL_PATTERN.test(residual);
+}
+
+// True when the element's `transform` collapses 2D extent to zero —
+// `scale(0)`, `scaleX(0)`, `scaleY(0)`, `scale3d(0, 0, _)`, or any
+// matrix/matrix3d whose x or y scale axis is zero. jsdom keeps the
+// function form verbatim, real browsers resolve to `matrix(...)` —
+// we handle both. Single-axis collapse still hides text (glyphs need
+// both axes to paint).
+function isCollapsedTransform(transform: string): boolean {
+  if (!transform || transform === "none") {
+    return false;
+  }
+  if (/^scale\(\s*0(?:\.0+)?\s*(?:,\s*\d+(?:\.\d+)?\s*)?\)$/.test(transform)) {
+    return true;
+  }
+  if (/^scale\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*\)$/.test(transform)) {
+    return true;
+  }
+  if (/^scale[XY]\(\s*0(?:\.0+)?\s*\)$/.test(transform)) {
+    return true;
+  }
+  if (/^scale3d\(\s*0(?:\.0+)?\s*,/.test(transform)) {
+    return true;
+  }
+  if (/^scale3d\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*,/.test(transform)) {
+    return true;
+  }
+  const matrix = /^matrix\(([^)]+)\)$/.exec(transform);
+  if (matrix?.[1]) {
+    const parts = matrix[1].split(",").map((s) => Number.parseFloat(s.trim()));
+    if (
+      parts.length >= 4 &&
+      (Math.abs(parts[0] ?? 1) < 1e-6 || Math.abs(parts[3] ?? 1) < 1e-6)
+    ) {
+      return true;
+    }
+  }
+  const matrix3d = /^matrix3d\(([^)]+)\)$/.exec(transform);
+  if (matrix3d?.[1]) {
+    const parts = matrix3d[1]
+      .split(",")
+      .map((s) => Number.parseFloat(s.trim()));
+    // matrix3d is column-major 4×4; scale-x lives at m11 (index 0),
+    // scale-y at m22 (index 5).
+    if (
+      parts.length >= 6 &&
+      (Math.abs(parts[0] ?? 1) < 1e-6 || Math.abs(parts[5] ?? 1) < 1e-6)
+    ) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -348,6 +471,94 @@ function detectHiddenByCss(
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         clip: style.clip,
         clipPath: style.clipPath,
+      },
+    };
+  }
+  // `-webkit-text-fill-color: transparent` paints glyphs with zero alpha.
+  // Legitimate gradient-text uses this with `background-clip: text` so a
+  // background gradient shows through the glyph outlines — skip that
+  // pattern. Gate on direct text, mirroring color-match / font-size:0:
+  // descendants can override the inherited property and a wrapper without
+  // own text doesn't render any pixel via this color.
+  const textFill = firstNonEmpty(
+    style.webkitTextFillColor,
+    (style as { WebkitTextFillColor?: string }).WebkitTextFillColor,
+  );
+  if (textFill && hasOwnDirectText(element)) {
+    const parsed = parseColor(textFill);
+    const backgroundClipsToText =
+      style.backgroundClip === "text" ||
+      (style as { webkitBackgroundClip?: string }).webkitBackgroundClip ===
+        "text";
+    if (parsed?.[3] === 0 && !backgroundClipsToText) {
+      return {
+        reason: "text-fill-transparent",
+        details: { webkitTextFillColor: textFill },
+      };
+    }
+  }
+  // `filter: opacity(0)` is the SVG-filter twin of `opacity: 0` and slips
+  // past a plain `opacity` check. Chains like `brightness(1) opacity(0)`
+  // match. Skip when filter is mid-animation — modals occasionally
+  // animate via `transition: filter` for the same fade-in pattern that
+  // motivates the opacity-transition guard above.
+  if (
+    hasZeroOpacityFilter(style.filter) &&
+    !hasPropertyAnimationInFlight(style, FILTER_PROPERTY_PATTERN)
+  ) {
+    return { reason: "filter-opacity-0", details: { filter: style.filter } };
+  }
+  // A fully-transparent mask-image hides every pixel the element paints.
+  // Check the longhand, the `-webkit-` prefix, and the `mask` shorthand
+  // (jsdom keeps the shorthand verbatim, real browsers expand to longhand
+  // — covering both keeps detection consistent across environments).
+  const maskImage = firstNonEmpty(
+    style.maskImage,
+    (style as { webkitMaskImage?: string }).webkitMaskImage,
+    (style as { mask?: string }).mask,
+  );
+  if (maskImage && isFullyTransparentMask(maskImage)) {
+    return { reason: "mask-transparent", details: { maskImage } };
+  }
+  // `transform: scale(0)` collapses the rendered box to zero area. Guard
+  // against mid-animation states (modals scaling in/out are common); a
+  // permanent scale(0) on a populated subtree is the injection shape.
+  if (
+    isCollapsedTransform(style.transform) &&
+    !hasPropertyAnimationInFlight(style, TRANSFORM_PROPERTY_PATTERN)
+  ) {
+    return {
+      reason: "transform-collapsed",
+      details: { transform: style.transform },
+    };
+  }
+  // `content-visibility: hidden` suspends rendering and lays out the
+  // element as if it were empty, but textContent and the a11y tree still
+  // expose the contents. `auto` skips rendering only when off-screen and
+  // stays visible otherwise — only `hidden` qualifies.
+  if (style.contentVisibility === "hidden") {
+    return {
+      reason: "content-visibility-hidden",
+      details: { contentVisibility: style.contentVisibility },
+    };
+  }
+  // `max-height: 0` + `overflow: hidden` clips the element's vertical
+  // extent to zero. The 1×1 SR-only envelope is already preserved by
+  // `hasStructuralSrOnlyPattern` upstream, so anything reaching this
+  // check is full-size. Common false-positive: an animated accordion
+  // collapsing — skip when a transition or animation on max-height /
+  // height is in flight.
+  const maxHeight = parsePixelLength(style.maxHeight);
+  if (
+    maxHeight === 0 &&
+    (style.overflow === "hidden" || style.overflowY === "hidden") &&
+    !hasPropertyAnimationInFlight(style, COLLAPSE_PROPERTY_PATTERN)
+  ) {
+    return {
+      reason: "max-height-collapsed",
+      details: {
+        maxHeight: style.maxHeight,
+        overflow: firstNonEmpty(style.overflow, style.overflowY),
       },
     };
   }
@@ -457,6 +668,13 @@ function parseColorViaCanvas(value: string): RGBA | null {
 }
 
 function parseColor(value: string): RGBA | null {
+  // The `transparent` keyword resolves to `rgba(0, 0, 0, 0)` per CSS
+  // Color spec. Real browsers normalize the computed value to the rgba
+  // form, but jsdom under Jest returns the keyword verbatim — handle
+  // both so callers don't have to.
+  if (value.trim().toLowerCase() === "transparent") {
+    return [0, 0, 0, 0];
+  }
   return parseColorViaRegex(value) ?? parseColorViaCanvas(value);
 }
 

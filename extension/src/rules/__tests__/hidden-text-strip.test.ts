@@ -171,6 +171,222 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#child")).not.toBeNull();
   });
 
+  it("scrubs text with -webkit-text-fill-color: transparent", () => {
+    document.body.innerHTML = `
+      <span id="x" style="-webkit-text-fill-color: transparent">${FIXTURES.HIDDEN_IGNORE_PRIOR}</span>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // The standard "gradient text" idiom paints a background gradient and
+  // clips it to the glyph outlines via `background-clip: text`. The text
+  // fill must be transparent so the gradient shows through. Stripping
+  // this would wipe out every gradient-styled headline.
+  it("preserves gradient-text using background-clip:text + transparent fill", () => {
+    document.body.innerHTML = `
+      <h1 id="x" style="
+        background-image: linear-gradient(red, blue);
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      ">Gradient Headline</h1>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toBe("Gradient Headline");
+  });
+
+  // text-fill inherits like `color` — a wrapper that sets transparent
+  // text-fill but whose only text lives in descendants with their own
+  // override would wipe out the descendants. Mirrors the color-match /
+  // font-size:0 gate.
+  it("preserves a -webkit-text-fill-color wrapper whose descendants override", () => {
+    document.body.innerHTML = `
+      <div id="wrapper" style="-webkit-text-fill-color: transparent">
+        <span id="child" style="-webkit-text-fill-color: rgb(0, 0, 0)">visible</span>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#wrapper")).not.toBeNull();
+    expect(document.querySelector("#child")?.textContent).toBe("visible");
+  });
+
+  it("scrubs text hidden via filter: opacity(0)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="filter: opacity(0)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs text in a filter chain containing opacity(0%)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="filter: brightness(1) opacity(0%) blur(0)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("preserves filter:opacity(0) when a filter transition is in flight", () => {
+    document.body.innerHTML = `
+      <div id="x" style="filter: opacity(0); transition: filter 150ms ease-out">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  it("preserves filter:opacity(0.5) (non-zero)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="filter: opacity(0.5)">half-faded but visible</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("half-faded");
+  });
+
+  it("scrubs text under a fully-transparent mask-image", () => {
+    document.body.innerHTML = `
+      <div id="x" style="mask-image: linear-gradient(transparent, transparent)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // jsdom under Jest doesn't reflect `-webkit-mask-image` style writes
+  // (`webkitMaskImage` reads back as `""`). The production check still
+  // covers the `-webkit-` longhand because Chromium aliases it to the
+  // standard `mask-image` getter, but we can't exercise that surface
+  // here. The `mask:` shorthand below covers the same code path.
+  it("scrubs text under a fully-transparent mask shorthand", () => {
+    document.body.innerHTML = `
+      <div id="x" style="mask: linear-gradient(transparent, transparent)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("preserves a mask-image with an opaque color stop", () => {
+    document.body.innerHTML = `
+      <div id="x" style="mask-image: linear-gradient(transparent, black)">fade-out heading</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("fade-out");
+  });
+
+  it("scrubs text collapsed by transform: scale(0)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="transform: scale(0)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // Real browsers resolve `scale(0)` to a 2D matrix. jsdom keeps the
+  // function form, so test both surfaces.
+  it("scrubs text whose transform resolved to matrix(0, 0, 0, 0, ...)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="transform: matrix(0, 0, 0, 0, 0, 0)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs text collapsed on a single axis via scaleX(0)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="transform: scaleX(0)">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("preserves transform:scale(0.5) (visible at half-size)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="transform: scale(0.5)">half-scale heading</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("half-scale");
+  });
+
+  // Modals / popovers commonly animate `transform: scale(0)` → `scale(1)`.
+  // The subtree watcher catches them mid-animation; the guard prevents
+  // those transient states from being stripped — same shape as the
+  // existing opacity-transition guard.
+  it("preserves transform:scale(0) when a transform transition is in flight", () => {
+    document.body.innerHTML = `
+      <div id="x" style="transform: scale(0); transition: transform 150ms ease-out">
+        modal contents
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  it("scrubs text with content-visibility: hidden", () => {
+    document.body.innerHTML = `
+      <div id="x" style="content-visibility: hidden">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // `content-visibility: auto` is a paint-skip perf hint that stays
+  // visible whenever the element is on-screen. Only the `hidden`
+  // keyword permanently suspends rendering.
+  it("preserves content-visibility: auto", () => {
+    document.body.innerHTML = `
+      <div id="x" style="content-visibility: auto">visible perf-hint section</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("visible");
+  });
+
+  it("scrubs text in a max-height:0 + overflow:hidden block", () => {
+    document.body.innerHTML = `
+      <div id="x" style="max-height: 0; overflow: hidden; width: 600px">${FIXTURES.HIDDEN_LARGE_OFFSCREEN}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // Accordions / details disclosures commonly animate `max-height: 0` →
+  // `max-height: <auto>`. The guard prevents those transient states from
+  // being stripped while the user expands them.
+  it("preserves max-height:0 collapse when a max-height transition is in flight", () => {
+    document.body.innerHTML = `
+      <div id="x" style="max-height: 0; overflow: hidden; transition: max-height 200ms ease-out">
+        accordion contents
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  it("preserves max-height:0 without overflow:hidden (text would overflow)", () => {
+    document.body.innerHTML = `
+      <div id="x" style="max-height: 0">overflowing visible text</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("overflowing");
+  });
+
   it("preserves .sr-only text", () => {
     document.body.innerHTML = `
       <span id="x" class="sr-only" style="position: absolute; left: -10000px">screen reader hint</span>
