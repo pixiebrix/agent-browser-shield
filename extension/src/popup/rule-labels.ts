@@ -55,4 +55,5 @@ export const RULE_LABELS: Readonly<Record<RuleId, string>> = {
   "webdriver-probe-annotate": "Flag navigator.webdriver Reads",
   "closed-shadow-root-annotate": "Flag Closed Shadow Roots",
   "hidden-fee-annotate": "Annotate Drip-Pricing Fees (Experimental)",
+  "form-prefill-annotate": "Annotate Form Prefills (Experimental)",
 } as const satisfies Record<RuleId, string>;

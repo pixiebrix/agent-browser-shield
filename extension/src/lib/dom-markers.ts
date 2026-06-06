@@ -78,3 +78,10 @@ export const CONFIRMSHAME_ORIGINAL_ARIA_ATTR =
   "data-abs-confirmshame-orig-aria";
 export const CONFIRMSHAME_ORIGINAL_TITLE_ATTR =
   "data-abs-confirmshame-orig-title";
+
+// `form-prefill-annotate`: marks a form control (or its annotation target —
+// wrapper, label, fieldset, submit row) that the rule has already badged so
+// the watcher doesn't append a second chip on the next mutation pass. Also
+// stamped on controls that were considered and rejected by the FP-control
+// gates so re-scans skip them on every burst.
+export const FORM_PREFILL_ANNOTATED_ATTR = "data-abs-form-prefill-annotated";
