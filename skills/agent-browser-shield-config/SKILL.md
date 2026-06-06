@@ -107,12 +107,14 @@ for the build-time workflow.
   the toggle shows as Unavailable. Hidden sections become click-to-reveal
   placeholders.
 - `cross-origin-frame-redact` — **experimental, off by default.** Replace
-  cross-origin `<iframe>` elements with click-to-reveal placeholders so an agent
-  reading the parent page doesn't ingest the embedded-origin content.
-  Same-origin frames, `srcdoc` frames, and inert (`about:`/`javascript:`/
-  `data:`/`blob:`) frames are left alone. Off by default because legitimate
-  cross-origin embeds (payment widgets, OAuth pop-ins, video) are common and
-  removing them breaks those flows until revealed.
+  embedded frame-like elements with click-to-reveal placeholders so an agent
+  reading the parent page doesn't ingest embedded content. Covers cross-origin
+  `<iframe src=…>`, cross-origin `<object data=…>` and `<embed src=…>`, and
+  `<iframe srcdoc=…>` regardless of origin (the inline HTML wasn't authored as
+  part of the host page). Same-origin frames/objects/embeds and inert
+  (`about:`/`javascript:`/`data:`/`blob:`) resources are left alone. Off by
+  default because legitimate embeds (payment widgets, OAuth pop-ins, video) are
+  common and removing them breaks those flows until revealed.
 - `webdriver-probe-annotate` — **experimental, off by default.** Wrap
   `navigator.webdriver`'s getter on the top-level document and prepend a
   screen-reader-only landmark when the page reads it — a precondition for
