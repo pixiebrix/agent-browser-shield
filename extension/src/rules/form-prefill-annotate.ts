@@ -199,18 +199,17 @@ function hasRecognizedAutofillToken(element: HTMLElement): boolean {
   return false;
 }
 
-// `autocomplete="off"` and `autocomplete="on"` are not field-target
-// tokens. We treat the absence of a recognized target as "unspecified"
-// and proceed.
-function isExplicitAutofillOff(element: HTMLElement): boolean {
-  const tokens = readAutocompleteTokens(element);
-  return tokens.length === 1 && tokens[0] === "off";
-}
-
 // Read the field's accessible label-ish text for the GEO check on
 // <select>. Cheap concatenation across name/id/aria-label and a single
 // associated <label> if reachable. We don't walk the full a11y tree —
 // the GEO check only needs a recognizable signal.
+//
+// `Element.textContent` is typed `string` (not `string | null`) by the
+// project's TypeScript lib, and `@typescript-eslint/no-unnecessary-
+// condition` flags `?? ""` as a redundant guard. Per the DOM spec only
+// `Document` and `DocumentType` nodes ever return `null`, neither of
+// which can flow through these selectors. Same convention as
+// `hidden-fee-annotate.ts` and `cart-addon-annotate.ts`.
 function readSelectLabelHints(element: HTMLSelectElement): string {
   const parts: string[] = [];
   const name = element.getAttribute("name");
@@ -348,10 +347,9 @@ function readTextCandidate(input: HTMLInputElement): TextCandidate | null {
   if (hasRecognizedAutofillToken(input)) {
     return null;
   }
-  // `autocomplete="off"` on a pre-filled field is the most interesting
-  // case — the site disabled browser autofill yet still served a value.
-  // Don't skip it just because the attribute was set; fall through.
-  isExplicitAutofillOff(input);
+  // `autocomplete="off"` is intentionally not a skip signal — a site
+  // disabling browser autofill while still serving a value is exactly
+  // the prefill case we want to flag, so we fall through here.
   // Read live `.value` rather than the `value` attribute. The attribute
   // is only set when SSR templated the prefill in HTML; framework-
   // rendered defaults (React `defaultValue`, Vue `v-model` initialState,

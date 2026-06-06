@@ -680,9 +680,11 @@ selects whose name, id, or label suggests a geo field (country / state /
 province / region / currency) are skipped because geo-IP defaults are
 legitimate; controls the user has focused since the page loaded are skipped;
 disabled / readonly controls are skipped; per-form chip count is capped so a
-long form (saved-card manager, admin panel) doesn't accumulate clutter. The
-attribute (not the live property) is read so server-rendered prefills are
-flagged even when a page script has already overwritten the live value.
+long form (saved-card manager, admin panel) doesn't accumulate clutter. The live
+property (not the HTML attribute) is read so framework-rendered defaults (React
+`defaultValue`, Vue `v-model` initialState, jQuery `.val()`) are flagged the
+same way the agent's DOM snapshot would see them; the focused-control skip above
+keeps user-entered values out of the flag set.
 
 Hidden inputs are out of scope for this rule — the value is submitted regardless
 of any chip and the agent never reads hidden inputs into a decision, so
