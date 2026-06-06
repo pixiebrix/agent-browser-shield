@@ -47,7 +47,7 @@ export const RULE_LABELS: Readonly<Record<RuleId, string>> = {
   "search-url-helper": "Embed Search URL Recipes",
   "roach-motel-annotate": "Flag Roach-Motel Sign-Ups",
   "irrelevant-sections-redact": "Hide Irrelevant Sections (AI)",
-  "cross-origin-frame-redact": "Hide Cross-Origin Frames (Experimental)",
+  "cross-origin-frame-redact": "Hide Embedded Frames (Experimental)",
   "schema-trust-sanitize": "Sanitize Schema Trust Claims (Experimental)",
   "trust-badge-annotate": "Flag Trust Badges (Experimental)",
   "disguised-ad-flag": "Hide Disguised Ads (Native Advertorials)",

@@ -75,27 +75,37 @@ describe("crossOriginFrameRedactRule", () => {
     expect(getPlaceholder()).toBeNull();
   });
 
-  it("leaves a srcdoc iframe alone — inherits the embedding origin", () => {
+  // srcdoc inherits the embedding origin so isn't a SOP bypass, but the
+  // inline HTML wasn't authored as part of the host page and an agent walking
+  // the DOM can still ingest it. Same agent-side threat as cross-origin
+  // content, so the rule redacts srcdoc frames too.
+  it("replaces a srcdoc iframe with a generic inline-content placeholder", () => {
     document.body.innerHTML = `
       <iframe srcdoc="<p>hi</p>"></iframe>
     `;
     crossOriginFrameRedactRule.apply(document.body);
 
-    expect(document.querySelector("iframe")).not.toBeNull();
-    expect(getPlaceholder()).toBeNull();
+    expect(document.querySelector("iframe")).toBeNull();
+    const placeholder = getPlaceholder();
+    expect(placeholder).not.toBeNull();
+    // No origin to surface — the body lives in the embedding origin.
+    expect(placeholder?.textContent).toContain("Inline frame content");
   });
 
-  // Even if a srcdoc iframe *also* declares a cross-origin src, srcdoc wins:
-  // the browser ignores src when srcdoc is present and renders the inline
-  // doc in the embedding origin.
-  it("leaves a srcdoc iframe alone even if it also has a cross-origin src", () => {
+  // The browser ignores src when srcdoc is present. The rule still redacts,
+  // but via the srcdoc branch — the placeholder reflects inline content
+  // rather than a misleading cross-origin label.
+  it("replaces a srcdoc iframe via the srcdoc branch even when src is also cross-origin", () => {
     document.body.innerHTML = `
       <iframe srcdoc="<p>hi</p>" src="https://example.com/widget"></iframe>
     `;
     crossOriginFrameRedactRule.apply(document.body);
 
-    expect(document.querySelector("iframe")).not.toBeNull();
-    expect(getPlaceholder()).toBeNull();
+    expect(document.querySelector("iframe")).toBeNull();
+    const placeholder = getPlaceholder();
+    expect(placeholder).not.toBeNull();
+    expect(placeholder?.textContent).toContain("Inline frame content");
+    expect(placeholder?.textContent).not.toContain("example.com");
   });
 
   it("leaves an iframe with no src alone", () => {
@@ -168,6 +178,74 @@ describe("crossOriginFrameRedactRule", () => {
 
     expect(document.querySelector("iframe")).toBeNull();
     expect(getPlaceholder()).not.toBeNull();
+  });
+
+  // Same SOP-bypass shape as a cross-origin iframe — <object> renders a
+  // resource referenced by `data`, <embed> by `src`. Browser-use agents can
+  // ingest the embedded resource as if it were on-page content, so the rule
+  // hides cross-origin <object>/<embed> too.
+  describe("<object> elements", () => {
+    it("replaces a cross-origin <object data=…> with a placeholder", () => {
+      document.body.innerHTML = `
+        <object data="https://example.com/doc.pdf" type="application/pdf"></object>
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).toBeNull();
+      const placeholder = getPlaceholder();
+      expect(placeholder).not.toBeNull();
+      expect(placeholder?.textContent).toContain("https://example.com");
+    });
+
+    it("leaves a same-origin <object> alone", () => {
+      document.body.innerHTML = `
+        <object data="http://localhost/doc.pdf"></object>
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+
+    it("leaves an <object> with no data attribute alone", () => {
+      document.body.innerHTML = `<object>fallback content</object>`;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+  });
+
+  describe("<embed> elements", () => {
+    it("replaces a cross-origin <embed src=…> with a placeholder", () => {
+      document.body.innerHTML = `
+        <embed src="https://example.com/widget.swf" type="application/x-shockwave-flash" />
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).toBeNull();
+      const placeholder = getPlaceholder();
+      expect(placeholder).not.toBeNull();
+      expect(placeholder?.textContent).toContain("https://example.com");
+    });
+
+    it("leaves a same-origin <embed> alone", () => {
+      document.body.innerHTML = `
+        <embed src="http://localhost/widget.swf" />
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+
+    it("leaves an <embed> with no src attribute alone", () => {
+      document.body.innerHTML = `<embed />`;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
   });
 
   describe("lazily-injected iframes", () => {
