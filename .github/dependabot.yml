@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /extension
     schedule:
       interval: weekly
@@ -12,7 +12,7 @@ updates:
         dependency-type: development
         update-types: [minor, patch]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /demo-site
     schedule:
       interval: weekly
@@ -24,7 +24,7 @@ updates:
         dependency-type: development
         update-types: [minor, patch]
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /docs
     schedule:
       interval: weekly
