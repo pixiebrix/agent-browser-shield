@@ -429,6 +429,47 @@ export default function ProductDetail() {
         />
       </section>
 
+      {/*
+        cross-origin-frame-redact fixtures.
+
+        The brand widget below is an <iframe srcdoc=…> whose inline HTML
+        contains an "AGENT NOTE" prompt-injection payload. srcdoc inherits
+        the host origin so isn't a SOP bypass, but the inline body lands
+        in the DOM and an agent walking the page can ingest it. With the
+        extension off you see the brand copy + the agent note; with it on
+        the whole iframe is replaced by a click-to-reveal placeholder.
+
+        The spec sheet below it is a cross-origin <object data=…> pointing
+        at a synthetic CDN. The host doesn't resolve, so the browser
+        renders the fallback children — also an instruction-shaped
+        payload. The rule redacts the entire <object>, fallback included.
+      */}
+      <section aria-label="Brand widget" className="mt-6">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          From the brand
+        </h2>
+        <iframe
+          title="Brand widget"
+          srcDoc={INJECTIONS.PRODUCT_DETAIL_SRCDOC_BRAND_WIDGET}
+          className="h-32 w-full max-w-2xl rounded border border-stone-200"
+        />
+      </section>
+
+      <section aria-label="Spec sheet" className="mt-6">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          Spec sheet
+        </h2>
+        <object
+          data="https://specs.rivermart-cdn.example/specs.html"
+          type="text/html"
+          className="h-32 w-full max-w-2xl rounded border border-stone-200"
+        >
+          <p className="p-3 text-sm text-stone-700">
+            {INJECTIONS.PRODUCT_DETAIL_OBJECT_SPEC_FALLBACK}
+          </p>
+        </object>
+      </section>
+
       <ReviewSection
         reviews={reviews}
         averageRating={product.rating}
