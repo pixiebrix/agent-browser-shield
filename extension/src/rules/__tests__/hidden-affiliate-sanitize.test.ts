@@ -192,9 +192,11 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
     expect(csrf.getAttribute(CLEARED_ATTR)).toBe("skipped");
   });
 
-  it("never clears a denylisted name that happens to overlap the allowlist", () => {
-    // A field literally named `state` would match the allowlist's
-    // overlap with denied names. Denylist takes precedence.
+  it("preserves OAuth `state` at checkout (whole-name denylist)", () => {
+    // `state` is a load-bearing OAuth / CSRF-style nonce on auth-flow
+    // checkout pages. It isn't in the allowlist regex — this test
+    // demonstrates the DENY_WHOLE_NAMES coverage, not allow/deny
+    // precedence (there's no overlap to resolve).
     document.body.innerHTML = `
       <form>
         <input type="hidden" name="state" value="OAUTH_NONCE_xyz">

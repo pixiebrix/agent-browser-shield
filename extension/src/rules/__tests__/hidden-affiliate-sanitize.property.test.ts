@@ -75,6 +75,7 @@ const SECURITY_TOKENS: readonly string[] = [
   "secret",
   "session",
   "antiforgery",
+  "verify",
 ];
 
 afterEach(() => {

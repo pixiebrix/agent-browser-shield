@@ -92,10 +92,10 @@ const AFFILIATE_NAME_RE = new RegExp(
 // match. Failure mode for CSRF / session / cart / order / nonce / state
 // / signature is a silently-rejected submit — worse than the original
 // dark pattern. Substring-match by design: any input whose name
-// contains `signature`, `csrf`, `token`, `nonce`, `session`, etc. is a
-// security primitive we must not touch even if it also happens to
-// match the allowlist by name overlap (e.g. a custom name like
-// `coupon_token` ought to be left alone).
+// contains `signature`, `csrf`, `nonce`, `session`, etc. is a security
+// primitive we must not touch even if a future allowlist addition
+// happens to name-overlap (e.g. a hypothetical `affiliate_nonce` would
+// be caught by the `nonce` substring).
 //
 // Token boundary uses `[^A-Za-z]` (not `\b`) because hidden-input
 // names commonly use snake/kebab/leading-underscore (`_csrf`,
@@ -116,10 +116,11 @@ const DENY_TOKENS: readonly string[] = [
   "verify",
   "requesttoken",
   "xtoken",
-  // Bare `token` and `state` are listed here as whole-name matches
-  // below — substring "token" would also catch the allowlist `aff_token`
-  // which we'd want a separate review for anyway, so keep them deny
-  // by default. `tok` is too short to substring safely.
+  // Bare `token` and `state` are listed in `DENY_WHOLE_NAMES` below
+  // rather than here — substring "token" is too noisy to substring
+  // safely (every framework's CSRF / antiforgery / session-id field
+  // ends in `_token`, but so could a benign field name that escapes
+  // our review). `tok` is too short to substring safely.
 ];
 const DENY_WHOLE_NAMES: ReadonlySet<string> = new Set([
   "state",
