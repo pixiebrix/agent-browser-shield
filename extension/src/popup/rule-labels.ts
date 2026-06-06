@@ -56,4 +56,5 @@ export const RULE_LABELS: Readonly<Record<RuleId, string>> = {
   "closed-shadow-root-annotate": "Flag Closed Shadow Roots",
   "hidden-fee-annotate": "Annotate Drip-Pricing Fees (Experimental)",
   "form-prefill-annotate": "Annotate Form Prefills (Experimental)",
+  "hidden-affiliate-sanitize": "Scrub Hidden Affiliate / Promo Metadata",
 } as const satisfies Record<RuleId, string>;

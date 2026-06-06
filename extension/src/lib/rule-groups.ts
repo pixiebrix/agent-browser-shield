@@ -57,6 +57,7 @@ export const RULE_GROUPS: readonly RuleGroup[] = [
       "hidden-fee-annotate",
       "checkout-checkbox-sanitize",
       "form-prefill-annotate",
+      "hidden-affiliate-sanitize",
       "confirmshame-sanitize",
       "roach-motel-annotate",
       "newsletter-modal-hide",

@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 38 rules, each independently toggleable from the extension's
+The extension ships 39 rules, each independently toggleable from the extension's
 options page. Rules marked **default: on** are active on fresh install;
 **default: off** rules must be enabled manually.
 
@@ -688,15 +688,13 @@ keeps user-entered values out of the flag set.
 
 Hidden inputs are out of scope for this rule — the value is submitted regardless
 of any chip and the agent never reads hidden inputs into a decision, so
-annotation would not change behavior.
+annotation would not change behavior. The hidden-input arm is handled by
+[Scrub Hidden Affiliate / Promo Metadata](#scrub-hidden-affiliate--promo-metadata)
+below.
 
 Future work tracked in issue
 [#121](https://github.com/pixiebrix/agent-browser-shield/issues/121):
 
-- A narrow sanitize companion that clears `value` on `<input type="hidden">`
-  whose `name` matches a curated affiliate / UTM / promo allowlist, behind a
-  hard CSRF / cart / session denylist. Different toggle so the FP profile is
-  controllable separately.
 - Optionally include the prefilled value in the chip text. The chip flags
   presence only today, to avoid leaking remembered PII into a logging snapshot.
 - Synthetic blur / change event after annotation so sites that recalc totals on
@@ -709,6 +707,43 @@ Future work tracked in issue
 Pre-populated form fields are *Preselection* in Mathur et al.
 [[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
 [[10]](#ref-brignull).
+
+#### Scrub Hidden Affiliate / Promo Metadata
+
+- **ID:** `hidden-affiliate-sanitize`
+- **Default:** on
+
+On checkout-like URLs, clear `value` on `<input type="hidden">` whose `name`
+matches a curated affiliate / UTM / promo / coupon allowlist (`utm_source` /
+`utm_medium` / `utm_campaign` / `utm_term` / `utm_content`, `aff` / `aff_id` /
+`affiliate_id`, `ref` / `ref_id` / `referrer` / `referral_code`, `promo` /
+`promo_code` / `promotion_id`, `coupon` / `coupon_code` / `coupon_id`,
+`discount_code` / `discount_id`, `source_id` / `campaign_id` / `partner_code`,
+`click_id`, `gclid` / `fbclid` / `msclkid`). The input is preserved — only its
+value is cleared — so the form's structure and the page's own scripts that read
+the input's existence still work. Annotation is the wrong tool here because
+hidden inputs are submitted regardless of any chip and never reach the agent's
+snapshot; sanitize-and-forget is the only useful action.
+
+Hard CSRF / session / cart / order / nonce / state / signature denylist takes
+precedence: any name containing `csrf`, `nonce`, `signature`, `hmac`, `secret`,
+`session`, `antiforgery`, etc. is preserved even if it also overlaps the
+allowlist by name shape. Failure mode for those is a silently-rejected submit —
+strictly worse than the original dark pattern. The input must live inside an
+enclosing `<form>` (either as a descendant or via a `form` attribute reference);
+free-floating hidden inputs are JS-only data carriers we leave alone. A per-host
+kill-switch (empty at launch) covers loyalty / Apple Pay / 1-Click flows where
+saved attribution is the user's intent; populate via PR review as live signal
+surfaces hosts where the affiliate id is load-bearing.
+
+`value` is cleared via the prototype's native setter so React / Vue value
+trackers observe the change. No `input` or `change` event is dispatched — hidden
+inputs aren't expected to fire those, and firing one could trip
+totals-recalculation handlers that re-fetch attribution from the same source.
+
+Affiliate / UTM / promo metadata is part of the *Sneaking* family in Mathur et
+al. [[9]](#ref-mathur-dark-patterns) and the *Hidden costs / hidden information*
+catalog in Brignull's deceptive.design [[10]](#ref-brignull).
 
 ### Confirmshaming
 

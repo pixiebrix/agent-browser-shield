@@ -45,6 +45,7 @@ export const RULE_DEFAULTS = {
   "closed-shadow-root-annotate": false,
   "hidden-fee-annotate": true,
   "form-prefill-annotate": true,
+  "hidden-affiliate-sanitize": true,
 } as const satisfies Readonly<Record<string, boolean>>;
 
 export type RuleId = keyof typeof RULE_DEFAULTS;

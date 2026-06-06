@@ -16,6 +16,7 @@ import { disguisedAdFlagRule } from "./disguised-ad-flag";
 import { encodedPayloadRedactRule } from "./encoded-payload-redact";
 import { footerRedactRule } from "./footer-redact";
 import { formPrefillAnnotateRule } from "./form-prefill-annotate";
+import { hiddenAffiliateSanitizeRule } from "./hidden-affiliate-sanitize";
 import { hiddenFeeAnnotateRule } from "./hidden-fee-annotate";
 import { hiddenTextStripRule } from "./hidden-text-strip";
 import { htmlCommentStripRule } from "./html-comment-strip";
@@ -94,6 +95,7 @@ const RULES_TUPLE = [
   closedShadowRootAnnotateRule,
   hiddenFeeAnnotateRule,
   formPrefillAnnotateRule,
+  hiddenAffiliateSanitizeRule,
 ] as const satisfies readonly Rule[];
 
 export type RuleId = (typeof RULES_TUPLE)[number]["id"];

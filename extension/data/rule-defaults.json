@@ -37,6 +37,7 @@
     "webdriver-probe-annotate": false,
     "closed-shadow-root-annotate": false,
     "hidden-fee-annotate": true,
-    "form-prefill-annotate": true
+    "form-prefill-annotate": true,
+    "hidden-affiliate-sanitize": true
   }
 }
