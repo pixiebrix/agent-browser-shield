@@ -22,9 +22,10 @@ import {
   shouldClearName,
 } from "../hidden-affiliate-sanitize";
 
-// Mirror of the affiliate name set sufficient for property exploration.
-// The unit suite covers the exhaustive list; here we draw from a
-// representative sample.
+// Mirror of the attribution name set sufficient for property
+// exploration. The unit suite covers the exhaustive list; here we draw
+// from a representative sample. Promo / coupon / discount names are
+// deliberately absent — see PROMO_NAMES below.
 const AFFILIATE_NAMES: readonly string[] = [
   "utm_source",
   "utm_medium",
@@ -40,17 +41,29 @@ const AFFILIATE_NAMES: readonly string[] = [
   "refid",
   "referrer",
   "referral_code",
-  "promo",
-  "promo_code",
-  "promotion_id",
-  "coupon",
-  "coupon_code",
-  "coupon_id",
-  "discount_code",
+  "source_id",
+  "campaign_id",
+  "partner_code",
   "click_id",
   "gclid",
   "fbclid",
   "msclkid",
+];
+
+// Promo / coupon / discount names. The rule must preserve these — they
+// commonly carry a legitimate user-acquired discount and clearing them
+// would silently strip it.
+const PROMO_NAMES: readonly string[] = [
+  "promo",
+  "promo_code",
+  "promotion",
+  "promotion_id",
+  "coupon",
+  "coupon_code",
+  "coupon_id",
+  "discount",
+  "discount_code",
+  "discount_id",
 ];
 
 // Substring tokens that must always be preserved regardless of context.
@@ -109,6 +122,48 @@ describe("denylist precedence (property)", () => {
           // preserved.
           const name = `${allow}_${deny}_combined`;
           expect(shouldClearName(name)).toBe(false);
+        },
+      ),
+    );
+  });
+});
+
+describe("promo / coupon / discount preservation (property)", () => {
+  it("no promo name matches the allowlist or gets cleared", () => {
+    fc.assert(
+      fc.property(fc.constantFrom(...PROMO_NAMES), (name) => {
+        expect(isAffiliateName(name)).toBe(false);
+        expect(shouldClearName(name)).toBe(false);
+      }),
+    );
+  });
+
+  it("hidden promo inputs at checkout keep their value", () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...PROMO_NAMES),
+        fc.stringMatching(/^[A-Z0-9-]{4,16}$/),
+        (name, code) => {
+          document.body.innerHTML = "";
+          const form = document.createElement("form");
+          const promo = document.createElement("input");
+          promo.type = "hidden";
+          promo.name = name;
+          promo.value = code;
+          const utm = document.createElement("input");
+          utm.type = "hidden";
+          utm.name = "utm_source";
+          utm.value = "email";
+          form.append(promo, utm);
+          document.body.append(form);
+
+          hiddenAffiliateSanitizeRule.apply(document.body);
+
+          // Promo value survives.
+          expect(promo.value).toBe(code);
+          // Attribution gets cleared.
+          expect(utm.value).toBe("");
+          hiddenAffiliateSanitizeRule.teardown();
         },
       ),
     );

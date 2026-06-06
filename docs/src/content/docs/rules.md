@@ -689,8 +689,7 @@ keeps user-entered values out of the flag set.
 Hidden inputs are out of scope for this rule — the value is submitted regardless
 of any chip and the agent never reads hidden inputs into a decision, so
 annotation would not change behavior. The hidden-input arm is handled by
-[Scrub Hidden Affiliate / Promo Metadata](#scrub-hidden-affiliate--promo-metadata)
-below.
+[Scrub Hidden Affiliate Metadata](#scrub-hidden-affiliate-metadata) below.
 
 Future work tracked in issue
 [#121](https://github.com/pixiebrix/agent-browser-shield/issues/121):
@@ -708,22 +707,29 @@ Pre-populated form fields are *Preselection* in Mathur et al.
 [[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
 [[10]](#ref-brignull).
 
-#### Scrub Hidden Affiliate / Promo Metadata
+#### Scrub Hidden Affiliate Metadata
 
 - **ID:** `hidden-affiliate-sanitize`
 - **Default:** on
 
 On checkout-like URLs, clear `value` on `<input type="hidden">` whose `name`
-matches a curated affiliate / UTM / promo / coupon allowlist (`utm_source` /
-`utm_medium` / `utm_campaign` / `utm_term` / `utm_content`, `aff` / `aff_id` /
-`affiliate_id`, `ref` / `ref_id` / `referrer` / `referral_code`, `promo` /
-`promo_code` / `promotion_id`, `coupon` / `coupon_code` / `coupon_id`,
-`discount_code` / `discount_id`, `source_id` / `campaign_id` / `partner_code`,
-`click_id`, `gclid` / `fbclid` / `msclkid`). The input is preserved — only its
-value is cleared — so the form's structure and the page's own scripts that read
-the input's existence still work. Annotation is the wrong tool here because
-hidden inputs are submitted regardless of any chip and never reach the agent's
-snapshot; sanitize-and-forget is the only useful action.
+matches a curated affiliate / UTM / referral attribution allowlist (`utm_source`
+/ `utm_medium` / `utm_campaign` / `utm_term` / `utm_content`, `aff` / `aff_id` /
+`affiliate_id`, `ref` / `ref_id` / `referrer` / `referral_code`, `source_id` /
+`campaign_id` / `partner_code`, `click_id`, `gclid` / `fbclid` / `msclkid`). The
+input is preserved — only its value is cleared — so the form's structure and the
+page's own scripts that read the input's existence still work. Annotation is the
+wrong tool here because hidden inputs are submitted regardless of any chip and
+never reach the agent's snapshot; sanitize-and-forget is the only useful action.
+
+Scope is attribution only — promo / coupon / discount names (`promo`,
+`promo_code`, `promotion_id`, `coupon`, `coupon_code`, `coupon_id`,
+`discount_code`, `discount_id`) are intentionally **not** in the allowlist.
+Hidden promo-code inputs commonly carry a legitimate user-acquired discount
+(email promo link, sticky session promo, "apply coupon" UI that writes to a
+hidden field at submit time). Clearing them would silently strip the user's
+discount with no visible recourse. Attribution has the opposite asymmetry —
+clearing it is invisible to the user and only costs the marketing trail.
 
 Hard CSRF / session / cart / order / nonce / state / signature denylist takes
 precedence: any name containing `csrf`, `nonce`, `signature`, `hmac`, `secret`,
@@ -741,9 +747,9 @@ trackers observe the change. No `input` or `change` event is dispatched — hidd
 inputs aren't expected to fire those, and firing one could trip
 totals-recalculation handlers that re-fetch attribution from the same source.
 
-Affiliate / UTM / promo metadata is part of the *Sneaking* family in Mathur et
-al. [[9]](#ref-mathur-dark-patterns) and the *Hidden costs / hidden information*
-catalog in Brignull's deceptive.design [[10]](#ref-brignull).
+Affiliate / UTM attribution metadata is part of the *Sneaking* family in Mathur
+et al. [[9]](#ref-mathur-dark-patterns) and the *Hidden costs / hidden
+information* catalog in Brignull's deceptive.design [[10]](#ref-brignull).
 
 ### Confirmshaming
 

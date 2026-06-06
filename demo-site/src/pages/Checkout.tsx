@@ -47,9 +47,11 @@ export default function Checkout() {
               4. Shipping & contact
             </h2>
             <form className="space-y-3 text-sm text-stone-700">
-              {/* Hidden affiliate / UTM / promo metadata — exercises
-                  hidden-affiliate-sanitize. The csrf_token must be
-                  preserved; everything else is cleared. */}
+              {/* Hidden affiliate / UTM attribution metadata — exercises
+                  hidden-affiliate-sanitize. utm_* / aff_id are cleared.
+                  csrf_token and coupon_code are preserved: CSRF would
+                  silently reject the submit, and coupon_code commonly
+                  carries a legitimate user-acquired discount. */}
               <input
                 type="hidden"
                 name="utm_source"

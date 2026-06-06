@@ -1,10 +1,20 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Clear `value` on `<input type="hidden">` whose `name` matches a curated
-// affiliate / UTM / promo / coupon allowlist on checkout pages, so the
-// agent doesn't silently submit attribution or discount-source metadata
-// that biases pricing or routes commission to a third party.
+// Clear `value` on `<input type="hidden">` whose `name` matches a
+// curated affiliate / UTM / referral attribution allowlist on checkout
+// pages, so the agent doesn't silently submit third-party attribution
+// metadata that routes commission or biases downstream pricing.
+//
+// Scope is attribution only — `promo` / `coupon` / `discount` names
+// are intentionally NOT in the allowlist. Hidden promo-code inputs
+// commonly carry a legitimate user-acquired discount (email promo
+// link, sticky session promo, "apply coupon" UI that writes to a
+// hidden field at submit time), and clearing them would silently
+// strip the user's discount with no visible recourse. Attribution
+// (UTM, gclid, affiliate refs) has the opposite asymmetry: clearing
+// it is invisible to the user and only costs the marketing trail.
+// See PR #188 for the discussion.
 //
 // Companion to `form-prefill-annotate` (issue #121): annotation is the
 // wrong tool for hidden inputs — the value is submitted regardless of
@@ -42,21 +52,24 @@ import type { Rule } from "./types";
 
 const RULE_ID = "hidden-affiliate-sanitize" as const;
 
-// Curated affiliate / UTM / promo / coupon name patterns. Whole-name
-// regex match against `input.name` (case-insensitive). Each entry pulls
-// double duty in the property tests as both a positive example and an
-// invariant input. Additions go through PR review — keep the set tight
-// so the surface stays small enough to reason about and so we can
-// property-test exhaustively against the denylist.
+// Curated attribution name patterns. Whole-name regex match against
+// `input.name` (case-insensitive). Each entry pulls double duty in the
+// property tests as both a positive example and an invariant input.
+// Additions go through PR review — keep the set tight so the surface
+// stays small enough to reason about and so we can property-test
+// exhaustively against the denylist.
 //
-// Trailing/leading word-boundary classes (`[_-]?\d*`, `[_-]?id`)
-// capture common suffix conventions:
+// Attribution only — patterns that could carry a legitimate
+// user-acquired discount (`promo`, `coupon`, `discount`, `promotion`)
+// are intentionally absent. See the file header.
+//
+// Trailing/leading word-boundary classes (`[_-]?id`) capture common
+// suffix conventions:
 //   - `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`
 //   - `aff`, `aff_id`, `affid`, `affiliate_id`
 //   - `ref`, `referrer`, `ref_id`, `refid`, `referral_code`
-//   - `promo`, `promo_code`, `promotion_id`, `promocode`
-//   - `coupon`, `coupon_code`, `coupon_id`
-//   - `discount`, `discount_code`, `discount_id`
+//   - `source_id`, `campaign_id`, `partner_code`
+//   - `click_id`, `gclid`, `fbclid`, `msclkid`
 const AFFILIATE_NAME_RE = new RegExp(
   [
     `^utm[_-]?(?:source|medium|campaign|term|content|id)$`,
@@ -64,10 +77,6 @@ const AFFILIATE_NAME_RE = new RegExp(
     `^affiliate[_-]?(?:id|code|source)?$`,
     `^ref(?:[_-]?(?:id|code|errer|erral|erral[_-]?code))?$`,
     `^referr?al[_-]?(?:id|code|source)?$`,
-    `^promo(?:[_-]?(?:code|id|tion|tion[_-]?id))?$`,
-    `^promotion[_-]?(?:id|code|source)?$`,
-    `^coupon(?:[_-]?(?:code|id))?$`,
-    `^discount(?:[_-]?(?:code|id))?$`,
     `^source[_-]?(?:id|code)$`,
     `^campaign[_-]?(?:id|code|source)$`,
     `^partner[_-]?(?:id|code|source)$`,
@@ -325,9 +334,9 @@ function apply(root: ParentNode): void {
 
 export const hiddenAffiliateSanitizeRule = {
   id: RULE_ID,
-  label: "Scrub Hidden Affiliate / Promo Metadata",
+  label: "Scrub Hidden Affiliate Metadata",
   description:
-    "On checkout pages, clear `value` on hidden inputs whose name matches a curated affiliate / UTM / promo / coupon allowlist. CSRF, session, cart, order, nonce, signature, and state fields are preserved.",
+    "On checkout pages, clear `value` on hidden inputs whose name matches a curated affiliate / UTM / referral attribution allowlist. Promo / coupon / discount names are preserved (legitimate user discount). CSRF, session, cart, order, nonce, signature, and state fields are also preserved.",
   apply,
   teardown: () => {
     watcher.stop();

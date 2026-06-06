@@ -46,15 +46,6 @@ describe("isAffiliateName — positive examples", () => {
     "refid",
     "referrer",
     "referral_code",
-    "promo",
-    "promo_code",
-    "promotion_id",
-    "promocode",
-    "coupon",
-    "coupon_code",
-    "coupon_id",
-    "discount_code",
-    "discount_id",
     "source_id",
     "campaign_id",
     "partner_code",
@@ -88,6 +79,21 @@ describe("isAffiliateName — negative examples", () => {
     // Substring sneaks
     "preferred_payment",
     "preferences",
+    // Promo / coupon / discount fields are intentionally NOT
+    // attribution — they commonly carry a legitimate user-acquired
+    // discount and clearing them would silently strip it. See the rule
+    // header.
+    "promo",
+    "promo_code",
+    "promocode",
+    "promotion",
+    "promotion_id",
+    "coupon",
+    "coupon_code",
+    "coupon_id",
+    "discount",
+    "discount_code",
+    "discount_id",
   ])("rejects %s", (name) => {
     expect(isAffiliateName(name)).toBe(false);
   });
@@ -123,9 +129,9 @@ describe("shouldClearName — allowlist trimmed by denylist", () => {
   it.each([
     "utm_source",
     "ref",
-    "promo_code",
-    "coupon_id",
+    "affiliate_id",
     "gclid",
+    "click_id",
   ])("clears %s", (name) => {
     expect(shouldClearName(name)).toBe(true);
   });
@@ -140,6 +146,20 @@ describe("shouldClearName — allowlist trimmed by denylist", () => {
     "state",
     "_token",
   ])("never clears %s, even if allowlisted by overlap", (name) => {
+    expect(shouldClearName(name)).toBe(false);
+  });
+
+  it.each([
+    // Promo / coupon / discount preservation — legitimate user
+    // discount, never cleared regardless of checkout context.
+    "promo_code",
+    "promotion_id",
+    "coupon",
+    "coupon_code",
+    "coupon_id",
+    "discount_code",
+    "discount_id",
+  ])("preserves promo/coupon/discount field %s", (name) => {
     expect(shouldClearName(name)).toBe(false);
   });
 
@@ -309,6 +329,38 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
     hiddenAffiliateSanitizeRule.apply(document.body);
     const utm = document.querySelector("#utm") as HTMLInputElement;
     expect(utm.getAttribute(CLEARED_ATTR)).toBe("already-empty");
+  });
+
+  it.each([
+    ["promo_code", "FALL15"],
+    ["promotion_id", "summer-2026"],
+    ["coupon", "SAVE10"],
+    ["coupon_code", "WELCOME20"],
+    ["coupon_id", "abc-123"],
+    ["discount_code", "STUDENT15"],
+    ["discount_id", "loyalty-tier-2"],
+  ])("preserves a hidden %s input alongside the rule (legitimate user discount)", (name, value) => {
+    document.body.innerHTML = `
+        <form>
+          <input type="hidden" name="utm_source" value="email">
+          <input type="hidden" name="${name}" value="${value}">
+          <button type="submit">Place order</button>
+        </form>
+      `;
+    hiddenAffiliateSanitizeRule.apply(document.body);
+
+    const utm = document.querySelector(
+      'input[name="utm_source"]',
+    ) as HTMLInputElement;
+    const promo = document.querySelector(
+      `input[name="${name}"]`,
+    ) as HTMLInputElement;
+    // Attribution still cleared.
+    expect(utm.value).toBe("");
+    // Promo / coupon / discount kept intact so the user's discount
+    // survives the agent's submit.
+    expect(promo.value).toBe(value);
+    expect(promo.getAttribute(CLEARED_ATTR)).toBe("skipped");
   });
 
   it("works for inputs associated with a form via the `form` attribute", () => {
