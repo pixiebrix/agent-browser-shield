@@ -3,7 +3,7 @@ title: Rules reference
 description: The defense rules shipped with agent-browser-shield, what each one does, and its default state.
 ---
 
-The extension ships 37 rules, each independently toggleable from the extension's
+The extension ships 38 rules, each independently toggleable from the extension's
 options page. Rules marked **default: on** are active on fresh install;
 **default: off** rules must be enabled manually.
 
@@ -656,6 +656,55 @@ including required agreements. `role="checkbox"` widgets and radio groups are
 out of scope.
 
 Pre-checked opt-ins are *Preselection* in Mathur et al.
+[[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
+[[10]](#ref-brignull).
+
+#### Annotate Form Prefills (Experimental)
+
+- **ID:** `form-prefill-annotate`
+- **Default:** on
+
+On checkout-like URLs, prepend a visible `[abs: pre-populated …]` annotation to
+form controls that ship with a server-rendered default the agent might silently
+inherit. Covers three shapes: text / email / tel / number / url inputs whose
+`value` attribute is non-empty, `<select>` elements whose explicitly-`selected`
+option is not the first one, and radio groups with an initially-`checked`
+option. The control's value is **not** changed — annotation preserves agency, so
+the agent reads the chip in its DOM snapshot and decides whether to overwrite.
+Required-selection radio groups stay submittable because nothing is unchecked.
+
+False-positive control is layered: text inputs with a recognized browser-
+autofill `autocomplete` token (`name`, `email`, `tel`, `street-address`,
+`postal-code`, etc.) are treated as legitimate autofill targets and skipped;
+selects whose name, id, or label suggests a geo field (country / state /
+province / region / currency) are skipped because geo-IP defaults are
+legitimate; controls the user has focused since the page loaded are skipped;
+disabled / readonly controls are skipped; per-form chip count is capped so a
+long form (saved-card manager, admin panel) doesn't accumulate clutter. The
+attribute (not the live property) is read so server-rendered prefills are
+flagged even when a page script has already overwritten the live value.
+
+Hidden inputs are out of scope for this rule — the value is submitted regardless
+of any chip and the agent never reads hidden inputs into a decision, so
+annotation would not change behavior.
+
+Future work tracked in issue
+[#121](https://github.com/pixiebrix/agent-browser-shield/issues/121):
+
+- A narrow sanitize companion that clears `value` on `<input type="hidden">`
+  whose `name` matches a curated affiliate / UTM / promo allowlist, behind a
+  hard CSRF / cart / session denylist. Different toggle so the FP profile is
+  controllable separately.
+- Optionally include the prefilled value in the chip text. The chip flags
+  presence only today, to avoid leaking remembered PII into a logging snapshot.
+- Synthetic blur / change event after annotation so sites that recalc totals on
+  input events can re-render. Today the rule never touches values.
+- Sanitize-mode toggle for `<select>` defaults on sneaking-prone fields
+  (shipping speed, tip percent, donation amount, insurance plan). Annotation is
+  the default action because the FP profile across visible defaults is harder to
+  bound than for hidden-input metadata.
+
+Pre-populated form fields are *Preselection* in Mathur et al.
 [[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
 [[10]](#ref-brignull).
 

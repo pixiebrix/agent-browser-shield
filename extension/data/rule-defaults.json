@@ -36,6 +36,7 @@
     "encoded-payload-redact": true,
     "webdriver-probe-annotate": false,
     "closed-shadow-root-annotate": false,
-    "hidden-fee-annotate": true
+    "hidden-fee-annotate": true,
+    "form-prefill-annotate": true
   }
 }

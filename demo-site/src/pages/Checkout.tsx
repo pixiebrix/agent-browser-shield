@@ -44,7 +44,92 @@ export default function Checkout() {
 
           <div className="rounded border border-stone-200 bg-white p-6">
             <h2 className="mb-3 text-lg font-semibold text-slate-900">
-              4. Final options
+              4. Shipping & contact
+            </h2>
+            <form className="space-y-3 text-sm text-stone-700">
+              <label className="block">
+                <span className="block font-medium text-stone-800">
+                  Marketing email
+                </span>
+                {/* `autocomplete="off"` so browsers don't paper over this
+                    server-prefilled value; the rule should chip it. */}
+                <input
+                  type="email"
+                  name="marketing_email"
+                  autoComplete="off"
+                  defaultValue="jordan@example.com"
+                  className="mt-1 w-full rounded border border-stone-300 px-2 py-1"
+                />
+              </label>
+              <label className="block">
+                <span className="block font-medium text-stone-800">
+                  SMS contact
+                </span>
+                <input
+                  type="tel"
+                  name="sms_contact"
+                  autoComplete="off"
+                  defaultValue="555-867-5309"
+                  className="mt-1 w-full rounded border border-stone-300 px-2 py-1"
+                />
+              </label>
+              <label className="block">
+                <span className="block font-medium text-stone-800">
+                  Shipping speed
+                </span>
+                {/* Default is the costliest option — annotate, don't reset. */}
+                <select
+                  name="shipping_speed"
+                  defaultValue="overnight"
+                  className="mt-1 w-full rounded border border-stone-300 px-2 py-1"
+                >
+                  <option value="standard">Standard — Free</option>
+                  <option value="express">Express — $9.99</option>
+                  <option value="overnight">Overnight — $24.99</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="block font-medium text-stone-800">
+                  Shipping country
+                </span>
+                {/* Geo select — geo-IP defaults are legitimate, rule skips. */}
+                <select
+                  name="country"
+                  defaultValue="US"
+                  className="mt-1 w-full rounded border border-stone-300 px-2 py-1"
+                >
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="MX">Mexico</option>
+                </select>
+              </label>
+              <fieldset className="rounded border border-stone-200 p-2">
+                <legend className="px-1 text-stone-800">Driver tip</legend>
+                <label className="mr-3 inline-flex items-center gap-1">
+                  <input type="radio" name="driver_tip" value="18" /> 18%
+                </label>
+                <label className="mr-3 inline-flex items-center gap-1">
+                  <input type="radio" name="driver_tip" value="20" /> 20%
+                </label>
+                <label className="mr-3 inline-flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name="driver_tip"
+                    value="22"
+                    defaultChecked
+                  />{" "}
+                  22%
+                </label>
+                <label className="mr-3 inline-flex items-center gap-1">
+                  <input type="radio" name="driver_tip" value="0" /> No tip
+                </label>
+              </fieldset>
+            </form>
+          </div>
+
+          <div className="rounded border border-stone-200 bg-white p-6">
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">
+              5. Final options
             </h2>
             <div className="space-y-2 text-sm text-stone-700">
               <label className="flex items-start gap-2">
