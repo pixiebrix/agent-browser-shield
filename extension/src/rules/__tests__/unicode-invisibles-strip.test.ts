@@ -11,9 +11,17 @@ const ZWNBSP = "\u{FEFF}"; // BOM
 const WORD_JOINER = "\u{2060}";
 const RLO = "\u{202E}"; // bidi override
 const LRI = "\u{2066}"; // bidi isolate
+const SOFT_HYPHEN = "\u{00AD}";
+const CGJ = "\u{034F}"; // combining grapheme joiner
+const HANGUL_FILLER = "\u{3164}";
+const HANGUL_CHOSEONG_FILLER = "\u{115F}";
+const HALFWIDTH_HANGUL_FILLER = "\u{FFA0}";
+const IVS_17 = "\u{E0100}"; // first variation selector supplement code point
 const ZWJ = "\u{200D}"; // preserved
 const ZWNJ = "\u{200C}"; // preserved
 const LRM = "\u{200E}"; // preserved
+const EMOJI_VS16 = "\u{FE0F}"; // preserved (emoji-variant selector)
+const BRAILLE_BLANK = "\u{2800}"; // preserved (load-bearing in Braille)
 
 const MUTATION_THROTTLE_MS = 250;
 
@@ -59,6 +67,60 @@ describe("unicode-invisibles-strip text nodes", () => {
     unicodeInvisiblesStripRule.apply(document.body);
 
     expect(document.body.textContent).toBe(preserved);
+  });
+
+  // Soft hyphen inside a word breaks `\b<verb>\b` anchors in every other
+  // regex-based rule. Sighted users don't see the soft hyphen except at
+  // line-break opportunities; the agent reading textContent always does.
+  // Stripping restores the word boundary so downstream pattern rules
+  // (prompt-injection-redact, secrets-redact, …) see the intended phrase.
+  it("strips soft hyphen inside a word", () => {
+    document.body.innerHTML = `<p>igno${SOFT_HYPHEN}re this</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe("ignore this");
+  });
+
+  it("strips combining grapheme joiner", () => {
+    document.body.innerHTML = `<p>dis${CGJ}regard</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe("disregard");
+  });
+
+  it("strips Hangul filler variants", () => {
+    document.body.innerHTML = `<p>a${HANGUL_FILLER}b${HANGUL_CHOSEONG_FILLER}c${HALFWIDTH_HANGUL_FILLER}d</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe("abcd");
+  });
+
+  it("strips variation-selector-supplement code points", () => {
+    document.body.innerHTML = `<p>x${IVS_17}y</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe("xy");
+  });
+
+  // The U+FE00–FE0F variation selectors are deliberately preserved: stripping
+  // U+FE0F would turn red-heart emoji ("❤️") into its text variant
+  // and change rendering for every emoji on the page.
+  it("preserves the emoji variation selector U+FE0F", () => {
+    document.body.innerHTML = `<p>love \u{2764}${EMOJI_VS16} you</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe(`love \u{2764}${EMOJI_VS16} you`);
+  });
+
+  // Braille text routinely contains the blank pattern as a load-bearing
+  // character; stripping would corrupt Braille documents.
+  it("preserves U+2800 BRAILLE PATTERN BLANK", () => {
+    document.body.innerHTML = `<p>${BRAILLE_BLANK}braille${BRAILLE_BLANK}</p>`;
+    unicodeInvisiblesStripRule.apply(document.body);
+
+    expect(document.body.textContent).toBe(
+      `${BRAILLE_BLANK}braille${BRAILLE_BLANK}`,
+    );
   });
 
   it("leaves plain text untouched", () => {
