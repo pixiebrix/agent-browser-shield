@@ -1,5 +1,8 @@
 import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
-import { hiddenTextStripRule } from "../hidden-text-strip";
+import {
+  __resetColorProbeForTesting,
+  hiddenTextStripRule,
+} from "../hidden-text-strip";
 import { FIXTURES } from "./injection-fixtures";
 
 beforeEach(() => {
@@ -472,5 +475,171 @@ describe("hiddenTextStripRule", () => {
 
     expect(document.querySelector("#ph")).not.toBeNull();
     expect(document.querySelector("#inner")).not.toBeNull();
+  });
+});
+
+// jsdom's HTMLCanvasElement.getContext returns null without the `canvas`
+// package, so the canvas-based color parser never runs in tests by default.
+// These cases install a deterministic stub that mimics the spec's
+// silent-ignore behavior for unparseable fillStyle assignments, then
+// exercise the rule against CSS Color Level 4 syntaxes that the regex
+// parser doesn't understand. With the stub uninstalled, the existing
+// jsdom path (regex parser only) is what runs.
+type RGBA = [number, number, number, number];
+
+function noop(): void {
+  // Stub for canvas drawing operations the rule calls but doesn't read.
+}
+
+function installMockCanvas(colorMap: Record<string, RGBA>): () => void {
+  // Sentinels used by parseColorViaCanvas must be accepted as valid colors
+  // so the two-probe round trip can converge for a parseable input.
+  const knownColors: Record<string, RGBA> = {
+    "#1a2b3c": [26, 43, 60, 255],
+    "#fedcba": [254, 220, 186, 255],
+    "#000000": [0, 0, 0, 255],
+    ...Object.fromEntries(
+      Object.entries(colorMap).map(([k, v]) => [k.toLowerCase().trim(), v]),
+    ),
+  };
+  let internal = "#000000";
+  const stubContext = {
+    clearRect: noop,
+    fillRect: noop,
+    getImageData: (): ImageData => {
+      const rgba = knownColors[internal] ?? [0, 0, 0, 0];
+      return {
+        data: new Uint8ClampedArray(rgba),
+        width: 1,
+        height: 1,
+        colorSpace: "srgb",
+      };
+    },
+  };
+  Object.defineProperty(stubContext, "fillStyle", {
+    get: () => internal,
+    set: (value: string) => {
+      if (typeof value !== "string") {
+        return;
+      }
+      const lower = value.toLowerCase().trim();
+      // Spec: an unparseable assignment is silently ignored. Mirror that
+      // by only accepting strings present in the color map.
+      if (knownColors[lower] !== undefined) {
+        internal = lower;
+      }
+    },
+  });
+
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function patched(
+    kind: string,
+  ): unknown {
+    if (kind === "2d") {
+      return stubContext;
+    }
+    return null;
+  } as typeof HTMLCanvasElement.prototype.getContext;
+  __resetColorProbeForTesting();
+
+  return () => {
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
+    __resetColorProbeForTesting();
+  };
+}
+
+describe("hiddenTextStripRule modern CSS color syntaxes", () => {
+  let uninstall: (() => void) | undefined;
+
+  afterEach(() => {
+    uninstall?.();
+    uninstall = undefined;
+  });
+
+  // The dominant in-the-wild bypass against the regex-only parser: text
+  // painted via `oklch()` (Tailwind v4, Open Props, modern design systems)
+  // reaches computed style unnormalized, so the regex returned null and
+  // the candidate was preserved. Canvas resolution recovers the RGB.
+  it("scrubs near-white oklch text on a white background", () => {
+    uninstall = installMockCanvas({
+      "oklch(0.99 0 0)": [252, 252, 252, 255],
+    });
+    document.body.setAttribute("style", "background-color: rgb(255, 255, 255)");
+    document.body.innerHTML = `
+      <p id="x" style="color: oklch(0.99 0 0)">${FIXTURES.HIDDEN_WHITE_ON_WHITE}</p>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // Same threat via lab(): a dark grey color on a dark background that
+  // the regex parser misses.
+  it("scrubs near-black lab text on a near-black background", () => {
+    uninstall = installMockCanvas({
+      "lab(20 0 0)": [48, 48, 48, 255],
+      "lab(22 0 0)": [52, 52, 52, 255],
+    });
+    document.body.innerHTML = `
+      <section style="background-color: lab(20 0 0)">
+        <span id="x" style="color: lab(22 0 0)">${FIXTURES.HIDDEN_SMUGGLED}</span>
+      </section>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // Color-mix() is the same threat class with even more obfuscation room
+  // — the resolved value can be any RGB, but visually it can match a
+  // sibling's background.
+  it("scrubs color-mix() text matching the ancestor background", () => {
+    uninstall = installMockCanvas({
+      "color-mix(in oklch, white, transparent)": [255, 255, 255, 255],
+    });
+    document.body.setAttribute("style", "background-color: rgb(255, 255, 255)");
+    document.body.innerHTML = `
+      <p id="x" style="color: color-mix(in oklch, white, transparent)">${FIXTURES.HIDDEN_WHITE_ON_WHITE}</p>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // Counterpart to the existing rgb-on-rgb regression: an oklch background
+  // that the canvas resolves to orange must NOT cause the white text on
+  // top to be stripped, because the perceptual distance is large. The
+  // existing test of the same shape passed in jsdom by accident (regex
+  // bailed); this confirms the fix preserves the right behavior for the
+  // right reason.
+  it("preserves white text on an oklch orange background", () => {
+    uninstall = installMockCanvas({
+      "oklch(0.705 0.213 47.604)": [251, 146, 60, 255],
+    });
+    document.body.innerHTML = `
+      <aside style="background-color: rgb(255, 255, 255)">
+        <a id="buy" href="/checkout"
+           style="background-color: oklch(0.705 0.213 47.604); color: rgb(255, 255, 255)">Buy Now</a>
+      </aside>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#buy")).not.toBeNull();
+  });
+
+  // The two-sentinel probe must reject any value the browser couldn't
+  // parse. Wired up by feeding the mock a name that isn't in its color
+  // map; the rule should leave the element alone rather than trip on the
+  // sentinel's RGB.
+  it("preserves the element when the color value is unparseable", () => {
+    uninstall = installMockCanvas({}); // no modern syntaxes registered
+    document.body.setAttribute("style", "background-color: rgb(255, 255, 255)");
+    document.body.innerHTML = `
+      <p id="x" style="color: not-a-color(0 0 0)">${FIXTURES.HIDDEN_WHITE_ON_WHITE}</p>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")).not.toBeNull();
+    expect(document.querySelector("#x")?.textContent ?? "").not.toBe("");
   });
 });

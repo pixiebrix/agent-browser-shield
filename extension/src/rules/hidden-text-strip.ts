@@ -360,7 +360,7 @@ const COLOR_MATCH_DISTANCE = 24;
 type RGB = readonly [number, number, number];
 type RGBA = readonly [number, number, number, number];
 
-function parseColor(value: string): RGBA | null {
+function parseColorViaRegex(value: string): RGBA | null {
   const match =
     /^rgba?\(\s*(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i.exec(
       value,
@@ -378,15 +378,82 @@ function parseColor(value: string): RGBA | null {
   return [r, g, b, a];
 }
 
+// One-time-allocated 1×1 canvas for resolving CSS Color Level 4 syntaxes
+// (`oklch()`, `lab()`, `color()`, `color-mix()`) that browsers emit
+// verbatim in computed style. `getContext` returns null in environments
+// without canvas (jsdom by default); callers fall back to the regex
+// parser. `undefined` distinguishes "not yet probed" from "probed, no
+// context".
+let colorProbeContext: CanvasRenderingContext2D | null | undefined;
+
+function getColorProbeContext(): CanvasRenderingContext2D | null {
+  if (colorProbeContext !== undefined) {
+    return colorProbeContext;
+  }
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    colorProbeContext = canvas.getContext("2d", { willReadFrequently: true });
+  } catch {
+    colorProbeContext = null;
+  }
+  return colorProbeContext;
+}
+
+// Resolve any CSS color syntax through the canvas 2D parser. Two distinct
+// sentinels guard against the silent-ignore behavior the spec mandates
+// for unparseable values: if `value` is rejected, fillStyle retains the
+// most recently-set sentinel under each probe, so the two reads disagree.
+// A valid color converges to the same resolved string under either
+// sentinel. Once the value is known to parse, we paint a single pixel
+// and read it back to recover the alpha channel (which the read-back
+// fillStyle string normalizes to opaque for the `#rrggbb` form).
+function parseColorViaCanvas(value: string): RGBA | null {
+  const context = getColorProbeContext();
+  if (!context) {
+    return null;
+  }
+  context.fillStyle = "#1a2b3c";
+  context.fillStyle = value;
+  const probe1 = context.fillStyle;
+  context.fillStyle = "#fedcba";
+  context.fillStyle = value;
+  const probe2 = context.fillStyle;
+  if (probe1 !== probe2) {
+    return null;
+  }
+  try {
+    context.clearRect(0, 0, 1, 1);
+    context.fillRect(0, 0, 1, 1);
+    const pixel = context.getImageData(0, 0, 1, 1).data;
+    return [pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0, (pixel[3] ?? 0) / 255];
+  } catch {
+    return null;
+  }
+}
+
+function parseColor(value: string): RGBA | null {
+  return parseColorViaRegex(value) ?? parseColorViaCanvas(value);
+}
+
+// Test-only: clear the cached canvas probe so a test that installs a
+// mock canvas after the module has already been imported can force a
+// fresh probe. Production code never calls this; the canvas is created
+// lazily at first parseColor() call and persists for the lifetime of
+// the realm.
+export function __resetColorProbeForTesting(): void {
+  colorProbeContext = undefined;
+}
+
 // Effective background color: walk up ancestors and composite the first
 // opaque background we find. `transparent` and `rgba(_, _, _, 0)` mean
 // "ask my parent." Falls back to white because every browser paints the
 // canvas white when nothing intervenes. Returns null when we hit a
-// background whose computed value we can't parse (CSS Color Level 4
-// syntaxes like `oklch()` / `lab()` / `color()` reach computed style
-// unnormalized) — walking past it to a distant white ancestor would
-// strip legitimate UI like a `bg-orange-500` button with white text
-// sitting inside an otherwise-white card.
+// background whose computed value neither the regex parser nor the
+// canvas can resolve — walking past an unknown background to a distant
+// white ancestor would strip legitimate UI like a colored button with
+// white text sitting inside an otherwise-white card.
 function effectiveBackgroundColor(element: Element): RGB | null {
   let current: Element | null = element;
   while (current) {
