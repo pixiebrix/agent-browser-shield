@@ -436,15 +436,76 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).not.toBeNull();
   });
 
-  it("preserves text inside aria-hidden=true ancestors", () => {
+  // aria-hidden subtree allowlist is positional-only: a visibility:hidden
+  // (or opacity:0 / color-match) child inside an aria-hidden wrapper used
+  // to bypass the rule because the wrapper's aria-hidden attribute was
+  // treated as a blanket exemption. Now stripped — aria-hidden suppresses
+  // the a11y tree but doesn't keep text out of `textContent` where an
+  // agent reads it.
+  it("scrubs visibility:hidden text inside an aria-hidden subtree", () => {
     document.body.innerHTML = `
       <div aria-hidden="true">
-        <span id="x" style="visibility: hidden">decorative</span>
+        <span id="x" style="visibility: hidden">${FIXTURES.HIDDEN_IGNORE_PRIOR}</span>
       </div>
     `;
     hiddenTextStripRule.apply(document.body);
 
-    expect(document.querySelector("#x")).not.toBeNull();
+    expectScrubbed("#x");
+  });
+
+  // Counterpart: aria-hidden subtree still preserves a positional hide
+  // (off-screen) — the SR-only / decorative-icon idiom commonly uses
+  // aria-hidden + off-screen positioning together.
+  it("preserves off-screen text inside an aria-hidden subtree", () => {
+    document.body.innerHTML = `
+      <div aria-hidden="true">
+        <span id="x" style="position: absolute; left: -10000px">decorative offscreen label</span>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#x")?.textContent).toContain("decorative");
+  });
+
+  // Landmark allowlist is positional-only too: a NAV with
+  // visibility:hidden text on the landmark element itself used to be a
+  // bypass.
+  it("scrubs visibility:hidden text on a landmark element", () => {
+    document.body.innerHTML = `
+      <nav id="x" style="visibility: hidden">${FIXTURES.HIDDEN_IGNORE_PRIOR}</nav>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs color-matched text on a landmark element", () => {
+    document.body.innerHTML = `
+      <section style="background-color: rgb(255, 255, 255)">
+        <aside id="x" style="color: rgb(255, 255, 255); background-color: rgb(255, 255, 255)">${FIXTURES.HIDDEN_SMUGGLED}</aside>
+      </section>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs opacity:0 text on a landmark element", () => {
+    document.body.innerHTML = `
+      <header id="x" style="opacity: 0">${FIXTURES.HIDDEN_IGNORE_PRIOR}</header>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs visibility:hidden text on an element with role=navigation", () => {
+    document.body.innerHTML = `
+      <div id="x" role="navigation" style="visibility: hidden">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
   });
 
   it("leaves display:none text alone (collapsed menu / tab panel pattern)", () => {
