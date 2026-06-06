@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: extension
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -91,7 +91,7 @@ jobs:
       run:
         working-directory: demo-site
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -120,7 +120,7 @@ jobs:
       run:
         working-directory: docs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@v2
@@ -148,7 +148,7 @@ jobs:
     name: Pre-commit hooks
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
       - uses: actions/setup-python@v6
@@ -169,7 +169,7 @@ jobs:
     name: Python (ruff + bandit + pyright + pytest)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
           # Full history so the strict-on-new-files ratchet below can compute
