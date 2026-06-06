@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.1.0
       # Default persona + the project's .github/zizmor.yml (ref-pin policy)
       # — we track action versions via Dependabot's github-actions ecosystem
       # rather than SHA pinning.
