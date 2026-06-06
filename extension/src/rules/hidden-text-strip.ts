@@ -320,10 +320,20 @@ function hasPropertyAnimationInFlight(
   return false;
 }
 
-const OPACITY_PROPERTY_PATTERN = /\b(?:opacity|all)\b/;
-const FILTER_PROPERTY_PATTERN = /\b(?:filter|all)\b/;
-const TRANSFORM_PROPERTY_PATTERN = /\b(?:transform|all)\b/;
-const COLLAPSE_PROPERTY_PATTERN = /\b(?:max-height|height|all)\b/;
+// CSS property names contain `-`, which is not a `\w` character, so
+// `\b` finds a word boundary at the hyphen. That means `\bfilter\b`
+// matches `filter` inside `backdrop-filter`, and `\bheight\b` matches
+// inside `line-height` — an attacker can declare `transition:
+// backdrop-filter 999s` or `transition: line-height 999s` to trip the
+// animation-in-flight guard and bypass the strip. Use a hyphen-aware
+// boundary instead. `OPACITY` and `TRANSFORM` are safe today because
+// no standard CSS property ends in `-opacity` or `-transform`, but use
+// the same boundary for consistency.
+const OPACITY_PROPERTY_PATTERN = /(?<![a-z-])(?:opacity|all)(?![a-z-])/;
+const FILTER_PROPERTY_PATTERN = /(?<![a-z-])(?:filter|all)(?![a-z-])/;
+const TRANSFORM_PROPERTY_PATTERN = /(?<![a-z-])(?:transform|all)(?![a-z-])/;
+const COLLAPSE_PROPERTY_PATTERN =
+  /(?<![a-z-])(?:max-height|height|all)(?![a-z-])/;
 
 function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
   return hasPropertyAnimationInFlight(style, OPACITY_PROPERTY_PATTERN);

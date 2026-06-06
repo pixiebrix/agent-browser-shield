@@ -240,6 +240,19 @@ describe("hiddenTextStripRule", () => {
     expect(document.querySelector("#x")).not.toBeNull();
   });
 
+  // CSS property names contain `-`, so a naive `\bfilter\b` would also
+  // match `backdrop-filter` and let an attacker declare a long
+  // transition on the unrelated property to suppress detection of
+  // `filter: opacity(0)`. The hyphen-aware boundary blocks that bypass.
+  it("still scrubs filter:opacity(0) when a transition targets backdrop-filter", () => {
+    document.body.innerHTML = `
+      <div id="x" style="filter: opacity(0); transition: backdrop-filter 999s">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
   it("preserves filter:opacity(0.5) (non-zero)", () => {
     document.body.innerHTML = `
       <div id="x" style="filter: opacity(0.5)">half-faded but visible</div>
@@ -376,6 +389,19 @@ describe("hiddenTextStripRule", () => {
     hiddenTextStripRule.apply(document.body);
 
     expect(document.querySelector("#x")).not.toBeNull();
+  });
+
+  // Same hyphen-boundary bypass as the backdrop-filter case: a naive
+  // `\bheight\b` matches `height` inside `line-height`, letting an
+  // attacker suppress the max-height:0 strip via `transition:
+  // line-height 999s`. The hyphen-aware boundary blocks it.
+  it("still scrubs max-height:0 when a transition targets line-height", () => {
+    document.body.innerHTML = `
+      <div id="x" style="max-height: 0; overflow: hidden; width: 600px; transition: line-height 999s">${FIXTURES.HIDDEN_LARGE_OFFSCREEN}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
   });
 
   it("preserves max-height:0 without overflow:hidden (text would overflow)", () => {
