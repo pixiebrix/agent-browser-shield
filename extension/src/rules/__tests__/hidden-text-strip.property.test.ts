@@ -94,6 +94,89 @@ describe("hidden-text-strip (property)", () => {
     );
   });
 
+  // Cross-product invariant for #203 item #10: landmark + aria-hidden
+  // allowlists kick in only for positional hide reasons. A future tweak
+  // that moves a check back into the unconditional skip block (or adds
+  // a new positional-shaped reason without updating the allowlist set)
+  // would re-open the bypass; pinning the class as a property catches it.
+  const POSITIONAL_TRIGGER = fc.constantFrom(
+    "position: absolute; left: -10000px",
+    "position: fixed; top: -10000px",
+    "clip-path: inset(100%)",
+    "text-indent: -10000px",
+  );
+  const NON_POSITIONAL_TRIGGER = fc.constantFrom(
+    "visibility: hidden",
+    "opacity: 0",
+  );
+  const LANDMARK_TAG = fc.constantFrom(
+    "nav",
+    "main",
+    "header",
+    "footer",
+    "aside",
+  );
+
+  it("preserves a positional-hide landmark; strips a non-positional one", () => {
+    fc.assert(
+      fc.property(
+        LANDMARK_TAG,
+        fc.boolean(),
+        POSITIONAL_TRIGGER,
+        NON_POSITIONAL_TRIGGER,
+        PAYLOAD,
+        (tag, positional, positionalStyle, nonPositionalStyle, payload) => {
+          document.body.innerHTML = "";
+          const target = document.createElement(tag);
+          target.id = "target";
+          target.setAttribute(
+            "style",
+            positional ? positionalStyle : nonPositionalStyle,
+          );
+          target.append(document.createTextNode(payload));
+          document.body.append(target);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.isConnected).toBe(true);
+          // Positional → landmark allowlist preserves text.
+          // Non-positional → injection-shaped on a landmark, stripped.
+          expect(target.textContent === "").toBe(!positional);
+        },
+      ),
+    );
+  });
+
+  it("preserves positional hides inside aria-hidden; strips non-positional ones", () => {
+    fc.assert(
+      fc.property(
+        fc.boolean(),
+        POSITIONAL_TRIGGER,
+        NON_POSITIONAL_TRIGGER,
+        PAYLOAD,
+        (positional, positionalStyle, nonPositionalStyle, payload) => {
+          document.body.innerHTML = "";
+          const wrapper = document.createElement("div");
+          wrapper.setAttribute("aria-hidden", "true");
+          const target = document.createElement("span");
+          target.id = "target";
+          target.setAttribute(
+            "style",
+            positional ? positionalStyle : nonPositionalStyle,
+          );
+          target.append(document.createTextNode(payload));
+          wrapper.append(target);
+          document.body.append(wrapper);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.isConnected).toBe(true);
+          expect(target.textContent === "").toBe(!positional);
+        },
+      ),
+    );
+  });
+
   it("blanks color-matched text and keeps wrapper + descendants attached", () => {
     // Color-match uses a different code path than the CSS triggers above —
     // it walks ancestors to compute the effective background. Cover it

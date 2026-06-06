@@ -96,15 +96,18 @@ function isExcludedAncestor(element: Element): boolean {
   return false;
 }
 
-// HTML5 landmarks + ARIA landmark roles. These elements are load-bearing for
-// page structure and accessibility, and sites routinely position them
+// HTML5 landmarks + ARIA landmark roles. Sites routinely position these
 // off-screen as "skip to content" affordances or keyboard-shortcut help
-// menus (e.g., Amazon's `<nav id="shortcut-menu">` at `left: -10000px`).
-// Stripping a landmark wipes out a chunk of the a11y tree, and the prose
-// inside is almost never injection — agents reading the a11y tree treat the
-// content as navigation anyway. We allowlist the element itself, not the
-// subtree: an injection-shaped descendant inside a landmark is still
-// strippable.
+// menus (e.g., Amazon's `<nav id="shortcut-menu">` at `left: -10000px`),
+// so the off-screen-positioning idiom inside a landmark gets preserved
+// regardless of size. This is a narrower allowlist than it used to be:
+// landmarks no longer protect against `visibility: hidden`, `opacity: 0`,
+// or color-matched text inside the landmark element — those shapes
+// aren't load-bearing for a11y and an attacker setting them on a `<nav>`
+// is still injection-shaped. The allowlist is per-element: an
+// injection-shaped descendant inside a landmark is still strippable
+// (a 600px-wide off-left DIV inside a NAV is not "the landmark"
+// itself).
 const LANDMARK_TAGS: ReadonlySet<string> = new Set([
   "NAV",
   "MAIN",
@@ -127,6 +130,26 @@ function isLandmark(element: Element): boolean {
   const role = element.getAttribute("role");
   return role !== null && LANDMARK_ROLES.has(role);
 }
+
+// Match reasons whose only signal is "the element is positioned out of
+// the visible viewport / clipped to zero area". These are the shapes a
+// landmark or aria-hidden subtree legitimately uses to keep content
+// available to assistive tech without painting it; we allowlist
+// landmarks and aria-hidden subtrees against these reasons only.
+//
+// Conversely, `visibility-hidden`, `opacity-0`, `font-size-0`, and
+// `color-match` are paint-mode hides — text remains in DOM textContent
+// and in the a11y tree (visibility:hidden does suppress the a11y tree
+// for assistive tech, but it doesn't suppress text agents reading
+// `textContent`, which is the threat model). A landmark or aria-hidden
+// subtree using one of those is bypassing the rule by exploiting its
+// own allowlist, so we strip.
+const POSITIONAL_HIDE_REASONS: ReadonlySet<string> = new Set([
+  "offscreen-left",
+  "offscreen-top",
+  "text-indent",
+  "clip-to-zero",
+]);
 
 function parsePixelLength(value: string): number | null {
   const match = /^(-?\d+(?:\.\d+)?)px$/.exec(value);
@@ -533,13 +556,7 @@ function findCandidates(root: ParentNode): Candidate[] {
     if (isInsidePlaceholder(element)) {
       continue;
     }
-    if (element.closest('[aria-hidden="true"]')) {
-      continue;
-    }
     if (hasSrOnlyClass(element)) {
-      continue;
-    }
-    if (isLandmark(element)) {
       continue;
     }
     if (isExcludedAncestor(element)) {
@@ -556,6 +573,20 @@ function findCandidates(root: ParentNode): Candidate[] {
       detectHiddenByCss(element, style) ?? detectColorMatch(element, style);
     if (!match) {
       continue;
+    }
+    // Landmark + aria-hidden subtree allowlists apply only to positional
+    // hide reasons (off-screen position, text-indent, clip-to-zero) —
+    // the shapes a11y patterns legitimately use to keep content
+    // available to assistive tech. visibility:hidden / opacity:0 /
+    // color-match inside a landmark or aria-hidden subtree is
+    // injection-shaped and gets stripped.
+    if (POSITIONAL_HIDE_REASONS.has(match.reason)) {
+      if (isLandmark(element)) {
+        continue;
+      }
+      if (element.closest('[aria-hidden="true"]')) {
+        continue;
+      }
     }
     matches.push({ element, ...match });
   }
