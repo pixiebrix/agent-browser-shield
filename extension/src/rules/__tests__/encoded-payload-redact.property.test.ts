@@ -165,3 +165,91 @@ describe("encoded-payload-redact (property)", () => {
     );
   });
 });
+
+// Render `encoded` inside `<p>`, split across N sibling `<span>` text
+// nodes — the markdown-highlight / syntax-color shape that defeated the
+// per-node length floors.
+function applyToSpanSplitText(
+  encoded: string,
+  splits: readonly number[],
+): HTMLElement {
+  document.body.innerHTML = "";
+  const p = document.createElement("p");
+  let cursor = 0;
+  for (const split of splits) {
+    const span = document.createElement("span");
+    span.textContent = encoded.slice(cursor, split);
+    p.append(span);
+    cursor = split;
+  }
+  const tail = document.createElement("span");
+  tail.textContent = encoded.slice(cursor);
+  p.append(tail);
+  document.body.append(p);
+  encodedPayloadRedactRule.apply(document.body);
+  return document.body;
+}
+
+function sortedSplitsArb(length: number) {
+  return fc
+    .uniqueArray(fc.integer({ min: 1, max: length - 1 }), {
+      minLength: 1,
+      maxLength: 4,
+    })
+    .map((indices) => indices.toSorted((a, b) => a - b));
+}
+
+describe("encoded-payload-redact cross-node detection (property)", () => {
+  it("redacts base64 payloads regardless of how they're split across sibling spans", () => {
+    fc.assert(
+      fc.property(
+        printableTextArb.chain((text) => {
+          const encoded = base64Encode(text);
+          return fc.tuple(
+            fc.constant(encoded),
+            sortedSplitsArb(encoded.length),
+          );
+        }),
+        ([encoded, splits]) => {
+          const body = applyToSpanSplitText(encoded, splits);
+          expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+            "[encoded payload hidden]",
+          );
+          expect(body.textContent).not.toContain(encoded);
+        },
+      ),
+    );
+  });
+
+  // Payloads whose ENCODED length is just over the base64 floor; splitting
+  // such a payload in half puts each half below the floor, so the only way
+  // the rule could redact would be by concatenating across the block
+  // boundary (which it must not do).
+  const justOverFloorTextArb = fc
+    .stringMatching(/^[ -~]{91,130}$/)
+    .filter((s) => s.length >= MIN_DECODED_LENGTH);
+
+  it("never redacts a payload whose halves fall below the floor when split across two paragraphs", () => {
+    fc.assert(
+      fc.property(justOverFloorTextArb, (text) => {
+        const encoded = base64Encode(text);
+        // Sanity: the full thing IS detectable when not split.
+        expect(encoded.length).toBeGreaterThanOrEqual(MIN_BASE64_LENGTH);
+        const mid = Math.floor(encoded.length / 2);
+        // Each half must sit below the floor, otherwise the rule could
+        // legitimately fire on one half alone — not a cross-block leak.
+        expect(mid).toBeLessThan(MIN_BASE64_LENGTH);
+
+        document.body.innerHTML = "";
+        const a = document.createElement("p");
+        const b = document.createElement("p");
+        a.textContent = encoded.slice(0, mid);
+        b.textContent = encoded.slice(mid);
+        document.body.append(a, b);
+        encodedPayloadRedactRule.apply(document.body);
+
+        expect(document.body.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+      }),
+    );
+  });
+});

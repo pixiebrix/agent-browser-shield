@@ -42,6 +42,49 @@ export default function Checkout() {
             </div>
           </div>
 
+          {/* Each digit group / segment rendered as its own <span> — the
+              React-style render shape that defeats per-text-node scanning
+              for pii-redact / encoded-payload-redact / secrets-redact. The
+              factory's inline-formatting-context grouping concatenates
+              sibling text nodes within one block before running the
+              detector, so each entry below should still be masked. */}
+          <div className="rounded border border-stone-200 bg-white p-6">
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">
+              3a. Alternate payment (cards on file, span-split rendering)
+            </h2>
+            <div className="space-y-1 text-sm text-stone-800">
+              <div>
+                Backup Visa: <span>4111 </span>
+                <span>1111 </span>
+                <span>1111 </span>
+                <span>1111</span>
+              </div>
+              <div>
+                Tax ID: <span>123</span>
+                <span>-45</span>
+                <span>-6789</span>
+              </div>
+              <div>
+                Office line: <strong>(555) </strong>
+                <em>867-</em>
+                <code>5309</code>
+              </div>
+              <div>
+                API token: <span>eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.</span>
+                <span>SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</span>
+              </div>
+              <div>
+                Encoded note:{" "}
+                <span>
+                  VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZyB3
+                </span>
+                <span>
+                  aGlsZSByZWNpdGluZyB0aGUgYWxwaGFiZXQgZnJvbSBBIHRocm91Z2ggWi4=
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded border border-stone-200 bg-white p-6">
             <h2 className="mb-3 text-lg font-semibold text-slate-900">
               4. Shipping & contact

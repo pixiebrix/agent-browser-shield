@@ -14,12 +14,14 @@ import {
   LABEL_ICON_CLASS,
   LABEL_TEXT_CLASS,
   PLACEHOLDER_CLASS,
+  replaceMatchAcrossTextNodes,
   replaceWithBlockPlaceholder,
   revealAll,
 } from "../placeholder";
 import type { RuleId } from "../storage";
 
 const RULE_ID = "footer-redact" as RuleId;
+const PII_RULE_ID = "pii-redact" as RuleId;
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -201,5 +203,130 @@ describe("revealAll", () => {
     expect(() => {
       revealAll(RULE_ID);
     }).not.toThrow();
+  });
+});
+
+// `replaceMatchAcrossTextNodes` is exercised end-to-end via the
+// inline-text-redact factory tests, but the wrapper-preservation /
+// reveal-restoration invariants are easier to pin down at the helper
+// level than through a rule's MutationObserver loop.
+describe("replaceMatchAcrossTextNodes", () => {
+  // Helper: lay out a parent `<p>` containing the supplied text fragments,
+  // wrapping each in a `<span>` so the rule's typical React-style render
+  // shape is reproduced. Returns the array of text nodes in document
+  // order — the helper takes them positionally.
+  function spanify(parts: readonly string[]): {
+    container: HTMLParagraphElement;
+    textNodes: Text[];
+  } {
+    const container = document.createElement("p");
+    const textNodes: Text[] = [];
+    for (const part of parts) {
+      const span = document.createElement("span");
+      const text = document.createTextNode(part);
+      span.append(text);
+      container.append(span);
+      textNodes.push(text);
+    }
+    document.body.append(container);
+    return { container, textNodes };
+  }
+
+  it("inserts one inline placeholder spanning matched range across siblings", () => {
+    const { container, textNodes } = spanify(["4111", "1111", "1111", "1111"]);
+    replaceMatchAcrossTextNodes(
+      textNodes,
+      0,
+      0,
+      3,
+      4,
+      PII_RULE_ID,
+      "[card hidden]",
+    );
+
+    const placeholders = container.querySelectorAll(`.${PLACEHOLDER_CLASS}`);
+    expect(placeholders).toHaveLength(1);
+    expect(placeholders[0]?.textContent).toBe("[card hidden]");
+    expect(container.textContent).toBe("[card hidden]");
+  });
+
+  it("keeps wrapping spans in the DOM even when their text is fully matched", () => {
+    const { container, textNodes } = spanify(["4111", "1111", "1111", "1111"]);
+    const spansBefore = [...container.querySelectorAll("span")];
+
+    replaceMatchAcrossTextNodes(
+      textNodes,
+      0,
+      0,
+      3,
+      4,
+      PII_RULE_ID,
+      "[card hidden]",
+    );
+
+    // All four wrapper spans stay (per the "scrub, don't detach
+    // framework-owned nodes" rule). The first span now hosts the
+    // placeholder; spans 2-4 hold empty text nodes.
+    const spansAfter = [...container.querySelectorAll("span")];
+    expect(spansAfter).toEqual(spansBefore);
+  });
+
+  it("preserves prefix and suffix text when the match is partial at the boundaries", () => {
+    const { container, textNodes } = spanify(["Card: 4111", "1111 1111 1111"]);
+    // "Card: " is 6 chars; first node length 10. Match covers digits only.
+    replaceMatchAcrossTextNodes(
+      textNodes,
+      0,
+      6,
+      1,
+      14,
+      PII_RULE_ID,
+      "[card hidden]",
+    );
+
+    expect(container.textContent).toBe("Card: [card hidden]");
+    expect(container.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
+  });
+
+  it("restores the original concatenated text on reveal click", () => {
+    const { container, textNodes } = spanify(["4111", "1111", "1111", "1111"]);
+    replaceMatchAcrossTextNodes(
+      textNodes,
+      0,
+      0,
+      3,
+      4,
+      PII_RULE_ID,
+      "[card hidden]",
+    );
+
+    const placeholder = container.querySelector<HTMLElement>(
+      `.${PLACEHOLDER_CLASS}`,
+    );
+    expect(placeholder).not.toBeNull();
+    placeholder?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    // Reveal collapses the original split into a single text node at the
+    // placeholder's prior position; spans 2-4 stay but contribute their
+    // (still-blanked) empty values.
+    expect(container.textContent).toBe("4111111111111111");
+    expect(container.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("delegates to replaceMatchesInTextNode when both endpoints land in one node", () => {
+    const { container, textNodes } = spanify(["leading 4111111111111111 tail"]);
+    // Match the 16-digit run inside the single text node, exercising the
+    // same-index fast path.
+    replaceMatchAcrossTextNodes(
+      textNodes,
+      0,
+      8,
+      0,
+      24,
+      PII_RULE_ID,
+      "[card hidden]",
+    );
+
+    expect(container.textContent).toBe("leading [card hidden] tail");
   });
 });

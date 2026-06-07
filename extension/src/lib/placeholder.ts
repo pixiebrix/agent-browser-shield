@@ -179,23 +179,13 @@ export function replaceMatchesInTextNode(
     if (match.start > cursor) {
       fragment.append(document.createTextNode(text.slice(cursor, match.start)));
     }
-    // Inline placeholders are short and have no scrollable area, so the
-    // <button> serves as both the visual chip and the a11y-tree exposure.
-    const placeholder = document.createElement("button");
-    placeholder.type = "button";
-    placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--inline`;
-    placeholder.setAttribute(RULE_ATTR, ruleId);
-    placeholder.textContent = match.label;
-    const restored = document.createTextNode(
-      text.slice(match.start, match.end),
+    fragment.append(
+      createInlinePlaceholder(
+        ruleId,
+        match.label,
+        text.slice(match.start, match.end),
+      ),
     );
-    attachReveal(placeholder, restored);
-    fragment.append(placeholder);
-    log("inline placeholder created", {
-      ruleId,
-      label: match.label,
-      hiddenLength: match.end - match.start,
-    });
     cursor = match.end;
   }
 
@@ -204,6 +194,219 @@ export function replaceMatchesInTextNode(
   }
 
   textNode.parentNode?.replaceChild(fragment, textNode);
+}
+
+function createInlinePlaceholder(
+  ruleId: RuleId,
+  label: string,
+  originalText: string,
+): HTMLButtonElement {
+  // Inline placeholders are short and have no scrollable area, so the
+  // <button> serves as both the visual chip and the a11y-tree exposure.
+  const placeholder = document.createElement("button");
+  placeholder.type = "button";
+  placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--inline`;
+  placeholder.setAttribute(RULE_ATTR, ruleId);
+  placeholder.textContent = label;
+  attachReveal(placeholder, document.createTextNode(originalText));
+  log("inline placeholder created", {
+    ruleId,
+    label,
+    hiddenLength: originalText.length,
+  });
+  return placeholder;
+}
+
+// One match in a bucket-level operation. Offsets are in each text node's
+// local nodeValue space; `startIndex` / `endIndex` index into the `nodes`
+// array passed to `replaceMatchesAcrossTextNodes`. Single-node matches
+// have `startIndex === endIndex`.
+export interface MultiNodeMatch {
+  startIndex: number;
+  startOffset: number;
+  endIndex: number;
+  endOffset: number;
+  label: string;
+}
+
+// Atomic-by-node materializer for a bucket of sibling text nodes in one
+// inline-formatting context. `nodes` is the ordered text-node run; each
+// match's offsets are interpreted against the *original* nodeValues, so
+// the caller passes pre-mutation positions for all matches at once. The
+// helper plans every affected node's new content before touching the DOM,
+// then performs at most one replaceChild per affected node.
+//
+// Why batch: applying matches one at a time invalidates the offset map.
+// Calling `parentNode.replaceChild(fragment, textNode)` for the first
+// match detaches that text node; a second match into the same node finds
+// `parentNode === null` and silently drops. Cross-node matches that
+// truncate a boundary node shift every later offset in that node by the
+// truncation amount, so a single-node match that lands in the truncated
+// region masks the wrong characters. Batching sidesteps both: each
+// affected text node is mutated exactly once, against its original
+// content.
+//
+// Wrapping inline elements (the `<span>`s a framework rendered around
+// per-digit groups) are NOT detached. Interior text nodes consumed
+// entirely have their `nodeValue` blanked instead of being removed, so
+// any framework tracking the parent span's child list still sees a
+// (now-empty) text node child. This matches the "scrub the carrier,
+// don't detach framework-owned nodes" pattern used by the rest of the
+// codebase.
+//
+// Reveal restores the matched substring as a single new text node at the
+// placeholder's position — the original per-node split is not
+// reconstructed. The user sees the same characters; the surrounding
+// wrapper elements remain in place around them.
+export function replaceMatchesAcrossTextNodes(
+  nodes: readonly Text[],
+  matches: readonly MultiNodeMatch[],
+  ruleId: RuleId,
+): void {
+  if (matches.length === 0) {
+    return;
+  }
+
+  // Snapshot original values up front — every offset in `matches` is
+  // interpreted against these, regardless of order. nodeValue can change
+  // out from under us as we mutate, but the snapshot stays canonical.
+  const originalValues = nodes.map((node) => node.nodeValue ?? "");
+
+  // For each match, build its reveal-text from the matched span (which
+  // can cross node boundaries) and create one placeholder element. The
+  // placeholder is anchored to the first node the match touches.
+  interface NodeSegment {
+    localStart: number;
+    localEnd: number;
+    // Present only on the node that anchors this match's placeholder.
+    placeholder?: HTMLButtonElement;
+  }
+  const perNode = new Map<number, NodeSegment[]>();
+
+  function pushSegment(index: number, segment: NodeSegment): void {
+    let list = perNode.get(index);
+    if (!list) {
+      list = [];
+      perNode.set(index, list);
+    }
+    list.push(segment);
+  }
+
+  for (const match of matches) {
+    if (
+      match.startIndex < 0 ||
+      match.startIndex >= nodes.length ||
+      match.endIndex < 0 ||
+      match.endIndex >= nodes.length ||
+      match.startIndex > match.endIndex
+    ) {
+      continue;
+    }
+    const matchedText = collectMatchedText(originalValues, match);
+    const placeholder = createInlinePlaceholder(
+      ruleId,
+      match.label,
+      matchedText,
+    );
+    if (match.startIndex === match.endIndex) {
+      pushSegment(match.startIndex, {
+        localStart: match.startOffset,
+        localEnd: match.endOffset,
+        placeholder,
+      });
+      continue;
+    }
+    pushSegment(match.startIndex, {
+      localStart: match.startOffset,
+      localEnd: originalValues[match.startIndex]?.length ?? 0,
+      placeholder,
+    });
+    for (let i = match.startIndex + 1; i < match.endIndex; i++) {
+      pushSegment(i, {
+        localStart: 0,
+        localEnd: originalValues[i]?.length ?? 0,
+      });
+    }
+    pushSegment(match.endIndex, {
+      localStart: 0,
+      localEnd: match.endOffset,
+    });
+  }
+
+  // Materialize each affected node from its original value. Segments
+  // come in concat order already (matches are sorted ascending in the
+  // caller); per-node segments inherit that ordering.
+  for (const [index, segments] of perNode) {
+    const node = nodes[index];
+    const originalValue = originalValues[index];
+    if (!node || originalValue === undefined) {
+      continue;
+    }
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    for (const segment of segments) {
+      if (segment.localStart > cursor) {
+        fragment.append(
+          document.createTextNode(
+            originalValue.slice(cursor, segment.localStart),
+          ),
+        );
+      }
+      if (segment.placeholder) {
+        fragment.append(segment.placeholder);
+      }
+      cursor = segment.localEnd;
+    }
+    if (cursor < originalValue.length) {
+      fragment.append(document.createTextNode(originalValue.slice(cursor)));
+    }
+    if (fragment.childNodes.length === 0) {
+      // Interior text node fully consumed by a cross-node match with no
+      // placeholder anchor here — blank rather than detach so the parent
+      // element still sees a child text node in its layout-time position.
+      node.nodeValue = "";
+    } else {
+      node.parentNode?.replaceChild(fragment, node);
+    }
+  }
+}
+
+function collectMatchedText(
+  originalValues: readonly string[],
+  match: MultiNodeMatch,
+): string {
+  const firstValue = originalValues[match.startIndex] ?? "";
+  if (match.startIndex === match.endIndex) {
+    return firstValue.slice(match.startOffset, match.endOffset);
+  }
+  const interior = originalValues
+    .slice(match.startIndex + 1, match.endIndex)
+    .join("");
+  const lastValue = originalValues[match.endIndex] ?? "";
+  return (
+    firstValue.slice(match.startOffset) +
+    interior +
+    lastValue.slice(0, match.endOffset)
+  );
+}
+
+// Single-match convenience wrapper. Most callers (and the placeholder.ts
+// tests) operate on one match at a time; the bucket factory uses the
+// plural form directly so its planning step can see every match at once.
+export function replaceMatchAcrossTextNodes(
+  nodes: readonly Text[],
+  startIndex: number,
+  startOffset: number,
+  endIndex: number,
+  endOffset: number,
+  ruleId: RuleId,
+  label: string,
+): void {
+  replaceMatchesAcrossTextNodes(
+    nodes,
+    [{ startIndex, startOffset, endIndex, endOffset, label }],
+    ruleId,
+  );
 }
 
 export function revealAll(ruleId: RuleId): void {

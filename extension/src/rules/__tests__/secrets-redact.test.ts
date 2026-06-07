@@ -194,6 +194,40 @@ describe("secrets-redact", () => {
   });
 });
 
+describe("secrets-redact cross-node detection", () => {
+  // Falls out of the shared inline-text-redact factory work — verifies
+  // splitting a token across sibling text nodes no longer hides it from
+  // the regex.
+  it("masks a JWT split across sibling spans", () => {
+    const half = Math.floor(JWT.length / 2);
+    document.body.innerHTML = `<p>token: <span>${JWT.slice(0, half)}</span><span>${JWT.slice(half)}</span></p>`;
+    secretsRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[jwt hidden]",
+    );
+    expect(document.body.textContent).not.toContain(JWT);
+  });
+
+  it("masks an AWS key split across sibling inline wrappers", () => {
+    const half = Math.floor(AWS_KEY.length / 2);
+    document.body.innerHTML = `<p>k=<code>${AWS_KEY.slice(0, half)}</code><code>${AWS_KEY.slice(half)}</code></p>`;
+    secretsRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[aws key hidden]",
+    );
+  });
+
+  it("does not mask a token split across two paragraphs", () => {
+    const half = Math.floor(AWS_KEY.length / 2);
+    document.body.innerHTML = `<p>${AWS_KEY.slice(0, half)}</p><p>${AWS_KEY.slice(half)}</p>`;
+    secretsRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+});
+
 describe("secrets-redact lazy-loaded subtrees", () => {
   it("masks secrets appearing after a client-side route change", async () => {
     secretsRedactRule.apply(document.body);

@@ -26,7 +26,11 @@
 // catch payloads rendered inside web-component shadow trees. Closed
 // shadow roots are opaque by design and not visited.
 
-import { collectTextNodesShadowPiercing } from "./dom-utils";
+import type { TextNodeWithInlineGroup } from "./dom-utils";
+import {
+  collectTextNodesShadowPiercing,
+  collectTextNodesWithInlineGroups,
+} from "./dom-utils";
 
 export interface WalkTextNodesChunkedOptions {
   // Aborts the walk at the next chunk boundary. Already-processed
@@ -127,6 +131,92 @@ export function walkTextNodesChunked(
       index = end;
     }
     return index < texts.length ? "yield" : "done";
+  }
+
+  function continueAsync(): void {
+    void yieldStrategy().then(() => {
+      if (signal?.aborted) {
+        return;
+      }
+      if (runChunkSync() === "done") {
+        runFinalize();
+      } else {
+        continueAsync();
+      }
+    });
+  }
+
+  if (runChunkSync() === "done") {
+    runFinalize();
+  } else {
+    continueAsync();
+  }
+}
+
+export interface WalkTextNodeGroupsChunkedOptions {
+  signal?: AbortSignal;
+  minLength?: number;
+  shouldSkipParent?: (parent: Element) => boolean;
+  chunkSize?: number;
+  // Same chunking contract as `walkTextNodesChunked`, but each entry
+  // carries its inline-formatting-context id so the consumer can detect
+  // matches that span sibling text nodes within one inline context.
+  // Chunk boundaries can fall mid-group — group id is stable across
+  // chunks, so a consumer that batches by group can detect that on its
+  // own.
+  process: (chunk: TextNodeWithInlineGroup[]) => void;
+  onComplete?: () => void;
+  yieldStrategy?: () => Promise<void>;
+}
+
+// Group-aware variant of `walkTextNodesChunked`. Same chunked-yield
+// semantics; the only difference is the item type. Existing callers
+// (prompt-injection-redact) keep using the non-group walker; the
+// `inline-text-redact` factory uses this one to enable cross-node
+// detection.
+export function walkTextNodeGroupsChunked(
+  root: ParentNode,
+  options: WalkTextNodeGroupsChunkedOptions,
+): void {
+  const {
+    signal,
+    minLength = 0,
+    shouldSkipParent,
+    chunkSize = 100,
+    process,
+    onComplete,
+    yieldStrategy = defaultYieldStrategy,
+  } = options;
+
+  if (signal?.aborted) {
+    return;
+  }
+
+  const entries = collectTextNodesWithInlineGroups(
+    root,
+    shouldSkipParent ? { minLength, shouldSkipParent } : { minLength },
+  );
+
+  if (signal?.aborted) {
+    return;
+  }
+
+  let index = 0;
+
+  function runFinalize(): void {
+    if (signal?.aborted) {
+      return;
+    }
+    onComplete?.();
+  }
+
+  function runChunkSync(): "yield" | "done" {
+    const end = Math.min(index + chunkSize, entries.length);
+    if (end > index) {
+      process(entries.slice(index, end));
+      index = end;
+    }
+    return index < entries.length ? "yield" : "done";
   }
 
   function continueAsync(): void {
