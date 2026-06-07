@@ -188,6 +188,37 @@ describe("pii-redact cross-node detection", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
+  // Regression: when two single-node matches both live in the same text
+  // node of a multi-node bucket, applying matches sequentially used to
+  // detach the text node on the first replace, so the second match
+  // silently dropped. Reported by unblocked review bot on PR #210.
+  it("masks two matches that share a text node in a multi-node bucket", () => {
+    document.body.innerHTML =
+      "<p><span>SSN: 123-45-6789 Card: 4111 1111 1111 1111</span><span> end</span></p>";
+    piiRedactRule.apply(document.body);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(2);
+    expect(document.body.textContent).not.toContain("123-45-6789");
+    expect(document.body.textContent).not.toContain("4111 1111 1111 1111");
+  });
+
+  // Same root cause as above, different shape: a cross-node phone match
+  // shares its lastNode with a single-node card match. Sequential
+  // application either dropped one match or shifted its offsets so the
+  // wrong characters were redacted.
+  it("masks a cross-node phone and a single-node card sharing a text node", () => {
+    document.body.innerHTML =
+      "<p>Contact <span>(555) 123-</span><span>4567 then card 4111 1111 1111 1111 end</span></p>";
+    piiRedactRule.apply(document.body);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(2);
+    expect(document.body.textContent).not.toContain("(555) 123-4567");
+    expect(document.body.textContent).not.toContain("4111 1111 1111 1111");
+    // The "4567" digits used to leak when the cross-node's lastNode
+    // truncation didn't apply because card had already detached N2.
+    expect(document.body.textContent).not.toMatch(/4567/);
+  });
+
   it("reveals the original split text on click of a cross-node placeholder", () => {
     document.body.innerHTML =
       "<p>Card: <span>4111 </span><span>1111 </span><span>1111 </span><span>1111</span></p>";

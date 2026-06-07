@@ -31,9 +31,9 @@
 import { ReusableAbortController } from "abort-utils";
 import type { Rule } from "../rules/types";
 import type { TextNodeWithInlineGroup } from "./dom-utils";
-import type { InlineMatch } from "./placeholder";
+import type { InlineMatch, MultiNodeMatch } from "./placeholder";
 import {
-  replaceMatchAcrossTextNodes,
+  replaceMatchesAcrossTextNodes,
   replaceMatchesInTextNode,
 } from "./placeholder";
 import { subscribeRouteChange } from "./route-change";
@@ -175,12 +175,17 @@ function buildBucketLayout(bucket: TextNodeWithInlineGroup[]): BucketLayout {
 // each match. Single-node buckets fall through `replaceMatchesInTextNode`
 // (bit-identical to the pre-grouping behavior). Multi-node buckets
 // concatenate values, run `collectMatches` on the concatenation, then
-// route each match to single-node or cross-node materializer based on
-// whether it straddles a node boundary.
+// hand the full match set to `replaceMatchesAcrossTextNodes` which
+// applies all mutations atomically per affected node.
 //
-// Multi-node matches are applied last-to-first so each application's
-// position references stay valid as later (rightward) mutations land
-// first and leave earlier offsets untouched.
+// All-at-once application is load-bearing: applying matches sequentially
+// would let each match invalidate the layout offsets the next match
+// depends on (a single-node match replaces its text node, detaching it
+// from the DOM and silently dropping any later match into the same node;
+// a cross-node match truncates a boundary node's value, shifting offsets
+// for any later match in that node). The plural helper plans every
+// affected node's new content from a single snapshot of the originals,
+// so each text node is mutated exactly once.
 function processBucket(
   bucket: TextNodeWithInlineGroup[],
   ruleId: RuleId,
@@ -213,31 +218,19 @@ function processBucket(
     return;
   }
 
-  for (const match of matches.toReversed()) {
+  const multiMatches: MultiNodeMatch[] = [];
+  for (const match of matches) {
     const start = locateStart(layout, match.start);
     const end = locateEnd(layout, match.end);
-    if (start.index === end.index) {
-      const node = layout.nodes[start.index];
-      if (!node) {
-        continue;
-      }
-      replaceMatchesInTextNode(
-        node,
-        [{ start: start.offset, end: end.offset, label: match.label }],
-        ruleId,
-      );
-      continue;
-    }
-    replaceMatchAcrossTextNodes(
-      layout.nodes,
-      start.index,
-      start.offset,
-      end.index,
-      end.offset,
-      ruleId,
-      match.label,
-    );
+    multiMatches.push({
+      startIndex: start.index,
+      startOffset: start.offset,
+      endIndex: end.index,
+      endOffset: end.offset,
+      label: match.label,
+    });
   }
+  replaceMatchesAcrossTextNodes(layout.nodes, multiMatches, ruleId);
 }
 
 // Translate a concatenated-string offset to (node index, local offset).
