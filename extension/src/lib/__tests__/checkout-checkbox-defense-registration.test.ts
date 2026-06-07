@@ -6,6 +6,19 @@
 // `webdriver-probe-registration.test.ts` — same shape, different script
 // id and filename. The module syncs chrome.scripting state against
 // (rule-enabled AND enforcement-enabled).
+//
+// `chrome.scripting`'s in-memory store comes from the shared
+// `installScriptingRegistry()` helper, see
+// `__test-mocks__/chrome-scripting-registry.ts`.
+
+import type {
+  RegisteredScript,
+  ScriptingRegistryHandle,
+} from "../../__test-mocks__/chrome-scripting-registry";
+import {
+  flushScriptingPromises,
+  installScriptingRegistry,
+} from "../../__test-mocks__/chrome-scripting-registry";
 
 jest.mock("nanoid", () => ({ nanoid: () => "test-ref" }));
 jest.mock("abort-utils", () => ({
@@ -22,31 +35,11 @@ jest.mock("abort-utils", () => ({
   },
 }));
 
-const defenseRegister = chrome.scripting
-  .registerContentScripts as unknown as jest.Mock;
-const defenseUnregister = chrome.scripting
-  .unregisterContentScripts as unknown as jest.Mock;
-const defenseGetRegistered = chrome.scripting
-  .getRegisteredContentScripts as unknown as jest.Mock;
-
 interface DefenseModule {
   startCheckoutCheckboxDefenseRegistration: () => void;
 }
 
-interface DefenseScript {
-  id: string;
-  matches: string[];
-  js: string[];
-  runAt: string;
-  world: string;
-  allFrames: boolean;
-}
-
-function flushDefense(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-}
+let registry: ScriptingRegistryHandle;
 
 async function loadDefenseModule(
   overrides: Record<string, boolean>,
@@ -58,46 +51,18 @@ async function loadDefenseModule(
   await jest.isolateModulesAsync(async () => {
     process.env.EXTENSION_DEFAULT_OVERRIDES = JSON.stringify(overrides);
 
-    const registered: DefenseScript[] = initiallyRegistered
-      ? [
-          {
-            id: "checkout-checkbox-sanitize-main-world",
-            matches: ["<all_urls>"],
-            js: ["checkout-checkbox-defense.js"],
-            runAt: "document_start",
-            world: "MAIN",
-            allFrames: true,
-          },
-        ]
-      : [];
-
-    defenseRegister.mockImplementation(
-      (scripts: DefenseScript[]): Promise<void> => {
-        registered.push(...scripts);
-        return Promise.resolve();
-      },
-    );
-    defenseUnregister.mockImplementation(
-      (filter: { ids: string[] }): Promise<void> => {
-        for (const id of filter.ids) {
-          const index = registered.findIndex((script) => script.id === id);
-          if (index !== -1) {
-            registered.splice(index, 1);
-          }
-        }
-        return Promise.resolve();
-      },
-    );
-    defenseGetRegistered.mockImplementation(
-      (filter?: { ids?: string[] }): Promise<DefenseScript[]> => {
-        if (!filter?.ids) {
-          return Promise.resolve([...registered]);
-        }
-        return Promise.resolve(
-          registered.filter((script) => filter.ids?.includes(script.id)),
-        );
-      },
-    );
+    if (initiallyRegistered) {
+      registry.seed([
+        {
+          id: "checkout-checkbox-sanitize-main-world",
+          matches: ["<all_urls>"],
+          js: ["checkout-checkbox-defense.js"],
+          runAt: "document_start",
+          world: "MAIN",
+          allFrames: true,
+        },
+      ]);
+    }
 
     const enforcement = await import("../enforcement");
     await enforcement.enforcementStorage.set(enforcementEnabled);
@@ -109,9 +74,7 @@ async function loadDefenseModule(
 }
 
 beforeEach(() => {
-  defenseRegister.mockReset();
-  defenseUnregister.mockReset();
-  defenseGetRegistered.mockReset();
+  registry = installScriptingRegistry();
 });
 
 afterEach(() => {
@@ -125,10 +88,12 @@ describe("startCheckoutCheckboxDefenseRegistration", () => {
     });
 
     module.startCheckoutCheckboxDefenseRegistration();
-    await flushDefense();
+    await flushScriptingPromises();
 
-    expect(defenseRegister).toHaveBeenCalledTimes(1);
-    const [scripts] = defenseRegister.mock.calls[0] as [DefenseScript[]];
+    expect(registry.registerMock).toHaveBeenCalledTimes(1);
+    const [scripts] = registry.registerMock.mock.calls[0] as [
+      RegisteredScript[],
+    ];
     expect(scripts[0]).toMatchObject({
       id: "checkout-checkbox-sanitize-main-world",
       matches: ["<all_urls>"],
@@ -148,10 +113,10 @@ describe("startCheckoutCheckboxDefenseRegistration", () => {
     });
 
     module.startCheckoutCheckboxDefenseRegistration();
-    await flushDefense();
+    await flushScriptingPromises();
 
-    expect(defenseRegister).not.toHaveBeenCalled();
-    expect(defenseUnregister).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
+    expect(registry.unregisterMock).not.toHaveBeenCalled();
   });
 
   it("unregisters when an already-registered script becomes ineligible", async () => {
@@ -162,9 +127,9 @@ describe("startCheckoutCheckboxDefenseRegistration", () => {
     );
 
     module.startCheckoutCheckboxDefenseRegistration();
-    await flushDefense();
+    await flushScriptingPromises();
 
-    expect(defenseUnregister).toHaveBeenCalledWith({
+    expect(registry.unregisterMock).toHaveBeenCalledWith({
       ids: ["checkout-checkbox-sanitize-main-world"],
     });
   });
@@ -177,10 +142,10 @@ describe("startCheckoutCheckboxDefenseRegistration", () => {
     );
 
     module.startCheckoutCheckboxDefenseRegistration();
-    await flushDefense();
+    await flushScriptingPromises();
 
-    expect(defenseRegister).not.toHaveBeenCalled();
-    expect(defenseUnregister).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
+    expect(registry.unregisterMock).not.toHaveBeenCalled();
   });
 
   it("treats enforcement-off as if the rule were disabled", async () => {
@@ -190,8 +155,8 @@ describe("startCheckoutCheckboxDefenseRegistration", () => {
     );
 
     module.startCheckoutCheckboxDefenseRegistration();
-    await flushDefense();
+    await flushScriptingPromises();
 
-    expect(defenseRegister).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
   });
 });

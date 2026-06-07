@@ -7,9 +7,19 @@
 // so the test covers the four corners plus the no-op short-circuits when
 // the desired state already matches the current one.
 //
-// chrome.* APIs come from jest-webextension-mock + chrome-mv3-extras
-// (wired via `setupFiles` in jest.config.cjs). Each loadModule call
-// replays a stateful registration store on top of those stubs.
+// `chrome.scripting`'s in-memory store comes from the shared
+// `installScriptingRegistry()` helper — same store semantics as the
+// other main-world registration tests, see
+// `__test-mocks__/chrome-scripting-registry.ts` for the contract.
+
+import type {
+  RegisteredScript,
+  ScriptingRegistryHandle,
+} from "../../__test-mocks__/chrome-scripting-registry";
+import {
+  flushScriptingPromises,
+  installScriptingRegistry,
+} from "../../__test-mocks__/chrome-scripting-registry";
 
 // See storage.test.ts for the rationale on these mocks — the storage
 // module pulls in the full rule catalog transitively.
@@ -28,34 +38,11 @@ jest.mock("abort-utils", () => ({
   },
 }));
 
-// chrome.scripting comes from chrome-mv3-extras.ts; @types/chrome types the
-// methods as plain functions, so cast each one to a jest.Mock for the
-// mock-control surface (mockImplementation, mockReset, .mock.calls).
-const registerMock = chrome.scripting
-  .registerContentScripts as unknown as jest.Mock;
-const unregisterMock = chrome.scripting
-  .unregisterContentScripts as unknown as jest.Mock;
-const getRegisteredMock = chrome.scripting
-  .getRegisteredContentScripts as unknown as jest.Mock;
-
 interface RegistrationModule {
   startWebdriverProbeRegistration: () => void;
 }
 
-interface RegisteredScript {
-  id: string;
-  matches: string[];
-  js: string[];
-  runAt: string;
-  world: string;
-  allFrames: boolean;
-}
-
-function flushPromises(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-}
+let registry: ScriptingRegistryHandle;
 
 async function loadModule(
   overrides: Record<string, boolean>,
@@ -67,46 +54,18 @@ async function loadModule(
   await jest.isolateModulesAsync(async () => {
     process.env.EXTENSION_DEFAULT_OVERRIDES = JSON.stringify(overrides);
 
-    const registered: RegisteredScript[] = initiallyRegistered
-      ? [
-          {
-            id: "webdriver-probe-annotate-main-world",
-            matches: ["<all_urls>"],
-            js: ["webdriver-probe.js"],
-            runAt: "document_start",
-            world: "MAIN",
-            allFrames: false,
-          },
-        ]
-      : [];
-
-    registerMock.mockImplementation(
-      (scripts: RegisteredScript[]): Promise<void> => {
-        registered.push(...scripts);
-        return Promise.resolve();
-      },
-    );
-    unregisterMock.mockImplementation(
-      (filter: { ids: string[] }): Promise<void> => {
-        for (const id of filter.ids) {
-          const index = registered.findIndex((script) => script.id === id);
-          if (index !== -1) {
-            registered.splice(index, 1);
-          }
-        }
-        return Promise.resolve();
-      },
-    );
-    getRegisteredMock.mockImplementation(
-      (filter?: { ids?: string[] }): Promise<RegisteredScript[]> => {
-        if (!filter?.ids) {
-          return Promise.resolve([...registered]);
-        }
-        return Promise.resolve(
-          registered.filter((script) => filter.ids?.includes(script.id)),
-        );
-      },
-    );
+    if (initiallyRegistered) {
+      registry.seed([
+        {
+          id: "webdriver-probe-annotate-main-world",
+          matches: ["<all_urls>"],
+          js: ["webdriver-probe.js"],
+          runAt: "document_start",
+          world: "MAIN",
+          allFrames: false,
+        },
+      ]);
+    }
 
     const enforcement = await import("../enforcement");
     await enforcement.enforcementStorage.set(enforcementEnabled);
@@ -118,9 +77,7 @@ async function loadModule(
 }
 
 beforeEach(() => {
-  registerMock.mockReset();
-  unregisterMock.mockReset();
-  getRegisteredMock.mockReset();
+  registry = installScriptingRegistry();
 });
 
 afterEach(() => {
@@ -134,10 +91,12 @@ describe("startWebdriverProbeRegistration", () => {
     });
 
     module.startWebdriverProbeRegistration();
-    await flushPromises();
+    await flushScriptingPromises();
 
-    expect(registerMock).toHaveBeenCalledTimes(1);
-    const [scripts] = registerMock.mock.calls[0] as [RegisteredScript[]];
+    expect(registry.registerMock).toHaveBeenCalledTimes(1);
+    const [scripts] = registry.registerMock.mock.calls[0] as [
+      RegisteredScript[],
+    ];
     expect(scripts[0]).toMatchObject({
       id: "webdriver-probe-annotate-main-world",
       matches: ["<all_urls>"],
@@ -154,10 +113,10 @@ describe("startWebdriverProbeRegistration", () => {
     });
 
     module.startWebdriverProbeRegistration();
-    await flushPromises();
+    await flushScriptingPromises();
 
-    expect(registerMock).not.toHaveBeenCalled();
-    expect(unregisterMock).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
+    expect(registry.unregisterMock).not.toHaveBeenCalled();
   });
 
   it("unregisters when an already-registered script becomes ineligible", async () => {
@@ -168,9 +127,9 @@ describe("startWebdriverProbeRegistration", () => {
     );
 
     module.startWebdriverProbeRegistration();
-    await flushPromises();
+    await flushScriptingPromises();
 
-    expect(unregisterMock).toHaveBeenCalledWith({
+    expect(registry.unregisterMock).toHaveBeenCalledWith({
       ids: ["webdriver-probe-annotate-main-world"],
     });
   });
@@ -183,10 +142,10 @@ describe("startWebdriverProbeRegistration", () => {
     );
 
     module.startWebdriverProbeRegistration();
-    await flushPromises();
+    await flushScriptingPromises();
 
-    expect(registerMock).not.toHaveBeenCalled();
-    expect(unregisterMock).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
+    expect(registry.unregisterMock).not.toHaveBeenCalled();
   });
 
   it("treats enforcement-off as if the rule were disabled", async () => {
@@ -196,8 +155,8 @@ describe("startWebdriverProbeRegistration", () => {
     );
 
     module.startWebdriverProbeRegistration();
-    await flushPromises();
+    await flushScriptingPromises();
 
-    expect(registerMock).not.toHaveBeenCalled();
+    expect(registry.registerMock).not.toHaveBeenCalled();
   });
 });
