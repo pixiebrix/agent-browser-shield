@@ -199,6 +199,205 @@ function sortedSplitsArb(length: number) {
     .map((indices) => indices.toSorted((a, b) => a - b));
 }
 
+// Text-cipher helpers. Encode benign-prose generators into cipher form
+// at test time so the source file holds only ciphertext or symbolic
+// runs — adversarial phrasing never appears in plaintext.
+
+const A_CODE = 65;
+const a_CODE = 97;
+
+function rot13(text: string): string {
+  return text.replaceAll(/[a-zA-Z]/g, (c) => {
+    const code = c.codePointAt(0) ?? 0;
+    const base = code >= a_CODE ? a_CODE : A_CODE;
+    return String.fromCodePoint(((code - base + 13) % 26) + base);
+  });
+}
+
+function atbash(text: string): string {
+  return text.replaceAll(/[a-zA-Z]/g, (c) => {
+    const code = c.codePointAt(0) ?? 0;
+    const base = code >= a_CODE ? a_CODE : A_CODE;
+    return String.fromCodePoint(26 - 1 - (code - base) + base);
+  });
+}
+
+function reverseText(text: string): string {
+  // `charAt` (vs `text[i]`) keeps the result `string` rather than
+  // `string | undefined`. Test inputs are pure ASCII so no
+  // astral-pair correctness concern with code-unit iteration.
+  let out = "";
+  for (let i = text.length - 1; i >= 0; i--) {
+    out += text.charAt(i);
+  }
+  return out;
+}
+
+const NATO_ENCODE: Record<string, string> = {
+  A: "alpha",
+  B: "bravo",
+  C: "charlie",
+  D: "delta",
+  E: "echo",
+  F: "foxtrot",
+  G: "golf",
+  H: "hotel",
+  I: "india",
+  J: "juliet",
+  K: "kilo",
+  L: "lima",
+  M: "mike",
+  N: "november",
+  O: "oscar",
+  P: "papa",
+  Q: "quebec",
+  R: "romeo",
+  S: "sierra",
+  T: "tango",
+  U: "uniform",
+  V: "victor",
+  W: "whiskey",
+  X: "xray",
+  Y: "yankee",
+  Z: "zulu",
+};
+
+function natoEncode(letters: string): string {
+  const out: string[] = [];
+  for (const char of letters.toUpperCase()) {
+    const word = NATO_ENCODE[char];
+    if (word) {
+      out.push(word);
+    }
+  }
+  return out.join(" ");
+}
+
+// Vocabulary of common English function words drawn from the rule's
+// internal qualifier set. Built-in fast-check generators can't conjure
+// "looks English to the rule" prose, so the property tests sample from
+// this list to build sentences guaranteed to clear the common-word
+// floor — no need to enumerate the rule's set in two places, just keep
+// a representative subset here.
+const COMMON_WORD_VOCAB = [
+  "the",
+  "and",
+  "you",
+  "for",
+  "this",
+  "that",
+  "with",
+  "have",
+  "from",
+  "when",
+  "what",
+  "should",
+  "could",
+  "would",
+  "must",
+  "your",
+  "their",
+  "every",
+  "other",
+  "every",
+] as const;
+
+const commonProseArb = fc
+  .array(fc.constantFrom(...COMMON_WORD_VOCAB), {
+    minLength: 20,
+    maxLength: 40,
+  })
+  .map((words) => words.join(" "))
+  .filter((s) => s.length >= 80);
+
+// Random letters A..Z. Filter out runs that are strict alphabet
+// sequences (ABCDE…) — the rule treats those as instructional content.
+const natoLettersArb = fc
+  .array(
+    fc
+      .integer({ min: 0, max: 25 })
+      .map((i) => String.fromCodePoint(A_CODE + i)),
+    { minLength: 10, maxLength: 24 },
+  )
+  .map((letters) => letters.join(""))
+  .filter((letters) => {
+    for (let i = 1; i < letters.length; i++) {
+      const previous = letters.codePointAt(i - 1) ?? 0;
+      const current = letters.codePointAt(i) ?? 0;
+      if (current - previous !== 1) {
+        return true;
+      }
+    }
+    return false;
+  });
+
+describe("encoded-payload-redact text ciphers (property)", () => {
+  it("redacts ROT13-encoded common-word prose", () => {
+    fc.assert(
+      fc.property(commonProseArb, (prose) => {
+        const ciphertext = rot13(prose);
+        // Parens delimit the cipher candidate so surrounding context
+        // doesn't get pulled into the match (`(` is outside the
+        // candidate's allowed char class).
+        const body = applyToText(`(prefix) ${ciphertext} (suffix)`);
+        expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+          "[encoded payload hidden]",
+        );
+        expect(body.textContent).not.toContain(ciphertext);
+      }),
+    );
+  });
+
+  it("redacts Atbash-encoded common-word prose", () => {
+    fc.assert(
+      fc.property(commonProseArb, (prose) => {
+        const ciphertext = atbash(prose);
+        const body = applyToText(`(prefix) ${ciphertext} (suffix)`);
+        expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+          "[encoded payload hidden]",
+        );
+        expect(body.textContent).not.toContain(ciphertext);
+      }),
+    );
+  });
+
+  it("redacts reversed common-word prose", () => {
+    fc.assert(
+      fc.property(commonProseArb, (prose) => {
+        const ciphertext = reverseText(prose);
+        const body = applyToText(`(prefix) ${ciphertext} (suffix)`);
+        expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+          "[encoded payload hidden]",
+        );
+        expect(body.textContent).not.toContain(ciphertext);
+      }),
+    );
+  });
+
+  it("redacts NATO-phonetic runs of >= 10 non-sequential letters", () => {
+    fc.assert(
+      fc.property(natoLettersArb, (letters) => {
+        const ciphertext = natoEncode(letters);
+        const body = applyToText(`(prefix) ${ciphertext} (suffix)`);
+        expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+          "[encoded payload hidden]",
+        );
+        expect(body.textContent).not.toContain(ciphertext);
+      }),
+    );
+  });
+
+  it("leaves plain English common-word prose alone (no cipher false-fire)", () => {
+    fc.assert(
+      fc.property(commonProseArb, (prose) => {
+        const body = applyToText(prose);
+        expect(body.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+        expect(body.textContent).toContain(prose);
+      }),
+    );
+  });
+});
+
 describe("encoded-payload-redact cross-node detection (property)", () => {
   it("redacts base64 payloads regardless of how they're split across sibling spans", () => {
     fc.assert(

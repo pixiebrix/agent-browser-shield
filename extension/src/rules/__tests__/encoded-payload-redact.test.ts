@@ -45,6 +45,151 @@ function percentEncode(text: string): string {
   return out;
 }
 
+// Benign English sentence rich in distinct common function words. Used as
+// the *cleartext* for the text-cipher positive cases: the ciphers
+// encode this string at test time so the source file holds only the
+// resulting gibberish (ROT13/Atbash) or symbolic form (NATO/Morse),
+// keeping adversarial phrasing out of the file while still exercising
+// the decoded common-word qualifier (>= 3 distinct hits).
+const CIPHER_CLEARTEXT =
+  "you can see this from above and you know what should come next " +
+  "when the time comes for you to look around";
+
+function rot13(text: string): string {
+  const A = 65;
+  const a = 97;
+  return text.replaceAll(/[a-zA-Z]/g, (c) => {
+    const code = c.codePointAt(0) ?? 0;
+    const base = code >= a ? a : A;
+    return String.fromCodePoint(((code - base + 13) % 26) + base);
+  });
+}
+
+function atbash(text: string): string {
+  const A = 65;
+  const a = 97;
+  return text.replaceAll(/[a-zA-Z]/g, (c) => {
+    const code = c.codePointAt(0) ?? 0;
+    const base = code >= a ? a : A;
+    return String.fromCodePoint(26 - 1 - (code - base) + base);
+  });
+}
+
+function reverseText(text: string): string {
+  // `charAt` (vs `text[i]`) keeps the result `string` rather than
+  // `string | undefined`. Test inputs are pure ASCII so no
+  // astral-pair correctness concern with code-unit iteration.
+  let out = "";
+  for (let i = text.length - 1; i >= 0; i--) {
+    out += text.charAt(i);
+  }
+  return out;
+}
+
+const LEET_ENCODE: Record<string, string> = {
+  o: "0",
+  i: "1",
+  e: "3",
+  a: "4",
+  s: "5",
+  t: "7",
+  b: "8",
+};
+
+function leetEncode(text: string): string {
+  return text.replaceAll(
+    /[oieasbtOIEASBT]/g,
+    (c) => LEET_ENCODE[c.toLowerCase()] ?? c,
+  );
+}
+
+const NATO_ENCODE: Record<string, string> = {
+  A: "alpha",
+  B: "bravo",
+  C: "charlie",
+  D: "delta",
+  E: "echo",
+  F: "foxtrot",
+  G: "golf",
+  H: "hotel",
+  I: "india",
+  J: "juliet",
+  K: "kilo",
+  L: "lima",
+  M: "mike",
+  N: "november",
+  O: "oscar",
+  P: "papa",
+  Q: "quebec",
+  R: "romeo",
+  S: "sierra",
+  T: "tango",
+  U: "uniform",
+  V: "victor",
+  W: "whiskey",
+  X: "xray",
+  Y: "yankee",
+  Z: "zulu",
+};
+
+function natoEncode(letters: string): string {
+  const out: string[] = [];
+  for (const char of letters.toUpperCase()) {
+    const word = NATO_ENCODE[char];
+    if (word) {
+      out.push(word);
+    }
+  }
+  return out.join(" ");
+}
+
+const MORSE_ENCODE: Record<string, string> = {
+  A: ".-",
+  B: "-...",
+  C: "-.-.",
+  D: "-..",
+  E: ".",
+  F: "..-.",
+  G: "--.",
+  H: "....",
+  I: "..",
+  J: ".---",
+  K: "-.-",
+  L: ".-..",
+  M: "--",
+  N: "-.",
+  O: "---",
+  P: ".--.",
+  Q: "--.-",
+  R: ".-.",
+  S: "...",
+  T: "-",
+  U: "..-",
+  V: "...-",
+  W: ".--",
+  X: "-..-",
+  Y: "-.--",
+  Z: "--..",
+};
+
+function morseEncode(text: string): string {
+  return text
+    .toUpperCase()
+    .split(" ")
+    .map((word) => {
+      const symbols: string[] = [];
+      for (const c of word) {
+        const sym = MORSE_ENCODE[c];
+        if (sym) {
+          symbols.push(sym);
+        }
+      }
+      return symbols.join(" ");
+    })
+    .filter(Boolean)
+    .join(" / ");
+}
+
 const MUTATION_THROTTLE_MS = 250;
 
 async function flushMutations(): Promise<void> {
@@ -272,6 +417,145 @@ describe("encoded-payload-redact cross-node detection", () => {
     const payload = base64Encode(LONG_PROSE);
     const half = Math.floor(payload.length / 2);
     document.body.innerHTML = `<div>${payload.slice(0, half)}</div><div>${payload.slice(half)}</div>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+});
+
+describe("encoded-payload-redact text-cipher positive cases", () => {
+  it("redacts a ROT13-encoded English sentence", () => {
+    const ciphertext = rot13(CIPHER_CLEARTEXT);
+    // Parens break the cipher candidate regex (`(` and `)` aren't in its
+    // char class), so the surrounding prose stays as its own text run.
+    document.body.innerHTML = `<p>(prefix) ${ciphertext} (suffix)</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+    expect(document.body.textContent).toContain("(prefix)");
+    expect(document.body.textContent).toContain("(suffix)");
+  });
+
+  it("redacts an Atbash-encoded English sentence", () => {
+    const ciphertext = atbash(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+  });
+
+  it("redacts a reversed English sentence", () => {
+    const ciphertext = reverseText(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+  });
+
+  it("redacts a leetspeak-encoded English sentence", () => {
+    const ciphertext = leetEncode(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+  });
+
+  it("redacts a NATO-phonetic spelling run of >= 10 non-sequential letters", () => {
+    // Spells THEQUICKBROWNFOX — 16 NATO tokens, not an alphabet sequence.
+    const ciphertext = natoEncode("thequickbrownfox");
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+  });
+
+  it("redacts a Morse-encoded English phrase", () => {
+    const ciphertext = morseEncode(
+      "the quick brown fox jumps over the lazy dog and you can see this",
+    );
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(ciphertext);
+  });
+});
+
+describe("encoded-payload-redact text-cipher false-positive guards", () => {
+  it("leaves ordinary English prose alone (no cipher fires)", () => {
+    const prose =
+      "You can see this paragraph from the homepage and you know what " +
+      "should come next when the time comes for you to look around.";
+    document.body.innerHTML = `<p>${prose}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(prose);
+  });
+
+  it("leaves a NATO alphabet drill (A..J) visible", () => {
+    // Sequential NATO spelling — the rule treats this as instructional
+    // content (alphabet page / signal-corps drill), not a payload.
+    const drill =
+      "alpha bravo charlie delta echo foxtrot golf hotel india juliet";
+    document.body.innerHTML = `<p>${drill}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(drill);
+  });
+
+  it("leaves a short ROT13 snippet (under 80-char floor) alone", () => {
+    const ciphertext = rot13("you can see this from above");
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("leaves text with a single incidental digit alone (leet floor)", () => {
+    // Product copy with one leet-shape digit ("1") — below the
+    // MIN_LEET_SUBSTITUTIONS=4 floor, so the leet detector skips it.
+    const prose =
+      "Limited time offer for 1 day only: get our flagship product before midnight tonight and have it shipped tomorrow.";
+    document.body.innerHTML = `<p>${prose}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("leaves a sparse dot/dash ASCII-art run alone (Morse valid-ratio floor)", () => {
+    // Repeating `--- . --- . ---` style separators — many tokens but
+    // most decode to letters with no decoded common-word hits, and the
+    // chosen pattern is below the valid-ratio + common-word qualifiers.
+    const ascii = "... --- ... --- ... --- ... --- ... --- ... --- ...";
+    document.body.innerHTML = `<p>${ascii}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("leaves a single NATO word in prose alone (below 10-word floor)", () => {
+    const prose =
+      "Our flagship product is called Tango and customers love it for the quality of the materials.";
+    document.body.innerHTML = `<p>${prose}</p>`;
     encodedPayloadRedactRule.apply(document.body);
 
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
