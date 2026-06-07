@@ -372,31 +372,32 @@ metadata that has no visible counterpart.
 
 ### Cross-origin surface
 
-#### Hide Embedded Frames (Experimental)
+#### Hide Cross-Origin Frames (Experimental)
 
 - **ID:** `cross-origin-frame-redact`
 - **Default:** off
 
-Replace embedded frame-like elements with a click-to-reveal placeholder so a
-browser-use agent reading the parent page doesn't ingest the embedded content.
-Three carriers are covered:
+Replace cross-origin embedded frame-like elements with a click-to-reveal
+placeholder so a browser-use agent reading the parent page doesn't ingest the
+embedded-origin content. Three carriers are covered:
 
 - `<iframe>` whose `src` resolves to a different web origin,
-- `<object data="…">` and `<embed src="…">` pointing at a different web origin,
-- `<iframe srcdoc="…">` regardless of origin — the inline HTML body wasn't
-  authored as part of the host page and an agent walking the DOM can still
-  ingest it.
+- `<object data="…">` and `<embed src="…">` pointing at a different web origin.
 
-Same-origin iframes/objects/embeds and inert `about:`/`javascript:`/`data:`/
-`blob:` resources are left alone. Each frame in the page processes its own
-direct children, so a cross-origin frame nested inside a same-origin frame is
-also caught. Off by default because legitimate embeds (payment widgets, OAuth
-pop-ins, video, third-party comments, PDF viewers) are common and removing them
-will break those flows until the user reveals.
+Same-origin iframes/objects/embeds, `srcdoc` iframes, and inert
+`about:`/`javascript:`/`data:`/`blob:` resources are left alone. Each frame in
+the page processes its own direct children, so a cross-origin frame nested
+inside a same-origin frame is also caught. Off by default because legitimate
+cross-origin embeds (payment widgets, OAuth pop-ins, video, third-party
+comments, PDF viewers) are common and removing them will break those flows until
+the user reveals.
 
 Motivated by Roesner & Kohlbrenner [[15]](#ref-roesner-sop), which shows that
 agents willing to read cross-origin frame content turn the same-origin policy
-from a hard guarantee into a soft one.
+from a hard guarantee into a soft one. `<object>` and `<embed>` carry the same
+SOP-bypass shape when they load a cross-origin resource. `srcdoc` inherits the
+embedding origin (no SOP crossing) and the content script runs inside the srcdoc
+frame on its own, so existing rules already apply to its body.
 
 #### Flag navigator.webdriver Reads (Experimental)
 

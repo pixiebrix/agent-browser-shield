@@ -1,33 +1,34 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Remove embedded frame-like elements (`<iframe>`, `<object>`, `<embed>`)
-// whose content the embedding page didn't author, and replace them with a
-// click-to-reveal placeholder. A browser-use agent reading the parent page
-// then never ingests the embedded content unless the user explicitly opts in.
+// Remove cross-origin embedded frame-like elements (`<iframe src=…>`,
+// `<object data=…>`, `<embed src=…>`) and replace them with a click-to-reveal
+// placeholder. A browser-use agent reading the parent page then never ingests
+// the embedded-origin content unless the user explicitly opts in.
 //
-// Three carriers are covered:
+// Motivation: Roesner & Kohlbrenner ("Agentic Browsers and the Same-Origin
+// Policy", ICLR 2026 Workshop) show that an agent willing to read content
+// from an embedded cross-origin frame turns a successful prompt injection
+// into a same-origin-policy bypass — exfiltrating cross-origin data, forging
+// cross-origin actions, etc. `<object data=…>` and `<embed src=…>` carry the
+// same SOP-bypass shape when they load a cross-origin resource: the browser
+// composites the embedded document into the parent's render/a11y tree, so
+// an agent that ingests the parent page ingests the cross-origin payload
+// alongside it. Removing the embed entirely is a stronger defense than
+// provenance markers: the agent can't be misled about content it never sees.
+// Ships off by default because legitimate cross-origin embeds (payment
+// widgets, OAuth pop-ins, video, embeds) are common.
 //
-// 1. Cross-origin `<iframe src=…>`: the original Roesner & Kohlbrenner
-//    threat — an agent willing to read content from an embedded cross-origin
-//    frame turns a successful prompt injection into a same-origin-policy
-//    bypass, exfiltrating cross-origin data or forging cross-origin actions
-//    ("Agentic Browsers and the Same-Origin Policy", ICLR 2026 Workshop).
-//
-// 2. Cross-origin `<object data=…>` / `<embed src=…>`: same SOP-bypass shape
-//    as a cross-origin iframe — embedded resources from a different web
-//    origin that the agent might ingest as part of the host page.
-//
-// 3. `<iframe srcdoc=…>`: inherits the embedding origin so isn't a SOP
-//    bypass, but carries inline HTML that wasn't part of the host page's
-//    authored DOM. An agent walking the page can ingest the srcdoc body as
-//    if it were on-page content, which is the same agent-side threat shape
-//    even without the cross-origin angle.
+// srcdoc iframes are deliberately left alone: srcdoc inherits the embedding
+// origin (so there is no SOP crossing), and the manifest's
+// `match_origin_as_fallback: true` setting means the content script runs
+// inside the srcdoc frame, so every other rule already applies to that
+// frame's body.
 //
 // Per-frame: the extension's content script runs in every frame via
 // all_frames: true, so each frame independently hides its own direct
-// embedded children. Nested cross-origin frames inside a same-origin
-// iframe are caught by the same-origin frame's own instance.
+// cross-origin embedded children. Nested cross-origin frames inside a
+// same-origin iframe are caught by the same-origin frame's own instance.
 
 import { REVEALED_ATTR } from "../lib/dom-markers";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
@@ -66,11 +67,10 @@ function resolveExternalOrigin(
 
 function describeRedaction(element: HTMLElement): string | null {
   if (element instanceof HTMLIFrameElement) {
-    // srcdoc takes precedence over src per HTML spec: when both are present,
-    // the browser renders the srcdoc body and ignores src. So check srcdoc
-    // first regardless of whether a (cross-origin) src is also set.
+    // srcdoc inherits the embedding origin and the content script runs
+    // inside the srcdoc frame on its own — not a SOP-bypass carrier, skip.
     if (element.hasAttribute("srcdoc")) {
-      return "Inline frame content";
+      return null;
     }
     const origin = resolveExternalOrigin(element, "src");
     return origin ? `Cross-origin frame from ${origin}` : null;
@@ -133,9 +133,9 @@ function teardown(): void {
 
 export const crossOriginFrameRedactRule = {
   id: RULE_ID,
-  label: "Hide Embedded Frames (Experimental)",
+  label: "Hide Cross-Origin Frames (Experimental)",
   description:
-    "Remove cross-origin iframes, <object>/<embed> resources, and srcdoc iframes from the page and replace them with a click-to-reveal placeholder, so browser-use agents don't ingest embedded content unless the user opts in.",
+    "Remove cross-origin iframes, <object>, and <embed> resources from the page and replace them with a click-to-reveal placeholder, so browser-use agents don't ingest embedded-origin content unless the user opts in.",
   apply,
   teardown,
 } satisfies Rule;

@@ -75,37 +75,31 @@ describe("crossOriginFrameRedactRule", () => {
     expect(getPlaceholder()).toBeNull();
   });
 
-  // srcdoc inherits the embedding origin so isn't a SOP bypass, but the
-  // inline HTML wasn't authored as part of the host page and an agent walking
-  // the DOM can still ingest it. Same agent-side threat as cross-origin
-  // content, so the rule redacts srcdoc frames too.
-  it("replaces a srcdoc iframe with a generic inline-content placeholder", () => {
+  // srcdoc inherits the embedding origin (no SOP crossing) and the manifest's
+  // `match_origin_as_fallback: true` means the content script runs inside the
+  // srcdoc frame, so every other rule already covers its body. Not a carrier
+  // for the Roesner SOP-bypass threat, so the rule leaves it alone.
+  it("leaves a srcdoc iframe alone — inherits the embedding origin", () => {
     document.body.innerHTML = `
       <iframe srcdoc="<p>hi</p>"></iframe>
     `;
     crossOriginFrameRedactRule.apply(document.body);
 
-    expect(document.querySelector("iframe")).toBeNull();
-    const placeholder = getPlaceholder();
-    expect(placeholder).not.toBeNull();
-    // No origin to surface — the body lives in the embedding origin.
-    expect(placeholder?.textContent).toContain("Inline frame content");
+    expect(document.querySelector("iframe")).not.toBeNull();
+    expect(getPlaceholder()).toBeNull();
   });
 
-  // The browser ignores src when srcdoc is present. The rule still redacts,
-  // but via the srcdoc branch — the placeholder reflects inline content
-  // rather than a misleading cross-origin label.
-  it("replaces a srcdoc iframe via the srcdoc branch even when src is also cross-origin", () => {
+  // Even if a srcdoc iframe *also* declares a cross-origin src, srcdoc wins:
+  // the browser ignores src when srcdoc is present and renders the inline
+  // doc in the embedding origin.
+  it("leaves a srcdoc iframe alone even if it also has a cross-origin src", () => {
     document.body.innerHTML = `
       <iframe srcdoc="<p>hi</p>" src="https://example.com/widget"></iframe>
     `;
     crossOriginFrameRedactRule.apply(document.body);
 
-    expect(document.querySelector("iframe")).toBeNull();
-    const placeholder = getPlaceholder();
-    expect(placeholder).not.toBeNull();
-    expect(placeholder?.textContent).toContain("Inline frame content");
-    expect(placeholder?.textContent).not.toContain("example.com");
+    expect(document.querySelector("iframe")).not.toBeNull();
+    expect(getPlaceholder()).toBeNull();
   });
 
   it("leaves an iframe with no src alone", () => {

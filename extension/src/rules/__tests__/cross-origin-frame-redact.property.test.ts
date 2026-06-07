@@ -8,7 +8,8 @@
 //     embed[src] triggers a placeholder,
 //   - same-origin URLs (resolved against document.baseURI) and inert
 //     protocols (about:, data:, javascript:, blob:) are left alone,
-//   - iframe[srcdoc] is always redacted regardless of any src.
+//   - iframe[srcdoc] is always left alone — inherits the embedding origin
+//     and the content script runs inside the srcdoc frame on its own.
 
 import fc from "fast-check";
 
@@ -173,10 +174,11 @@ describe("cross-origin-frame-redact (property)", () => {
     );
   });
 
-  // srcdoc takes precedence over src per spec, so a srcdoc iframe is
-  // always redacted via the inline-content branch regardless of whether
-  // src is absent, same-origin, or cross-origin.
-  it("redacts any iframe with srcdoc set, regardless of accompanying src", () => {
+  // srcdoc inherits the embedding origin — no SOP crossing — and the content
+  // script runs inside the srcdoc frame on its own. The rule leaves it alone
+  // regardless of whether an accompanying src is absent, same-origin, or
+  // cross-origin (the browser ignores src when srcdoc is present).
+  it("leaves any iframe with srcdoc set alone, regardless of accompanying src", () => {
     const ANY_SRC = fc.oneof(
       fc.constant<string | undefined>(undefined),
       SAME_ORIGIN_URL,
@@ -197,13 +199,8 @@ describe("cross-origin-frame-redact (property)", () => {
 
           crossOriginFrameRedactRule.apply(document.body);
 
-          expect(document.querySelector("iframe")).toBeNull();
-          const placeholder = document.querySelector(
-            `.${PLACEHOLDER_CLASS}[${RULE_ATTR}="${RULE_ID}"]`,
-          );
-          expect(placeholder).not.toBeNull();
-          // srcdoc branch never surfaces an origin — it's inline.
-          expect(placeholder?.textContent).toContain("Inline frame content");
+          expect(document.querySelector("iframe")).not.toBeNull();
+          expect(hasPlaceholder()).toBe(false);
 
           crossOriginFrameRedactRule.teardown();
         },
