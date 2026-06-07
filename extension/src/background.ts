@@ -8,6 +8,7 @@ import {
   clearTab as clearDebugTraceTab,
 } from "./lib/debug-trace-store";
 import type {
+  DebugTraceEntry,
   DebugTraceEventMessage,
   DetectionKind,
   DetectionPayload,
@@ -417,19 +418,28 @@ chrome.runtime.onMessage.addListener(
     if (message.type === "debug-trace-event") {
       const tabId = sender.tab?.id;
       const frameId = sender.frameId;
-      const entry = (message as unknown as DebugTraceEventMessage).entry;
+      // `entry` is typed as `unknown` rather than `DebugTraceEntry` so the
+      // runtime guards below are actually type-meaningful — a malformed
+      // sendMessage payload could carry `entry: null` (typeof null is
+      // "object") or omit it entirely, and the cast on the message
+      // envelope wouldn't catch either.
+      const entry: unknown = (message as unknown as DebugTraceEventMessage)
+        .entry;
       if (
         typeof tabId === "number" &&
         typeof frameId === "number" &&
-        typeof entry === "object"
+        typeof entry === "object" &&
+        entry !== null
       ) {
         // Fire-and-forget — IDB writes are async, but the message handler
         // shouldn't block on disk. Pruning happens inside `appendEvent`.
-        void appendDebugTraceEvent(tabId, frameId, entry).catch(
-          (error: unknown) => {
-            log("debug-trace IDB write failed", { error });
-          },
-        );
+        void appendDebugTraceEvent(
+          tabId,
+          frameId,
+          entry as DebugTraceEntry,
+        ).catch((error: unknown) => {
+          log("debug-trace IDB write failed", { error });
+        });
       }
       return undefined;
     }

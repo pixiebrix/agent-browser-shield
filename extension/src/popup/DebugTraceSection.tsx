@@ -145,9 +145,10 @@ function SegmentBlock({ group }: { group: SegmentGroup }) {
         <p className="segment__empty">No rule activity in this segment.</p>
       ) : (
         <ul className="segment__events">
-          {group.events.map((event) => (
+          {group.events.map((event, index) => (
             <RuleApplicationItem
-              key={`${event.segmentId}:${event.timestamp}:${event.ruleId}`}
+              // biome-ignore lint/suspicious/noArrayIndexKey: trace entries within a segment are append-only — the list never reorders or splices, so the index is a stable identifier.
+              key={`${event.segmentId}:${index}`}
               event={event}
             />
           ))}
