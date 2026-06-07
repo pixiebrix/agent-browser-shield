@@ -60,8 +60,57 @@ describe("disguisedAdFlagRule positive cases", () => {
     "Sponsored Content",
     "Sponsored Post",
     "Branded Content",
+    "Featured Listing",
+    "From Our Advertisers",
+    "Marketing Partner",
   ])("hides a card labeled '%s'", (label) => {
     document.body.innerHTML = articleCard({ label });
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("hides a card labeled 'In partnership with Acme'", () => {
+    document.body.innerHTML = articleCard({
+      label: "In partnership with Acme",
+    });
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("hides a card with lowercase '[ad]'", () => {
+    // Audit #203 item 18: lowercase form. Safe because the regex is anchored
+    // on the trimmed textContent with no internal whitespace allowed —
+    // editorial idioms `[ad hoc]` / `[ad lib]` can't match.
+    document.body.innerHTML = articleCard({ label: "[ad]" });
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it('hides a card whose heading is a `<div class="headline">` instead of an h*', () => {
+    document.body.innerHTML = `
+      <article class="post" data-fixture="card">
+        <span class="label">Sponsored</span>
+        <div class="headline"><a href="/x">Acme energy drinks are the future of hydration</a></div>
+        <img src="hero.jpg" alt="" />
+        <p>A long-form look at how Acme reformulated its flagship beverage to taste less metallic while keeping the same caffeine load and electrolyte balance.</p>
+        <a href="/x">Read more</a>
+      </article>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+    expect(document.querySelector('[data-fixture="card"]')).toBeNull();
+  });
+
+  it("hides a card whose heading is `[role=heading]` on a div", () => {
+    document.body.innerHTML = `
+      <article class="post" data-fixture="card">
+        <span class="label">Sponsored</span>
+        <div role="heading" aria-level="2"><a href="/x">Acme drinks are the future</a></div>
+        <img src="hero.jpg" alt="" />
+        <p>A long-form look at how Acme reformulated its flagship beverage to taste less metallic while keeping the same caffeine load and electrolyte balance.</p>
+        <a href="/x">Read more</a>
+      </article>
+    `;
     disguisedAdFlagRule.apply(document.body);
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
   });

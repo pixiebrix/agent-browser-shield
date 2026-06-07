@@ -11,12 +11,10 @@
 
 import { registrableDomain } from "./domain-trust";
 
-// Schema.org @type values we treat as carrying organizational authority.
-// `Person` is intentionally excluded: legitimate guest authors and
-// outside contributors routinely link to personal sites, so a
-// cross-domain `author.url` is too noisy to act on in V1. The
-// `Organization` subtypes we list here are the ones we see in real-world
-// publisher / sourceOrganization / ClaimReview.author markup.
+// Schema.org @type values we treat as carrying organizational authority
+// strongly enough to *blank* identity fields when the URL doesn't match.
+// `Person` is intentionally NOT in this set — see ANNOTATE_ONLY_AUTHORITY_TYPES
+// below for the weaker treatment.
 //
 // Match is by substring on the bare type name so a `@type` of
 // `"https://schema.org/NewsMediaOrganization"` (the long-form IRI form)
@@ -32,11 +30,55 @@ export const AUTHORITY_TYPES: ReadonlySet<string> = new Set([
   "MediaOrganization",
 ]);
 
+// Schema.org @type values we treat as carrying *borrowed* authority — strong
+// enough to flag a cross-RD URL as unverifiable, not strong enough to blank
+// the identity outright. Concretely: `Person`. We can't sanitize Person.url
+// mismatches because they're routinely legitimate (a guest author on
+// nytimes.com linking to their personal site at janedoe.example, an academic
+// `author` whose `url` is their university page). But the same shape is also
+// the exact carrier for byline impersonation — a scam page asserting
+// `Article.author = Person{name:"Sanjay Gupta", url:"cnn.com"}` to borrow
+// CNN's authority. The annotate path lets an agent reading structured data
+// see "this authority claim has no domain binding" without erasing genuine
+// metadata.
+export const ANNOTATE_ONLY_AUTHORITY_TYPES: ReadonlySet<string> = new Set([
+  "Person",
+]);
+
+// Schema.org property names whose values inherit organizational authority
+// from the enclosing entity (the Article, ClaimReview, Product, etc.). A
+// `Person` standing alone (e.g. a top-level bio page typed as `Person`) is
+// not making a cross-domain authority claim — only one nested under one of
+// these properties is. Restricting the annotate path to these properties is
+// what makes it safe to ship: a personal homepage typed as `@type: Person`
+// with a cross-RD `url` is not borrowing anyone's authority and is left
+// alone.
+export const AUTHORITY_CONTEXT_PROPERTIES: ReadonlySet<string> = new Set([
+  "author",
+  "editor",
+  "publisher",
+  "creator",
+  "contributor",
+  "maintainer",
+  "sourceOrganization",
+  "reviewedBy",
+  "funder",
+  "sponsor",
+  "provider",
+  "producer",
+]);
+
 // Fields to blank on an authority object whose URL doesn't match the
 // page. The agent still sees the structural shape of the claim
 // (`@type: Organization`), it just loses the impersonating identity
 // strings.
 export const SANITIZE_KEYS: readonly string[] = ["name", "url", "@id"];
+
+// JSON-LD key we add to a Person object whose borrowed-authority URL
+// doesn't match the page. The `abs:` prefix namespaces the assertion so
+// it can't collide with a real schema.org property and is recognizable
+// to any agent that's inspecting the structured data.
+export const UNVERIFIED_AUTHORITY_KEY = "abs:unverified-authority";
 
 // Page hosts where mismatched publisher claims are expected, not
 // suspicious — aggregators, AMP caches, web archives, reader-mode
@@ -91,6 +133,16 @@ export function typeNames(rawType: unknown): string[] {
 
 export function isAuthorityType(rawType: unknown): boolean {
   return typeNames(rawType).some((name) => AUTHORITY_TYPES.has(name));
+}
+
+export function isAnnotateOnlyAuthorityType(rawType: unknown): boolean {
+  return typeNames(rawType).some((name) =>
+    ANNOTATE_ONLY_AUTHORITY_TYPES.has(name),
+  );
+}
+
+export function isAuthorityContextProperty(name: string): boolean {
+  return AUTHORITY_CONTEXT_PROPERTIES.has(name);
 }
 
 // True iff `claimUrl` resolves to a different registrable domain than

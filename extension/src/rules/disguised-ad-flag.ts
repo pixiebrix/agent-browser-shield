@@ -68,6 +68,12 @@ const STANDALONE_PHRASES: readonly string[] = [
   "sponsored content",
   "sponsored post",
   "branded content",
+  // Added per audit #203 item 18: marketplace listings and partner-program
+  // disclosures use these as standalone labels in the same shape — small
+  // leaf-ish text in the corner of an article-shaped card.
+  "featured listing",
+  "from our advertisers",
+  "marketing partner",
 ];
 
 // Suffix-form phrases — "Sponsored by Acme", "Presented by Acme", "Paid
@@ -77,6 +83,10 @@ const SUFFIX_PHRASES: readonly string[] = [
   "sponsored by",
   "presented by",
   "paid for and presented by",
+  // Added per audit #203 item 18: "In partnership with <Brand>" is the
+  // co-branded native-advertorial label shape on retail and editorial
+  // sites alike.
+  "in partnership with",
 ];
 
 function escapeRegex(literal: string): string {
@@ -98,9 +108,13 @@ const SUFFIX_RE = new RegExp(
 );
 
 // Bracket / parenthesized labels common in social feeds and mobile apps.
-// Case-sensitive on the "A" so the English preposition "ad" in
-// "[ad hoc]" / "[ad lib]" doesn't trigger.
-const BRACKET_RE = /^(?:\[Ad\]|\[AD\]|\(promoted\)|\(sponsored\))$/;
+// The regex is anchored end-to-end against the *trimmed* textContent of a
+// leaf-ish candidate, so the editorial idioms "ad hoc" / "ad lib" cannot
+// match — their bracketed forms have internal whitespace ("[ad hoc]")
+// which the no-content `\[ad\]` literal rejects. That's why we can accept
+// the lowercase form here (audit #203 item 18) alongside the original
+// case-variants that were guarded as a defense-in-depth precaution.
+const BRACKET_RE = /^(?:\[ad\]|\[Ad\]|\[AD\]|\(promoted\)|\(sponsored\))$/;
 
 interface LabelMatch {
   // The phrase form that matched, used in the placeholder copy so a
@@ -177,12 +191,26 @@ function isPageBoundary(element: Element): boolean {
   return element.getAttribute("role") === "main";
 }
 
+// Heading-equivalent selector. Beyond the literal h1–h6 set, accept two
+// accessibility-spec-compliant carriers (audit #203 item 19):
+//   - `[role="heading"]`: the ARIA-defined heading carrier (a `<div
+//     role="heading" aria-level="…">` is semantically identical to an
+//     `<h*>` for assistive tech, and design systems that style their own
+//     headings emit it instead of a real `<h*>`).
+//   - `.headline` (exact token match via `[class~="headline"]`): the
+//     conventional class name for card headlines on news / publisher CMSs
+//     (`<div class="headline">`, `<div class="card headline">`). Narrow
+//     to this single token — `[class*="title"]` would chew through chrome
+//     like `.page-title` / `.section-title` and over-fire.
+const HEADING_SELECTOR =
+  'h1, h2, h3, h4, h5, h6, [role="heading"], [class~="headline"]';
+
 // True if `element` looks like an article card: contains a heading, plus
 // at least one of an image or an outgoing link, plus enough prose text to
 // be confusable with editorial. The label text itself and headings are
 // excluded from the prose count so a label-only row doesn't qualify.
 function isArticleShaped(element: Element, labelElement: Element): boolean {
-  const heading = element.querySelector("h1, h2, h3, h4, h5, h6");
+  const heading = element.querySelector(HEADING_SELECTOR);
   if (heading === null) {
     return false;
   }
@@ -207,7 +235,7 @@ function isArticleShaped(element: Element, labelElement: Element): boolean {
     if (child === labelElement || labelElement.contains(child)) {
       continue;
     }
-    if (child.querySelector("h1, h2, h3, h4, h5, h6") !== null) {
+    if (child.querySelector(HEADING_SELECTOR) !== null) {
       continue;
     }
     let hasNestedCandidate = false;

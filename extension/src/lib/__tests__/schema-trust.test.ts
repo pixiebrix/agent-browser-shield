@@ -2,6 +2,8 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import {
+  isAnnotateOnlyAuthorityType,
+  isAuthorityContextProperty,
   isAuthorityType,
   isAuthorityUrlMismatch,
   shouldSkipPage,
@@ -45,12 +47,43 @@ describe("isAuthorityType", () => {
     );
   });
 
-  it("does not match Person (out of scope for V1)", () => {
+  it("does not match Person (Person goes through the annotate path, not the sanitize path)", () => {
     expect(isAuthorityType("Person")).toBe(false);
   });
 
   it("does not match Article", () => {
     expect(isAuthorityType("Article")).toBe(false);
+  });
+});
+
+describe("isAnnotateOnlyAuthorityType", () => {
+  it("matches Person", () => {
+    expect(isAnnotateOnlyAuthorityType("Person")).toBe(true);
+  });
+
+  it("matches Person via the long-form IRI", () => {
+    expect(isAnnotateOnlyAuthorityType("https://schema.org/Person")).toBe(true);
+  });
+
+  it("does not match Organization (sanitized, not annotated)", () => {
+    expect(isAnnotateOnlyAuthorityType("Organization")).toBe(false);
+  });
+});
+
+describe("isAuthorityContextProperty", () => {
+  it("matches author / editor / publisher", () => {
+    expect(isAuthorityContextProperty("author")).toBe(true);
+    expect(isAuthorityContextProperty("editor")).toBe(true);
+    expect(isAuthorityContextProperty("publisher")).toBe(true);
+  });
+
+  it("matches reviewedBy", () => {
+    expect(isAuthorityContextProperty("reviewedBy")).toBe(true);
+  });
+
+  it("does not match arbitrary properties", () => {
+    expect(isAuthorityContextProperty("headline")).toBe(false);
+    expect(isAuthorityContextProperty("about")).toBe(false);
   });
 });
 
