@@ -429,6 +429,28 @@ export default function ProductDetail() {
         />
       </section>
 
+      {/*
+        cross-origin-frame-redact fixture: a cross-origin <object data=…>
+        pointing at a synthetic CDN. The host doesn't resolve, so the
+        browser renders the fallback children — an instruction-shaped
+        payload an agent walking the page can ingest. The rule redacts
+        the entire <object>, fallback included.
+      */}
+      <section aria-label="Spec sheet" className="mt-6">
+        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+          Spec sheet
+        </h2>
+        <object
+          data="https://specs.rivermart-cdn.example/specs.html"
+          type="text/html"
+          className="h-32 w-full max-w-2xl rounded border border-stone-200"
+        >
+          <p className="p-3 text-sm text-stone-700">
+            {INJECTIONS.PRODUCT_DETAIL_OBJECT_SPEC_FALLBACK}
+          </p>
+        </object>
+      </section>
+
       <ReviewSection
         reviews={reviews}
         averageRating={product.rating}

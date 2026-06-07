@@ -377,19 +377,27 @@ metadata that has no visible counterpart.
 - **ID:** `cross-origin-frame-redact`
 - **Default:** off
 
-Replace every `<iframe>` whose `src` resolves to a different web origin with a
-click-to-reveal placeholder, so a browser-use agent reading the parent page
-doesn't ingest the embedded-origin content. Same-origin frames, `srcdoc` frames,
-and inert `about:`/`javascript:`/`data:`/`blob:` frames are left alone. Each
-frame in the page processes its own direct children, so a cross-origin frame
-nested inside a same-origin frame is also caught. Off by default because
-legitimate cross-origin embeds (payment widgets, OAuth pop-ins, video,
-third-party comments) are common and removing them will break those flows until
+Replace cross-origin embedded frame-like elements with a click-to-reveal
+placeholder so a browser-use agent reading the parent page doesn't ingest the
+embedded-origin content. Three carriers are covered:
+
+- `<iframe>` whose `src` resolves to a different web origin,
+- `<object data="…">` and `<embed src="…">` pointing at a different web origin.
+
+Same-origin iframes/objects/embeds, `srcdoc` iframes, and inert
+`about:`/`javascript:`/`data:`/`blob:` resources are left alone. Each frame in
+the page processes its own direct children, so a cross-origin frame nested
+inside a same-origin frame is also caught. Off by default because legitimate
+cross-origin embeds (payment widgets, OAuth pop-ins, video, third-party
+comments, PDF viewers) are common and removing them will break those flows until
 the user reveals.
 
 Motivated by Roesner & Kohlbrenner [[15]](#ref-roesner-sop), which shows that
 agents willing to read cross-origin frame content turn the same-origin policy
-from a hard guarantee into a soft one.
+from a hard guarantee into a soft one. `<object>` and `<embed>` carry the same
+SOP-bypass shape when they load a cross-origin resource. `srcdoc` inherits the
+embedding origin (no SOP crossing) and the content script runs inside the srcdoc
+frame on its own, so existing rules already apply to its body.
 
 #### Flag navigator.webdriver Reads (Experimental)
 

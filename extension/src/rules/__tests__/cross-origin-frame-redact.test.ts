@@ -75,6 +75,10 @@ describe("crossOriginFrameRedactRule", () => {
     expect(getPlaceholder()).toBeNull();
   });
 
+  // srcdoc inherits the embedding origin (no SOP crossing) and the manifest's
+  // `match_origin_as_fallback: true` means the content script runs inside the
+  // srcdoc frame, so every other rule already covers its body. Not a carrier
+  // for the Roesner SOP-bypass threat, so the rule leaves it alone.
   it("leaves a srcdoc iframe alone — inherits the embedding origin", () => {
     document.body.innerHTML = `
       <iframe srcdoc="<p>hi</p>"></iframe>
@@ -168,6 +172,74 @@ describe("crossOriginFrameRedactRule", () => {
 
     expect(document.querySelector("iframe")).toBeNull();
     expect(getPlaceholder()).not.toBeNull();
+  });
+
+  // Same SOP-bypass shape as a cross-origin iframe — <object> renders a
+  // resource referenced by `data`, <embed> by `src`. Browser-use agents can
+  // ingest the embedded resource as if it were on-page content, so the rule
+  // hides cross-origin <object>/<embed> too.
+  describe("<object> elements", () => {
+    it("replaces a cross-origin <object data=…> with a placeholder", () => {
+      document.body.innerHTML = `
+        <object data="https://example.com/doc.pdf" type="application/pdf"></object>
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).toBeNull();
+      const placeholder = getPlaceholder();
+      expect(placeholder).not.toBeNull();
+      expect(placeholder?.textContent).toContain("https://example.com");
+    });
+
+    it("leaves a same-origin <object> alone", () => {
+      document.body.innerHTML = `
+        <object data="http://localhost/doc.pdf"></object>
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+
+    it("leaves an <object> with no data attribute alone", () => {
+      document.body.innerHTML = `<object>fallback content</object>`;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("object")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+  });
+
+  describe("<embed> elements", () => {
+    it("replaces a cross-origin <embed src=…> with a placeholder", () => {
+      document.body.innerHTML = `
+        <embed src="https://example.com/widget.swf" type="application/x-shockwave-flash" />
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).toBeNull();
+      const placeholder = getPlaceholder();
+      expect(placeholder).not.toBeNull();
+      expect(placeholder?.textContent).toContain("https://example.com");
+    });
+
+    it("leaves a same-origin <embed> alone", () => {
+      document.body.innerHTML = `
+        <embed src="http://localhost/widget.swf" />
+      `;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
+
+    it("leaves an <embed> with no src attribute alone", () => {
+      document.body.innerHTML = `<embed />`;
+      crossOriginFrameRedactRule.apply(document.body);
+
+      expect(document.querySelector("embed")).not.toBeNull();
+      expect(getPlaceholder()).toBeNull();
+    });
   });
 
   describe("lazily-injected iframes", () => {
