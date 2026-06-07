@@ -7,6 +7,13 @@
 // duplicated the same lifecycle scaffolding around a one-line difference
 // in `collectMatches`.
 //
+// The walk groups text nodes by inline-formatting context (see
+// `collectTextNodesWithInlineGroups`) so `collectMatches` sees the
+// concatenation of sibling text nodes within one inline run — a card
+// number rendered as `<span>4111</span> <span>1111</span> ...` is
+// detected, while digits split across a `<br>` or block boundary are
+// not.
+//
 // Lifecycle the factory owns:
 //   - One `ReusableAbortController` whose signal is threaded into every
 //     chunked text walk. Route changes call `abortAndReset` to cancel
@@ -23,12 +30,16 @@
 
 import { ReusableAbortController } from "abort-utils";
 import type { Rule } from "../rules/types";
+import type { TextNodeWithInlineGroup } from "./dom-utils";
 import type { InlineMatch } from "./placeholder";
-import { replaceMatchesInTextNode } from "./placeholder";
+import {
+  replaceMatchAcrossTextNodes,
+  replaceMatchesInTextNode,
+} from "./placeholder";
 import { subscribeRouteChange } from "./route-change";
 import type { RuleId } from "./storage";
 import { createSubtreeWatcher } from "./subtree-watcher";
-import { walkTextNodesChunked } from "./yielding-text-walk";
+import { walkTextNodeGroupsChunked } from "./yielding-text-walk";
 
 export interface InlineTextRedactRuleOptions {
   id: RuleId;
@@ -56,15 +67,18 @@ export function defineInlineTextRedactRule(
   let unsubscribeRouteChange: (() => void) | null = null;
 
   function scanAndMask(root: ParentNode): void {
-    walkTextNodesChunked(root, {
+    // Per-node `minLength` is intentionally NOT passed to the walker —
+    // it would drop legitimate cross-node matches whose individual text
+    // nodes sit below the floor (the card-in-spans bypass we're fixing
+    // is exactly this shape: each `<span>` carries a 4-digit fragment,
+    // well below pii-redact's MIN_TEXT_LENGTH=9). The per-group floor
+    // applies in `processBucket` against the concatenated length, which
+    // preserves the per-rule cheap early-out for prose nodes.
+    walkTextNodeGroupsChunked(root, {
       signal: lifecycle.signal,
-      minLength,
       process: (chunk) => {
-        for (const node of chunk) {
-          const matches = collectMatches(node.nodeValue ?? "");
-          if (matches.length > 0) {
-            replaceMatchesInTextNode(node, matches, id);
-          }
+        for (const bucket of bucketByGroup(chunk)) {
+          processBucket(bucket, id, collectMatches, minLength);
         }
       },
     });
@@ -97,4 +111,168 @@ export function defineInlineTextRedactRule(
       unsubscribeRouteChange = null;
     },
   } satisfies InlineTextRedactRule;
+}
+
+// Bucket a chunk of group-tagged text nodes into runs of consecutive
+// entries that share a group id. Chunk-internal grouping only —
+// cross-chunk groups (rare: >100 text nodes in one inline-formatting
+// context, e.g. a single huge `<p>` with span-per-word rendering) are
+// processed as two separate buckets. Accepted miss: matches that span
+// the chunk boundary go undetected. The 100-node default cushion makes
+// this vanishingly rare in practice.
+function bucketByGroup(
+  chunk: readonly TextNodeWithInlineGroup[],
+): TextNodeWithInlineGroup[][] {
+  const buckets: TextNodeWithInlineGroup[][] = [];
+  let current: TextNodeWithInlineGroup[] = [];
+  let currentGroup: number | null = null;
+  for (const entry of chunk) {
+    if (currentGroup === null || entry.group !== currentGroup) {
+      if (current.length > 0) {
+        buckets.push(current);
+      }
+      current = [entry];
+      currentGroup = entry.group;
+    } else {
+      current.push(entry);
+    }
+  }
+  if (current.length > 0) {
+    buckets.push(current);
+  }
+  return buckets;
+}
+
+interface BucketLayout {
+  // Sibling text nodes whose nodeValues concatenate to form `concatenated`.
+  nodes: Text[];
+  // `lengths[i] = nodes[i].nodeValue.length`. Parallel to `nodes`.
+  lengths: number[];
+  // `offsets[i] = sum(lengths[0..i-1])`. Parallel to `nodes`.
+  offsets: number[];
+  // Joined value of every node, in document order.
+  concatenated: string;
+}
+
+function buildBucketLayout(bucket: TextNodeWithInlineGroup[]): BucketLayout {
+  const nodes: Text[] = [];
+  const lengths: number[] = [];
+  const offsets: number[] = [];
+  let total = 0;
+  const parts: string[] = [];
+  for (const entry of bucket) {
+    const value = entry.node.nodeValue ?? "";
+    nodes.push(entry.node);
+    lengths.push(value.length);
+    offsets.push(total);
+    parts.push(value);
+    total += value.length;
+  }
+  return { nodes, lengths, offsets, concatenated: parts.join("") };
+}
+
+// Run `collectMatches` over a single inline-group bucket and materialize
+// each match. Single-node buckets fall through `replaceMatchesInTextNode`
+// (bit-identical to the pre-grouping behavior). Multi-node buckets
+// concatenate values, run `collectMatches` on the concatenation, then
+// route each match to single-node or cross-node materializer based on
+// whether it straddles a node boundary.
+//
+// Multi-node matches are applied last-to-first so each application's
+// position references stay valid as later (rightward) mutations land
+// first and leave earlier offsets untouched.
+function processBucket(
+  bucket: TextNodeWithInlineGroup[],
+  ruleId: RuleId,
+  collectMatches: (text: string) => InlineMatch[],
+  minLength: number,
+): void {
+  const [firstEntry] = bucket;
+  if (!firstEntry) {
+    return;
+  }
+  if (bucket.length === 1) {
+    const node = firstEntry.node;
+    const value = node.nodeValue ?? "";
+    if (value.length < minLength) {
+      return;
+    }
+    const matches = collectMatches(value);
+    if (matches.length > 0) {
+      replaceMatchesInTextNode(node, matches, ruleId);
+    }
+    return;
+  }
+
+  const layout = buildBucketLayout(bucket);
+  if (layout.concatenated.length < minLength) {
+    return;
+  }
+  const matches = collectMatches(layout.concatenated);
+  if (matches.length === 0) {
+    return;
+  }
+
+  for (const match of matches.toReversed()) {
+    const start = locateStart(layout, match.start);
+    const end = locateEnd(layout, match.end);
+    if (start.index === end.index) {
+      const node = layout.nodes[start.index];
+      if (!node) {
+        continue;
+      }
+      replaceMatchesInTextNode(
+        node,
+        [{ start: start.offset, end: end.offset, label: match.label }],
+        ruleId,
+      );
+      continue;
+    }
+    replaceMatchAcrossTextNodes(
+      layout.nodes,
+      start.index,
+      start.offset,
+      end.index,
+      end.offset,
+      ruleId,
+      match.label,
+    );
+  }
+}
+
+// Translate a concatenated-string offset to (node index, local offset).
+// `start` semantics: at an exact node boundary, prefer the right node
+// (offset=0) so the placeholder lands inside the wrapper that holds the
+// matched content rather than at the trailing edge of a non-matching
+// sibling.
+function locateStart(
+  layout: BucketLayout,
+  position: number,
+): { index: number; offset: number } {
+  for (const [i, length] of layout.lengths.entries()) {
+    const offset = layout.offsets[i] ?? 0;
+    if (position < offset + length) {
+      return { index: i, offset: position - offset };
+    }
+  }
+  const lastIndex = layout.lengths.length - 1;
+  return { index: lastIndex, offset: layout.lengths[lastIndex] ?? 0 };
+}
+
+// `end` semantics: at an exact node boundary, prefer the left node
+// (offset=length). Otherwise the cross-node helper would be asked to
+// truncate a node from offset 0 to 0 — a no-op that leaves the trailing
+// node's text fully intact and pushes the placeholder past content the
+// match was supposed to consume.
+function locateEnd(
+  layout: BucketLayout,
+  position: number,
+): { index: number; offset: number } {
+  for (let i = layout.offsets.length - 1; i >= 0; i--) {
+    const offset = layout.offsets[i] ?? 0;
+    if (offset < position) {
+      return { index: i, offset: position - offset };
+    }
+  }
+  return { index: 0, offset: 0 };
 }

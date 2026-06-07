@@ -179,23 +179,13 @@ export function replaceMatchesInTextNode(
     if (match.start > cursor) {
       fragment.append(document.createTextNode(text.slice(cursor, match.start)));
     }
-    // Inline placeholders are short and have no scrollable area, so the
-    // <button> serves as both the visual chip and the a11y-tree exposure.
-    const placeholder = document.createElement("button");
-    placeholder.type = "button";
-    placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--inline`;
-    placeholder.setAttribute(RULE_ATTR, ruleId);
-    placeholder.textContent = match.label;
-    const restored = document.createTextNode(
-      text.slice(match.start, match.end),
+    fragment.append(
+      createInlinePlaceholder(
+        ruleId,
+        match.label,
+        text.slice(match.start, match.end),
+      ),
     );
-    attachReveal(placeholder, restored);
-    fragment.append(placeholder);
-    log("inline placeholder created", {
-      ruleId,
-      label: match.label,
-      hiddenLength: match.end - match.start,
-    });
     cursor = match.end;
   }
 
@@ -204,6 +194,111 @@ export function replaceMatchesInTextNode(
   }
 
   textNode.parentNode?.replaceChild(fragment, textNode);
+}
+
+function createInlinePlaceholder(
+  ruleId: RuleId,
+  label: string,
+  originalText: string,
+): HTMLButtonElement {
+  // Inline placeholders are short and have no scrollable area, so the
+  // <button> serves as both the visual chip and the a11y-tree exposure.
+  const placeholder = document.createElement("button");
+  placeholder.type = "button";
+  placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--inline`;
+  placeholder.setAttribute(RULE_ATTR, ruleId);
+  placeholder.textContent = label;
+  attachReveal(placeholder, document.createTextNode(originalText));
+  log("inline placeholder created", {
+    ruleId,
+    label,
+    hiddenLength: originalText.length,
+  });
+  return placeholder;
+}
+
+// Cross-node analog of `replaceMatchesInTextNode`. `nodes` is an ordered
+// run of sibling text nodes in one inline-formatting context (per
+// `collectTextNodesWithInlineGroups`). `match.start` / `match.end` are
+// offsets into the concatenation of those nodes' `nodeValue`s; the helper
+// slices the first and last nodes, blanks any nodes in between, and
+// inserts a single inline placeholder where the matched range begins.
+//
+// Wrapping inline elements (the `<span>`s a framework rendered around
+// per-digit groups) are NOT detached — the carrier text node's value is
+// reduced to its non-matched prefix/suffix, and interior nodes get their
+// value blanked to `""`. This follows the "scrub the carrier, don't
+// detach framework-owned nodes" pattern that already covers the rest of
+// the codebase.
+//
+// Reveal restores the matched substring as a single new text node at the
+// placeholder's position — the original per-node split is not
+// reconstructed. The user sees the same characters; the surrounding
+// wrapper elements remain in place around them.
+export function replaceMatchAcrossTextNodes(
+  nodes: readonly Text[],
+  startIndex: number,
+  startOffset: number,
+  endIndex: number,
+  endOffset: number,
+  ruleId: RuleId,
+  label: string,
+): void {
+  const firstNode = nodes[startIndex];
+  const lastNode = nodes[endIndex];
+  if (!firstNode || !lastNode) {
+    return;
+  }
+
+  if (startIndex === endIndex) {
+    // Caller bug — single-node case belongs in replaceMatchesInTextNode.
+    // Tolerate it for robustness rather than throw mid-walk.
+    replaceMatchesInTextNode(
+      firstNode,
+      [{ start: startOffset, end: endOffset, label }],
+      ruleId,
+    );
+    return;
+  }
+
+  const firstText = firstNode.nodeValue ?? "";
+  const lastText = lastNode.nodeValue ?? "";
+
+  // Capture the original matched span before mutating anything — used as
+  // the reveal target. Interior nodes' full values are included so reveal
+  // shows the exact characters that were hidden.
+  const interiorText = nodes
+    .slice(startIndex + 1, endIndex)
+    .map((node) => node.nodeValue ?? "")
+    .join("");
+  const originalText =
+    firstText.slice(startOffset) + interiorText + lastText.slice(0, endOffset);
+
+  const placeholder = createInlinePlaceholder(ruleId, label, originalText);
+
+  // First node: keep prefix (if any), insert placeholder right after it.
+  // When the match starts at offset 0, swap the node out entirely so the
+  // placeholder takes its sibling slot — keeps the parent's child list
+  // tidy on the common "whole span is the digit group" case.
+  const firstParent = firstNode.parentNode;
+  if (!firstParent) {
+    return;
+  }
+  if (startOffset === 0) {
+    firstNode.replaceWith(placeholder);
+  } else {
+    firstNode.nodeValue = firstText.slice(0, startOffset);
+    firstParent.insertBefore(placeholder, firstNode.nextSibling);
+  }
+
+  // Interior nodes: blank value, keep node in place so any framework
+  // tracking the element / its parent span doesn't see a detach.
+  for (const interior of nodes.slice(startIndex + 1, endIndex)) {
+    interior.nodeValue = "";
+  }
+
+  // Last node: keep suffix (if any), drop the matched prefix.
+  lastNode.nodeValue = lastText.slice(endOffset);
 }
 
 export function revealAll(ruleId: RuleId): void {

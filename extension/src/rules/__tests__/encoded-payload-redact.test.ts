@@ -214,6 +214,70 @@ describe("encoded-payload-redact false-positive guards", () => {
   });
 });
 
+describe("encoded-payload-redact cross-node detection", () => {
+  // Splitting an encoded payload across sibling text nodes (e.g. wrapped
+  // in highlight `<span>`s after a markdown render) used to defeat the
+  // per-node length floors — each fragment fell below MIN_BASE64_LENGTH
+  // even when the full concatenation cleared it. Audit gap #203/#7.
+  it("redacts a long base64 run split across two sibling spans", () => {
+    const payload = base64Encode(LONG_PROSE);
+    const half = Math.floor(payload.length / 2);
+    const first = payload.slice(0, half);
+    const second = payload.slice(half);
+    document.body.innerHTML = `<p><span>${first}</span><span>${second}</span></p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    expect(document.body.textContent).not.toContain(payload);
+  });
+
+  it("redacts a long hex run split across sibling spans", () => {
+    const payload = hexEncode(LONG_HEX_PROSE);
+    const a = payload.slice(0, 80);
+    const b = payload.slice(80);
+    document.body.innerHTML = `<p><span>${a}</span><span>${b}</span></p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+  });
+
+  it("redacts a long percent-encoded run split across sibling spans", () => {
+    const payload = percentEncode(LONG_PERCENT_PROSE);
+    const mid = Math.floor(payload.length / 2);
+    // Slice on a triplet boundary so each half is still well-formed.
+    const a = payload.slice(0, mid - (mid % 3));
+    const b = payload.slice(mid - (mid % 3));
+    document.body.innerHTML = `<p><span>${a}</span><span>${b}</span></p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+  });
+
+  it("does not redact a payload split across a <br>", () => {
+    const payload = base64Encode(LONG_PROSE);
+    const half = Math.floor(payload.length / 2);
+    document.body.innerHTML = `<p>${payload.slice(0, half)}<br>${payload.slice(half)}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+
+  it("does not redact a payload split across two block elements", () => {
+    const payload = base64Encode(LONG_PROSE);
+    const half = Math.floor(payload.length / 2);
+    document.body.innerHTML = `<div>${payload.slice(0, half)}</div><div>${payload.slice(half)}</div>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+  });
+});
+
 describe("encoded-payload-redact teardown", () => {
   it("stops re-scanning after teardown", async () => {
     encodedPayloadRedactRule.apply(document.body);

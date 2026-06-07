@@ -199,6 +199,75 @@ export function walkTextNodes(
   return collectTextNodesShadowPiercing(root, options);
 }
 
+// Tags that introduce a new inline-formatting context — text nodes on
+// opposite sides render on separate lines visually and do NOT logically
+// concatenate. Used by `collectTextNodesWithInlineGroups` to bucket text
+// nodes so the inline-text-redact factory can detect matches split across
+// sibling text nodes (a React `<span>`-per-digit-group card render is the
+// motivating case) without falsely concatenating across block boundaries.
+//
+// Static list rather than `getComputedStyle().display` — the lookup is
+// hot (every text node visited), the false-negative cost is only a missed
+// detection on an inline tag styled to `display:block`, and reading
+// computed style during a tree walk forces layout. Conservative: a tag
+// missing from this set is treated as inline; that can cause false
+// negatives but never false positives across true block boundaries.
+const BLOCK_LEVEL_TAGS: ReadonlySet<string> = new Set([
+  "ADDRESS",
+  "ARTICLE",
+  "ASIDE",
+  "BLOCKQUOTE",
+  "BODY",
+  "CAPTION",
+  "COLGROUP",
+  "DD",
+  "DETAILS",
+  "DIALOG",
+  "DIV",
+  "DL",
+  "DT",
+  "FIELDSET",
+  "FIGCAPTION",
+  "FIGURE",
+  "FOOTER",
+  "FORM",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "HEADER",
+  "HR",
+  "HTML",
+  "LI",
+  "MAIN",
+  "MENU",
+  "NAV",
+  "OL",
+  "P",
+  "PRE",
+  "SECTION",
+  "SUMMARY",
+  "TABLE",
+  "TBODY",
+  "TD",
+  "TFOOT",
+  "TH",
+  "THEAD",
+  "TR",
+  "UL",
+]);
+
+export interface TextNodeWithInlineGroup {
+  node: Text;
+  // Stable id per inline-formatting context within this collection pass.
+  // Two text nodes share a group iff they're rendered as one continuous
+  // line of inline text (no intervening block element, `<br>`, or shadow
+  // boundary). Ids are dense within a pass but otherwise opaque.
+  group: number;
+}
+
 // Shared core for `walkTextNodes` and the chunked walker in
 // `yielding-text-walk.ts`. Pre-collects every text node under `root`
 // matching the same filter both APIs expose, descending through open
@@ -212,8 +281,31 @@ export function collectTextNodesShadowPiercing(
   root: ParentNode,
   options: WalkTextNodesOptions = {},
 ): Text[] {
+  return collectTextNodesWithInlineGroups(root, options).map(
+    (entry) => entry.node,
+  );
+}
+
+// Group-aware variant. Same filter and shadow-piercing semantics as
+// `collectTextNodesShadowPiercing`, plus an inline-formatting-context id
+// per text node so callers can detect cross-node matches without
+// concatenating across block / `<br>` / shadow-root boundaries.
+//
+// Group id bumps:
+//   - on entering and leaving a `BLOCK_LEVEL_TAGS` subtree (pre+post so
+//     siblings before/inside/after the block sit in three groups);
+//   - on encountering a `<br>` element (post only; `<br>` is void);
+//   - on entering and leaving a shadow root.
+//
+// Each text node is tagged with the counter's value at the moment it's
+// visited.
+export function collectTextNodesWithInlineGroups(
+  root: ParentNode,
+  options: WalkTextNodesOptions = {},
+): TextNodeWithInlineGroup[] {
   const { minLength = 0, shouldSkipParent } = options;
-  const out: Text[] = [];
+  const out: TextNodeWithInlineGroup[] = [];
+  let currentGroup = 0;
 
   function accept(text: Text): boolean {
     const parent = text.parentElement;
@@ -240,7 +332,7 @@ export function collectTextNodesShadowPiercing(
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node as Text;
       if (accept(text)) {
-        out.push(text);
+        out.push({ node: text, group: currentGroup });
       }
       return;
     }
@@ -255,13 +347,29 @@ export function collectTextNodesShadowPiercing(
     if (isNonContentTag(element.tagName)) {
       return;
     }
+    const tag = element.tagName;
+    if (tag === "BR") {
+      // Void element; bump on leave so any post-<br> sibling text starts
+      // a new group.
+      currentGroup++;
+      return;
+    }
+    const isBlock = BLOCK_LEVEL_TAGS.has(tag);
+    if (isBlock) {
+      currentGroup++;
+    }
     for (const child of element.childNodes) {
       visit(child);
     }
     if (element.shadowRoot) {
+      currentGroup++;
       for (const child of element.shadowRoot.childNodes) {
         visit(child);
       }
+      currentGroup++;
+    }
+    if (isBlock) {
+      currentGroup++;
     }
   }
 
