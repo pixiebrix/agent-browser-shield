@@ -382,13 +382,10 @@ const LEET_MAP: Record<string, string> = {
 // occurrence is a candidate disguised letter; we require a minimum
 // count of these in any candidate window before attempting a decode so
 // that ordinary text with incidental digits doesn't qualify.
-const LEET_SUBSTITUTION_CHAR_CLASS = "[0134578@$!]";
+const LEET_SUBSTITUTION_RE = /[0134578@$!]/g;
 
 function deleet(text: string): string {
-  return text.replaceAll(
-    new RegExp(LEET_SUBSTITUTION_CHAR_CLASS, "g"),
-    (c) => LEET_MAP[c] ?? c,
-  );
+  return text.replaceAll(LEET_SUBSTITUTION_RE, (c) => LEET_MAP[c] ?? c);
 }
 
 // NATO phonetic alphabet — one word per encoded letter. Includes both
@@ -487,8 +484,7 @@ const MORSE_CANDIDATE = new RegExp(
 );
 
 function countLeetSubstitutions(text: string): number {
-  return (text.match(new RegExp(LEET_SUBSTITUTION_CHAR_CLASS, "g")) ?? [])
-    .length;
+  return (text.match(LEET_SUBSTITUTION_RE) ?? []).length;
 }
 
 interface CipherDecodeResult {
@@ -717,9 +713,19 @@ function collectPercent(text: string, matches: InlineMatch[]): void {
   }
 }
 
-function collectSubstitutionCipher(
+// All substitution-style decoders share the same candidate window and
+// already-English gate, so we iterate TEXT_CIPHER_CANDIDATE once and try
+// each decoder. The first one that produces a readable decode wins; the
+// rest are skipped for that candidate (their match spans would overlap
+// and merge identically downstream anyway).
+const SUBSTITUTION_DECODERS: ReadonlyArray<(text: string) => string> = [
+  rot13,
+  atbash,
+  reverseText,
+];
+
+function collectSubstitutionCiphers(
   text: string,
-  decoder: (text: string) => string,
   matches: InlineMatch[],
 ): void {
   for (const m of text.matchAll(TEXT_CIPHER_CANDIDATE)) {
@@ -727,28 +733,15 @@ function collectSubstitutionCipher(
     if (alreadyEnglish(candidate)) {
       continue;
     }
-    if (tryCipherDecode(candidate, decoder) !== null) {
-      matches.push({
-        start: m.index,
-        end: m.index + candidate.length,
-        label: "[encoded payload hidden]",
-      });
-    }
-  }
-}
-
-function collectReverse(text: string, matches: InlineMatch[]): void {
-  for (const m of text.matchAll(TEXT_CIPHER_CANDIDATE)) {
-    const candidate = m[0];
-    if (alreadyEnglish(candidate)) {
-      continue;
-    }
-    if (tryCipherDecode(candidate, reverseText) !== null) {
-      matches.push({
-        start: m.index,
-        end: m.index + candidate.length,
-        label: "[encoded payload hidden]",
-      });
+    for (const decoder of SUBSTITUTION_DECODERS) {
+      if (tryCipherDecode(candidate, decoder) !== null) {
+        matches.push({
+          start: m.index,
+          end: m.index + candidate.length,
+          label: "[encoded payload hidden]",
+        });
+        break;
+      }
     }
   }
 }
@@ -806,9 +799,7 @@ function collectMatches(text: string): InlineMatch[] {
   collectBase64(text, jwtRanges, matches);
   collectHex(text, matches);
   collectPercent(text, matches);
-  collectSubstitutionCipher(text, rot13, matches);
-  collectSubstitutionCipher(text, atbash, matches);
-  collectReverse(text, matches);
+  collectSubstitutionCiphers(text, matches);
   collectLeet(text, matches);
   collectNato(text, matches);
   collectMorse(text, matches);
