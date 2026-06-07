@@ -7,6 +7,7 @@
     "src/popup.tsx",
     "src/options.tsx",
     "src/webdriver-probe.ts",
+    "src/checkout-checkbox-defense.ts",
     "eslint-rules/index.js"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "eslint-rules/**/*.js"],

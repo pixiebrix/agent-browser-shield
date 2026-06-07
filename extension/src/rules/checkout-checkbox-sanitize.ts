@@ -11,9 +11,18 @@
 // in lazily-loaded checkout steps are caught. We deliberately do NOT observe
 // attribute mutations on existing checkboxes via the watcher — the
 // MutationObserver path would burn cycles on every class/style toggle.
-// Defense against post-sanitize re-checks lives in the prototype setter
-// patch below, which intercepts programmatic `.checked = true` writes on
-// cleared boxes synchronously.
+//
+// Defense against post-sanitize re-checks (the dark-pattern threat model
+// the rule was built for) lives in a separate page-world bundle:
+// `lib/checkout-checkbox-defense-source.ts`, registered by the background
+// worker at `document_start` whenever this rule is enabled. The
+// isolated-world prototype that a content script can reach is a distinct
+// object from the page world's copy that React/Vue reconciles drive
+// `node.checked = true` through, so the wrap MUST live in the page
+// world. This rule's `apply` sends an `inject-checkout-checkbox-defense`
+// message at `document_idle` so the tab the user was already viewing
+// when they toggled the rule on also gets the patch — dynamic
+// registrations only apply to future navigations.
 
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
@@ -23,10 +32,9 @@ import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-sanitize" as const;
 
-// One patch per realm. Idempotent so a subframe re-import or test re-run
-// doesn't stack patches on top of each other. Matches the convention used
-// by `lib/shadow-roots.ts`.
-const PATCH_INSTALLED = Symbol.for("abs.checkoutCheckedSetterPatched");
+const INJECT_DEFENSE_MESSAGE = {
+  type: "inject-checkout-checkbox-defense",
+} as const;
 
 // React/Vue track checked state internally; setting `.checked` directly skips
 // their value-tracker, so onChange handlers never fire and totals don't
@@ -37,10 +45,6 @@ const PATCH_INSTALLED = Symbol.for("abs.checkoutCheckedSetterPatched");
 // DOM-less contexts (service worker, codegen). Touching
 // `HTMLInputElement.prototype` at module top level used to crash the
 // background worker bundle — see scripts/check-background-purity.ts.
-//
-// Captured before `installCheckedDefensePatch` overwrites the descriptor,
-// so the rule's own `uncheck` always invokes the native setter directly
-// rather than re-entering our wrapper.
 let cachedNativeCheckedSetter:
   | ((this: HTMLInputElement, value: boolean) => void)
   | null
@@ -62,100 +66,6 @@ function getNativeCheckedSetter():
   cachedNativeCheckedSetter = setter ?? null;
   return cachedNativeCheckedSetter;
 }
-
-// Defend a cleared checkbox against programmatic re-checks driven by the
-// page itself — the dark-pattern threat model the rule was built for.
-// React/Vue controlled inputs reconcile `.checked` from component state on
-// every re-render; without this patch a single `setState({ optIn: true })`
-// after our sanitize pass silently re-checks every pre-selected add-on.
-//
-// Activation gate:
-//   - the target value is truthy (we never block unchecks),
-//   - the input bears `CLEARED_ATTR` (so non-sanitized inputs — including
-//     every text/radio/file input on the page — behave normally), and
-//   - the current URL is still checkout-shaped (SPA navigation away from
-//     checkout releases the lock).
-//
-// The marker is the source of truth: an agent that genuinely wants to
-// re-check a sanitized box must either remove `[data-abs-cleared]` first
-// or invoke `checkbox.click()`, which routes through the native activation
-// behavior and bypasses the JS setter.
-function installCheckedDefensePatch(): void {
-  const flagHolder = globalThis as unknown as Record<symbol, unknown>;
-  if (flagHolder[PATCH_INSTALLED]) {
-    return;
-  }
-  const descriptor = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
-    "checked",
-  );
-  if (!descriptor?.configurable) {
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const nativeSetter = descriptor.set;
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const nativeGetter = descriptor.get;
-  if (!nativeSetter || !nativeGetter) {
-    return;
-  }
-  // Seed the cache so `uncheck` calls the captured native setter directly
-  // rather than discovering the now-patched descriptor on first read.
-  cachedNativeCheckedSetter = nativeSetter;
-  flagHolder[PATCH_INSTALLED] = true;
-
-  Object.defineProperty(HTMLInputElement.prototype, "checked", {
-    configurable: true,
-    enumerable: descriptor.enumerable ?? true,
-    get: nativeGetter,
-    set(this: HTMLInputElement, value: boolean) {
-      if (
-        value &&
-        this.getAttribute(CLEARED_ATTR) !== null &&
-        isCheckoutUrl(globalThis.location.href)
-      ) {
-        nativeSetter.call(this, false);
-        return;
-      }
-      nativeSetter.call(this, value);
-    },
-  });
-
-  // Release the defense on genuine user interaction. Without this, a
-  // controlled React/Vue checkbox would visibly flicker on a real click:
-  // native activation toggles `.checked` to true (bypassing our setter),
-  // the framework's onChange schedules `setState(true)` → reconcile →
-  // `node.checked = true`, and the patch would revert to false because
-  // the marker is still present. Running in capture phase guarantees
-  // the marker is gone before any framework handler runs, so the
-  // framework's reconcile sticks.
-  document.addEventListener("change", handleUserChangeEvent, {
-    capture: true,
-  });
-}
-
-// Gated on `isTrusted` so synthetic dispatches from page scripts
-// (including our own `uncheck` change event and any `element.click()`
-// call from page JS) do not release the lock — only real user gestures
-// and WebDriver/CDP-driven clicks do. Exported under a test-only name
-// because jsdom installs `isTrusted` as an unforgeable per-instance
-// property, so the integration listener is not reachable from a unit
-// test that constructs a synthetic "trusted" event — we call the
-// handler directly instead.
-function handleUserChangeEvent(event: Event): void {
-  if (!event.isTrusted) {
-    return;
-  }
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement) || target.type !== "checkbox") {
-    return;
-  }
-  if (target.getAttribute(CLEARED_ATTR) !== null) {
-    target.removeAttribute(CLEARED_ATTR);
-  }
-}
-
-export const __handleUserChangeEventForTesting = handleUserChangeEvent;
 
 function uncheck(checkbox: HTMLInputElement): void {
   getNativeCheckedSetter()?.call(checkbox, false);
@@ -202,8 +112,18 @@ const watcher = createSubtreeWatcher({
   },
 });
 
+function requestDefenseInjection(): void {
+  // Service worker may be asleep / receiver not yet ready; swallow rejection
+  // so unhandled-promise warnings don't surface on every page load. The
+  // defense itself short-circuits on `__abs_checkout_checkbox_defense_installed`,
+  // so re-requests on the same document are no-ops in the page world.
+  chrome.runtime.sendMessage(INJECT_DEFENSE_MESSAGE).catch(() => {
+    // noop
+  });
+}
+
 function apply(root: ParentNode): void {
-  installCheckedDefensePatch();
+  requestDefenseInjection();
   scanAndClear(root);
   watcher.start(root);
 }
@@ -218,3 +138,5 @@ export const checkoutCheckboxSanitizeRule = {
     watcher.stop();
   },
 } satisfies Rule;
+
+export { INJECT_DEFENSE_MESSAGE };

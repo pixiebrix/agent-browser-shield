@@ -2,29 +2,25 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://shop.example.com/checkout"}
  */
+import { installCheckoutCheckboxDefense } from "../../lib/checkout-checkbox-defense-source";
 import { isCheckoutUrl } from "../../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
-import {
-  checkoutCheckboxSanitizeRule,
-  __handleUserChangeEventForTesting as handleUserChangeEvent,
-} from "../checkout-checkbox-sanitize";
-
-// jsdom installs `Event.isTrusted` as an unforgeable per-instance
-// property, so we can't construct a "trusted" event through the public
-// constructor — emulate the surface the production listener inspects.
-function fakeTrustedChange(target: EventTarget): Event {
-  return {
-    isTrusted: true,
-    target,
-    type: "change",
-  } as unknown as Event;
-}
+import { checkoutCheckboxSanitizeRule } from "../checkout-checkbox-sanitize";
 
 const MUTATION_THROTTLE_MS = 250;
 
 async function flushMutations(): Promise<void> {
   await Promise.resolve();
 }
+
+beforeAll(() => {
+  // In production the defense is shipped into the page world via a
+  // separate bundle registered by the background worker; jsdom has a
+  // single world, so installing the source here gives the rule's
+  // unchecked boxes the same prototype-wrap defense they'd see at
+  // runtime. Idempotent — safe to call once per file.
+  installCheckoutCheckboxDefense.call(globalThis as unknown as Window);
+});
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -119,6 +115,33 @@ describe("checkoutCheckboxSanitizeRule.apply", () => {
     expect(radio.checked).toBe(true);
     expect(text.value).toBe("hello");
   });
+
+  it("requests page-world defense injection via chrome.runtime.sendMessage", () => {
+    document.body.innerHTML = `<input type="checkbox" checked />`;
+    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
+    sendMessage.mockReset();
+    sendMessage.mockResolvedValue(undefined);
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: "inject-checkout-checkbox-defense",
+    });
+  });
+
+  it("swallows sendMessage rejections so the rule still scans", async () => {
+    document.body.innerHTML = `<input id="x" type="checkbox" checked />`;
+    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
+    sendMessage.mockReset();
+    sendMessage.mockRejectedValue(new Error("no receiver"));
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    await flushMutations();
+
+    const checkbox = document.querySelector("#x") as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
+  });
 });
 
 describe("checkoutCheckboxSanitizeRule lazy-loaded sections", () => {
@@ -154,169 +177,43 @@ describe("checkoutCheckboxSanitizeRule lazy-loaded sections", () => {
   });
 });
 
-describe("checkoutCheckboxSanitizeRule prototype defense patch", () => {
-  it("reverts a programmatic .checked = true on a cleared box", () => {
+describe("end-to-end with the page-world defense installed", () => {
+  // The rule clears the box and stamps the marker; the source-side
+  // prototype wrap then defends that marker against programmatic
+  // re-checks. These tests exercise the integration in jsdom's
+  // single-world environment, which mirrors how the two pieces interact
+  // at runtime once the defense bundle has been injected.
+
+  it("a page-script .checked = true after sanitize is reverted", () => {
     document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
     const checkbox = document.querySelector("#upsell") as HTMLInputElement;
 
     checkoutCheckboxSanitizeRule.apply(document.body);
     expect(checkbox.checked).toBe(false);
 
-    // Simulate the page's hydration / controlled-input reconcile loop
-    // writing the pre-selected state back onto the input.
     checkbox.checked = true;
 
     expect(checkbox.checked).toBe(false);
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
   });
 
-  it("reverts repeated re-check attempts on a cleared box", () => {
-    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
-    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-
-    for (let index = 0; index < 5; index++) {
-      checkbox.checked = true;
-      expect(checkbox.checked).toBe(false);
-    }
-  });
-
-  it("allows .click() to legitimately re-check a cleared box", () => {
+  it("an agent .click() on a cleared box re-checks (escape hatch)", () => {
     document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
     const checkbox = document.querySelector("#terms") as HTMLInputElement;
 
     checkoutCheckboxSanitizeRule.apply(document.body);
-    expect(checkbox.checked).toBe(false);
-
-    // .click() routes through the native activation behavior, not the
-    // patched JS setter — this is the documented agent escape hatch.
     checkbox.click();
 
     expect(checkbox.checked).toBe(true);
   });
 
-  it("allows re-check after the cleared marker is removed", () => {
+  it("removing the marker manually releases the lock", () => {
     document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
     const checkbox = document.querySelector("#terms") as HTMLInputElement;
 
     checkoutCheckboxSanitizeRule.apply(document.body);
-
     checkbox.removeAttribute(CLEARED_ATTR);
     checkbox.checked = true;
 
     expect(checkbox.checked).toBe(true);
-  });
-
-  it("does not interfere with non-cleared checkboxes", () => {
-    document.body.innerHTML = `<input id="fresh" type="checkbox" />`;
-    const checkbox = document.querySelector("#fresh") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-
-    checkbox.checked = true;
-
-    expect(checkbox.checked).toBe(true);
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
-  });
-
-  it("allows setting .checked = false on a cleared box (no-op pass-through)", () => {
-    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
-    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-
-    checkbox.checked = false;
-
-    expect(checkbox.checked).toBe(false);
-  });
-
-  it("releases the marker on a trusted change event so a controlled framework reconcile sticks", () => {
-    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
-    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-    expect(checkbox.checked).toBe(false);
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
-
-    handleUserChangeEvent(fakeTrustedChange(checkbox));
-
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
-    // A subsequent framework reconcile now passes through the setter
-    // patch unmodified — no flicker on a real-user click.
-    checkbox.checked = true;
-    expect(checkbox.checked).toBe(true);
-  });
-
-  it("ignores untrusted change events so page-script dispatches do not release the lock", () => {
-    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
-    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
-
-    // A page script firing `dispatchEvent(new Event("change"))` produces
-    // an untrusted event — must not release the defense. (jsdom's
-    // `Event` is untrusted by default, so this also covers the live
-    // listener path.)
-    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-
-    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
-    checkbox.checked = true;
-    expect(checkbox.checked).toBe(false);
-  });
-
-  it("ignores trusted change events on non-checkbox inputs", () => {
-    document.body.innerHTML = `
-      <input id="other" type="checkbox" />
-      <input id="text" type="text" />
-    `;
-    const text = document.querySelector("#text") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-    // Marker is normally rule-managed, but a hostile page could
-    // theoretically stamp it onto an arbitrary input. The handler must
-    // only release for checkboxes.
-    text.setAttribute(CLEARED_ATTR, "");
-    handleUserChangeEvent(fakeTrustedChange(text));
-    expect(text.hasAttribute(CLEARED_ATTR)).toBe(true);
-  });
-
-  it("does not interfere with non-checkbox inputs that happen to gain the marker", () => {
-    // CLEARED_ATTR is only ever stamped on checkboxes by the rule, but
-    // the prototype patch's selectivity rests on the marker — verify a
-    // text input wearing the marker still accepts arbitrary value writes
-    // (the patch gates by `.checked` writes only, never `.value`).
-    document.body.innerHTML = `<input id="oddball" type="text" />`;
-    const input = document.querySelector("#oddball") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-
-    input.setAttribute(CLEARED_ATTR, "");
-    input.value = "hello";
-
-    expect(input.value).toBe("hello");
-  });
-});
-
-describe("checkoutCheckboxSanitizeRule URL gate on the patch", () => {
-  it("does not defend cleared boxes once the SPA route leaves checkout", () => {
-    // Sanitize a checkout box, then SPA-navigate away. The patch's URL
-    // gate releases the lock so the page's own state can drive the box
-    // again on a non-checkout route.
-    globalThis.history.replaceState({}, "", "/checkout");
-    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
-    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
-
-    checkoutCheckboxSanitizeRule.apply(document.body);
-    expect(checkbox.checked).toBe(false);
-
-    globalThis.history.replaceState({}, "", "/account");
-    try {
-      checkbox.checked = true;
-      expect(checkbox.checked).toBe(true);
-    } finally {
-      globalThis.history.replaceState({}, "", "/checkout");
-    }
   });
 });

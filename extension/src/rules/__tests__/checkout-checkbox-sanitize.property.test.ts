@@ -2,23 +2,28 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://shop.example.com/checkout"}
  */
-// Property-based tests for checkout-checkbox-sanitize. The rule guarantees
-// two invariants we want fast-check to hammer against arbitrary sequences
-// of programmatic state writes:
+// Property-based tests for checkout-checkbox-sanitize. The rule + the
+// page-world defense together guarantee invariants we want fast-check
+// to hammer against arbitrary sequences of programmatic state writes:
 //
 //   1. While the URL is checkout-shaped and the box wears `CLEARED_ATTR`,
 //      no sequence of `.checked = boolean` writes can leave the box in
 //      a checked state. (`.click()` is the escape hatch — it routes
 //      through the activation behavior, not the patched setter.)
-//   2. The patch is selective: a fresh checkbox that the rule never
+//   2. The defense is selective: a fresh checkbox that the rule never
 //      touched accepts arbitrary `.checked` writes verbatim.
 //   3. URL gating is symmetric: once the SPA navigates away from a
 //      checkout URL, a re-check on the (still-marked) box sticks again.
 
 import fc from "fast-check";
 
+import { installCheckoutCheckboxDefense } from "../../lib/checkout-checkbox-defense-source";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
 import { checkoutCheckboxSanitizeRule } from "../checkout-checkbox-sanitize";
+
+beforeAll(() => {
+  installCheckoutCheckboxDefense.call(globalThis as unknown as Window);
+});
 
 afterEach(() => {
   checkoutCheckboxSanitizeRule.teardown();
@@ -61,7 +66,8 @@ describe("non-cleared checkbox is unaffected by the prototype patch", () => {
         (writes) => {
           document.body.innerHTML = `<input id="fresh" type="checkbox" />`;
           const checkbox = document.querySelector("#fresh") as HTMLInputElement;
-          // Install the patch by applying the rule on an unrelated subtree.
+          // The rule runs on an unrelated subtree; the patch is already
+          // installed via beforeAll.
           checkoutCheckboxSanitizeRule.apply(document.body);
 
           for (const value of writes) {
