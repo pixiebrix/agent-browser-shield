@@ -353,8 +353,11 @@ function atbash(text: string): string {
 }
 
 function reverseText(text: string): string {
-  // Unicode-aware reverse so any astral pairs survive.
-  return [...text].reverse().join("");
+  // Unicode-aware reverse so any astral pairs survive. Array.from over a
+  // string splits on code points (handling surrogate pairs), which is what
+  // we want here; spread would trigger no-misused-spread.
+  // eslint-disable-next-line unicorn/prefer-spread
+  return Array.from(text).toReversed().join("");
 }
 
 // Leetspeak substitution table — only the substitutions that obscure a
@@ -379,7 +382,7 @@ const LEET_MAP: Record<string, string> = {
 // occurrence is a candidate disguised letter; we require a minimum
 // count of these in any candidate window before attempting a decode so
 // that ordinary text with incidental digits doesn't qualify.
-const LEET_SUBSTITUTION_CHAR_CLASS = String.raw`[0134578@$!]`;
+const LEET_SUBSTITUTION_CHAR_CLASS = "[0134578@$!]";
 
 function deleet(text: string): string {
   return text.replaceAll(
@@ -525,9 +528,9 @@ function isAlphabetSequence(letters: string): boolean {
   // these as instructional content rather than a payload — alphabet
   // pages and signal-corps drills shouldn't be redacted.
   for (let i = 1; i < letters.length; i++) {
-    const prev = letters.codePointAt(i - 1) ?? 0;
-    const curr = letters.codePointAt(i) ?? 0;
-    if (curr - prev !== 1) {
+    const previous = letters.codePointAt(i - 1) ?? 0;
+    const current = letters.codePointAt(i) ?? 0;
+    if (current - previous !== 1) {
       return false;
     }
   }
@@ -549,7 +552,7 @@ function findNatoRuns(text: string): NatoRun[] {
     const end = start + m[0].length;
     const gap = text.slice(lastTokenEnd, start);
     const letter = NATO_FIRST_LETTER[m[0]];
-    const gapIsSeparator = lastTokenEnd === -1 || /^[\s,\-]+$/.test(gap);
+    const gapIsSeparator = lastTokenEnd === -1 || /^[\s,-]+$/.test(gap);
     if (letter && (current === null || gapIsSeparator)) {
       if (current === null) {
         current = { start, end, letters: letter };
