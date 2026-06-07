@@ -43,6 +43,18 @@ const IGNORE_TAGS: ReadonlySet<string> = new Set(["STYLE", "BR"]);
 // (Pattern from Ghostery's adblocker DOMMonitor.)
 const BURST_FLUSH_THRESHOLD = 512;
 
+// Optional observer notified each time the burst-flush path fires. The
+// debug-trace segment tracker registers here to emit a "mutation-burst"
+// marker; production behavior is unchanged when no observer is set.
+type BurstFlushObserver = (pendingCount: number) => void;
+let burstFlushObserver: BurstFlushObserver | null = null;
+
+export function setBurstFlushObserver(
+  observer: BurstFlushObserver | null,
+): void {
+  burstFlushObserver = observer;
+}
+
 // `id` and `class` drive the selector-token-index dispatcher; `content`
 // drives meta-injection-strip's in-place re-scrub when a framework or
 // page script overwrites a `<meta>`'s `content=` after we blanked it
@@ -233,6 +245,7 @@ function fanOut(router: Router, mutations: MutationRecord[]): void {
       // Cancel the trailing throttle call and drain right now. drainSubscriber()
       // guards its own empty case, so an in-flight throttle that fires later
       // is a no-op.
+      burstFlushObserver?.(subscriber.pending.size);
       subscriber.throttledScan.cancel();
       drainSubscriber(subscriber);
     } else {

@@ -1,20 +1,40 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { useEffect, useState } from "react";
+import { debugTraceStorage } from "../lib/debug-trace";
 import { enforcementStorage } from "../lib/enforcement";
 import { HelpLinks } from "../lib/HelpLinks";
 import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
+import { DebugTraceSection } from "./DebugTraceSection";
 import { DetectionsSection } from "./DetectionsSection";
-import { PerRuleCountsSection } from "./PerRuleCountsSection";
+import { HumanModeSection } from "./HumanModeSection";
+import { useTabDebugTrace } from "./use-tab-debug-trace";
 import { useTabActivity } from "./use-tab-detections";
 
 export function Popup() {
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
   const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
+  const debugTraceEnabled = useChromeStorageValue(debugTraceStorage);
   const activity = useTabActivity();
+  const [activeTabId, setActiveTabId] = useState<number | null>(null);
 
-  if (enforcementEnabled === null || optionsButtonEnabled === null) {
+  useEffect(() => {
+    void chrome.tabs
+      .query({ active: true, currentWindow: true })
+      .then(([tab]) => {
+        setActiveTabId(typeof tab?.id === "number" ? tab.id : null);
+      });
+  }, []);
+
+  const trace = useTabDebugTrace(debugTraceEnabled ? activeTabId : null);
+
+  if (
+    enforcementEnabled === null ||
+    optionsButtonEnabled === null ||
+    debugTraceEnabled === null
+  ) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -66,7 +86,7 @@ export function Popup() {
         Configure rules
       </button>
       <DetectionsSection detections={activity?.detections ?? []} />
-      <PerRuleCountsSection entries={activity?.entries ?? []} />
+      <HumanModeSection entries={activity?.entries ?? []} />
       <label className="options-button-toggle">
         <span className="options-button-toggle__text">
           <strong>On-page options button</strong>
@@ -87,6 +107,27 @@ export function Popup() {
           <span className="switch__track" />
         </span>
       </label>
+      <label className="options-button-toggle">
+        <span className="options-button-toggle__text">
+          <strong>Debug trace</strong>
+          <span className="options-button-toggle__hint">
+            Captures DOM snippets of removed content for debugging. Stored only
+            in this browser.
+          </span>
+        </span>
+        <span className="switch" role="presentation">
+          <input
+            type="checkbox"
+            checked={debugTraceEnabled}
+            onChange={(event) => {
+              void debugTraceStorage.set(event.target.checked);
+            }}
+            aria-label="Enable debug trace"
+          />
+          <span className="switch__track" />
+        </span>
+      </label>
+      {debugTraceEnabled && <DebugTraceSection trace={trace} />}
       <HelpLinks className="popup__footer" />
     </div>
   );

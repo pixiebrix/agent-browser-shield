@@ -241,6 +241,187 @@
         border-radius: 999px;
         text-align: center;
       }
+      .human-mode {
+        margin: 0 0 12px;
+      }
+      .human-mode__heading {
+        margin: 0 0 6px;
+        padding-bottom: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #555;
+        border-bottom: 1px solid #e4e4e7;
+      }
+      .human-mode__summary {
+        margin: 0 0 6px;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #333;
+      }
+      .human-mode__toggle {
+        margin: 0 0 6px;
+        padding: 2px 6px;
+        font: inherit;
+        font-size: 11px;
+        color: #2563eb;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      .human-mode__toggle:hover {
+        text-decoration: underline;
+      }
+      .debug-trace {
+        margin: 12px 0 0;
+        padding: 8px 10px;
+        border: 1px solid #e4e4e7;
+        border-radius: 6px;
+        background: #f8fafc;
+      }
+      .debug-trace__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .debug-trace__heading {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #555;
+      }
+      .debug-trace__actions {
+        display: inline-flex;
+        gap: 4px;
+      }
+      .debug-trace__action {
+        padding: 2px 6px;
+        font: inherit;
+        font-size: 10px;
+        color: #2563eb;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .debug-trace__action:disabled {
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+      .debug-trace__empty,
+      .debug-trace__meta {
+        margin: 0 0 6px;
+        font-size: 11px;
+        color: #666;
+      }
+      .debug-trace__segments {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .segment {
+        padding: 6px 8px;
+        background: #fff;
+        border: 1px solid #e4e4e7;
+        border-radius: 4px;
+      }
+      .segment__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .segment__label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #1d4ed8;
+      }
+      .segment__meta {
+        font-size: 10px;
+        color: #888;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 180px;
+      }
+      .segment__empty {
+        margin: 0;
+        font-size: 11px;
+        color: #999;
+        font-style: italic;
+      }
+      .segment__events {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .trace-event__row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 3px 6px;
+        font: inherit;
+        text-align: left;
+        background: #f8fafc;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .trace-event__row:hover {
+        background: #e0e7ff;
+      }
+      .trace-event__rule {
+        font-size: 11px;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .trace-event__kind {
+        flex: none;
+        font-size: 10px;
+        color: #666;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .trace-event__detail {
+        padding: 4px 6px;
+        font-size: 11px;
+        color: #333;
+        line-height: 1.4;
+      }
+      .trace-event__selector,
+      .trace-event__before-text {
+        margin: 4px 0;
+        word-break: break-all;
+      }
+      .trace-event__html {
+        max-height: 160px;
+        margin: 4px 0 0;
+        padding: 6px;
+        overflow: auto;
+        font-size: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
       .options-button-toggle {
         display: flex;
         align-items: center;

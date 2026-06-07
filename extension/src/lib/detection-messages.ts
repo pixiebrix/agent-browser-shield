@@ -86,3 +86,67 @@ export interface GetTabRuleCountsResponse {
   entries: RuleCountEntry[];
   detections: DetectionPayload[];
 }
+
+// Dev-mode structured trace of every rule-driven mutation. Captured only
+// when the user enables the "Debug trace" toggle in the popup; gated at
+// emission by `debug-trace.ts` so a disabled toggle drops the work
+// entirely. Each event is attributed to the segment that was active when
+// the mutation happened so consumers can group events by initial-load /
+// route-change / modal-open / mutation-burst.
+export type SegmentKind =
+  | "initial-load"
+  | "route-change"
+  | "modal-open"
+  | "mutation-burst";
+
+export interface SegmentMarker {
+  // Monotonically increasing within a single content script. Combined with
+  // tabId + frameId in the background to form a stable key.
+  segmentId: number;
+  kind: SegmentKind;
+  // Local timestamp (Date.now) at emit time. Used to render a timeline in
+  // the popup without round-tripping back to the content script.
+  timestamp: number;
+  // Per-kind context. URLs for route-change / initial-load, selectors for
+  // modal-open, pending count for mutation-burst.
+  meta: Record<string, string | number>;
+}
+
+export type RuleApplicationKind =
+  | "block-placeholder"
+  | "inline-placeholder"
+  | "hide-in-place";
+
+export interface RuleApplicationEvent {
+  segmentId: number;
+  // Typed as a plain string rather than `RuleId` because the catalog-derived
+  // `RuleId` widens to `string` in practice (the Rule type's self-referential
+  // id field forces widening), and the trace consumer falls back gracefully
+  // to the raw id when the label lookup misses.
+  ruleId: string;
+  kind: RuleApplicationKind;
+  timestamp: number;
+  // Selector that matched the original element when one is known
+  // (selector-hide-rule has the union string). Otherwise a structural
+  // fingerprint like "div.cookie-banner" from `describeNode`.
+  selector: string;
+  // outerHTML of the original element captured immediately before the
+  // mutation. May be empty for inline placeholders, which store the raw
+  // text snippet in `beforeText` instead.
+  beforeHtml: string;
+  // outerHTML of the replacement placeholder, or empty for in-place hides
+  // (the original node stays in the DOM, just `display:none`).
+  afterHtml: string;
+  // Original text replaced by an inline placeholder. Only populated for
+  // `inline-placeholder` events.
+  beforeText?: string;
+}
+
+export type DebugTraceEntry =
+  | ({ type: "segment" } & SegmentMarker)
+  | ({ type: "rule-application" } & RuleApplicationEvent);
+
+export interface DebugTraceEventMessage {
+  type: "debug-trace-event";
+  entry: DebugTraceEntry;
+}

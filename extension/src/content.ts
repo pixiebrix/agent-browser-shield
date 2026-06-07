@@ -5,6 +5,7 @@ import { isTopFrame } from "./lib/frame";
 import { startOptionsBadge } from "./lib/options-badge";
 import { startRuleCountReporter } from "./lib/rule-count";
 import { start } from "./lib/rule-engine";
+import { startSegmentTracker } from "./lib/segment-tracker";
 import { installShadowRootHook } from "./lib/shadow-roots";
 
 // Install the attachShadow patch as early as possible. The content script
@@ -28,6 +29,12 @@ start().catch((error: unknown) => {
 // Per-frame, per-rule footprint reporter — background aggregates across
 // frames into the toolbar badge total and the popup's per-rule activity list.
 startRuleCountReporter();
+
+// Dev-mode trace segment markers (initial load, route changes, modal
+// opens, mutation bursts). All emission is gated by the user's debug-trace
+// toggle inside the tracker — when off, this is one route-change listener
+// plus one shared subtree-watcher subscriber, no other cost.
+startSegmentTracker();
 
 if (isTopFrame()) {
   startOptionsBadge();

@@ -3,7 +3,12 @@
 
 import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
 import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
+import {
+  appendEvent as appendDebugTraceEvent,
+  clearTab as clearDebugTraceTab,
+} from "./lib/debug-trace-store";
 import type {
+  DebugTraceEventMessage,
   DetectionKind,
   DetectionPayload,
   GetTabDetectionsRequest,
@@ -175,6 +180,10 @@ function clearDetectionsOfKind(kind: DetectionKind): void {
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabRuleCounts.delete(tabId);
   tabDetections.delete(tabId);
+  // Fire-and-forget — IDB write may outlive the listener context.
+  void clearDebugTraceTab(tabId).catch(() => {
+    // noop
+  });
 });
 
 // On a top-level navigation, drop stale per-frame counts so the new document
@@ -182,6 +191,9 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === "loading") {
     clearTab(tabId);
+    void clearDebugTraceTab(tabId).catch(() => {
+      // noop
+    });
   }
 });
 
@@ -399,6 +411,26 @@ chrome.runtime.onMessage.addListener(
           ? buildRuleCountsResponse(request.tabId)
           : { entries: [], detections: [] };
       sendResponse(response);
+      return undefined;
+    }
+
+    if (message.type === "debug-trace-event") {
+      const tabId = sender.tab?.id;
+      const frameId = sender.frameId;
+      const entry = (message as unknown as DebugTraceEventMessage).entry;
+      if (
+        typeof tabId === "number" &&
+        typeof frameId === "number" &&
+        typeof entry === "object"
+      ) {
+        // Fire-and-forget — IDB writes are async, but the message handler
+        // shouldn't block on disk. Pruning happens inside `appendEvent`.
+        void appendDebugTraceEvent(tabId, frameId, entry).catch(
+          (error: unknown) => {
+            log("debug-trace IDB write failed", { error });
+          },
+        );
+      }
       return undefined;
     }
 

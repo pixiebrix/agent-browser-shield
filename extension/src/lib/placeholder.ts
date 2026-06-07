@@ -1,9 +1,18 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import { REVEALED_ATTR, RULE_ATTR } from "./dom-markers";
 import { log } from "./log";
 import type { RuleId } from "./storage";
+
+function describeForTrace(element: Element): string {
+  const tag = element.tagName.toLowerCase();
+  const id = element.id ? `#${element.id}` : "";
+  const classes =
+    element.classList.length > 0 ? `.${[...element.classList].join(".")}` : "";
+  return `${tag}${id}${classes}`;
+}
 
 export const PLACEHOLDER_CLASS = "abs-placeholder";
 export const LABEL_CLASS = "abs-placeholder__label";
@@ -150,12 +159,24 @@ export function replaceWithBlockPlaceholder(
   }
 
   attachReveal(placeholder, element);
+  // outerHTML is non-trivial on large subtrees — only pay the cost when
+  // the dev-mode trace toggle is on. Capture before the swap so the
+  // serialization reflects the original tree, not the placeholder.
+  const beforeHtml = isDebugTraceEnabled() ? element.outerHTML : "";
+  const selector = isDebugTraceEnabled() ? describeForTrace(element) : "";
   element.replaceWith(placeholder);
   log("block placeholder created", {
     ruleId,
     label,
     hidden: describeNode(element),
     size: { width: rect.width, height: rect.height },
+  });
+  recordRuleApplication({
+    ruleId,
+    kind: "block-placeholder",
+    selector,
+    beforeHtml,
+    afterHtml: isDebugTraceEnabled() ? placeholder.outerHTML : "",
   });
   return placeholder;
 }
@@ -214,6 +235,16 @@ function createInlinePlaceholder(
     label,
     hiddenLength: originalText.length,
   });
+  if (isDebugTraceEnabled()) {
+    recordRuleApplication({
+      ruleId,
+      kind: "inline-placeholder",
+      selector: `text:${label}`,
+      beforeHtml: "",
+      afterHtml: placeholder.outerHTML,
+      beforeText: originalText,
+    });
+  }
   return placeholder;
 }
 

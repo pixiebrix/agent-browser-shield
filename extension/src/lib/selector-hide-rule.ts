@@ -15,6 +15,7 @@
 
 import type { URLPattern } from "urlpattern-polyfill";
 import type { Rule } from "../rules/types";
+import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import { HIDDEN_ATTR, REVEALED_ATTR } from "./dom-markers";
 import { filterToOutermost } from "./dom-utils";
 import { PLACEHOLDER_CLASS, replaceWithBlockPlaceholder } from "./placeholder";
@@ -200,8 +201,16 @@ export function createSelectorHideRule(
         // a stale sibling throws NotFoundError and unmounts the tree). Hiding
         // in place with !important is visually equivalent and removes the
         // node from the a11y tree, without invalidating those references.
+        const beforeHtml = isDebugTraceEnabled() ? element.outerHTML : "";
         element.style.setProperty("display", "none", "important");
         element.setAttribute(HIDDEN_ATTR, id);
+        recordRuleApplication({
+          ruleId: id,
+          kind: "hide-in-place",
+          selector: memoJoined,
+          beforeHtml,
+          afterHtml: "",
+        });
       } else {
         // hideLabel is guaranteed non-undefined by the constructor check above.
         replaceWithBlockPlaceholder(element, id, hideLabel as string);

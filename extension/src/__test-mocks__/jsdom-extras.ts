@@ -22,6 +22,24 @@ Object.defineProperty(Element.prototype, "checkVisibility", {
   },
 });
 
+// jsdom 26's globalThis doesn't expose `structuredClone` to the test world
+// even though the underlying Node runtime ships it natively. `fake-indexeddb`
+// uses structuredClone to clone values on insertion, so debug-trace-store
+// tests trip a ReferenceError without this bridge.
+interface GlobalWithStructuredClone {
+  structuredClone?: <T>(value: T) => T;
+}
+const globalWithClone = globalThis as GlobalWithStructuredClone;
+if (typeof globalWithClone.structuredClone !== "function") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const v8 = require("node:v8") as {
+    deserialize: (buffer: Buffer) => unknown;
+    serialize: (value: unknown) => Buffer;
+  };
+  globalWithClone.structuredClone = <T>(value: T): T =>
+    v8.deserialize(v8.serialize(value)) as T;
+}
+
 // jsdom does not compute layout — every element reports offsetWidth/Height = 0.
 // Page-tree treats that as "invisible" and strips the node. Override with a
 // non-zero default so fixture markup makes it through the visibility filter;
