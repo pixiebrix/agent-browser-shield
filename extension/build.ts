@@ -131,6 +131,15 @@ async function build(): Promise<void> {
       // registration call. See `lib/webdriver-probe-source.ts` and
       // `lib/webdriver-probe-registration.ts`.
       join(SRC, "webdriver-probe.ts"),
+      // Standalone main-world bundle registered by the background worker
+      // whenever `checkout-checkbox-sanitize` is enabled. The patched
+      // `HTMLInputElement.prototype.checked` setter MUST live in the page
+      // world — page scripts (React/Vue reconciles) hit the page's own
+      // copy of the prototype, which is distinct from the one the
+      // isolated-world content script sees. See
+      // `lib/checkout-checkbox-defense-source.ts` and
+      // `lib/checkout-checkbox-defense-registration.ts`.
+      join(SRC, "checkout-checkbox-defense.ts"),
     ],
     outdir: DIST,
     target: "browser",

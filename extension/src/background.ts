@@ -1,6 +1,8 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
+import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
 import type {
   DetectionKind,
   DetectionPayload,
@@ -281,6 +283,35 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
 
+    if (message.type === "inject-checkout-checkbox-defense") {
+      const tabId = sender.tab?.id;
+      if (typeof tabId !== "number") {
+        return undefined;
+      }
+      const frameId = sender.frameId;
+      // Same shape as inject-webdriver-probe: the registered content
+      // script covers future navigations; this fallback runs the defense
+      // on the tab the user was already viewing when they toggled the
+      // rule on. installCheckoutCheckboxDefense's
+      // `__abs_checkout_checkbox_defense_installed` guard makes a
+      // redundant call a no-op in the page world.
+      chrome.scripting
+        .executeScript({
+          target: {
+            tabId,
+            frameIds: typeof frameId === "number" ? [frameId] : undefined,
+          },
+          world: "MAIN",
+          func: installCheckoutCheckboxDefense,
+        })
+        .catch((error: unknown) => {
+          log("inject-checkout-checkbox-defense executeScript failed", {
+            error,
+          });
+        });
+      return undefined;
+    }
+
     if (message.type === "rule-count") {
       const tabId = sender.tab?.id;
       const frameId = sender.frameId;
@@ -384,3 +415,10 @@ startClassifyPortListener();
 // content-script-side inline fallback can't reach. See
 // `lib/webdriver-probe-registration.ts`.
 startWebdriverProbeRegistration();
+
+// Same lifecycle for `checkout-checkbox-sanitize`'s page-world
+// `HTMLInputElement.prototype.checked` defense. The patch must live in
+// the page world to intercept React/Vue reconciles that drive
+// `node.checked = true` through the page's own prototype copy. See
+// `lib/checkout-checkbox-defense-registration.ts`.
+startCheckoutCheckboxDefenseRegistration();

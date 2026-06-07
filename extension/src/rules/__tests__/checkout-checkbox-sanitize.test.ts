@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://shop.example.com/checkout"}
  */
+import { installCheckoutCheckboxDefense } from "../../lib/checkout-checkbox-defense-source";
 import { isCheckoutUrl } from "../../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
 import { checkoutCheckboxSanitizeRule } from "../checkout-checkbox-sanitize";
@@ -11,6 +12,15 @@ const MUTATION_THROTTLE_MS = 250;
 async function flushMutations(): Promise<void> {
   await Promise.resolve();
 }
+
+beforeAll(() => {
+  // In production the defense is shipped into the page world via a
+  // separate bundle registered by the background worker; jsdom has a
+  // single world, so installing the source here gives the rule's
+  // unchecked boxes the same prototype-wrap defense they'd see at
+  // runtime. Idempotent — safe to call once per file.
+  installCheckoutCheckboxDefense.call(globalThis as unknown as Window);
+});
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -105,6 +115,33 @@ describe("checkoutCheckboxSanitizeRule.apply", () => {
     expect(radio.checked).toBe(true);
     expect(text.value).toBe("hello");
   });
+
+  it("requests page-world defense injection via chrome.runtime.sendMessage", () => {
+    document.body.innerHTML = `<input type="checkbox" checked />`;
+    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
+    sendMessage.mockReset();
+    sendMessage.mockResolvedValue(undefined);
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: "inject-checkout-checkbox-defense",
+    });
+  });
+
+  it("swallows sendMessage rejections so the rule still scans", async () => {
+    document.body.innerHTML = `<input id="x" type="checkbox" checked />`;
+    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
+    sendMessage.mockReset();
+    sendMessage.mockRejectedValue(new Error("no receiver"));
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    await flushMutations();
+
+    const checkbox = document.querySelector("#x") as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
+  });
 });
 
 describe("checkoutCheckboxSanitizeRule lazy-loaded sections", () => {
@@ -123,24 +160,6 @@ describe("checkoutCheckboxSanitizeRule lazy-loaded sections", () => {
     expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
   });
 
-  it("does not re-uncheck a cleared box that the agent re-checks", async () => {
-    document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
-    checkoutCheckboxSanitizeRule.apply(document.body);
-
-    const checkbox = document.querySelector("#terms") as HTMLInputElement;
-    expect(checkbox.checked).toBe(false);
-
-    // Agent re-checks the box (e.g., after deciding to accept T&C).
-    checkbox.checked = true;
-
-    // Trigger a scan: append an unrelated element so the mutation observer fires.
-    document.body.append(document.createElement("span"));
-    await flushMutations();
-    jest.advanceTimersByTime(MUTATION_THROTTLE_MS);
-
-    expect(checkbox.checked).toBe(true);
-  });
-
   it("teardown stops the observer so later additions are ignored", async () => {
     checkoutCheckboxSanitizeRule.apply(document.body);
     checkoutCheckboxSanitizeRule.teardown();
@@ -155,5 +174,46 @@ describe("checkoutCheckboxSanitizeRule lazy-loaded sections", () => {
     const checkbox = document.querySelector("#late") as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
+  });
+});
+
+describe("end-to-end with the page-world defense installed", () => {
+  // The rule clears the box and stamps the marker; the source-side
+  // prototype wrap then defends that marker against programmatic
+  // re-checks. These tests exercise the integration in jsdom's
+  // single-world environment, which mirrors how the two pieces interact
+  // at runtime once the defense bundle has been injected.
+
+  it("a page-script .checked = true after sanitize is reverted", () => {
+    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
+    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    expect(checkbox.checked).toBe(false);
+
+    checkbox.checked = true;
+
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it("an agent .click() on a cleared box re-checks (escape hatch)", () => {
+    document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
+    const checkbox = document.querySelector("#terms") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    checkbox.click();
+
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it("removing the marker manually releases the lock", () => {
+    document.body.innerHTML = `<input id="terms" type="checkbox" checked />`;
+    const checkbox = document.querySelector("#terms") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    checkbox.removeAttribute(CLEARED_ATTR);
+    checkbox.checked = true;
+
+    expect(checkbox.checked).toBe(true);
   });
 });

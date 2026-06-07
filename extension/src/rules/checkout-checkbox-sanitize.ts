@@ -9,8 +9,20 @@
 //
 // We re-scan added subtrees via a throttled MutationObserver so checkboxes
 // in lazily-loaded checkout steps are caught. We deliberately do NOT observe
-// attribute mutations: once we've cleared a checkbox, re-checks by the
-// agent/user must stick, or we'd be in a fight loop.
+// attribute mutations on existing checkboxes via the watcher — the
+// MutationObserver path would burn cycles on every class/style toggle.
+//
+// Defense against post-sanitize re-checks (the dark-pattern threat model
+// the rule was built for) lives in a separate page-world bundle:
+// `lib/checkout-checkbox-defense-source.ts`, registered by the background
+// worker at `document_start` whenever this rule is enabled. The
+// isolated-world prototype that a content script can reach is a distinct
+// object from the page world's copy that React/Vue reconciles drive
+// `node.checked = true` through, so the wrap MUST live in the page
+// world. This rule's `apply` sends an `inject-checkout-checkbox-defense`
+// message at `document_idle` so the tab the user was already viewing
+// when they toggled the rule on also gets the patch — dynamic
+// registrations only apply to future navigations.
 
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
@@ -19,6 +31,10 @@ import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-sanitize" as const;
+
+const INJECT_DEFENSE_MESSAGE = {
+  type: "inject-checkout-checkbox-defense",
+} as const;
 
 // React/Vue track checked state internally; setting `.checked` directly skips
 // their value-tracker, so onChange handlers never fire and totals don't
@@ -96,7 +112,18 @@ const watcher = createSubtreeWatcher({
   },
 });
 
+function requestDefenseInjection(): void {
+  // Service worker may be asleep / receiver not yet ready; swallow rejection
+  // so unhandled-promise warnings don't surface on every page load. The
+  // defense itself short-circuits on `__abs_checkout_checkbox_defense_installed`,
+  // so re-requests on the same document are no-ops in the page world.
+  chrome.runtime.sendMessage(INJECT_DEFENSE_MESSAGE).catch(() => {
+    // noop
+  });
+}
+
 function apply(root: ParentNode): void {
+  requestDefenseInjection();
   scanAndClear(root);
   watcher.start(root);
 }
@@ -111,3 +138,5 @@ export const checkoutCheckboxSanitizeRule = {
     watcher.stop();
   },
 } satisfies Rule;
+
+export { INJECT_DEFENSE_MESSAGE };
