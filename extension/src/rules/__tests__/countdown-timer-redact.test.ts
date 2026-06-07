@@ -50,6 +50,18 @@ describe("matchesTimerPattern", () => {
     expect(matchesTimerPattern("15 minutes remaining")).toBe(true);
   });
 
+  it("matches urgency suffix synonyms (#203 item 21)", () => {
+    expect(matchesTimerPattern("5 hours to claim")).toBe(true);
+    expect(matchesTimerPattern("45 minutes to save")).toBe(true);
+  });
+
+  it("matches expiry-lead phrasings (#203 item 21)", () => {
+    expect(matchesTimerPattern("Sale ends in 3h")).toBe(true);
+    expect(matchesTimerPattern("Offer expires in 45 minutes")).toBe(true);
+    expect(matchesTimerPattern("Closes in 2d")).toBe(true);
+    expect(matchesTimerPattern("Ends in 30 seconds")).toBe(true);
+  });
+
   it("does not match arbitrary numbers", () => {
     expect(matchesTimerPattern("Item #123456")).toBe(false);
     expect(matchesTimerPattern("Save 30%")).toBe(false);
@@ -123,6 +135,31 @@ describe("countdownTimerRedactRule", () => {
 
     expect(document.querySelector("#t")).toBeNull();
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("hides an expiry-lead countdown that decreased (#203 item 21)", () => {
+    document.body.innerHTML = `<div id="t">Sale ends in 2h 15m</div>`;
+    countdownTimerRedactRule.apply(document.body);
+
+    const timer = document.querySelector("#t");
+    if (timer) {
+      timer.textContent = "Sale ends in 2h 14m";
+    }
+
+    jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
+
+    expect(document.querySelector("#t")).toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
+  it("leaves a static expiry-lead badge alone (decrement gate)", () => {
+    document.body.innerHTML = `<div id="t">Expires in 30 days</div>`;
+    countdownTimerRedactRule.apply(document.body);
+
+    jest.advanceTimersByTime(SNAPSHOT_DELAY_MS);
+
+    expect(document.querySelector("#t")).not.toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
   it("leaves static clock-shaped text alone", () => {

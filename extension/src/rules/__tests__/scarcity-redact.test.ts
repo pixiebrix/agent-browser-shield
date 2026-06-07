@@ -46,6 +46,21 @@ describe("matchesScarcityPattern", () => {
     "8 purchased in the past day",
     "5 have it in their cart",
     "3 in carts",
+    // Synonym evasion bypasses (#203 item 21).
+    "Just 3 left",
+    "Just 2 in stock",
+    "3 items left",
+    "5 units remaining",
+    "2 pieces left",
+    "While supplies last",
+    "While stocks last",
+    "Selling quickly",
+    "Going quickly",
+    "Flying off the shelves",
+    "Going off shelves",
+    "12 added to cart in the last hour",
+    "8 shoppers added this to their bag",
+    "5 others added to wishlist",
   ])("matches urgency phrasing: %s", (text) => {
     expect(matchesScarcityPattern(text)).toBe(true);
   });
@@ -67,6 +82,11 @@ describe("matchesScarcityPattern", () => {
     "Ships in 2 days",
     "Save 30%",
     "Free shipping",
+    // "Just" alone is not an urgency signal.
+    "Just released",
+    "Just for you",
+    // Bare "added to cart" without a count is a UI confirmation, not scarcity.
+    "Added to cart",
   ])("leaves non-urgency text alone: %s", (text) => {
     expect(matchesScarcityPattern(text)).toBe(false);
   });

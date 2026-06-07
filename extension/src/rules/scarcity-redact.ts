@@ -28,24 +28,33 @@ const MAX_CANDIDATE_LENGTH = 80;
 const MAX_CANDIDATE_DESCENDANTS = 20;
 
 const SCARCITY_PATTERNS: RegExp[] = [
-  /\bonly\s+\d+\s+(?:left|remaining|in\s+stock|available)\b/i,
+  /\b(?:only|just)\s+\d+\s+(?:left|remaining|in\s+stock|available)\b/i,
   /\b\d+\s+(?:left|remaining)\s+in\s+stock\b/i,
+  /\b\d+\s+(?:items?|units?|pieces?)\s+(?:left|remaining)\b/i,
   /\b(?:low|limited)\s+(?:stock|inventory|availability|quantit(?:y|ies)|supply)\b/i,
   /\bstock(?:\s+is)?\s+running\s+low\b/i,
   /\b\d+\s+(?:in\s+stock|available)\b/i,
+  // "While supplies last" / "while stocks last" — fixed phrase, no FP risk.
+  /\bwhile\s+(?:supplies|stocks?)\s+last\b/i,
 ];
 
 const DEMAND_PATTERNS: RegExp[] = [
   /\b(?:almost|nearly)\s+(?:gone|out|sold(?:\s+out)?)\b/i,
-  /\bselling\s+(?:fast|out)\b/i,
-  /\bgoing\s+fast\b/i,
+  /\bselling\s+(?:fast|out|quickly)\b/i,
+  /\bgoing\s+(?:fast|quickly)\b/i,
   /\bhigh\s+demand\b/i,
+  // "Flying off the shelves" / "going off shelves" — retail-only idiom; 80-char
+  // leaf-candidate gate makes prose mentions (e.g. news copy) unreachable.
+  /\b(?:flying|going)\s+off\s+(?:the\s+)?shelves\b/i,
 ];
 
 const ACTIVITY_PATTERNS: RegExp[] = [
   /\b\d+\s+(?:people|users|shoppers|customers|others?)\s+(?:are\s+)?(?:viewing|looking|watching)\b/i,
   /\b\d+\s+(?:sold|bought|purchased)\s+(?:in\s+the\s+)?(?:last|past)\s+\w+/i,
   /\b\d+\s+(?:in|have\s+(?:this\s+|it\s+)?in)\s+(?:their\s+)?carts?\b/i,
+  // "12 added to cart in the last hour" / "8 added to bag" — covers the
+  // verb-swap from "viewing/watching" to "added".
+  /\b\d+\s+(?:people\s+|shoppers\s+|others\s+)?added\s+(?:this\s+)?to\s+(?:their\s+)?(?:carts?|baskets?|bags?|wishlists?)\b/i,
 ];
 
 const ALL_PATTERNS: RegExp[] = [

@@ -36,13 +36,20 @@ const COLON_PATTERN = /(?<!\d)\d{1,3}:[0-5]\d(?::[0-5]\d)?(?!\d)/;
 const MULTI_UNIT_PATTERN =
   /\b\d+\s*(?:d(?:ays?)?|h(?:ours?|rs?)?|m(?:in(?:utes?)?)?|s(?:ec(?:onds?)?)?)\b[\s,:]*\b\d+\s*(?:d(?:ays?)?|h(?:ours?|rs?)?|m(?:in(?:utes?)?)?|s(?:ec(?:onds?)?)?)\b/i;
 const URGENCY_UNIT_PATTERN =
-  /\b\d+\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)\s+(?:left|remaining|to\s+go|until)\b/i;
+  /\b\d+\s*(?:hours?|hrs?|minutes?|mins?|seconds?|secs?)\s+(?:left|remaining|to\s+go|to\s+claim|to\s+save|until)\b/i;
+// "Sale ends in 3h", "Offer expires in 45 minutes", "Closes in 2d" — common
+// countdown lead-ins where the urgency word precedes the value. Candidate
+// only; redaction still requires the decrement check in reconcileCandidates,
+// so a static "Expires in 30 days" badge is never replaced.
+const EXPIRY_LEAD_PATTERN =
+  /\b(?:ends?|expires?|closes?)\s+in\s+\d+\s*(?:d(?:ays?)?|h(?:ours?|rs?)?|m(?:in(?:utes?)?)?|s(?:ec(?:onds?)?)?)\b/i;
 
 export function matchesTimerPattern(text: string): boolean {
   return (
     COLON_PATTERN.test(text) ||
     MULTI_UNIT_PATTERN.test(text) ||
-    URGENCY_UNIT_PATTERN.test(text)
+    URGENCY_UNIT_PATTERN.test(text) ||
+    EXPIRY_LEAD_PATTERN.test(text)
   );
 }
 
