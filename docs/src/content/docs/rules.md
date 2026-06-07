@@ -53,6 +53,15 @@ handful of hardened embeds, but they are a known gap. The optional
 [Flag Closed Shadow Roots](#flag-closed-shadow-roots-experimental) rule can
 heuristically warn the agent at read-time when this gap is in use.
 
+**Extension presence is observable.** The rules leave rendered artifacts on the
+page — click-to-reveal placeholders, screen-reader-only landmarks, inline
+annotation chips, neutralized button labels — so a sophisticated site that
+fingerprints for those artifacts can detect ABS and serve a different DOM under
+that fingerprint than it would to an unprotected browser. The rule engine only
+sees what the page renders, so any content shaped by such adaptation is read by
+the rules as legitimate page content. Counter-cloaking from a content script is
+structurally out of scope.
+
 ## Indirect prompt injection
 
 Remove or neutralize content that could carry attacker-controlled instructions
@@ -72,6 +81,14 @@ delivery vector documented in those threat models.
 Hide page sections matching known prompt-injection patterns. The pattern set is
 intentionally not reproduced in docs — see the project README for how patterns
 are sourced and shipped.
+
+The bundle is a finite, curated catalog of phrasings observed in the literature
+and in fixtures. Payloads outside the catalog — novel framings, instruction
+shapes drawn from agent APIs the bundle does not yet cover, role markers from
+chat formats outside the set — pass through. The same bundle backs
+`meta-injection-strip`, `attribute-injection-sanitize`, `json-ld-sanitize`,
+`html-comment-strip`, and `svg-text-strip`, so coverage in those rules is
+bounded by the same catalog.
 
 #### Redact Encoded Payloads
 
@@ -639,6 +656,11 @@ sections. The snapshot-and-confirm approach follows Mathur et al.
 mutations over time and comparing successive snapshots to confirm a ticking
 value.
 
+Timers that reset to their starting value on each tick — and timers rendered via
+`<canvas>` or WebGL rather than DOM text — are not detected: the snapshot
+comparison requires a parseable text representation whose value strictly
+decreases across the 1.5s window.
+
 ### Scarcity
 
 #### Hide Scarcity Warnings
@@ -837,6 +859,12 @@ The underlying control is preserved — only its visible label and any matching
 `aria-label` / `title` are rewritten — so the agent can still click it normally.
 Plain decline labels like "No thanks", "Decline", "Maybe later", "Skip", and
 "Continue as guest" are left untouched.
+
+Coverage is English-only — the phrase set ships in English and does not run
+across localized variants of the same buttons. Buttons whose decline action is
+conveyed entirely by an icon, with no text label and no accessible name on
+`aria-label` / `title`, are out of scope: the rule matches against textual
+labels and has nothing to rewrite when there is no text.
 
 Cataloged as *Confirmshaming* in Brignull's deceptive.design
 [[10]](#ref-brignull) and as part of the *Misdirection* family in Mathur et al.
