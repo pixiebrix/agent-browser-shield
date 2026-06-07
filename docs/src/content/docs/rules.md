@@ -510,18 +510,26 @@ too. Off by default while the false-positive rate is characterized.
 - **Default:** on
 
 Annotate `<a>` elements whose visible text is visually spoofed relative to the
-link's actual destination. Two checks, both signalled with a visible inline chip
-appended next to the anchor:
+link's actual destination. Three checks, all signalled with a visible inline
+chip appended next to the anchor:
 
 1. The visible text contains a word that mixes Latin letters with letters from
    Greek (`U+0370–03FF`), Cyrillic (`U+0400–04FF`), Armenian (`U+0530–058F`), or
    Cherokee (`U+13A0–13FF`) — the script blocks that supply the Latin
    confusables used in homoglyph attacks. A pure-Cyrillic word adjacent to a
-   pure-Latin word does not match; the test requires within-word script mixing.
-2. The visible text contains a fully-formed domain whose last-two-labels apex
-   doesn't match `URL.hostname` of the link's `href` (after stripping `www.`).
-   Gated to `http(s):` hrefs so `mailto:`, `tel:`, and fragment anchors don't
-   get spurious comparisons.
+   pure-Latin word does not match; this test requires within-word script mixing.
+2. The visible text contains a domain whose letters are drawn entirely from one
+   non-Latin script but whose visual skeleton — via a curated subset of the
+   Unicode TR39 confusables table — collapses to a pure-Latin string (e.g. a
+   fully-Cyrillic letter sequence visually mimicking a Latin brand). Catches
+   single-script homograph attacks the within-word check (#1) misses. The chip
+   surfaces the Latin form the domain mimics.
+3. The visible text contains a fully-formed domain whose registrable identity
+   (PSL, ICANN section) doesn't match the link's actual host. Visible candidate
+   and href are both normalized to their punycode form before the comparison, so
+   legitimate IDN links (visible Unicode ↔ `xn--` href) don't surface while
+   attacker-redirect cases do. Gated to `http(s):` hrefs so `mailto:`, `tel:`,
+   and fragment anchors don't get spurious comparisons.
 
 The chip is rendered as visible markup — not just a `data-*` attribute — because
 the rule's threat model is the asymmetry where a vision-based agent (or a

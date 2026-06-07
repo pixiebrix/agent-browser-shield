@@ -57,6 +57,43 @@ describe("detectSpoof homoglyph check", () => {
   });
 });
 
+describe("detectSpoof single-script homograph (#203 item 16)", () => {
+  it("flags a fully-Cyrillic domain that skeletons to a Latin brand", () => {
+    // Every letter Cyrillic: а р р ӏ е — visually "apple.com".
+    const anchor = makeAnchor("аррӏе.com", "https://attacker.example/");
+    const triggers = detectSpoof(anchor);
+    expect(triggers).not.toBeNull();
+    expect(triggers?.homoglyphWord).toBe("аррӏе.com");
+    expect(triggers?.homoglyphSkeleton).toBe("apple.com");
+  });
+
+  it("flags a fully-Cyrillic homograph even when href is the matching IDN domain", () => {
+    // Attacker bought the IDN form; text and href agree on registrable
+    // identity, but the visible domain still mimics a Latin brand.
+    const anchor = makeAnchor("аррӏе.com", "https://xn--80ak6aa92e.com/");
+    const triggers = detectSpoof(anchor);
+    expect(triggers?.homoglyphWord).toBe("аррӏе.com");
+    expect(triggers?.homoglyphSkeleton).toBe("apple.com");
+    // No text/href mismatch — RDs are identical after punycode.
+    expect(triggers?.textDomain).toBeNull();
+  });
+
+  it("does not flag a legitimate IDN whose skeleton is not pure Latin", () => {
+    // 'п', 'з', 'и', 'д', 'н', 'т', 'ф' have no Latin confusable; the
+    // skeleton retains Cyrillic and so isn't read as a Latin mimic.
+    const anchor = makeAnchor(
+      "президент.рф",
+      "https://xn--d1abbgf6aiiy.xn--p1ai/",
+    );
+    expect(detectSpoof(anchor)).toBeNull();
+  });
+
+  it("does not flag pure-Latin domains via the skeleton check", () => {
+    const anchor = makeAnchor("apple.com", "https://apple.com/");
+    expect(detectSpoof(anchor)).toBeNull();
+  });
+});
+
 describe("detectSpoof href/text domain mismatch", () => {
   it("flags when visible text shows a different apex than the href", () => {
     const anchor = makeAnchor(
@@ -123,6 +160,24 @@ describe("detectSpoof href/text domain mismatch", () => {
     );
     expect(detectSpoof(anchor)).toBeNull();
   });
+
+  it("flags an IDN visible-text domain pointing at an unrelated ASCII host (#203 item 16)", () => {
+    // Same homograph attack as the skeleton check, but the attacker
+    // pointed the link at a plain ASCII domain — the text/href
+    // comparison surfaces the mismatch independently.
+    const anchor = makeAnchor("аррӏе.com", "https://evil.example.com/");
+    const triggers = detectSpoof(anchor);
+    expect(triggers?.textDomain).toBe("аррӏе.com");
+    expect(triggers?.hrefHost).toBe("evil.example.com");
+  });
+
+  it("does not flag a legitimate IDN link whose href is the punycode form", () => {
+    const anchor = makeAnchor(
+      "президент.рф",
+      "https://xn--d1abbgf6aiiy.xn--p1ai/",
+    );
+    expect(detectSpoof(anchor)).toBeNull();
+  });
 });
 
 describe("linkSpoofAnnotateRule", () => {
@@ -171,5 +226,15 @@ describe("linkSpoofAnnotateRule", () => {
     linkSpoofAnnotateRule.apply(document.body);
 
     expect(document.querySelectorAll(`.${FLAG_CLASS}`).length).toBe(0);
+  });
+
+  it("chip surfaces the Latin mimic for a single-script homograph (#203 item 16)", () => {
+    const anchor = makeAnchor("аррӏе.com", "https://xn--80ak6aa92e.com/");
+    document.body.append(anchor);
+    linkSpoofAnnotateRule.apply(document.body);
+
+    const chip = document.querySelector(`.${FLAG_CLASS}`);
+    expect(chip?.textContent).toContain("аррӏе.com");
+    expect(chip?.textContent).toContain("apple.com");
   });
 });
