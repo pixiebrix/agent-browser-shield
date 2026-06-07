@@ -344,6 +344,122 @@ describe("discoverShadowRootsIn — set-idempotence", () => {
 });
 
 // -----------------------------------------------------------------------
+// Invariant 3a: setHTMLUnsafe DSD lifting registers every open root
+// -----------------------------------------------------------------------
+
+// Each spec describes one element in a flat hosting tree. The tree is
+// serialized to a `<template shadowrootmode>`-bearing HTML string, and
+// `setHTMLUnsafe` is called on a single receiver in the document. After
+// the call, every open declarative shadow should be in the registry and
+// every closed declarative shadow should be absent.
+interface DSDNode {
+  // null = no DSD on this element, otherwise the mode of the template
+  // hosted as a direct child of this element.
+  shadow: ShadowMode;
+}
+
+interface DSDTree {
+  size: number;
+  parents: readonly number[];
+  specs: readonly DSDNode[];
+}
+
+const dsdNodeArb: fc.Arbitrary<DSDNode> = fc.record({
+  shadow: shadowModeArb,
+});
+
+const dsdTreeArb: fc.Arbitrary<DSDTree> = fc
+  .integer({ min: 1, max: 8 })
+  .chain((size) => {
+    const specsArb = fc.array(dsdNodeArb, {
+      minLength: size,
+      maxLength: size,
+    });
+    if (size === 1) {
+      return specsArb.map((specs) => ({ size, parents: [], specs }));
+    }
+    const parentArbs = Array.from({ length: size - 1 }, (_, index) =>
+      fc.integer({ min: 0, max: index }),
+    );
+    return fc
+      .tuple(fc.tuple(...parentArbs), specsArb)
+      .map(([parents, specs]) => ({ size, parents, specs }));
+  });
+
+// Serialize a tree to an HTML string with one element per node, indexed
+// for later querySelector lookup, and a `<template shadowrootmode>` as
+// the first child of every shadow-bearing node.
+function serializeDSDTree(tree: DSDTree): string {
+  const { size, parents, specs } = tree;
+  // Build children-by-parent index so we can recurse in document order.
+  const childrenByParent = new Map<number, number[]>();
+  for (let i = 1; i < size; i++) {
+    const parent = parents[i - 1] as number;
+    const list = childrenByParent.get(parent) ?? [];
+    list.push(i);
+    childrenByParent.set(parent, list);
+  }
+  function emit(nodeIndex: number): string {
+    const spec = specs[nodeIndex] as DSDNode;
+    const children = childrenByParent.get(nodeIndex) ?? [];
+    const tag = `node-${nodeIndex}`;
+    let inner = "";
+    if (spec.shadow !== null) {
+      inner += `<template shadowrootmode="${spec.shadow}">shadow content for ${nodeIndex}</template>`;
+    }
+    for (const childIndex of children) {
+      inner += emit(childIndex);
+    }
+    return `<${tag} data-index="${nodeIndex}">${inner}</${tag}>`;
+  }
+  return emit(0);
+}
+
+describe("setHTMLUnsafe — open DSD registration property", () => {
+  it("registers exactly the open declarative shadows in the parsed HTML", () => {
+    fc.assert(
+      fc.property(dsdTreeArb, (tree) => {
+        document.body.innerHTML = "";
+        __resetShadowRootsForTesting();
+        installShadowRootHook();
+
+        const receiver = document.createElement("div");
+        document.body.append(receiver);
+        receiver.setHTMLUnsafe(serializeDSDTree(tree));
+
+        // For each spec with shadow !== null we expect a corresponding
+        // host element of tag `node-<index>` to exist and either have
+        // an open shadow (registered) or a closed shadow (host.shadowRoot
+        // returns null — and the tracker should not contain anything
+        // attributable to it).
+        const expectedOpen = new Set<ShadowRoot>();
+        let expectedClosedCount = 0;
+        for (let i = 0; i < tree.size; i++) {
+          const spec = tree.specs[i] as DSDNode;
+          const host = receiver.querySelector(`node-${i}`);
+          expect(host).not.toBeNull();
+          if (spec.shadow === "open") {
+            expect(host?.shadowRoot).not.toBeNull();
+            expectedOpen.add(host?.shadowRoot as ShadowRoot);
+          } else if (spec.shadow === "closed") {
+            expect(host?.shadowRoot).toBeNull();
+            expectedClosedCount += 1;
+          } else {
+            expect(host?.shadowRoot).toBeNull();
+          }
+        }
+
+        const tracked = new Set(getOpenShadowRoots());
+        expect(tracked).toEqual(expectedOpen);
+        expect(tracked.size + expectedClosedCount).toBe(
+          tree.specs.filter((s) => s.shadow !== null).length,
+        );
+      }),
+    );
+  });
+});
+
+// -----------------------------------------------------------------------
 // Invariant 3: dispatch coverage on randomized nested shadow forests
 // -----------------------------------------------------------------------
 

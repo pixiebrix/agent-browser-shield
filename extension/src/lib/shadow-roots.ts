@@ -16,6 +16,18 @@
 // page parsing have already happened by the time we install the hook. Callers
 // pair `installShadowRootHook()` with `discoverShadowRootsIn(document.body)`
 // at startup to catch those.
+//
+// Declarative shadow DOM (`<template shadowrootmode="open">`) is consumed by
+// the HTML parser without invoking `attachShadow`. Initial-parse DSD shadows
+// are caught by the startup walk because by document_idle the parser has
+// already materialized them and `host.shadowRoot` returns the open root. The
+// remaining post-parse opt-in surface — `Element.prototype.setHTMLUnsafe` and
+// `ShadowRoot.prototype.setHTMLUnsafe` — bypasses both `attachShadow` and the
+// subtree-watcher's "host was just inserted" path (the receiver is already
+// in the tree; only its children mutate). Those two methods are patched here
+// to walk the receiver after the call so any newly-materialized open shadow
+// is registered. Closed DSD is invisible by the same spec contract as
+// imperative closed shadows.
 
 const HOOK_INSTALLED = Symbol.for("abs.shadowRootHookInstalled");
 
@@ -46,6 +58,62 @@ export function installShadowRootHook(): void {
     }
     return root;
   };
+
+  patchSetHTMLUnsafe();
+}
+
+// `setHTMLUnsafe` is the only post-parse opt-in path that honors declarative
+// shadow DOM templates. Plain `innerHTML` drops them by spec. Patching both
+// the Element and ShadowRoot variants covers the case where the receiver is
+// itself already in the document: the page calls `host.setHTMLUnsafe(html)`,
+// the parser attaches a shadow root on the receiver without ever invoking
+// `attachShadow`, and the subtree-watcher's "host was just inserted" path
+// never fires — the receiver's host record is unchanged, only its descendants
+// mutated. The trampoline walks the receiver after the call so any new open
+// shadow shows up in the registry and fans out to subscribers.
+//
+// `Document.parseHTMLUnsafe` returns a detached `Document`; any path that
+// grafts its contents into the live tree goes through `appendChild` (which
+// trips the subtree-watcher's discovery walk on the host) or another
+// `setHTMLUnsafe`, so it does not need its own patch.
+function patchSetHTMLUnsafe(): void {
+  interface ElementSetHTMLUnsafeCapable {
+    setHTMLUnsafe?: (this: Element, html: string) => void;
+  }
+  interface ShadowSetHTMLUnsafeCapable {
+    setHTMLUnsafe?: (this: ShadowRoot, html: string) => void;
+  }
+
+  const elementProto = Element.prototype as ElementSetHTMLUnsafeCapable;
+  const originalElementSet = elementProto.setHTMLUnsafe;
+  if (typeof originalElementSet === "function") {
+    elementProto.setHTMLUnsafe = function patched(
+      this: Element,
+      html: string,
+    ): void {
+      originalElementSet.call(this, html);
+      // The receiver itself may have gained a shadow root (when the
+      // top-level fragment is a `<template shadowrootmode>`), and any
+      // descendant element may have gained one too — walk the whole
+      // subtree from the receiver.
+      discoverShadowRootsIn(this);
+    };
+  }
+
+  const shadowProto = ShadowRoot.prototype as ShadowSetHTMLUnsafeCapable;
+  const originalShadowSet = shadowProto.setHTMLUnsafe;
+  if (typeof originalShadowSet === "function") {
+    shadowProto.setHTMLUnsafe = function patched(
+      this: ShadowRoot,
+      html: string,
+    ): void {
+      originalShadowSet.call(this, html);
+      // A shadow root cannot itself receive another shadow — only its
+      // element descendants can. Walk from the shadow root so nested
+      // DSD inside the new content is registered.
+      discoverShadowRootsIn(this);
+    };
+  }
 }
 
 function registerShadowRoot(root: ShadowRoot): void {

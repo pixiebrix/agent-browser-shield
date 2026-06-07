@@ -1749,5 +1749,42 @@ describe("createSubtreeWatcher", () => {
       setTimeoutSpy.mockRestore();
       watcher.stop();
     });
+
+    it("dispatches children of an open DSD shadow materialized via setHTMLUnsafe", async () => {
+      // Declarative shadow DOM (`<template shadowrootmode="open">`)
+      // attached via Element.setHTMLUnsafe on a connected host bypasses
+      // both `attachShadow` and the "host was just inserted"
+      // MutationObserver path — the receiver is already in the tree;
+      // only its descendants mutate, and the shadow it gains is invisible
+      // to a vanilla observer. The setHTMLUnsafe patch in shadow-roots
+      // closes the gap by walking the receiver afterward and registering
+      // the new open root with the existing subscribeShadowRootAttached
+      // fanout.
+      const host = document.createElement("div");
+      document.body.append(host);
+
+      const onSubtrees = jest.fn();
+      const watcher = createSubtreeWatcher({ onSubtrees });
+      watcher.start(document.body);
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+      onSubtrees.mockClear();
+
+      host.setHTMLUnsafe(
+        '<template shadowrootmode="open"><section id="dsd-inner">payload</section></template>',
+      );
+
+      await flushMutations();
+      jest.advanceTimersByTime(THROTTLE_MS);
+
+      const allRoots = (onSubtrees.mock.calls as Array<[Element[]]>).flatMap(
+        (call) => call[0],
+      );
+      const dsdInner = host.shadowRoot?.querySelector("#dsd-inner");
+      expect(dsdInner).not.toBeNull();
+      expect(allRoots).toContain(dsdInner);
+      watcher.stop();
+    });
   });
 });
