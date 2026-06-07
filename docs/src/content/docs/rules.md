@@ -350,12 +350,24 @@ claims — `Article.publisher`, `Article.sourceOrganization`,
 [registrable domain](https://publicsuffix.org/) than the page asserting it.
 Structural fields (`@type`, `logo`, `datePublished`, `price`, `ratingValue`) are
 preserved exactly, so an agent still gets the article's body data; it just loses
-the impersonating identity strings. `Person`-typed claims and name-only claims
-with no `url` to anchor against are out of scope and left alone. Off by default
-while we gather real-world signal on false positives; the rule short-circuits
-entirely on known syndicators (Google News, Yahoo News, MSN, Apple News,
-Flipboard, SmartNews, Feedly, Pocket), web archives, AMP cache, and Google
-Translate proxies, where mismatched publisher claims are expected.
+the impersonating identity strings. Name-only claims with no `url` to anchor
+against are left alone. Off by default while we gather real-world signal on
+false positives; the rule short-circuits entirely on known syndicators (Google
+News, Yahoo News, MSN, Apple News, Flipboard, SmartNews, Feedly, Pocket), web
+archives, AMP cache, and Google Translate proxies, where mismatched publisher
+claims are expected.
+
+`Person`-typed claims get a weaker treatment than `Organization`. When a
+`Person` is nested under an authority-context property (`author`, `editor`,
+`publisher`, `creator`, `contributor`, `reviewedBy`, `funder`, `sponsor`,
+similar) and its `url` is on a different registrable domain than the page, the
+rule annotates the markup with `abs:unverified-authority: true` (JSON-LD) or
+`data-abs-schema-trust-unverified="true"` (microdata) and leaves the identity
+fields intact. Sanitizing those would erase legitimate guest-author and academic
+bylines, which routinely link off-domain. The annotation surfaces the same
+domain-binding gap a blanked Organization would, without damaging real metadata.
+A standalone `@type: Person` (a personal homepage) is not borrowing anyone's
+authority and is left alone regardless of URL.
 
 Schema.org has no native provenance mechanism — every claim is self-asserted,
 which is structurally why a page can list itself as published by The New York
@@ -950,18 +962,23 @@ and tracker selector patterns.
 - **Default:** on
 
 Hide article-shaped blocks that carry a visible disclosure label — "Sponsored",
-"Promoted", "Advertorial", "Paid Post", "Partner Content", or the bracketed
-variants common in social feeds — but are rendered by the publisher's own CMS
-rather than served from an ad network. Native advertorials bypass the
-infrastructure-level selectors that power `ads-hide` because they share class
-names and DOM shape with editorial articles; the only signal that distinguishes
-them is the disclosure label itself, which the
+"Promoted", "Advertorial", "Paid Post", "Partner Content", "Featured Listing",
+"From our Advertisers", "Marketing Partner", "In partnership with `<Brand>`", or
+the bracketed variants (`[Ad]`, `(promoted)`, `(sponsored)`) common in social
+feeds — but are rendered by the publisher's own CMS rather than served from an
+ad network. Native advertorials bypass the infrastructure-level selectors that
+power `ads-hide` because they share class names and DOM shape with editorial
+articles; the only signal that distinguishes them is the disclosure label
+itself, which the
 [FTC's `.com Disclosures`](https://www.ftc.gov/business-guidance/resources/com-disclosures-how-make-effective-disclosures-digital-advertising)
 require publishers to render prominently.
 
 Detection works on the visible label — not network selectors — and only fires
 when the label sits inside an article-shaped container (heading, image or
-outbound link, body prose). Filter chips, navigation links, and editorial
+outbound link, body prose). The heading carrier is recognized as any of `<h1>`–
+`<h6>`, `[role="heading"]`, or `[class~="headline"]`, so design systems that
+emit a styled `<div class="headline">` or an ARIA-heading `<div>` instead of a
+real `<h*>` are still detected. Filter chips, navigation links, and editorial
 paragraphs that mention sponsorship in passing are excluded by that shape check,
 by an interactive-ancestor guard, and by a whole-string regex on the label
 element. Matching cards are replaced with a click-to-reveal placeholder in the

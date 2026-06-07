@@ -93,3 +93,16 @@ export const FORM_PREFILL_ANNOTATED_ATTR = "data-abs-form-prefill-annotated";
 // drive an infinite re-clear loop.
 export const HIDDEN_AFFILIATE_CLEARED_ATTR =
   "data-abs-hidden-affiliate-cleared";
+
+// `schema-trust-sanitize`: stamped on a microdata Person scope (and added as
+// the JSON-LD key `abs:unverified-authority` on the corresponding object) when
+// the Person carries borrowed organizational authority — i.e. it is the value
+// of an `author` / `editor` / `publisher` / similar property — and its `url`
+// resolves to a different registrable domain than the page. We annotate
+// rather than blank because legitimate guest-author and academic bylines
+// routinely link off-domain; sanitizing those would erase real metadata. The
+// marker is the same domain-binding warning the Organization-typed path
+// communicates by blanking, surfaced through structured data only (these
+// nodes have no visible carrier, so a chip wouldn't reach an agent reading
+// JSON-LD).
+export const SCHEMA_TRUST_UNVERIFIED_ATTR = "data-abs-schema-trust-unverified";

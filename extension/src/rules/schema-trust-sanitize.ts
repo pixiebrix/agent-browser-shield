@@ -10,26 +10,41 @@
 // Snopes, or a top-level `@type: Organization` block on a domain that
 // has no relationship to the named entity.
 //
-// V1 scope is intentionally narrow: only `Organization` and its
-// subtypes, only when the claim object exposes a `url` field, only
-// matching at eTLD+1 (registrable domain). `Person.url` mismatches and
-// name-only claims with no `url` to anchor against are out — they're
-// noisier and need a brand allowlist to handle without false positives.
+// Two treatments live in this rule, picked by `@type`:
 //
-// Sanitize semantics: when a mismatch is detected we blank the
-// identifying string fields (`name`, `url`, `@id`) on the offending
-// object and leave the surrounding structure intact, so an agent still
-// receives the article's price / rating / headline / dates but loses
-// the impersonating identity. Pages on known syndicators, AMP caches,
-// archive proxies, and reader-mode hosts short-circuit the rule
-// entirely — mismatched publishers on those hosts are expected, not
-// suspicious.
+//   * Organization-family @types are *sanitized* — `name` / `url` /
+//     `@id` are blanked on a cross-RD mismatch. The agent still sees
+//     `@type: Organization` and the surrounding metadata (headline,
+//     price, dates) but loses the impersonating identity strings.
+//   * `Person` is *annotated* — when nested under an authority context
+//     property (author / editor / publisher / etc.) and the URL is
+//     cross-RD, we stamp the JSON-LD object with
+//     `abs:unverified-authority: true` and stamp the microdata scope
+//     with `data-abs-schema-trust-unverified`. The identity is left
+//     intact. The asymmetry is on purpose: sanitizing Person.url would
+//     erase legitimate guest-author and academic bylines that
+//     routinely link off-domain, but the same shape is the carrier for
+//     byline impersonation (a scam page asserting `Article.author =
+//     Person{name:"Sanjay Gupta", url:"cnn.com"}`). The annotation
+//     gives an agent reading structured data the same domain-binding
+//     warning the Organization path conveys by blanking, without
+//     damaging real metadata. A standalone `@type: Person` (a personal
+//     homepage) is left alone — it isn't borrowing anyone's authority,
+//     so the cross-RD URL isn't a smoking gun.
+//
+// Pages on known syndicators, AMP caches, archive proxies, and
+// reader-mode hosts short-circuit the rule entirely — mismatched
+// publishers on those hosts are expected, not suspicious.
 
+import { SCHEMA_TRUST_UNVERIFIED_ATTR } from "../lib/dom-markers";
 import {
+  isAnnotateOnlyAuthorityType,
+  isAuthorityContextProperty,
   isAuthorityType,
   isAuthorityUrlMismatch,
   SANITIZE_KEYS,
   shouldSkipPage,
+  UNVERIFIED_AUTHORITY_KEY,
 } from "../lib/schema-trust";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
@@ -68,14 +83,33 @@ function sanitizeAuthorityNode(
   }
 }
 
+function annotateAuthorityNode(
+  node: Record<string, unknown>,
+  mutated: { value: boolean },
+): void {
+  if (node[UNVERIFIED_AUTHORITY_KEY] === true) {
+    return;
+  }
+  node[UNVERIFIED_AUTHORITY_KEY] = true;
+  mutated.value = true;
+}
+
+// `parentKey` is the property name under which this object lives in its
+// containing object — `undefined` for the top-level node. It's used only
+// to gate the Person annotate path: a Person under `author` (or one of
+// the other authority-context properties) is borrowing organizational
+// authority and worth flagging; a top-level `@type: Person` page is
+// not. Arrays inherit the parent's key (a `Person[]` under `author` is
+// still author-context).
 function walk(
   value: unknown,
   pageHost: string,
   mutated: { value: boolean },
+  parentKey?: string,
 ): void {
   if (Array.isArray(value)) {
     for (const item of value) {
-      walk(item, pageHost, mutated);
+      walk(item, pageHost, mutated, parentKey);
     }
     return;
   }
@@ -88,9 +122,18 @@ function walk(
     if (claimUrl !== null && isAuthorityUrlMismatch(claimUrl, pageHost)) {
       sanitizeAuthorityNode(node, mutated);
     }
+  } else if (
+    parentKey !== undefined &&
+    isAuthorityContextProperty(parentKey) &&
+    isAnnotateOnlyAuthorityType(node["@type"])
+  ) {
+    const claimUrl = extractClaimUrl(node);
+    if (claimUrl !== null && isAuthorityUrlMismatch(claimUrl, pageHost)) {
+      annotateAuthorityNode(node, mutated);
+    }
   }
-  for (const child of Object.values(node)) {
-    walk(child, pageHost, mutated);
+  for (const [key, child] of Object.entries(node)) {
+    walk(child, pageHost, mutated, key);
   }
 }
 
@@ -215,32 +258,67 @@ function blankItempropValue(element: Element): boolean {
   return false;
 }
 
+// Microdata equivalent of the JSON-LD `parentKey` gate: in microdata,
+// an item that's serving as the value of a property on the enclosing
+// item carries that property name in its own `itemprop` attribute
+// (e.g. `<div itemscope itemtype=".../Person" itemprop="author">`).
+// Returns the property names this item is filling for its enclosing
+// scope, or an empty array for a top-level item that isn't acting as
+// anyone's property.
+function itemPropertyContext(item: Element): string[] {
+  const itemprop = item.getAttribute("itemprop");
+  if (itemprop === null) {
+    return [];
+  }
+  return itemprop.split(/\s+/).filter((name) => name !== "");
+}
+
+function readClaimUrl(item: Element): string | null {
+  const urlElements = scopedDescendants(item, "url");
+  for (const element of urlElements) {
+    const value = readItempropValue(element).trim();
+    if (value !== "") {
+      return value;
+    }
+  }
+  const itemid = item.getAttribute("itemid");
+  if (itemid !== null && itemid !== "") {
+    return itemid;
+  }
+  return null;
+}
+
 function processItem(item: Element, pageHost: string): void {
   const itemtype = item.getAttribute("itemtype");
   if (itemtype === null) {
     return;
   }
   const types = microdataTypeNames(itemtype);
-  if (!types.some((name) => isAuthorityType(name))) {
+  const isAuthority = types.some((name) => isAuthorityType(name));
+  const isAnnotateOnly =
+    !isAuthority && types.some((name) => isAnnotateOnlyAuthorityType(name));
+  if (!isAuthority && !isAnnotateOnly) {
     return;
   }
-  const urlElements = scopedDescendants(item, "url");
-  let claimUrl: string | null = null;
-  for (const element of urlElements) {
-    const value = readItempropValue(element).trim();
-    if (value !== "") {
-      claimUrl = value;
-      break;
+  // For annotate-only (Person) we require an authority-context itemprop on
+  // the item itself — a standalone Person scope (a personal bio page typed
+  // as Person) is not borrowing anyone's authority, so a cross-RD URL
+  // there isn't suspicious.
+  if (isAnnotateOnly) {
+    const context = itemPropertyContext(item);
+    if (!context.some((name) => isAuthorityContextProperty(name))) {
+      return;
+    }
+    if (item.hasAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR)) {
+      return;
     }
   }
-  if (claimUrl === null) {
-    // Fall back to itemid (microdata's @id-equivalent) if present.
-    const itemid = item.getAttribute("itemid");
-    if (itemid !== null && itemid !== "") {
-      claimUrl = itemid;
-    }
-  }
+  const claimUrl = readClaimUrl(item);
   if (claimUrl === null || !isAuthorityUrlMismatch(claimUrl, pageHost)) {
+    return;
+  }
+  if (isAnnotateOnly) {
+    item.setAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR, "true");
     return;
   }
   for (const key of SANITIZE_KEYS) {

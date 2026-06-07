@@ -147,19 +147,79 @@ describe("JSON-LD path", () => {
     expect(parsed["@graph"][1]?.name).toBe("Story");
   });
 
-  it("does not touch Person.author (out of V1 scope)", () => {
+  it("annotates Person.author with a cross-RD URL but preserves identity", () => {
     const script = jsonLdScript({
       "@type": "Article",
       author: {
         "@type": "Person",
-        name: "Jane Doe",
-        url: "https://janedoe.example/bio",
+        name: "Sanjay Gupta",
+        url: "https://www.cnn.com/profiles/sanjay-gupta",
+      },
+    });
+    document.head.append(script);
+    schemaTrustSanitizeRule.apply(document);
+    const parsed = parseScript(script) as {
+      author: Record<string, unknown>;
+    };
+    expect(parsed.author["abs:unverified-authority"]).toBe(true);
+    // Identity is preserved (unlike Organization, where we blank). The
+    // annotation surfaces the domain-binding gap; the agent still sees
+    // the name/url so legitimate guest-author bylines render normally.
+    expect(parsed.author.name).toBe("Sanjay Gupta");
+    expect(parsed.author.url).toBe("https://www.cnn.com/profiles/sanjay-gupta");
+  });
+
+  it("leaves Person.author alone when the URL matches the page RD", () => {
+    const script = jsonLdScript({
+      "@type": "Article",
+      author: {
+        "@type": "Person",
+        name: "House Reporter",
+        url: "https://attacker.example/staff/house-reporter",
       },
     });
     document.head.append(script);
     const before = script.textContent;
     schemaTrustSanitizeRule.apply(document);
     expect(script.textContent).toBe(before);
+  });
+
+  it("leaves a standalone (non-author) Person block alone even when cross-RD", () => {
+    // A personal homepage typed `@type: Person` isn't borrowing anyone's
+    // authority — the cross-RD URL would just be the person's own site.
+    const script = jsonLdScript({
+      "@type": "Person",
+      name: "Jane Doe",
+      url: "https://janedoe.example/",
+    });
+    document.head.append(script);
+    const before = script.textContent;
+    schemaTrustSanitizeRule.apply(document);
+    expect(script.textContent).toBe(before);
+  });
+
+  it("annotates Person nested under editor / publisher / reviewedBy", () => {
+    const script = jsonLdScript({
+      "@type": "Article",
+      editor: {
+        "@type": "Person",
+        name: "Editor X",
+        url: "https://elsewhere.example/editor-x",
+      },
+      reviewedBy: {
+        "@type": "Person",
+        name: "Reviewer Y",
+        url: "https://other.example/reviewer-y",
+      },
+    });
+    document.head.append(script);
+    schemaTrustSanitizeRule.apply(document);
+    const parsed = parseScript(script) as {
+      editor: Record<string, unknown>;
+      reviewedBy: Record<string, unknown>;
+    };
+    expect(parsed.editor["abs:unverified-authority"]).toBe(true);
+    expect(parsed.reviewedBy["abs:unverified-authority"]).toBe(true);
   });
 
   it("does nothing when the Organization claim has no URL anchor", () => {
@@ -255,6 +315,45 @@ describe("microdata path", () => {
     expect(
       document.querySelector('[itemprop="url"]')?.getAttribute("href"),
     ).toBe("");
+  });
+
+  it("annotates a microdata Person.author with a cross-RD URL", () => {
+    document.body.innerHTML = `
+      <article itemscope itemtype="https://schema.org/Article">
+        <h1 itemprop="headline">Profile</h1>
+        <div itemprop="author" itemscope itemtype="https://schema.org/Person">
+          <span itemprop="name">Sanjay Gupta</span>
+          <link itemprop="url" href="https://www.cnn.com/profiles/sanjay-gupta">
+        </div>
+      </article>
+    `;
+    schemaTrustSanitizeRule.apply(document.body);
+    const author = document.querySelector('[itemprop="author"]');
+    expect(author).toBeInstanceOf(HTMLElement);
+    expect((author as HTMLElement).dataset.absSchemaTrustUnverified).toBe(
+      "true",
+    );
+    // Identity preserved.
+    expect(author?.querySelector('[itemprop="name"]')?.textContent).toBe(
+      "Sanjay Gupta",
+    );
+    expect(
+      author?.querySelector('[itemprop="url"]')?.getAttribute("href"),
+    ).toBe("https://www.cnn.com/profiles/sanjay-gupta");
+  });
+
+  it("leaves a standalone microdata Person scope alone", () => {
+    // No enclosing authority-context itemprop, so the cross-RD URL is
+    // the Person's own site, not a borrowed-authority claim.
+    document.body.innerHTML = `
+      <div itemscope itemtype="https://schema.org/Person">
+        <span itemprop="name">Jane Doe</span>
+        <link itemprop="url" href="https://janedoe.example/">
+      </div>
+    `;
+    const before = document.body.innerHTML;
+    schemaTrustSanitizeRule.apply(document.body);
+    expect(document.body.innerHTML).toBe(before);
   });
 
   it("does not descend into nested itemscope when reading the item's own URL", () => {
