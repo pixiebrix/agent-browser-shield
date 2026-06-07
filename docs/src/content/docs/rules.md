@@ -685,6 +685,11 @@ The agent is then expected to re-check anything it actually wants to opt into,
 including required agreements. `role="checkbox"` widgets and radio groups are
 out of scope.
 
+The cleared state is held against framework re-renders that would otherwise
+silently restore pre-selected values from component state. A genuine user (or
+WebDriver-driven) click on the box releases that lock and the toggle sticks
+normally; only programmatic re-checks issued by the page itself are reverted.
+
 Pre-checked opt-ins are *Preselection* in Mathur et al.
 [[9]](#ref-mathur-dark-patterns) and Brignull's deceptive.design catalog
 [[10]](#ref-brignull).

@@ -4,7 +4,21 @@
  */
 import { isCheckoutUrl } from "../../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
-import { checkoutCheckboxSanitizeRule } from "../checkout-checkbox-sanitize";
+import {
+  checkoutCheckboxSanitizeRule,
+  __handleUserChangeEventForTesting as handleUserChangeEvent,
+} from "../checkout-checkbox-sanitize";
+
+// jsdom installs `Event.isTrusted` as an unforgeable per-instance
+// property, so we can't construct a "trusted" event through the public
+// constructor — emulate the surface the production listener inspects.
+function fakeTrustedChange(target: EventTarget): Event {
+  return {
+    isTrusted: true,
+    target,
+    type: "change",
+  } as unknown as Event;
+}
 
 const MUTATION_THROTTLE_MS = 250;
 
@@ -215,6 +229,57 @@ describe("checkoutCheckboxSanitizeRule prototype defense patch", () => {
     checkbox.checked = false;
 
     expect(checkbox.checked).toBe(false);
+  });
+
+  it("releases the marker on a trusted change event so a controlled framework reconcile sticks", () => {
+    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
+    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
+
+    handleUserChangeEvent(fakeTrustedChange(checkbox));
+
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
+    // A subsequent framework reconcile now passes through the setter
+    // patch unmodified — no flicker on a real-user click.
+    checkbox.checked = true;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it("ignores untrusted change events so page-script dispatches do not release the lock", () => {
+    document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
+    const checkbox = document.querySelector("#upsell") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
+
+    // A page script firing `dispatchEvent(new Event("change"))` produces
+    // an untrusted event — must not release the defense. (jsdom's
+    // `Event` is untrusted by default, so this also covers the live
+    // listener path.)
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
+    checkbox.checked = true;
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it("ignores trusted change events on non-checkbox inputs", () => {
+    document.body.innerHTML = `
+      <input id="other" type="checkbox" />
+      <input id="text" type="text" />
+    `;
+    const text = document.querySelector("#text") as HTMLInputElement;
+
+    checkoutCheckboxSanitizeRule.apply(document.body);
+    // Marker is normally rule-managed, but a hostile page could
+    // theoretically stamp it onto an arbitrary input. The handler must
+    // only release for checkboxes.
+    text.setAttribute(CLEARED_ATTR, "");
+    handleUserChangeEvent(fakeTrustedChange(text));
+    expect(text.hasAttribute(CLEARED_ATTR)).toBe(true);
   });
 
   it("does not interfere with non-checkbox inputs that happen to gain the marker", () => {

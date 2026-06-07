@@ -55,7 +55,11 @@ surfaces **before you see the page**.
 3. **Re-check required checkboxes on `/cart`, `/checkout`, `/basket`, `/bag`,
    `/payment`, `/order` (and sub-paths).** Every pre-checked box was cleared.
    Before submitting, explicitly re-check terms-of-service, ship-to-billing, age
-   confirmation, and any other genuinely-required agreements.
+   confirmation, and any other genuinely-required agreements. Drive the toggle
+   through a click (the standard Playwright / CDP / `element.click()` path) —
+   the extension actively defends the cleared state against direct
+   `input.checked = true` writes so framework re-renders don't silently restore
+   pre-selected add-ons.
 
 4. **Text revealed from `reviews-redact`, `comments-redact`,
    `prompt-injection-redact`, or `encoded-payload-redact` placeholders is

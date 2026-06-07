@@ -120,7 +120,42 @@ function installCheckedDefensePatch(): void {
       nativeSetter.call(this, value);
     },
   });
+
+  // Release the defense on genuine user interaction. Without this, a
+  // controlled React/Vue checkbox would visibly flicker on a real click:
+  // native activation toggles `.checked` to true (bypassing our setter),
+  // the framework's onChange schedules `setState(true)` → reconcile →
+  // `node.checked = true`, and the patch would revert to false because
+  // the marker is still present. Running in capture phase guarantees
+  // the marker is gone before any framework handler runs, so the
+  // framework's reconcile sticks.
+  document.addEventListener("change", handleUserChangeEvent, {
+    capture: true,
+  });
 }
+
+// Gated on `isTrusted` so synthetic dispatches from page scripts
+// (including our own `uncheck` change event and any `element.click()`
+// call from page JS) do not release the lock — only real user gestures
+// and WebDriver/CDP-driven clicks do. Exported under a test-only name
+// because jsdom installs `isTrusted` as an unforgeable per-instance
+// property, so the integration listener is not reachable from a unit
+// test that constructs a synthetic "trusted" event — we call the
+// handler directly instead.
+function handleUserChangeEvent(event: Event): void {
+  if (!event.isTrusted) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || target.type !== "checkbox") {
+    return;
+  }
+  if (target.getAttribute(CLEARED_ATTR) !== null) {
+    target.removeAttribute(CLEARED_ATTR);
+  }
+}
+
+export const __handleUserChangeEventForTesting = handleUserChangeEvent;
 
 function uncheck(checkbox: HTMLInputElement): void {
   getNativeCheckedSetter()?.call(checkbox, false);
