@@ -43,11 +43,15 @@
 // content ABS cannot see," not "this is definitely a closed shadow root."
 //
 // Known false negatives:
-//   - Declarative shadow DOM (`<template shadowrootmode="closed">`) — the
-//     template is consumed during HTML parsing, never goes through
+//   - Declarative shadow DOM with `shadowrootmode="closed"` — the template
+//     is consumed during HTML parsing, never goes through
 //     `Element.prototype.attachShadow`, and the materialized closed root
 //     is indistinguishable from "no shadow" the same as imperative
-//     closed shadows.
+//     closed shadows. The open variant of declarative shadow DOM is
+//     covered by the regular open-shadow plumbing — initial-parse roots
+//     are walked at content-script startup, and the `setHTMLUnsafe`
+//     patch in `shadow-roots.ts` registers any open shadow materialized
+//     post-parse.
 //   - Closed shadows on non-custom elements (e.g., a page that attaches a
 //     closed shadow to a `<div>`). Rare in practice — closed mode is
 //     almost always paired with the custom element pattern — and a

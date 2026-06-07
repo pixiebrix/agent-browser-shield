@@ -27,20 +27,29 @@ Numbered citations like [[1]](#ref-greshake-2023) link to the
 ## Coverage scope
 
 All rules run against the page's light DOM and any **open shadow roots** the
-page builds via `element.attachShadow({ mode: "open" })`. That covers the way
-most chat widgets, consent banners, ad SDKs, and custom elements ship UI today —
-the host element lives in the light tree, the rendered content lives one
-boundary inside.
+page builds, regardless of which attachment path created the shadow:
 
-**Closed shadow roots** (`{ mode: "closed" }`) are not reached. The Web
-Components spec makes closed mode opt-out of all external JavaScript access —
-`host.shadowRoot` is `null`, `document.adoptedStyleSheets` and
-`MutationObserver` do not cross the boundary, and no supported API undoes that.
-Any content a page renders inside a closed shadow root — whether ads, chat
-widgets, hidden text, or prompt-injection payloads — is invisible to every rule
-and will be passed through to the agent untouched. Closed shadow roots are
-uncommon outside browser UA shadows and a handful of hardened embeds, but they
-are a known gap. The optional
+- Imperative attachment — `element.attachShadow({ mode: "open" })`. Covers the
+  way most chat widgets, consent banners, ad SDKs, and custom elements ship UI
+  today.
+- Declarative shadow DOM at parse time — `<template shadowrootmode="open">` in
+  the initial HTML. The browser materializes the shadow before the content
+  script runs; the extension's startup walk finds it.
+- Declarative shadow DOM post-parse — `Element.setHTMLUnsafe` and
+  `ShadowRoot.setHTMLUnsafe`, the modern hydration path used by SSR-style
+  component frameworks. The extension wraps both so a host that gains a shadow
+  via this path is added to the registry.
+
+**Closed shadow roots** (`{ mode: "closed" }`) are not reached, regardless of
+how they were attached (imperative, parse-time DSD with
+`shadowrootmode="closed"`, or any other path). The Web Components spec makes
+closed mode opt-out of all external JavaScript access — `host.shadowRoot` is
+`null`, `document.adoptedStyleSheets` and `MutationObserver` do not cross the
+boundary, and no supported API undoes that. Any content a page renders inside a
+closed shadow root — whether ads, chat widgets, hidden text, or prompt-injection
+payloads — is invisible to every rule and will be passed through to the agent
+untouched. Closed shadow roots are uncommon outside browser UA shadows and a
+handful of hardened embeds, but they are a known gap. The optional
 [Flag Closed Shadow Roots](#flag-closed-shadow-roots-experimental) rule can
 heuristically warn the agent at read-time when this gap is in use.
 
@@ -483,9 +492,10 @@ JavaScript. The rule looks for the structural shape strongly correlated with
 in `customElements`) with no light-DOM children, no `host.shadowRoot`, and a
 non-zero rendered box. Built-in elements with UA shadow roots (`<input>`,
 `<details>`, `<video>`) are filtered out for free — their tag names contain no
-hyphen. Declarative shadow DOM (`<template shadowrootmode="closed">`) is
+hyphen. Declarative shadow DOM with `shadowrootmode="closed"` is
 indistinguishable from imperative closed shadows after parsing and is not
-separately surfaced.
+separately surfaced; the open variant of declarative shadow DOM is covered by
+the regular open-shadow plumbing described in [Coverage scope](#coverage-scope).
 
 The landmark says "may contain content ABS cannot see," not "this is definitely
 a closed shadow root" — a custom element that renders via canvas, WebGL, or

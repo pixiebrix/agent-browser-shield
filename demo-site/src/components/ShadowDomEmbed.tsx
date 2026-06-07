@@ -21,7 +21,14 @@ import { INJECTIONS } from "../data/injection-fixtures";
 // class only matches via the EasyList generic CSS sheet, which now
 // adopts into open shadow roots so the hide applies here too.
 //
-// A second host below mounts a custom element with a CLOSED shadow root
+// A third host hydrates via `Element.setHTMLUnsafe` with a
+// `<template shadowrootmode="open">` payload — the declarative shadow
+// DOM path. The HTML parser materializes the shadow without ever going
+// through `attachShadow`, so the extension's `setHTMLUnsafe` patch is
+// the only thing that gets the shadow into the registry; without it
+// the injection paragraph here would be passed through to the agent.
+//
+// A fourth host mounts a custom element with a CLOSED shadow root
 // to exercise `closed-shadow-root-annotate`. By spec the rules cannot
 // see inside; the heuristic only confirms it's there.
 
@@ -47,6 +54,7 @@ if (typeof customElements !== "undefined" && !customElements.get(CLOSED_TAG)) {
 
 export default function ShadowDomEmbed() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const dsdHostRef = useRef<HTMLDivElement>(null);
   const closedHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,6 +109,56 @@ export default function ShadowDomEmbed() {
   }, []);
 
   useEffect(() => {
+    const host = dsdHostRef.current;
+    if (!host || host.shadowRoot) {
+      return;
+    }
+    // Declarative shadow DOM: the parser materializes the shadow when
+    // it encounters `<template shadowrootmode>` as a child of the
+    // receiver during `setHTMLUnsafe`. No `attachShadow` call is made.
+    // Without the extension's `setHTMLUnsafe` patch the new shadow is
+    // invisible to every shadow-piercing rule.
+    //
+    // `setHTMLUnsafe` is in TypeScript's lib.dom.d.ts but the browser
+    // matrix for "Baseline 2024" — feature-detect rather than rely on
+    // a tooling assumption.
+    if (typeof host.setHTMLUnsafe !== "function") {
+      return;
+    }
+    const escapedInjection = INJECTIONS.PRODUCT_DETAIL_HIDDEN_SYSTEM.replaceAll(
+      "<",
+      "&lt;",
+    ).replaceAll(">", "&gt;");
+    host.setHTMLUnsafe(
+      `<template shadowrootmode="open">
+        <style>
+          .dsd-card {
+            padding: 6px 10px;
+            border: 1px solid #0f766e;
+            background: #f0fdfa;
+            color: #134e4a;
+            font: 13px system-ui;
+            border-radius: 4px;
+          }
+          .dsd-injection {
+            margin: 8px 0 0;
+            padding: 6px 10px;
+            border: 1px solid #b91c1c;
+            background: #fef2f2;
+            color: #7f1d1d;
+            font: 13px system-ui;
+          }
+        </style>
+        <div class="dsd-card">SSR-style widget hydrated via declarative shadow DOM.</div>
+        <p class="dsd-injection">${escapedInjection}</p>
+      </template>`,
+    );
+    return () => {
+      host.shadowRoot?.replaceChildren();
+    };
+  }, []);
+
+  useEffect(() => {
     const host = closedHostRef.current;
     if (!host || host.querySelector(CLOSED_TAG)) {
       return;
@@ -134,6 +192,19 @@ export default function ShadowDomEmbed() {
       <div
         ref={hostRef}
         className="shadow-host mt-3 rounded border border-dashed border-slate-300 p-3"
+      />
+      <p className="mt-4 text-sm text-stone-700">
+        The host below hydrates via <code>Element.setHTMLUnsafe</code> with a{" "}
+        <code>&lt;template shadowrootmode="open"&gt;</code> payload — the
+        declarative shadow DOM path used by SSR component frameworks. The HTML
+        parser attaches the shadow without ever calling{" "}
+        <code>attachShadow</code>; without the extension's{" "}
+        <code>setHTMLUnsafe</code> patch the injection paragraph inside this
+        shadow would slip past every shadow-piercing rule.
+      </p>
+      <div
+        ref={dsdHostRef}
+        className="dsd-shadow-host mt-3 rounded border border-dashed border-slate-300 p-3"
       />
       <p className="mt-4 text-sm text-stone-700">
         The widget below mounts inside a <em>closed</em> shadow root. ABS cannot
