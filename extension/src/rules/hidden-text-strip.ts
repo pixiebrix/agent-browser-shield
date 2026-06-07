@@ -41,9 +41,16 @@
 // not catching a hypothetical adversary who specifically targets agents
 // via 1×1 boxes. That tradeoff is intentional.
 //
-// display:none is intentionally NOT a trigger: collapsed menus, tab panels,
+// display:none is generally NOT a trigger: collapsed menus, tab panels,
 // and dropdowns commonly toggle display, and stripping their text content
 // would corrupt the underlying app state once the user/agent expands them.
+// The narrow exception is display:none on a live region (role=status /
+// alert / log / marquee / timer / alertdialog, or aria-live=polite /
+// assertive): those elements are explicitly opted in to "announce my
+// contents," so the carrier reaches agents walking textContent or the
+// a11y tree while staying invisible to sighted users. Tab panels never
+// wear those attributes, so the narrower trigger preserves the original
+// carve-out.
 //
 // When a non-allowlisted match is found, we blank every text node inside
 // the element rather than detaching the element itself. Frameworks
@@ -129,6 +136,28 @@ function isLandmark(element: Element): boolean {
   }
   const role = element.getAttribute("role");
   return role !== null && LANDMARK_ROLES.has(role);
+}
+
+// Live-region attributes that opt an element in to assistive-tech
+// announcements. `display:none` on one of these is the narrow shape we
+// strip — see the file-level comment for why this carve-out is narrower
+// than the general display:none exclusion.
+const LIVE_REGION_ROLES: ReadonlySet<string> = new Set([
+  "status",
+  "alert",
+  "log",
+  "marquee",
+  "timer",
+  "alertdialog",
+]);
+
+function isLiveRegion(element: Element): boolean {
+  const role = element.getAttribute("role");
+  if (role !== null && LIVE_REGION_ROLES.has(role)) {
+    return true;
+  }
+  const live = element.getAttribute("aria-live");
+  return live === "polite" || live === "assertive";
 }
 
 // Match reasons whose only signal is "the element is positioned out of
@@ -433,6 +462,15 @@ function detectHiddenByCss(
   element: Element,
   style: CSSStyleDeclaration,
 ): MatchDetail | null {
+  if (style.display === "none" && isLiveRegion(element)) {
+    return {
+      reason: "display-none-live-region",
+      details: {
+        role: element.getAttribute("role") ?? "",
+        ariaLive: element.getAttribute("aria-live") ?? "",
+      },
+    };
+  }
   if (style.visibility === "hidden" || style.visibility === "collapse") {
     return {
       reason: `visibility-${style.visibility}`,
