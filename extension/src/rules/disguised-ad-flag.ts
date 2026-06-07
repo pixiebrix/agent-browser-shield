@@ -123,8 +123,11 @@ interface LabelMatch {
 }
 
 function matchLabel(text: string): LabelMatch | null {
-  // Bracket form is case-sensitive on `Ad`, so check it before the
-  // case-insensitive regexes.
+  // Bracket form has no `i` flag (case-sensitive) and enumerates the three
+  // accepted variants explicitly (`[ad]`, `[Ad]`, `[AD]`) so the editorial
+  // idioms `[ad hoc]` / `[ad lib]` — which carry internal whitespace — can't
+  // match. Check it before the case-insensitive regexes since both could
+  // match a `[Ad]` text otherwise.
   if (BRACKET_RE.test(text)) {
     return { phrase: text };
   }
