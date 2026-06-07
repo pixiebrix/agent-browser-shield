@@ -100,6 +100,63 @@ describe("hidden-text-strip (property)", () => {
     );
   });
 
+  // Live-region opt-ins that turn `display:none` into a strip target.
+  // The narrow carve-out around tab panels means the bypass surface
+  // here is the cross-product of (live-region attribute) × (subtree
+  // shape), and a future refactor that special-cased one role at the
+  // expense of another would only fail a single unit test. The
+  // property pins the whole class so the next regression is caught
+  // before it ships.
+  const LIVE_REGION_ATTR = fc.constantFrom(
+    { role: "status" },
+    { role: "alert" },
+    { role: "log" },
+    { role: "marquee" },
+    { role: "timer" },
+    { role: "alertdialog" },
+    { "aria-live": "polite" },
+    { "aria-live": "assertive" },
+  );
+
+  it("strips display:none on any live-region role / aria-live opt-in", () => {
+    fc.assert(
+      fc.property(
+        LIVE_REGION_ATTR,
+        PAYLOAD,
+        CHILD_COUNT,
+        (attributes, payload, childCount) => {
+          document.body.innerHTML = "";
+          const target = document.createElement("div");
+          target.id = "target";
+          target.setAttribute("style", "display: none");
+          for (const [name, value] of Object.entries(attributes)) {
+            target.setAttribute(name, value);
+          }
+          target.append(document.createTextNode(payload));
+
+          const markers: HTMLSpanElement[] = [];
+          for (let i = 0; i < childCount; i++) {
+            const marker = document.createElement("span");
+            marker.id = `marker-${i}`;
+            marker.textContent = `marker-${i}`;
+            target.append(marker);
+            markers.push(marker);
+          }
+          document.body.append(target);
+
+          hiddenTextStripRule.apply(document.body);
+
+          expect(target.isConnected).toBe(true);
+          expect(target.textContent).toBe("");
+          for (const marker of markers) {
+            expect(marker.isConnected).toBe(true);
+            expect(marker.parentElement).toBe(target);
+          }
+        },
+      ),
+    );
+  });
+
   // Every shape the matrix → scale check is supposed to recognize as
   // "x or y axis collapsed to zero". Unit tests pin one example each;
   // the property test pins the whole class so a future tweak to the

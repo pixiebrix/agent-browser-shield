@@ -757,6 +757,71 @@ describe("hiddenTextStripRule", () => {
     hiddenTextStripRule.apply(document.body);
 
     expect(document.querySelector("#panel")).not.toBeNull();
+    expect(document.querySelector("#panel")?.textContent).toContain(
+      "tab panel content",
+    );
+  });
+
+  it("scrubs display:none on role=status (live-region smuggling)", () => {
+    document.body.innerHTML = `
+      <div id="x" role="status" style="display: none">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs display:none on role=alert", () => {
+    document.body.innerHTML = `
+      <div id="x" role="alert" style="display: none">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs display:none on aria-live=polite", () => {
+    document.body.innerHTML = `
+      <div id="x" aria-live="polite" style="display: none">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  it("scrubs display:none on aria-live=assertive", () => {
+    document.body.innerHTML = `
+      <div id="x" aria-live="assertive" style="display: none">${FIXTURES.HIDDEN_IGNORE_PRIOR}</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expectScrubbed("#x");
+  });
+
+  // `aria-live="off"` is explicit opt-out — the page is telling AT not
+  // to announce the region. The display:none carve-out for tab panels
+  // still applies.
+  it("leaves display:none with aria-live=off alone", () => {
+    document.body.innerHTML = `
+      <div id="panel" aria-live="off" style="display: none">tab content</div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#panel")?.textContent).toContain(
+      "tab content",
+    );
+  });
+
+  it("scrubs display:none on role=status while preserving descendant element nodes", () => {
+    document.body.innerHTML = `
+      <div id="x" role="status" style="display: none">
+        <span id="inner">${FIXTURES.HIDDEN_IGNORE_PRIOR}</span>
+      </div>
+    `;
+    hiddenTextStripRule.apply(document.body);
+
+    expect(document.querySelector("#inner")).not.toBeNull();
+    expect(document.querySelector("#x")?.textContent).toBe("");
   });
 
   it("leaves visible text alone", () => {
