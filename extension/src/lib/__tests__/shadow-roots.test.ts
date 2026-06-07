@@ -249,3 +249,58 @@ describe("setHTMLUnsafe — declarative shadow DOM", () => {
     expect(getOpenShadowRoots().has(firstRoot as ShadowRoot)).toBe(true);
   });
 });
+
+describe("abs:shadow-discover listener — main-world probe bridge", () => {
+  // The page-world probe (lib/shadow-root-probe-source.ts) dispatches
+  // `abs:shadow-discover` with the receiver node on event.detail.target
+  // whenever a page-script attachShadow or setHTMLUnsafe call lands in
+  // the page world. The isolated-world listener installed by
+  // installShadowRootHook walks the target with discoverShadowRootsIn.
+  // Without the listener, page-script open-shadow attachments would
+  // only be picked up by the MutationObserver host-insertion path,
+  // which can miss attachments on already-connected hosts.
+
+  it("registers an open shadow when the probe dispatches with the host", () => {
+    const host = document.createElement("div");
+    const root = host.attachShadow({ mode: "open" });
+    document.body.append(host);
+    __resetShadowRootsForTesting();
+    expect(getOpenShadowRoots().has(root)).toBe(false);
+
+    document.dispatchEvent(
+      new CustomEvent("abs:shadow-discover", { detail: { target: host } }),
+    );
+
+    expect(getOpenShadowRoots().has(root)).toBe(true);
+  });
+
+  it("walks a ShadowRoot target dispatched by the probe", () => {
+    const host = document.createElement("div");
+    const root = host.attachShadow({ mode: "open" });
+    document.body.append(host);
+    const inner = document.createElement("section");
+    const innerRoot = inner.attachShadow({ mode: "open" });
+    root.append(inner);
+    __resetShadowRootsForTesting();
+
+    document.dispatchEvent(
+      new CustomEvent("abs:shadow-discover", { detail: { target: root } }),
+    );
+
+    expect(getOpenShadowRoots().has(innerRoot)).toBe(true);
+  });
+
+  it("no-ops on a non-Node target (forged dispatch defense)", () => {
+    const listener = jest.fn();
+    subscribeShadowRootAttached(listener);
+
+    document.dispatchEvent(
+      new CustomEvent("abs:shadow-discover", {
+        detail: { target: "not-a-node" },
+      }),
+    );
+    document.dispatchEvent(new CustomEvent("abs:shadow-discover"));
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+});

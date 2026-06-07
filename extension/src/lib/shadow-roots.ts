@@ -28,8 +28,21 @@
 // to walk the receiver after the call so any newly-materialized open shadow
 // is registered. Closed DSD is invisible by the same spec contract as
 // imperative closed shadows.
+//
+// The patches above live in the isolated world. Page-script calls to
+// `attachShadow` / `setHTMLUnsafe` go through the page's own prototype
+// copies and never hit the isolated-world wraps. The main-world probe in
+// `lib/shadow-root-probe-source.ts` (registered when
+// `closed-shadow-root-annotate` is enabled) closes that gap by wrapping
+// the same methods in the page world and dispatching an
+// `abs:shadow-discover` CustomEvent on the document with
+// `detail: { target }`. The listener here translates each event into a
+// `discoverShadowRootsIn(target)` walk so subscribers see roots
+// regardless of which world attached them.
 
 const HOOK_INSTALLED = Symbol.for("abs.shadowRootHookInstalled");
+
+const SHADOW_DISCOVER_EVENT = "abs:shadow-discover";
 
 const openShadowRoots = new Set<ShadowRoot>();
 const attachListeners = new Set<(root: ShadowRoot) => void>();
@@ -60,6 +73,30 @@ export function installShadowRootHook(): void {
   };
 
   patchSetHTMLUnsafe();
+  installShadowDiscoverListener();
+}
+
+// Subscribes to `abs:shadow-discover` events dispatched by the main-world
+// probe in `lib/shadow-root-probe-source.ts`. Each event carries the
+// receiver node (host element or ShadowRoot) on `event.detail.target`;
+// DOM-node references survive cross-realm in Chrome content scripts, so
+// the handler can route the target straight through the existing
+// `discoverShadowRootsIn` walk. The instanceof gate filters forged
+// dispatches (any page can fire `abs:shadow-discover` with an arbitrary
+// detail, but a non-Node target would no-op anyway — the check just
+// avoids running the walk for clearly bogus payloads).
+function installShadowDiscoverListener(): void {
+  document.addEventListener(SHADOW_DISCOVER_EVENT, (event) => {
+    // event.detail is typed `unknown` at the CustomEvent boundary; a
+    // forged dispatch could omit it entirely, hence the explicit narrow.
+    const detail = (event as CustomEvent<unknown>).detail as {
+      target?: unknown;
+    } | null;
+    const target = detail ? detail.target : undefined;
+    if (target instanceof Node) {
+      discoverShadowRootsIn(target);
+    }
+  });
 }
 
 // `setHTMLUnsafe` is the only post-parse opt-in path that honors declarative

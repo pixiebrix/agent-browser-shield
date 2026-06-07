@@ -479,28 +479,48 @@ the new threat.
 - **Default:** off
 - **Top frame only**
 
-Heuristically detect pages that render content inside closed shadow roots and
-prepend a screen-reader-only landmark noting that the extension cannot see
-inside those shadow trees. Complements the open-shadow-root coverage described
-in [Coverage scope](#coverage-scope) above by giving the agent a positive signal
-at read-time that a known blind spot is in use on this page.
+Detect pages that attach closed shadow roots and prepend a screen-reader-only
+landmark noting that the extension cannot see inside those shadow trees.
+Complements the open-shadow-root coverage described in
+[Coverage scope](#coverage-scope) above by giving the agent a positive signal at
+read-time that a known blind spot is in use on this page.
 
-Detection is necessarily heuristic: by spec, an element with `mode: "closed"` is
-indistinguishable from an element with no shadow root at all from outside
-JavaScript. The rule looks for the structural shape strongly correlated with
-"closed shadow host": an upgraded custom element (hyphenated tag name, defined
-in `customElements`) with no light-DOM children, no `host.shadowRoot`, and a
-non-zero rendered box. Built-in elements with UA shadow roots (`<input>`,
-`<details>`, `<video>`) are filtered out for free — their tag names contain no
-hyphen. Declarative shadow DOM with `shadowrootmode="closed"` is
-indistinguishable from imperative closed shadows after parsing and is not
-separately surfaced; the open variant of declarative shadow DOM is covered by
-the regular open-shadow plumbing described in [Coverage scope](#coverage-scope).
+Two detection paths feed the landmark:
 
-The landmark says "may contain content ABS cannot see," not "this is definitely
-a closed shadow root" — a custom element that renders via canvas, WebGL, or
-`::before` background-image with no actual shadow root will trip the heuristic
-too. Off by default while the false-positive rate is characterized.
+1. **Main-world probe (primary).** When the rule is enabled, a page-world wrap
+   over `Element.prototype.attachShadow` runs at `document_start`. Any call with
+   `mode: "closed"` dispatches a binary signal that the landmark listens for.
+   The wrap runs in the page's own JavaScript world because page-script
+   attachments hit the page's prototype copy, which is a distinct object from
+   the isolated-world copy the rule engine sees. No shadow contents are exposed
+   by the probe — only the binary "attachment happened" signal crosses worlds,
+   preserving the spec-mandated encapsulation of closed mode.
+
+2. **Structural heuristic (fallback).** Looks for the shape strongly correlated
+   with a closed shadow host: an upgraded custom element (hyphenated tag name,
+   defined in `customElements`) with no light-DOM children, no
+   `host.shadowRoot`, and a non-zero rendered box. Built-in elements with UA
+   shadow roots (`<input>`, `<details>`, `<video>`) are filtered out for free —
+   their tag names contain no hyphen. The heuristic covers the active tab
+   between toggle-on and the moment the probe injects into it; on subsequent
+   navigations the probe runs at `document_start` and the heuristic becomes
+   redundant.
+
+The heuristic path has a known false positive: a custom element that renders via
+canvas, WebGL, or `::before` background-image with no actual shadow root will
+trip it. The landmark text reads "may contain content ABS cannot see," not "this
+is definitely a closed shadow root." The main-world probe is definitive when
+both signals are available.
+
+Declarative shadow DOM with `shadowrootmode="closed"` is not surfaced by either
+path. The parser materializes the shadow without going through `attachShadow`,
+so the probe doesn't see it; and the materialized closed root is
+indistinguishable from "no shadow" from outside JS, so the heuristic can't catch
+it reliably either. The open variant of declarative shadow DOM is covered by the
+regular open-shadow plumbing described in [Coverage scope](#coverage-scope).
+
+Off by default while the false-positive rate of the heuristic path is
+characterized.
 
 ### Visual identity spoofing
 

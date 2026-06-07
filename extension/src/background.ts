@@ -16,6 +16,8 @@ import type {
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
 import { log } from "./lib/log";
+import { startShadowRootProbeRegistration } from "./lib/shadow-root-probe-registration";
+import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
 import { ruleStatesStorage } from "./lib/storage";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 import { installProbe } from "./lib/webdriver-probe-source";
@@ -312,6 +314,33 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
 
+    if (message.type === "inject-shadow-root-probe") {
+      const tabId = sender.tab?.id;
+      if (typeof tabId !== "number") {
+        return undefined;
+      }
+      const frameId = sender.frameId;
+      // Same shape as the other main-world fallbacks: the registered
+      // content script covers future navigations; this round-trip wraps
+      // attachShadow / setHTMLUnsafe on the tab the user was already
+      // viewing when they toggled `closed-shadow-root-annotate` on.
+      // installShadowRootProbe's `__abs_shadow_root_probe_installed`
+      // guard makes a redundant call a no-op in the page world.
+      chrome.scripting
+        .executeScript({
+          target: {
+            tabId,
+            frameIds: typeof frameId === "number" ? [frameId] : undefined,
+          },
+          world: "MAIN",
+          func: installShadowRootProbe,
+        })
+        .catch((error: unknown) => {
+          log("inject-shadow-root-probe executeScript failed", { error });
+        });
+      return undefined;
+    }
+
     if (message.type === "rule-count") {
       const tabId = sender.tab?.id;
       const frameId = sender.frameId;
@@ -422,3 +451,13 @@ startWebdriverProbeRegistration();
 // `node.checked = true` through the page's own prototype copy. See
 // `lib/checkout-checkbox-defense-registration.ts`.
 startCheckoutCheckboxDefenseRegistration();
+
+// Same lifecycle for `closed-shadow-root-annotate`'s page-world
+// shadow-root probe. Wraps `Element.prototype.attachShadow` and
+// `setHTMLUnsafe` in the page world so attachments issued by page
+// scripts (which hit the page's own prototype copies, not the
+// isolated-world ones the rule engine sees) emit the events the
+// isolated-world consumers in `lib/shadow-roots.ts` and
+// `rules/closed-shadow-root-annotate.ts` rely on. See
+// `lib/shadow-root-probe-registration.ts`.
+startShadowRootProbeRegistration();

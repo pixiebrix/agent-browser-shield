@@ -140,6 +140,15 @@ async function build(): Promise<void> {
       // `lib/checkout-checkbox-defense-source.ts` and
       // `lib/checkout-checkbox-defense-registration.ts`.
       join(SRC, "checkout-checkbox-defense.ts"),
+      // Standalone main-world bundle registered by the background worker
+      // whenever `closed-shadow-root-annotate` is enabled. Wraps
+      // `Element.prototype.attachShadow` and `setHTMLUnsafe` in the page
+      // world so page-script shadow attachments (which never touch the
+      // isolated-world copies of those prototypes) emit the events the
+      // `closed-shadow-root-annotate` and `shadow-roots` consumers rely
+      // on. See `lib/shadow-root-probe-source.ts` and
+      // `lib/shadow-root-probe-registration.ts`.
+      join(SRC, "shadow-root-probe.ts"),
     ],
     outdir: DIST,
     target: "browser",
