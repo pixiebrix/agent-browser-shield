@@ -290,6 +290,71 @@ describe("closedShadowRootAnnotateRule.apply", () => {
   });
 });
 
+describe("closedShadowRootAnnotateRule main-world probe integration", () => {
+  it("stamps the landmark when the probe dispatches abs:closed-shadow-attached with no heuristic match", () => {
+    // No custom-element hosts in the page — the heuristic would never
+    // trip — but the page-world probe fires the event directly. This
+    // covers the case the heuristic would miss: a closed shadow on a
+    // non-custom-element (e.g. a `<div>`), which the future-work probe
+    // was specifically introduced to catch.
+    document.body.innerHTML = "<div><p>plain content</p></div>";
+
+    closedShadowRootAnnotateRule.apply(document.body);
+    expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
+
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+
+    expect(document.querySelector(LANDMARK_SELECTOR)).not.toBeNull();
+  });
+
+  it("requests probe injection on apply (background fallback for the active tab)", () => {
+    closedShadowRootAnnotateRule.apply(document.body);
+
+    const requested = sendMessageMock.mock.calls.some(
+      ([message]: [unknown]) =>
+        (message as { type?: string }).type === "inject-shadow-root-probe",
+    );
+    expect(requested).toBe(true);
+  });
+
+  it("does not re-stamp on subsequent probe events (per-document dedupe)", () => {
+    closedShadowRootAnnotateRule.apply(document.body);
+
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+
+    expect(document.querySelectorAll(LANDMARK_SELECTOR)).toHaveLength(1);
+  });
+
+  it("stops listening for probe events after teardown", () => {
+    closedShadowRootAnnotateRule.apply(document.body);
+    closedShadowRootAnnotateRule.teardown();
+
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+
+    expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
+  });
+
+  it("emits exactly one rule-detection when the probe is the trigger", () => {
+    document.body.innerHTML = "<div><p>plain</p></div>";
+    closedShadowRootAnnotateRule.apply(document.body);
+    sendMessageMock.mockClear();
+
+    document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
+
+    expect(detectionCalls()).toHaveLength(1);
+    expect(detectionCalls()[0]).toEqual({
+      type: "rule-detection",
+      payload: {
+        kind: "closed-shadow-root",
+        host: globalThis.location.hostname,
+        url: globalThis.location.href,
+      },
+    });
+  });
+});
+
 describe("closedShadowRootAnnotateRule rule-detection emission", () => {
   it("does not emit on apply when no hosts match", () => {
     document.body.innerHTML = "<p>plain content</p>";

@@ -1,69 +1,89 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Heuristically flag pages that render content inside closed shadow roots so
-// the agent's accessibility-tree view of the document carries an explicit
-// note that ABS has a blind spot here. Closed shadow roots are opt-out of
-// every external JS API by spec — `host.shadowRoot` returns `null`, adopted
-// stylesheets and MutationObserver do not cross the boundary, and no
-// supported API undoes that. Documented as a coverage gap in
-// `docs/src/content/docs/rules.md`; this rule lets the agent learn the same
-// thing at read-time.
+// Flag pages that render content inside closed shadow roots so the agent's
+// accessibility-tree view of the document carries an explicit note that ABS
+// has a blind spot here. Closed shadow roots are opt-out of every external
+// JS API by spec — `host.shadowRoot` returns `null`, adopted stylesheets
+// and MutationObserver do not cross the boundary, and no supported API
+// undoes that. Documented as a coverage gap in
+// `docs/src/content/docs/rules.md`; this rule lets the agent learn the
+// same thing at read-time.
 //
-// Detection is heuristic, not definitive. We cannot enumerate closed shadow
-// roots directly — the entire point of `mode: "closed"` is that the page
-// is indistinguishable from an element with no shadow root at all from
-// outside JS. Instead, the rule looks for a structural shape that's
-// strongly correlated with "this element has a closed shadow root":
+// Two detection paths feed the landmark, ORed:
 //
-//   1. Tag name contains a hyphen — required for valid custom element names
-//      (per the Web Components spec). UA-shadowed built-ins (`<input>`,
-//      `<details>`, `<video>`, `<select>`, `<textarea>`) are filtered out
-//      for free because they don't have hyphenated names.
-//   2. `customElements.get(tagName.toLowerCase())` returns a constructor —
-//      the element has been upgraded. Unupgraded custom elements haven't
-//      had their constructor run yet, so they can't have called
-//      `attachShadow`.
-//   3. `element.shadowRoot === null` — there's no open shadow root for
-//      ABS to scan into. (Open-shadow elements are handled by the
-//      Tier-1/2/3 shadow-piercing plumbing — issue #164.)
-//   4. No light-DOM children — `element.children.length === 0` and no
-//      non-whitespace direct text. A custom element with no light children
-//      that still renders something is almost certainly using shadow DOM
-//      for its UI, and combined with (3) that shadow must be closed.
-//   5. Visibly rendering — `getBoundingClientRect()` reports a non-zero
-//      box. Avoids flagging custom elements that are defined but unused
-//      (zero-sized stubs). In jsdom the rect is always zero, so this
-//      gate is bypassed when both dimensions are zero — same convention
-//      as `newsletter-modal-hide`.
+//   1. Main-world probe (primary). When the rule is enabled, the
+//      background worker registers `shadow-root-probe.js` as a
+//      `world: "MAIN"`, `runAt: "document_start"` content script
+//      (`lib/shadow-root-probe-registration.ts`) that wraps
+//      `Element.prototype.attachShadow` in the page world. Any call
+//      with `init.mode === "closed"` dispatches an
+//      `abs:closed-shadow-attached` CustomEvent on the document; the
+//      listener here stamps the landmark on first event. The wrap
+//      sees attachments issued by page scripts directly — the
+//      isolated-world copy of the same prototype is a different
+//      object, so page-script `attachShadow` calls would otherwise
+//      never be observable from an isolated-world rule. The probe
+//      delivers a definitive signal that supersedes the structural
+//      heuristic below (no canvas/WebGL false positives, catches
+//      closed shadows on non-custom-element hosts).
 //
-// Known false positive: a custom element that renders via canvas/WebGL or
-// `::before` background-image without any shadow DOM still trips the
-// heuristic. We accept this — the landmark text says "may contain
-// content ABS cannot see," not "this is definitely a closed shadow root."
+//   2. Structural heuristic (fallback). Triggered on `apply` and on
+//      every subtree mutation while the rule is on. Necessary because
+//      the registered main-world probe lands only on navigations made
+//      after the rule was enabled — the active tab the user toggled
+//      it on for is covered by the rule's `apply`-time
+//      `inject-shadow-root-probe` round-trip (mirrors
+//      `webdriver-probe-annotate`), but that round-trip happens at
+//      `document_idle`, so closed shadows attached during the active
+//      tab's initial parse won't fire the probe. The heuristic looks
+//      for the structural shape strongly correlated with "closed
+//      shadow host":
 //
-// Known false negatives:
-//   - Declarative shadow DOM with `shadowrootmode="closed"` — the template
-//     is consumed during HTML parsing, never goes through
-//     `Element.prototype.attachShadow`, and the materialized closed root
-//     is indistinguishable from "no shadow" the same as imperative
-//     closed shadows. The open variant of declarative shadow DOM is
-//     covered by the regular open-shadow plumbing — initial-parse roots
-//     are walked at content-script startup, and the `setHTMLUnsafe`
-//     patch in `shadow-roots.ts` registers any open shadow materialized
-//     post-parse.
-//   - Closed shadows on non-custom elements (e.g., a page that attaches a
-//     closed shadow to a `<div>`). Rare in practice — closed mode is
-//     almost always paired with the custom element pattern — and a
-//     hyphen-less filter would balloon false positives across the whole
-//     document.
+//        a. Tag name contains a hyphen — required for valid custom
+//           element names (per the Web Components spec). UA-shadowed
+//           built-ins (`<input>`, `<details>`, `<video>`, `<select>`,
+//           `<textarea>`) are filtered out for free because they don't
+//           have hyphenated names.
+//        b. `customElements.get(tagName.toLowerCase())` returns a
+//           constructor — the element has been upgraded. Unupgraded
+//           custom elements haven't had their constructor run yet, so
+//           they can't have called `attachShadow`.
+//        c. `element.shadowRoot === null` — there's no open shadow
+//           root for ABS to scan into. (Open-shadow elements are
+//           handled by the Tier-1/2/3 shadow-piercing plumbing —
+//           issue #164.)
+//        d. No light-DOM children — `element.children.length === 0`
+//           and no non-whitespace direct text. A custom element with
+//           no light children that still renders something is almost
+//           certainly using shadow DOM for its UI, and combined with
+//           (c) that shadow must be closed.
+//        e. Visibly rendering — `getBoundingClientRect()` reports a
+//           non-zero box. Avoids flagging custom elements that are
+//           defined but unused (zero-sized stubs). In jsdom the rect
+//           is always zero, so this gate is bypassed when both
+//           dimensions are zero — same convention as
+//           `newsletter-modal-hide`.
 //
-// Future work: a main-world probe that wraps `Element.prototype.attachShadow`
-// in the page realm and reports calls with `init.mode === "closed"`, the
-// same delivery pattern as `webdriver-probe-annotate`. Would catch the
-// non-custom-element case (3) above with high specificity. Skipped for
-// now to keep the rule a single-file isolated-world change; revisit if
-// the heuristic produces too much noise in the wild.
+// Known false positive on the heuristic path: a custom element that
+// renders via canvas/WebGL or `::before` background-image without any
+// shadow DOM still trips it. The landmark text reads "may contain
+// content ABS cannot see," not "this is definitely a closed shadow
+// root." The main-world probe is definitive on the navigations it
+// covers and is preferred when both signals are available.
+//
+// Known false negatives that even the main-world probe doesn't cover:
+//   - Declarative shadow DOM with `shadowrootmode="closed"` — the
+//     template is consumed during HTML parsing, never goes through
+//     `Element.prototype.attachShadow`, so the wrap never sees it. The
+//     materialized closed root is also indistinguishable from "no
+//     shadow" from outside JS, so the heuristic can't catch it
+//     reliably either. The open variant of declarative shadow DOM is
+//     covered by the regular open-shadow plumbing — initial-parse
+//     roots are walked at content-script startup, and the
+//     `setHTMLUnsafe` patches in `shadow-roots.ts` (isolated world)
+//     and `shadow-root-probe-source.ts` (page world) register any
+//     open shadow materialized post-parse.
 
 import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
@@ -78,6 +98,12 @@ const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
 const LANDMARK_TEXT =
   "This page renders content inside one or more closed shadow roots. The contents of those shadow roots are invisible to this extension and may include text, controls, or instructions that are not reflected in the rest of the page's accessible content.";
+
+const PROBE_EVENT = "abs:closed-shadow-attached";
+
+const INJECT_PROBE_MESSAGE = { type: "inject-shadow-root-probe" } as const;
+
+let probeListenerAttached = false;
 
 function hasLightContent(element: Element): boolean {
   if (element.children.length > 0) {
@@ -194,13 +220,52 @@ const watcher = createSubtreeWatcher({
   },
 });
 
+// The main-world probe (lib/shadow-root-probe-source.ts) dispatches this
+// event on the document for every page-script `attachShadow(... mode:
+// "closed" ...)` call. The probe sends no detail — closed shadow contents
+// must stay opaque to every consumer; only the binary "an attachment
+// happened" signal crosses worlds. The listener stamps the landmark on
+// first event, and ensureLandmark's per-document dedupe short-circuits
+// every subsequent event for the page's lifetime.
+function onClosedShadowAttached(): void {
+  ensureLandmark();
+}
+
+function requestProbeInjection(): void {
+  // Service worker may be asleep / receiver not yet ready; swallow
+  // rejection so unhandled-promise warnings don't surface on every page
+  // load. installShadowRootProbe is idempotent via its FLAG sentinel, so
+  // re-requests on the same document are no-ops in the page world.
+  chrome.runtime.sendMessage(INJECT_PROBE_MESSAGE).catch(() => {
+    // noop
+  });
+}
+
 function apply(root: ParentNode): void {
+  if (!probeListenerAttached) {
+    document.addEventListener(PROBE_EVENT, onClosedShadowAttached);
+    probeListenerAttached = true;
+  }
+  // Ask the background to run the probe on this tab — covers the tab
+  // the user was already viewing when they toggled the rule on, since
+  // the dynamic main-world registration only takes effect on
+  // subsequent navigations.
+  requestProbeInjection();
   scan(root);
   watcher.start(root);
 }
 
 function teardown(): void {
   watcher.stop();
+  if (probeListenerAttached) {
+    document.removeEventListener(PROBE_EVENT, onClosedShadowAttached);
+    probeListenerAttached = false;
+  }
+  // The page-world wrap on Element.prototype.attachShadow is left in
+  // place intentionally — same posture as webdriver-probe-annotate's
+  // Navigator.prototype.webdriver wrap. The landmark is the user-visible
+  // signal; the wrap itself is plumbing and re-enabling later still
+  // benefits from the existing patch on the same document.
   for (const node of document.querySelectorAll(LANDMARK_SELECTOR)) {
     node.remove();
   }
@@ -210,7 +275,7 @@ export const closedShadowRootAnnotateRule = {
   id: RULE_ID,
   label: "Flag Closed Shadow Roots",
   description:
-    "Heuristically detect when a page renders content inside closed shadow roots (custom elements that visibly render with no light-DOM children). If detected, add a screen-reader-only landmark noting that the extension cannot see inside those shadow trees.",
+    "Detect when a page attaches closed shadow roots via a main-world probe over Element.prototype.attachShadow, with a structural heuristic as a fallback. If detected, add a screen-reader-only landmark noting that the extension cannot see inside those shadow trees.",
   // Closed shadow roots in cross-origin iframes are handled — or not — by
   // the iframe's own document; injecting a per-frame landmark there isn't
   // useful since the agent reads the top frame's a11y tree.
@@ -218,3 +283,5 @@ export const closedShadowRootAnnotateRule = {
   apply,
   teardown,
 } satisfies Rule;
+
+export { INJECT_PROBE_MESSAGE, PROBE_EVENT };
