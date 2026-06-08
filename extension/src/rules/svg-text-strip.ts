@@ -16,6 +16,7 @@
 // structural mapping while the payload is gone.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
@@ -29,7 +30,9 @@ function containsInjection(value: string): boolean {
 function scrub(element: Element): void {
   const text = element.textContent;
   if (text.length > 0 && containsInjection(text)) {
-    element.textContent = "";
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+      element.textContent = "";
+    });
   }
 }
 

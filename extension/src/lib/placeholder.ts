@@ -1,9 +1,11 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import { REVEALED_ATTR, RULE_ATTR } from "./dom-markers";
 import { log } from "./log";
 import type { RuleId } from "./storage";
+import { traceMutation } from "./trace-mutation";
 
 export const PLACEHOLDER_CLASS = "abs-placeholder";
 export const LABEL_CLASS = "abs-placeholder__label";
@@ -150,7 +152,21 @@ export function replaceWithBlockPlaceholder(
   }
 
   attachReveal(placeholder, element);
-  element.replaceWith(placeholder);
+  // Capture from the parent so the before-snapshot shows the original
+  // element in context and the after-snapshot shows the placeholder in
+  // the same position. `parentElement` is non-null in practice — callers
+  // only invoke this on connected elements.
+  traceMutation(
+    {
+      ruleId,
+      kind: "hide",
+      target: element,
+      captureFrom: element.parentElement ?? element,
+    },
+    () => {
+      element.replaceWith(placeholder);
+    },
+  );
   log("block placeholder created", {
     ruleId,
     label,
@@ -214,6 +230,16 @@ function createInlinePlaceholder(
     label,
     hiddenLength: originalText.length,
   });
+  if (isDebugTraceEnabled()) {
+    recordRuleApplication({
+      ruleId,
+      kind: "mask",
+      selector: `text:${label}`,
+      beforeHtml: "",
+      afterHtml: placeholder.outerHTML,
+      beforeText: originalText,
+    });
+  }
   return placeholder;
 }
 

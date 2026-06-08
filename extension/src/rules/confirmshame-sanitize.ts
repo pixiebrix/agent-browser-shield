@@ -39,6 +39,7 @@ import {
 } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "confirmshame-sanitize" as const;
@@ -215,19 +216,34 @@ function rewriteAttribute(
   }
 }
 
+function isConfirmshameCandidate(element: HTMLElement): boolean {
+  if (element instanceof HTMLInputElement) {
+    return Boolean(element.value) && isConfirmshameLabel(element.value);
+  }
+  return isConfirmshameLabel(element.textContent);
+}
+
 function neutralize(element: HTMLElement): boolean {
   if (alreadyRewritten(element)) {
     return false;
   }
-  const changed =
-    element instanceof HTMLInputElement
-      ? rewriteInput(element)
-      : rewriteButtonLike(element);
-  if (changed) {
-    rewriteAttribute(element, "aria-label", ORIGINAL_ARIA_ATTR);
-    rewriteAttribute(element, "title", ORIGINAL_TITLE_ATTR);
+  if (!isConfirmshameCandidate(element)) {
+    return false;
   }
-  return changed;
+  return traceMutation(
+    { ruleId: RULE_ID, kind: "sanitize", target: element },
+    () => {
+      const changed =
+        element instanceof HTMLInputElement
+          ? rewriteInput(element)
+          : rewriteButtonLike(element);
+      if (changed) {
+        rewriteAttribute(element, "aria-label", ORIGINAL_ARIA_ATTR);
+        rewriteAttribute(element, "title", ORIGINAL_TITLE_ATTR);
+      }
+      return changed;
+    },
+  );
 }
 
 function scanAndNeutralize(root: ParentNode): void {

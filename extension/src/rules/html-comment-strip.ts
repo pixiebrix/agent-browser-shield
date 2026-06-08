@@ -24,6 +24,7 @@
 // comment text.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
@@ -58,7 +59,20 @@ function stripComments(root: ParentNode): void {
       continue;
     }
     if (containsInjection(data)) {
-      comment.data = "";
+      // Comments don't have outerHTML, but the parent's outerHTML does
+      // include the comment markup (`<!-- … -->`) so before/after on the
+      // parent shows the scrub.
+      const parent = comment.parentElement;
+      if (parent === null) {
+        comment.data = "";
+      } else {
+        traceMutation(
+          { ruleId: RULE_ID, kind: "strip", target: parent },
+          () => {
+            comment.data = "";
+          },
+        );
+      }
     }
   }
 }

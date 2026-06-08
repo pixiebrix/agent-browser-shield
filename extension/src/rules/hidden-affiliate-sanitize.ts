@@ -48,6 +48,7 @@ import { isCheckoutUrl } from "../lib/checkout-url";
 import { HIDDEN_AFFILIATE_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-affiliate-sanitize" as const;
@@ -230,16 +231,18 @@ function getNativeValueSetter():
 }
 
 function clearValue(input: HTMLInputElement): void {
-  getNativeValueSetter()?.call(input, "");
-  // No input/change event dispatch. Hidden inputs aren't observed by
-  // listeners the user would have wired up for visible-control
-  // interactions, and firing one here could trip totals-recalculation
-  // handlers that re-fetch attribution from the same source. The agent
-  // submits via the form anyway; a downstream listener that genuinely
-  // needs the field non-empty will see the cleared value at submit
-  // time and can do whatever fallback the page intended for "user
-  // didn't come from a tracked source".
-  input.setAttribute(CLEARED_ATTR, "");
+  traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: input }, () => {
+    getNativeValueSetter()?.call(input, "");
+    // No input/change event dispatch. Hidden inputs aren't observed by
+    // listeners the user would have wired up for visible-control
+    // interactions, and firing one here could trip totals-recalculation
+    // handlers that re-fetch attribution from the same source. The
+    // agent submits via the form anyway; a downstream listener that
+    // genuinely needs the field non-empty will see the cleared value
+    // at submit time and can do whatever fallback the page intended
+    // for "user didn't come from a tracked source".
+    input.setAttribute(CLEARED_ATTR, "");
+  });
 }
 
 function isFormScopedHidden(input: HTMLInputElement): boolean {

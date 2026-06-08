@@ -20,6 +20,7 @@ import { filterToOutermost } from "./dom-utils";
 import { PLACEHOLDER_CLASS, replaceWithBlockPlaceholder } from "./placeholder";
 import { registerRule as registerWithTokenIndex } from "./selector-token-index";
 import type { RuleId } from "./storage";
+import { traceMutation } from "./trace-mutation";
 
 export interface SiteRule {
   patterns: URLPattern[];
@@ -200,8 +201,18 @@ export function createSelectorHideRule(
         // a stale sibling throws NotFoundError and unmounts the tree). Hiding
         // in place with !important is visually equivalent and removes the
         // node from the a11y tree, without invalidating those references.
-        element.style.setProperty("display", "none", "important");
-        element.setAttribute(HIDDEN_ATTR, id);
+        traceMutation(
+          {
+            ruleId: id,
+            kind: "hide",
+            target: element,
+            selector: memoJoined,
+          },
+          () => {
+            element.style.setProperty("display", "none", "important");
+            element.setAttribute(HIDDEN_ATTR, id);
+          },
+        );
       } else {
         // hideLabel is guaranteed non-undefined by the constructor check above.
         replaceWithBlockPlaceholder(element, id, hideLabel as string);

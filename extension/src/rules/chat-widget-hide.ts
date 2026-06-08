@@ -16,6 +16,14 @@
 // browser parses them — no MutationObserver, no per-batch QSA, and lazily
 // injected widgets (HubSpot's conversations-embed.js, Intercom's loader,
 // etc.) are hidden at parse time without us doing anything.
+//
+// Debug-trace coverage: the CSS-first sweep in `rule-count.ts` emits one
+// `rule-application` event per matched element when the trace toggle is
+// on, flagged with `cssOnly: true`. There's no element-level write to
+// wrap with `traceMutation` (the stylesheet hides matches declaratively),
+// so `beforeHtml` and `afterHtml` are identical — the value of the event
+// is the matched element's outerHTML, which is exactly what a reviewer
+// needs to confirm or deny a false-positive report.
 
 import type { HideStylesheet } from "../lib/css-hide-stylesheet";
 import { injectHideStylesheet } from "../lib/css-hide-stylesheet";

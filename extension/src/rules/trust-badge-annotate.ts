@@ -31,6 +31,7 @@ import {
 import { registrableDomain } from "../lib/domain-trust";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "trust-badge-annotate" as const;
@@ -248,24 +249,34 @@ function annotate(element: Element, name: string): void {
   if (!element.isConnected || element.hasAttribute(ANNOTATED_ATTR)) {
     return;
   }
-  element.setAttribute(ANNOTATED_ATTR, "");
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "flag",
+      target: element,
+      captureFrom: element.parentElement ?? element,
+    },
+    () => {
+      element.setAttribute(ANNOTATED_ATTR, "");
 
-  const chip = element.ownerDocument.createElement("span");
-  chip.className = CHIP_CLASS;
-  chip.setAttribute(RULE_ATTR, RULE_ID);
-  // Inline styling so the warning is visible even on pages that strip
-  // extension stylesheets. Mirrors the chip style used by
-  // link-spoof-annotate for consistency.
-  chip.style.display = "inline-block";
-  chip.style.margin = "0 0 0 4px";
-  chip.style.padding = "0 4px";
-  chip.style.border = "1px solid #b00";
-  chip.style.background = "#fff5f5";
-  chip.style.color = "#900";
-  chip.style.font = "11px/1.4 system-ui, sans-serif";
-  chip.style.fontStyle = "italic";
-  chip.textContent = chipText(name);
-  element.after(chip);
+      const chip = element.ownerDocument.createElement("span");
+      chip.className = CHIP_CLASS;
+      chip.setAttribute(RULE_ATTR, RULE_ID);
+      // Inline styling so the warning is visible even on pages that
+      // strip extension stylesheets. Mirrors the chip style used by
+      // link-spoof-annotate for consistency.
+      chip.style.display = "inline-block";
+      chip.style.margin = "0 0 0 4px";
+      chip.style.padding = "0 4px";
+      chip.style.border = "1px solid #b00";
+      chip.style.background = "#fff5f5";
+      chip.style.color = "#900";
+      chip.style.font = "11px/1.4 system-ui, sans-serif";
+      chip.style.fontStyle = "italic";
+      chip.textContent = chipText(name);
+      element.after(chip);
+    },
+  );
 }
 
 function scanAndAnnotate(root: ParentNode): void {

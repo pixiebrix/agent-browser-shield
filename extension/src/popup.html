@@ -241,7 +241,53 @@
         border-radius: 999px;
         text-align: center;
       }
-      .options-button-toggle {
+      .debug-trace {
+        margin: 12px 0 0;
+        padding: 8px 10px;
+        border: 1px solid #e4e4e7;
+        border-radius: 6px;
+        background: #f8fafc;
+      }
+      .debug-trace__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .debug-trace__heading {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #555;
+      }
+      .debug-trace__actions {
+        display: inline-flex;
+        gap: 4px;
+      }
+      .debug-trace__action {
+        padding: 2px 6px;
+        font: inherit;
+        font-size: 10px;
+        color: #2563eb;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .debug-trace__action:disabled {
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+      .debug-trace__empty,
+      .debug-trace__meta {
+        margin: 0;
+        font-size: 11px;
+        color: #666;
+      }
+      .popup-toggle {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -252,16 +298,16 @@
         background: #fafafa;
         cursor: pointer;
       }
-      .options-button-toggle__text {
+      .popup-toggle__text {
         flex: 1;
         display: inline-flex;
         flex-direction: column;
         gap: 2px;
       }
-      .options-button-toggle__text strong {
+      .popup-toggle__text strong {
         font-size: 13px;
       }
-      .options-button-toggle__hint {
+      .popup-toggle__hint {
         font-size: 11px;
         color: #666;
         line-height: 1.3;

@@ -47,6 +47,7 @@ import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "webdriver-probe-annotate" as const;
@@ -84,7 +85,16 @@ function ensureLandmark(): void {
   if (!document.body) {
     return;
   }
-  document.body.prepend(buildLandmark());
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "flag",
+      target: document.body,
+    },
+    () => {
+      document.body.prepend(buildLandmark());
+    },
+  );
   log("webdriver-probe-annotate landmark added", {
     host: globalThis.location.hostname,
   });

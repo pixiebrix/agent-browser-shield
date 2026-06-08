@@ -8,6 +8,7 @@ import {
   getRuleAvailabilityStates,
   subscribeRuleAvailability,
 } from "./availability";
+import { initDebugTrace } from "./debug-trace";
 import { PLACEHOLDER_MODE_ATTR } from "./dom-markers";
 import {
   getEnforcementEnabled,
@@ -258,11 +259,17 @@ export async function start(): Promise<void> {
   void getPlaceholderDisplayMode().then(applyDisplayMode);
   subscribePlaceholderDisplayMode(applyDisplayMode);
 
+  // Block on the debug-trace toggle alongside the rule state loads. If we
+  // don't, the first document_idle apply emits its rule mutations while
+  // the in-memory `enabled` flag is still its default (false) — the
+  // storage round-trip resolves a tick later and the entire initial
+  // burst gets silently dropped from the trace buffer.
   const [rawStates, enforcementInitial, availabilityInitial] =
     await Promise.all([
       getRuleStates(),
       getEnforcementEnabled(),
       getRuleAvailabilityStates(),
+      initDebugTrace(),
     ]);
   let rawCurrent = rawStates;
   let enforcementCurrent = enforcementInitial;

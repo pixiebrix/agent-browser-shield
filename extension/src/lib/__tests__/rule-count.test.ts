@@ -6,17 +6,35 @@
 // payload on pagehide. Throttling is covered with jest fake timers — the
 // 250 ms window is exercised by advancing the timer between mutations.
 
-import type { RuleCountMessage } from "../detection-messages";
+import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import type {
+  RuleApplicationEvent,
+  RuleCountMessage,
+} from "../detection-messages";
 import { HIDDEN_ATTR, RULE_ATTR } from "../dom-markers";
-import { startRuleCountReporter } from "../rule-count";
+import {
+  registerCssFirstSelectors,
+  startRuleCountReporter,
+} from "../rule-count";
 
-// Minimal chrome.runtime stub — only `sendMessage` is exercised by the
-// reporter. `@types/chrome` is loaded via the test tsconfig, so we shim
-// just the call path and cast through `unknown` when wiring it up.
-let sendMessage: jest.Mock;
+let stub: DebugTraceStub;
 
 function sentMessages(): RuleCountMessage[] {
-  return sendMessage.mock.calls.map(([message]) => message as RuleCountMessage);
+  return stub.sendMessage.mock.calls
+    .map(([message]) => message as { type: string })
+    .filter(
+      (message): message is RuleCountMessage => message.type === "rule-count",
+    );
+}
+
+function sentCssOnlyTraces(): RuleApplicationEvent[] {
+  return stub
+    .sentEntries()
+    .filter(
+      (entry): entry is { type: "rule-application" } & RuleApplicationEvent =>
+        entry.type === "rule-application" && entry.cssOnly === true,
+    );
 }
 
 function makePlaceholder(ruleId: string): HTMLElement {
@@ -36,16 +54,14 @@ let stop: (() => void) | null = null;
 beforeEach(() => {
   jest.useFakeTimers();
   document.body.innerHTML = "";
-  sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
+  stub = installDebugTraceStub();
 });
 
 afterEach(() => {
   stop?.();
   stop = null;
   jest.useRealTimers();
+  stub.reset();
 });
 
 describe("startRuleCountReporter", () => {
@@ -105,6 +121,65 @@ describe("startRuleCountReporter", () => {
     const sent = sentMessages();
     expect(sent).toHaveLength(2);
     expect(sent.at(-1)?.counts).toEqual({ "pii-redact": 2 });
+  });
+
+  it("emits cssOnly trace events for CSS-first matches when the trace toggle is on", () => {
+    stub.setEnabled(true);
+    const widget = document.createElement("div");
+    widget.id = "intercom-frame";
+    document.body.append(widget);
+
+    const unregister = registerCssFirstSelectors(
+      "chat-widget-hide",
+      "#intercom-frame",
+    );
+    stop = startRuleCountReporter();
+
+    const traces = sentCssOnlyTraces();
+    expect(traces).toHaveLength(1);
+    expect(traces[0]?.ruleId).toBe("chat-widget-hide");
+    expect(traces[0]?.kind).toBe("hide");
+    expect(traces[0]?.selector).toBe("#intercom-frame");
+    expect(traces[0]?.beforeHtml).toBe(traces[0]?.afterHtml);
+    expect(traces[0]?.beforeHtml).toContain('id="intercom-frame"');
+    unregister();
+  });
+
+  it("dedupes cssOnly trace events for the same element across recounts", async () => {
+    stub.setEnabled(true);
+    const widget = document.createElement("div");
+    widget.id = "intercom-frame";
+    document.body.append(widget);
+
+    const unregister = registerCssFirstSelectors(
+      "chat-widget-hide",
+      "#intercom-frame",
+    );
+    stop = startRuleCountReporter();
+
+    // Force a second sweep by mutating the DOM and flushing the throttle.
+    document.body.append(document.createElement("section"));
+    await Promise.resolve();
+    jest.advanceTimersByTime(300);
+
+    expect(sentCssOnlyTraces()).toHaveLength(1);
+    unregister();
+  });
+
+  it("emits no cssOnly trace events when the trace toggle is off", () => {
+    stub.setEnabled(false);
+    const widget = document.createElement("div");
+    widget.id = "intercom-frame";
+    document.body.append(widget);
+
+    const unregister = registerCssFirstSelectors(
+      "chat-widget-hide",
+      "#intercom-frame",
+    );
+    stop = startRuleCountReporter();
+
+    expect(sentCssOnlyTraces()).toHaveLength(0);
+    unregister();
   });
 
   it("flushes an empty payload on pagehide so the background decrements the frame", () => {

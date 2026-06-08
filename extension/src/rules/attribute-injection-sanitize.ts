@@ -38,6 +38,7 @@
 // `title` and `alt`.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
@@ -69,10 +70,13 @@ function containsInjection(value: string): boolean {
 }
 
 function scrubElement(element: Element): void {
+  // Collect attributes to remove first so we emit a single trace event
+  // covering every scrubbed attribute on this element.
+  const toRemove: string[] = [];
   for (const name of CANDIDATE_ATTRIBUTES) {
     const value = element.getAttribute(name);
     if (value !== null && containsInjection(value)) {
-      element.removeAttribute(name);
+      toRemove.push(name);
     }
   }
   if (element.tagName === "INPUT" && element.hasAttribute("value")) {
@@ -82,10 +86,18 @@ function scrubElement(element: Element): void {
     if (isUnreachable) {
       const value = element.getAttribute("value");
       if (value !== null && containsInjection(value)) {
-        element.removeAttribute("value");
+        toRemove.push("value");
       }
     }
   }
+  if (toRemove.length === 0) {
+    return;
+  }
+  traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: element }, () => {
+    for (const name of toRemove) {
+      element.removeAttribute(name);
+    }
+  });
 }
 
 function scrub(root: ParentNode): void {

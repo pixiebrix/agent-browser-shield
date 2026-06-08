@@ -28,6 +28,7 @@ import { isCheckoutUrl } from "../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-sanitize" as const;
@@ -68,10 +69,12 @@ function getNativeCheckedSetter():
 }
 
 function uncheck(checkbox: HTMLInputElement): void {
-  getNativeCheckedSetter()?.call(checkbox, false);
-  checkbox.dispatchEvent(new Event("input", { bubbles: true }));
-  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-  checkbox.setAttribute(CLEARED_ATTR, "");
+  traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: checkbox }, () => {
+    getNativeCheckedSetter()?.call(checkbox, false);
+    checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    checkbox.setAttribute(CLEARED_ATTR, "");
+  });
 }
 
 function scanAndClear(root: ParentNode): void {

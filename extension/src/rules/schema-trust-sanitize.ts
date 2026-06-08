@@ -47,6 +47,7 @@ import {
   UNVERIFIED_AUTHORITY_KEY,
 } from "../lib/schema-trust";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "schema-trust-sanitize" as const;
@@ -151,7 +152,9 @@ function processScript(script: HTMLScriptElement, pageHost: string): void {
   const mutated = { value: false };
   walk(parsed, pageHost, mutated);
   if (mutated.value) {
-    script.textContent = JSON.stringify(parsed);
+    traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: script }, () => {
+      script.textContent = JSON.stringify(parsed);
+    });
   }
 }
 
@@ -318,21 +321,26 @@ function processItem(item: Element, pageHost: string): void {
     return;
   }
   if (isAnnotateOnly) {
-    item.setAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR, "true");
+    traceMutation({ ruleId: RULE_ID, kind: "flag", target: item }, () => {
+      item.setAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR, "true");
+    });
     return;
   }
-  for (const key of SANITIZE_KEYS) {
-    // `@id` in microdata is the `itemid` attribute on the scope element.
-    if (key === "@id") {
-      if (item.getAttribute("itemid") !== null) {
-        item.setAttribute("itemid", "");
+  traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: item }, () => {
+    for (const key of SANITIZE_KEYS) {
+      // `@id` in microdata is the `itemid` attribute on the scope
+      // element.
+      if (key === "@id") {
+        if (item.getAttribute("itemid") !== null) {
+          item.setAttribute("itemid", "");
+        }
+        continue;
       }
-      continue;
+      for (const element of scopedDescendants(item, key)) {
+        blankItempropValue(element);
+      }
     }
-    for (const element of scopedDescendants(item, key)) {
-      blankItempropValue(element);
-    }
-  }
+  });
 }
 
 // ---------- Rule plumbing ----------

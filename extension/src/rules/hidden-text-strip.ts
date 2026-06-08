@@ -74,6 +74,7 @@ import {
 import { log } from "../lib/log";
 import { SR_ONLY_CLASS_NAMES, SR_ONLY_MAX_SIZE_PX } from "../lib/sr-only";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-text-strip" as const;
@@ -901,7 +902,9 @@ function scanAndStrip(root: ParentNode): void {
       textLength: visible.length,
       textPreview: textPreview(visible),
     });
-    blankDescendantText(element);
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+      blankDescendantText(element);
+    });
   }
 }
 
