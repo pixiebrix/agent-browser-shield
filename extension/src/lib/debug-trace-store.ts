@@ -98,6 +98,38 @@ export async function getEventsForTab(tabId: number): Promise<StoredEvent[]> {
   return db.getAllFromIndex(STORE_NAME, BY_TAB_INDEX, tabId);
 }
 
+export interface TabTraceStats {
+  // Count of `rule-application` entries only — segment markers are
+  // bookkeeping and don't represent "events" the user thinks about.
+  eventCount: number;
+  // Approximate disk footprint of every stored entry (segment markers
+  // included) — what `Copy JSON` would emit. JSON.stringify length is
+  // close enough for an order-of-magnitude readout.
+  byteSize: number;
+}
+
+// Single-pass cursor walk so polling doesn't transfer full entries — the
+// popup polls this every second while open and a busy SPA can accumulate
+// thousands of multi-KB `outerHTML` snippets.
+export async function getTabStats(tabId: number): Promise<TabTraceStats> {
+  const db = await getDb();
+  const tx = db.transaction(STORE_NAME, "readonly");
+  const index = tx.store.index(BY_TAB_INDEX);
+  let cursor = await index.openCursor(IDBKeyRange.only(tabId));
+  let eventCount = 0;
+  let byteSize = 0;
+  while (cursor) {
+    const stored = cursor.value;
+    byteSize += JSON.stringify(stored.entry).length;
+    if (stored.entry.type === "rule-application") {
+      eventCount += 1;
+    }
+    cursor = await cursor.continue();
+  }
+  await tx.done;
+  return { eventCount, byteSize };
+}
+
 export async function clearTab(tabId: number): Promise<void> {
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, "readwrite");

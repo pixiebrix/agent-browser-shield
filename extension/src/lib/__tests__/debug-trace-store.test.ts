@@ -14,6 +14,7 @@ import {
   clearAll,
   clearTab,
   getEventsForTab,
+  getTabStats,
 } from "../debug-trace-store";
 import type { DebugTraceEntry } from "../detection-messages";
 
@@ -78,6 +79,27 @@ describe("debug-trace store", () => {
     }
     const remaining = await getEventsForTab(7);
     expect(remaining).toHaveLength(3);
+  });
+
+  it("getTabStats counts only rule-application entries and sums byte size", async () => {
+    await appendEvent(1, 0, segmentEntry(1));
+    await appendEvent(1, 0, appEntry(1));
+    await appendEvent(1, 0, appEntry(1));
+    await appendEvent(2, 0, appEntry(1));
+
+    const tab1 = await getTabStats(1);
+    const tab2 = await getTabStats(2);
+    const empty = await getTabStats(99);
+
+    // Segment marker doesn't count, two rule-application entries do.
+    expect(tab1.eventCount).toBe(2);
+    expect(tab2.eventCount).toBe(1);
+    expect(empty.eventCount).toBe(0);
+
+    // Byte size includes the segment marker — it's the on-disk footprint
+    // a developer would weigh against exporting the trace.
+    expect(tab1.byteSize).toBeGreaterThan(tab2.byteSize);
+    expect(empty.byteSize).toBe(0);
   });
 
   it("clearAll wipes every tab", async () => {
