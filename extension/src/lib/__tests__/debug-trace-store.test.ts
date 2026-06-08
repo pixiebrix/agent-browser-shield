@@ -33,7 +33,7 @@ function appEntry(segmentId: number): DebugTraceEntry {
     type: "rule-application",
     segmentId,
     ruleId: "pii-redact",
-    kind: "block-placeholder",
+    kind: "hide",
     timestamp: Date.now(),
     selector: "div.x",
     beforeHtml: "<div>x</div>",

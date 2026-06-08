@@ -112,10 +112,27 @@ export interface SegmentMarker {
   meta: Record<string, string | number>;
 }
 
+// Mutation shape, in the vocabulary the user-facing docs and rule
+// labels already use. Multiple rule labels can map to the same kind —
+// e.g., "Hide Reviews" and "Remove Cookie Banners" both produce a `hide`
+// trace event because the underlying mutation shape is the same.
 export type RuleApplicationKind =
-  | "block-placeholder"
-  | "inline-placeholder"
-  | "hide-in-place";
+  // Replace with a placeholder OR set display:none on the original.
+  // Doc verbs: Hide, Remove.
+  | "hide"
+  // Inline text replacement (substring → labelled chip). Doc verbs:
+  // Mask, Redact.
+  | "mask"
+  // Blank textContent or remove children/attributes outright.
+  // Doc verb: Strip.
+  | "strip"
+  // In-place edit of attributes or text. Doc verbs: Sanitize, Scrub,
+  // Clear, Neutralize.
+  | "sanitize"
+  // Append a chip/badge near the element. Doc verbs: Flag, Annotate.
+  | "flag"
+  // Inject helper content (e.g. URL recipes). Doc verb: Embed.
+  | "embed";
 
 export interface RuleApplicationEvent {
   segmentId: number;
@@ -138,7 +155,7 @@ export interface RuleApplicationEvent {
   // (the original node stays in the DOM, just `display:none`).
   afterHtml: string;
   // Original text replaced by an inline placeholder. Only populated for
-  // `inline-placeholder` events.
+  // `mask` events (inline text replacement).
   beforeText?: string;
 }
 

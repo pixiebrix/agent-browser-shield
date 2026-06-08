@@ -31,6 +31,7 @@ import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
+import { traceMutation } from "../lib/trace-mutation";
 import type { JustDeleteMeEntry } from "./justdeleteme.generated";
 import { JUSTDELETEME_ENTRIES } from "./justdeleteme.generated";
 import type { RoachMotelDifficulty } from "./site-data.generated";
@@ -195,7 +196,18 @@ function apply(_root: ParentNode): void {
   // Inject at body level (regardless of which subtree root was passed)
   // so the landmark is the first element of <body> at the top of the
   // a11y tree.
-  document.body.prepend(buildLandmark(globalThis.location.hostname, warning));
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "flag",
+      target: document.body,
+    },
+    () => {
+      document.body.prepend(
+        buildLandmark(globalThis.location.hostname, warning),
+      );
+    },
+  );
   log("roach-motel-annotate applied", {
     host: globalThis.location.hostname,
     difficulty: warning.difficulty,

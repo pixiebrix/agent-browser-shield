@@ -45,7 +45,7 @@ describe("debug-trace recorder", () => {
     recordSegment("initial-load", { url: "https://example.com" });
     recordRuleApplication({
       ruleId: "pii-redact",
-      kind: "block-placeholder",
+      kind: "hide",
       selector: "div.banner",
       beforeHtml: "<div>x</div>",
       afterHtml: "<div class='abs'></div>",
@@ -75,7 +75,7 @@ describe("debug-trace recorder", () => {
     recordSegment("initial-load", { url: "https://example.com" });
     recordRuleApplication({
       ruleId: "cookie-banner-hide",
-      kind: "hide-in-place",
+      kind: "hide",
       selector: "#cookie",
       beforeHtml: "<div id=cookie></div>",
       afterHtml: "",
@@ -83,7 +83,7 @@ describe("debug-trace recorder", () => {
     recordSegment("route-change", { to: "https://example.com/next" });
     recordRuleApplication({
       ruleId: "ads-hide",
-      kind: "block-placeholder",
+      kind: "hide",
       selector: ".ad",
       beforeHtml: "<div class=ad></div>",
       afterHtml: "<div class=abs></div>",

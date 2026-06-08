@@ -173,7 +173,7 @@ export function replaceWithBlockPlaceholder(
   });
   recordRuleApplication({
     ruleId,
-    kind: "block-placeholder",
+    kind: "hide",
     selector,
     beforeHtml,
     afterHtml: isDebugTraceEnabled() ? placeholder.outerHTML : "",
@@ -238,7 +238,7 @@ function createInlinePlaceholder(
   if (isDebugTraceEnabled()) {
     recordRuleApplication({
       ruleId,
-      kind: "inline-placeholder",
+      kind: "mask",
       selector: `text:${label}`,
       beforeHtml: "",
       afterHtml: placeholder.outerHTML,

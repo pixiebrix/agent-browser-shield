@@ -25,6 +25,7 @@
 // react-helmet, etc.) mutate `<head>` on route changes.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
@@ -39,14 +40,18 @@ function containsInjection(value: string): boolean {
 function scrubMeta(element: Element): void {
   const content = element.getAttribute("content");
   if (content !== null && content.length > 0 && containsInjection(content)) {
-    element.setAttribute("content", "");
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+      element.setAttribute("content", "");
+    });
   }
 }
 
 function scrubTitle(element: Element): void {
   const text = element.textContent;
   if (text.length > 0 && containsInjection(text)) {
-    element.textContent = "";
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+      element.textContent = "";
+    });
   }
 }
 

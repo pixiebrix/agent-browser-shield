@@ -90,6 +90,7 @@ import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "closed-shadow-root-annotate" as const;
@@ -181,7 +182,16 @@ function ensureLandmark(): void {
   if (!document.body) {
     return;
   }
-  document.body.prepend(buildLandmark());
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "flag",
+      target: document.body,
+    },
+    () => {
+      document.body.prepend(buildLandmark());
+    },
+  );
   log("closed-shadow-root-annotate landmark added", {
     host: globalThis.location.hostname,
   });

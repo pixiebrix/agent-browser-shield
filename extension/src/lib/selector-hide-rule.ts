@@ -206,7 +206,7 @@ export function createSelectorHideRule(
         element.setAttribute(HIDDEN_ATTR, id);
         recordRuleApplication({
           ruleId: id,
-          kind: "hide-in-place",
+          kind: "hide",
           selector: memoJoined,
           beforeHtml,
           afterHtml: "",

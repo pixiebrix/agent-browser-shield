@@ -31,6 +31,7 @@
 // rule off requires a reload to recover the original fallback markup.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "noscript-strip" as const;
@@ -40,7 +41,9 @@ function blankNoscript(element: Element): void {
   if (element.firstChild === null) {
     return;
   }
-  element.textContent = "";
+  traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+    element.textContent = "";
+  });
 }
 
 function stripNoscript(root: ParentNode): void {

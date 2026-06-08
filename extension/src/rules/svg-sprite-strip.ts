@@ -12,6 +12,7 @@
 // page. This preserves icons that are actually rendered via <use>.
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "svg-sprite-strip" as const;
@@ -100,7 +101,22 @@ function scan(root: ParentNode): void {
     if (symbols.some((s) => referenced.has(s.id))) {
       continue;
     }
-    svg.remove();
+    const parent = svg.parentElement;
+    if (parent === null) {
+      svg.remove();
+      continue;
+    }
+    traceMutation(
+      {
+        ruleId: RULE_ID,
+        kind: "strip",
+        target: svg,
+        captureFrom: parent,
+      },
+      () => {
+        svg.remove();
+      },
+    );
   }
 }
 

@@ -31,6 +31,7 @@
 
 import { walkTextNodes } from "../lib/dom-utils";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "unicode-invisibles-strip" as const;
@@ -92,9 +93,17 @@ function scrubTextNodes(root: ParentNode): void {
       continue;
     }
     const cleaned = strip(original);
-    if (cleaned !== original) {
-      node.nodeValue = cleaned;
+    if (cleaned === original) {
+      continue;
     }
+    const parent = node.parentElement;
+    if (parent === null) {
+      node.nodeValue = cleaned;
+      continue;
+    }
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: parent }, () => {
+      node.nodeValue = cleaned;
+    });
   }
 }
 
@@ -104,12 +113,24 @@ function scrubAttributes(root: ParentNode): void {
   for (const element of root.querySelectorAll("*")) {
     // Element.attributes is a live NamedNodeMap; snapshot before mutating.
     const attributes = [...element.attributes];
+    // Compute the pending mutations first so we emit one trace event per
+    // element rather than one per attribute — five attribute scrubs on a
+    // single element should read as one rule application.
+    const pending: Array<[string, string]> = [];
     for (const attribute of attributes) {
       const cleaned = strip(attribute.value);
       if (cleaned !== attribute.value) {
-        element.setAttribute(attribute.name, cleaned);
+        pending.push([attribute.name, cleaned]);
       }
     }
+    if (pending.length === 0) {
+      continue;
+    }
+    traceMutation({ ruleId: RULE_ID, kind: "strip", target: element }, () => {
+      for (const [name, value] of pending) {
+        element.setAttribute(name, value);
+      }
+    });
   }
 }
 

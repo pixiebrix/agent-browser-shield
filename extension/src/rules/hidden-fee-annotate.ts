@@ -44,6 +44,7 @@ import {
 import { findInnermostMatches } from "../lib/dom-utils";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-fee-annotate" as const;
@@ -482,25 +483,28 @@ function flag(candidate: Candidate): void {
   if (element.getAttribute(FLAGGED_ATTR) === "") {
     return;
   }
-  element.setAttribute(FLAGGED_ATTR, "");
+  traceMutation({ ruleId: RULE_ID, kind: "flag", target: element }, () => {
+    element.setAttribute(FLAGGED_ATTR, "");
 
-  const chip = document.createElement("span");
-  chip.className = FLAG_CLASS;
-  chip.setAttribute(RULE_ATTR, RULE_ID);
-  // Inline styling so the annotation survives stripped-extension-CSS pages.
-  // Block display puts the chip on its own visual line above the row text
-  // without disturbing the existing layout.
-  chip.style.display = "block";
-  chip.style.padding = "2px 6px";
-  chip.style.margin = "0 0 4px 0";
-  chip.style.border = "1px solid #b00";
-  chip.style.background = "#fff5f5";
-  chip.style.color = "#900";
-  chip.style.font = "12px/1.4 system-ui, sans-serif";
-  chip.style.fontStyle = "italic";
-  const amountSuffix = amount === null ? "" : `, "${amount}"`;
-  chip.textContent = `[abs: drip-pricing fee (${phrase}${amountSuffix}) — verify the total before completing checkout]`;
-  element.prepend(chip);
+    const chip = document.createElement("span");
+    chip.className = FLAG_CLASS;
+    chip.setAttribute(RULE_ATTR, RULE_ID);
+    // Inline styling so the annotation survives
+    // stripped-extension-CSS pages. Block display puts the chip on
+    // its own visual line above the row text without disturbing the
+    // existing layout.
+    chip.style.display = "block";
+    chip.style.padding = "2px 6px";
+    chip.style.margin = "0 0 4px 0";
+    chip.style.border = "1px solid #b00";
+    chip.style.background = "#fff5f5";
+    chip.style.color = "#900";
+    chip.style.font = "12px/1.4 system-ui, sans-serif";
+    chip.style.fontStyle = "italic";
+    const amountSuffix = amount === null ? "" : `, "${amount}"`;
+    chip.textContent = `[abs: drip-pricing fee (${phrase}${amountSuffix}) — verify the total before completing checkout]`;
+    element.prepend(chip);
+  });
 }
 
 function scanAndFlag(root: ParentNode): void {

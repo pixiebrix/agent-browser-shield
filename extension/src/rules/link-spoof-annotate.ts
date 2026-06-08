@@ -47,6 +47,7 @@ import {
 import { registrableDomain } from "../lib/domain-trust";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "link-spoof-annotate" as const;
@@ -181,24 +182,38 @@ function flag(link: HTMLAnchorElement, triggers: SpoofTriggers): void {
   if (!link.isConnected || link.hasAttribute(FLAGGED_ATTR)) {
     return;
   }
-  link.setAttribute(FLAGGED_ATTR, "");
+  // Capture from the parent so the appended chip shows up in the trace's
+  // after-snapshot. Falls back to the link itself when detached (rare,
+  // skipped above) — the wrapper still records the FLAGGED_ATTR stamp.
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "flag",
+      target: link,
+      captureFrom: link.parentElement ?? link,
+    },
+    () => {
+      link.setAttribute(FLAGGED_ATTR, "");
 
-  const chip = document.createElement("span");
-  chip.className = FLAG_CLASS;
-  chip.setAttribute(RULE_ATTR, RULE_ID);
-  // Inline-block so the chip stays on the same baseline as the link in
-  // running text, and self-contained inline styling so the warning is
-  // visible even on pages that strip extension stylesheets.
-  chip.style.display = "inline-block";
-  chip.style.margin = "0 0 0 4px";
-  chip.style.padding = "0 4px";
-  chip.style.border = "1px solid #b00";
-  chip.style.background = "#fff5f5";
-  chip.style.color = "#900";
-  chip.style.font = "11px/1.4 system-ui, sans-serif";
-  chip.style.fontStyle = "italic";
-  chip.textContent = chipText(triggers);
-  link.after(chip);
+      const chip = document.createElement("span");
+      chip.className = FLAG_CLASS;
+      chip.setAttribute(RULE_ATTR, RULE_ID);
+      // Inline-block so the chip stays on the same baseline as the link
+      // in running text, and self-contained inline styling so the
+      // warning is visible even on pages that strip extension
+      // stylesheets.
+      chip.style.display = "inline-block";
+      chip.style.margin = "0 0 0 4px";
+      chip.style.padding = "0 4px";
+      chip.style.border = "1px solid #b00";
+      chip.style.background = "#fff5f5";
+      chip.style.color = "#900";
+      chip.style.font = "11px/1.4 system-ui, sans-serif";
+      chip.style.fontStyle = "italic";
+      chip.textContent = chipText(triggers);
+      link.after(chip);
+    },
+  );
 }
 
 function scanAndFlag(root: ParentNode): void {

@@ -34,6 +34,7 @@ import {
 import { findInnermostMatches } from "../lib/dom-utils";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "cart-addon-annotate" as const;
@@ -151,25 +152,30 @@ function flag(candidate: Candidate): void {
   if (element.hasAttribute(FLAGGED_ATTR)) {
     return;
   }
-  element.setAttribute(FLAGGED_ATTR, "");
+  // The chip is prepended INTO the element, so the element's own
+  // outerHTML reflects the addition — no captureFrom override needed.
+  traceMutation({ ruleId: RULE_ID, kind: "flag", target: element }, () => {
+    element.setAttribute(FLAGGED_ATTR, "");
 
-  const chip = document.createElement("span");
-  chip.className = FLAG_CLASS;
-  chip.setAttribute(RULE_ATTR, RULE_ID);
-  // Inline styling rather than an external stylesheet so the annotation
-  // is self-contained and visible even on pages that strip extension CSS.
-  // Block display puts the chip on its own visual line above the matched
-  // text without interfering with the line-item's existing layout.
-  chip.style.display = "block";
-  chip.style.padding = "2px 6px";
-  chip.style.margin = "0 0 4px 0";
-  chip.style.border = "1px solid #b00";
-  chip.style.background = "#fff5f5";
-  chip.style.color = "#900";
-  chip.style.font = "12px/1.4 system-ui, sans-serif";
-  chip.style.fontStyle = "italic";
-  chip.textContent = `[abs: likely cart add-on (${label}, matched "${matched}") — verify you intended this charge before completing purchase]`;
-  element.prepend(chip);
+    const chip = document.createElement("span");
+    chip.className = FLAG_CLASS;
+    chip.setAttribute(RULE_ATTR, RULE_ID);
+    // Inline styling rather than an external stylesheet so the
+    // annotation is self-contained and visible even on pages that
+    // strip extension CSS. Block display puts the chip on its own
+    // visual line above the matched text without interfering with the
+    // line-item's existing layout.
+    chip.style.display = "block";
+    chip.style.padding = "2px 6px";
+    chip.style.margin = "0 0 4px 0";
+    chip.style.border = "1px solid #b00";
+    chip.style.background = "#fff5f5";
+    chip.style.color = "#900";
+    chip.style.font = "12px/1.4 system-ui, sans-serif";
+    chip.style.fontStyle = "italic";
+    chip.textContent = `[abs: likely cart add-on (${label}, matched "${matched}") — verify you intended this charge before completing purchase]`;
+    element.prepend(chip);
+  });
 }
 
 function scanAndFlag(root: ParentNode): void {

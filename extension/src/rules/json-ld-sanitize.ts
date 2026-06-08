@@ -20,6 +20,7 @@
 // the agent will not be able to use the data anyway).
 
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
 import type { Rule } from "./types";
 
@@ -71,7 +72,9 @@ function processScript(script: HTMLScriptElement): void {
   const mutated = { value: false };
   const sanitized = sanitize(parsed, mutated);
   if (mutated.value) {
-    script.textContent = JSON.stringify(sanitized);
+    traceMutation({ ruleId: RULE_ID, kind: "sanitize", target: script }, () => {
+      script.textContent = JSON.stringify(sanitized);
+    });
   }
 }
 

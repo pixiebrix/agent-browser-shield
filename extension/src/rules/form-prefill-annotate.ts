@@ -52,6 +52,7 @@ import {
 } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "form-prefill-annotate" as const;
@@ -576,18 +577,21 @@ function flag(candidate: Candidate): void {
     return;
   }
 
-  // Stamp the control itself so a later scan doesn't re-evaluate it,
-  // and stamp the target so we don't append a sibling chip in case the
-  // same target is selected by two different candidates (the
-  // seenRadioGroups guard already prevents that for radios within one
-  // scan; the target stamp is the cross-scan guard for radios).
-  candidate.control.setAttribute(FLAGGED_ATTR, "");
-  if (target !== candidate.control) {
-    target.setAttribute(FLAGGED_ATTR, "");
-  }
+  traceMutation({ ruleId: RULE_ID, kind: "flag", target }, () => {
+    // Stamp the control itself so a later scan doesn't re-evaluate
+    // it, and stamp the target so we don't append a sibling chip in
+    // case the same target is selected by two different candidates
+    // (the seenRadioGroups guard already prevents that for radios
+    // within one scan; the target stamp is the cross-scan guard for
+    // radios).
+    candidate.control.setAttribute(FLAGGED_ATTR, "");
+    if (target !== candidate.control) {
+      target.setAttribute(FLAGGED_ATTR, "");
+    }
 
-  const chip = buildChip(chipTextFor(candidate));
-  target.prepend(chip);
+    const chip = buildChip(chipTextFor(candidate));
+    target.prepend(chip);
+  });
 }
 
 function scanAndFlag(root: ParentNode): void {

@@ -18,6 +18,7 @@
 import { RULE_ATTR } from "../lib/dom-markers";
 import { log } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
+import { traceMutation } from "../lib/trace-mutation";
 import { SEARCH_URL_HELPER_RECIPES } from "./site-data.generated";
 import type { Rule } from "./types";
 
@@ -62,7 +63,16 @@ function apply(_root: ParentNode): void {
   // The engine passes document.body, but we always inject at body level
   // (regardless of which subtree root was handed in) so the landmark is
   // the first element of <body> at the top of the a11y tree.
-  document.body.prepend(buildLandmark(recipe));
+  traceMutation(
+    {
+      ruleId: RULE_ID,
+      kind: "embed",
+      target: document.body,
+    },
+    () => {
+      document.body.prepend(buildLandmark(recipe));
+    },
+  );
   log("search-url-helper applied", {
     host: globalThis.location.hostname,
     recipeLength: recipe.length,
