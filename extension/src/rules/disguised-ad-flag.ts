@@ -24,12 +24,13 @@ import {
   findInnermostMatches,
   isInsidePlaceholder,
 } from "../lib/dom-utils";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import type { Rule } from "./types";
 
 const RULE_ID = "disguised-ad-flag" as const;
+const log = createRuleLogger(RULE_ID);
 
 // Cap on the trimmed text length of the *label* element. Real disclosure
 // labels are short — "Sponsored", "Paid for and presented by Acme", a
@@ -398,7 +399,7 @@ function scanAndHide(root: ParentNode): void {
   for (const candidate of candidates) {
     hideCandidate(candidate);
   }
-  log("disguised ad placeholders inserted", {
+  log.info("disguised ad placeholders inserted", {
     count: candidates.length,
     phrases: candidates.map((c) => c.phrase),
   });

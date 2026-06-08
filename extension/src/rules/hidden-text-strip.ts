@@ -71,13 +71,14 @@ import {
   NON_CONTENT_TAGS,
   visibleTextContent,
 } from "../lib/dom-utils";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { SR_ONLY_CLASS_NAMES, SR_ONLY_MAX_SIZE_PX } from "../lib/sr-only";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-text-strip" as const;
+const log = createRuleLogger(RULE_ID);
 
 const OFFSCREEN_THRESHOLD_PX = -9999;
 
@@ -892,7 +893,7 @@ function scanAndStrip(root: ParentNode): void {
       continue;
     }
     const visible = visibleTextContent(element);
-    log("hidden text scrubbed", {
+    log.info("hidden text scrubbed", {
       ruleId: RULE_ID,
       reason,
       details,

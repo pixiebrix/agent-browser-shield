@@ -55,7 +55,7 @@ async function isRegistered(): Promise<boolean> {
     // getRegisteredContentScripts throws if no script with the id exists
     // in some Chrome versions; treat that as "not registered" rather than
     // a failure mode that prevents registration.
-    log("shadow-root-probe registration: getRegistered threw", { error });
+    log.warn("shadow-root-probe registration: getRegistered threw", { error });
     return false;
   }
 }
@@ -77,20 +77,20 @@ async function register(): Promise<void> {
         persistAcrossSessions: true,
       },
     ]);
-    log("shadow-root-probe registered at document_start (main world)");
+    log.info("shadow-root-probe registered at document_start (main world)");
   } catch (error) {
-    log("shadow-root-probe registration failed", { error });
+    log.error("shadow-root-probe registration failed", { error });
   }
 }
 
 async function unregister(): Promise<void> {
   try {
     await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
-    log("shadow-root-probe unregistered");
+    log.info("shadow-root-probe unregistered");
   } catch (error) {
     // Unregister fails if the script wasn't registered to begin with;
     // that's a benign state, not a problem.
-    log("shadow-root-probe unregister no-op", { error });
+    log.debug("shadow-root-probe unregister no-op", { error });
   }
 }
 

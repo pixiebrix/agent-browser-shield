@@ -45,12 +45,13 @@ import {
   RULE_ATTR,
 } from "../lib/dom-markers";
 import { registrableDomain } from "../lib/domain-trust";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "link-spoof-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 const FLAG_CLASS = "abs-link-spoof-annotate";
 
 // Adjacent letters from different scripts inside a single word. Covers
@@ -230,7 +231,7 @@ function scanAndFlag(root: ParentNode): void {
     }
   }
   if (count > 0) {
-    log("link spoofs flagged", { count });
+    log.info("link spoofs flagged", { count });
   }
 }
 

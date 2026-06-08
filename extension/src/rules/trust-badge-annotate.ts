@@ -29,12 +29,13 @@ import {
   RULE_ATTR,
 } from "../lib/dom-markers";
 import { registrableDomain } from "../lib/domain-trust";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "trust-badge-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 const CHIP_CLASS = "abs-trust-badge-annotate";
 
 // Hard cap on the accessible-name length we'll consider. Real badges carry
@@ -293,7 +294,7 @@ function scanAndAnnotate(root: ParentNode): void {
     }
   }
   if (count > 0) {
-    log("trust badges annotated", { count });
+    log.info("trust badges annotated", { count });
   }
 }
 

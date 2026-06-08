@@ -50,7 +50,7 @@ async function isRegistered(): Promise<boolean> {
     // getRegisteredContentScripts throws if no script with the id exists
     // in some Chrome versions; treat that as "not registered" rather than
     // a failure mode that prevents registration.
-    log("checkout-checkbox-defense registration: getRegistered threw", {
+    log.warn("checkout-checkbox-defense registration: getRegistered threw", {
       error,
     });
     return false;
@@ -76,20 +76,22 @@ async function register(): Promise<void> {
         persistAcrossSessions: true,
       },
     ]);
-    log("checkout-checkbox-defense registered at document_start (main world)");
+    log.info(
+      "checkout-checkbox-defense registered at document_start (main world)",
+    );
   } catch (error) {
-    log("checkout-checkbox-defense registration failed", { error });
+    log.error("checkout-checkbox-defense registration failed", { error });
   }
 }
 
 async function unregister(): Promise<void> {
   try {
     await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
-    log("checkout-checkbox-defense unregistered");
+    log.info("checkout-checkbox-defense unregistered");
   } catch (error) {
     // Unregister fails if the script wasn't registered to begin with;
     // that's a benign state, not a problem.
-    log("checkout-checkbox-defense unregister no-op", { error });
+    log.debug("checkout-checkbox-defense unregister no-op", { error });
   }
 }
 

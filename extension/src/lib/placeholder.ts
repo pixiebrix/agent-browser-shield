@@ -35,7 +35,7 @@ function attachReveal(container: HTMLElement, original: Node): void {
   let revealed = false;
   const reveal = (event: Event) => {
     const target = event.target as Element | null;
-    log("reveal click received", {
+    log.info("reveal click received", {
       ruleId,
       eventType: event.type,
       isTrusted: event.isTrusted,
@@ -54,7 +54,7 @@ function attachReveal(container: HTMLElement, original: Node): void {
       (original as Element).setAttribute(REVEALED_ATTR, ruleId);
     }
     container.replaceWith(original);
-    log("reveal complete — original restored", {
+    log.info("reveal complete — original restored", {
       ruleId,
       restored: describeNode(original),
     });
@@ -167,7 +167,7 @@ export function replaceWithBlockPlaceholder(
       element.replaceWith(placeholder);
     },
   );
-  log("block placeholder created", {
+  log.info("block placeholder created", {
     ruleId,
     label,
     hidden: describeNode(element),
@@ -225,7 +225,7 @@ function createInlinePlaceholder(
   placeholder.setAttribute(RULE_ATTR, ruleId);
   placeholder.textContent = label;
   attachReveal(placeholder, document.createTextNode(originalText));
-  log("inline placeholder created", {
+  log.info("inline placeholder created", {
     ruleId,
     label,
     hiddenLength: originalText.length,
@@ -439,7 +439,7 @@ export function revealAll(ruleId: RuleId): void {
   const placeholders = document.querySelectorAll<HTMLElement>(
     `[${RULE_ATTR}="${ruleId}"]`,
   );
-  log("revealAll invoked", { ruleId, count: placeholders.length });
+  log.info("revealAll invoked", { ruleId, count: placeholders.length });
   for (const placeholder of placeholders) {
     placeholder.dispatchEvent(new MouseEvent("click"));
   }

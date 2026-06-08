@@ -37,12 +37,13 @@ import {
   CONFIRMSHAME_ORIGINAL_TITLE_ATTR as ORIGINAL_TITLE_ATTR,
   CONFIRMSHAME_ORIGINAL_VALUE_ATTR as ORIGINAL_VALUE_ATTR,
 } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "confirmshame-sanitize" as const;
+const log = createRuleLogger(RULE_ID);
 
 // Decline label that replaces confirmshame copy. "No thanks" reads as a
 // plain refusal in every context this rule fires in (modals, signup forms,
@@ -267,7 +268,7 @@ function scanAndNeutralize(root: ParentNode): void {
     }
   }
   if (count > 0) {
-    log("confirmshame buttons neutralized", { count });
+    log.info("confirmshame buttons neutralized", { count });
   }
 }
 

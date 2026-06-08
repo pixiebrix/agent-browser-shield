@@ -7,6 +7,11 @@
 // the outerHTML before/after the swap so a false-positive report can be
 // reproduced offline.
 //
+// The same toggle also unmasks `log.debug` console output (see
+// `lib/log.ts`) — one switch silences both surfaces. Use this module
+// for structured before/after HTML capture; use `log.debug` for
+// unstructured human-readable diagnostic lines.
+//
 // The toggle gates emission at the source: when off, `recordRuleApplication`
 // and `recordSegment` are no-ops. Callers that route through `traceMutation`
 // skip the outerHTML serialization entirely on the off path; direct callers

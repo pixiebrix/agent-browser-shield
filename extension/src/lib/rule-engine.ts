@@ -159,7 +159,7 @@ function applyEnabled(
   // TS lib types `document.body` as non-null; reality disagrees in iframes.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!document.body) {
-    log("rule engine skipping — no document.body", {
+    log.info("rule engine skipping — no document.body", {
       url: globalThis.location.href,
     });
     return;
@@ -167,7 +167,7 @@ function applyEnabled(
   const enabled = RULES.filter(
     (rule) => isApplicableHere(rule, topFrame, availability) && states[rule.id],
   ).map((r) => r.id);
-  log("initial rule application", {
+  log.info("initial rule application", {
     enabled,
     url: globalThis.location.href,
     topFrame,
@@ -177,7 +177,7 @@ function applyEnabled(
       continue;
     }
     if (states[rule.id]) {
-      log("applying rule", { ruleId: rule.id });
+      log.info("applying rule", { ruleId: rule.id });
       rule.apply(document.body);
     }
   }
@@ -227,10 +227,12 @@ function reconcile(
       continue;
     }
     if (isApplied) {
-      log("rule enabled — applying", { ruleId: rule.id });
+      log.info("rule enabled — applying", { ruleId: rule.id });
       rule.apply(document.body);
     } else {
-      log("rule disabled — revealing and tearing down", { ruleId: rule.id });
+      log.info("rule disabled — revealing and tearing down", {
+        ruleId: rule.id,
+      });
       revealAll(rule.id);
       rule.teardown?.();
     }
@@ -251,7 +253,7 @@ function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
 
 export async function start(): Promise<void> {
   const topFrame = isTopFrame();
-  log("rule engine starting", { url: globalThis.location.href, topFrame });
+  log.info("rule engine starting", { url: globalThis.location.href, topFrame });
   injectStyles();
   // Set the default synchronously so any placeholder created before storage
   // resolves gets the right CSS scoping.
@@ -305,11 +307,11 @@ export async function start(): Promise<void> {
     applyChange(next, enforcementCurrent, availabilityCurrent);
   });
   subscribeEnforcementEnabled((enabled) => {
-    log("enforcement toggle changed", { enabled });
+    log.info("enforcement toggle changed", { enabled });
     applyChange(rawCurrent, enabled, availabilityCurrent);
   });
   subscribeRuleAvailability((next) => {
-    log("rule availability changed", {
+    log.info("rule availability changed", {
       snapshot: Object.fromEntries(
         Object.entries(next).map(([id, snap]) => [id, snap.available]),
       ),

@@ -293,7 +293,7 @@ chrome.runtime.onMessage.addListener(
           // disallowed) reject here. The primary registration silently
           // skips these origins via match-pattern filtering; the fallback
           // has to swallow the rejection explicitly.
-          log("inject-webdriver-probe executeScript failed", { error });
+          log.error("inject-webdriver-probe executeScript failed", { error });
         });
       return undefined;
     }
@@ -320,7 +320,7 @@ chrome.runtime.onMessage.addListener(
           func: installCheckoutCheckboxDefense,
         })
         .catch((error: unknown) => {
-          log("inject-checkout-checkbox-defense executeScript failed", {
+          log.error("inject-checkout-checkbox-defense executeScript failed", {
             error,
           });
         });
@@ -349,7 +349,7 @@ chrome.runtime.onMessage.addListener(
           func: installShadowRootProbe,
         })
         .catch((error: unknown) => {
-          log("inject-shadow-root-probe executeScript failed", { error });
+          log.error("inject-shadow-root-probe executeScript failed", { error });
         });
       return undefined;
     }
@@ -438,7 +438,7 @@ chrome.runtime.onMessage.addListener(
           frameId,
           entry as DebugTraceEntry,
         ).catch((error: unknown) => {
-          log("debug-trace IDB write failed", { error });
+          log.error("debug-trace IDB write failed", { error });
         });
       }
       return undefined;

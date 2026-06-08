@@ -26,12 +26,13 @@
 
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-sanitize" as const;
+const log = createRuleLogger(RULE_ID);
 
 const INJECT_DEFENSE_MESSAGE = {
   type: "inject-checkout-checkbox-defense",
@@ -96,7 +97,7 @@ function scanAndClear(root: ParentNode): void {
   }
 
   if (cleared > 0) {
-    log("checkout checkboxes cleared", {
+    log.info("checkout checkboxes cleared", {
       count: cleared,
       url: globalThis.location.href,
     });

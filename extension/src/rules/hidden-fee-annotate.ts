@@ -42,12 +42,13 @@ import {
   RULE_ATTR,
 } from "../lib/dom-markers";
 import { findInnermostMatches } from "../lib/dom-utils";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-fee-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const FLAG_CLASS = "abs-hidden-fee-annotate";
 
@@ -521,7 +522,7 @@ function scanAndFlag(root: ParentNode): void {
   for (const candidate of candidates) {
     flag(candidate);
   }
-  log("hidden fees flagged", {
+  log.info("hidden fees flagged", {
     count: candidates.length,
     phrases: candidates.map((c) => c.phrase),
     url: globalThis.location.href,

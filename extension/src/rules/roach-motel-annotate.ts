@@ -29,7 +29,7 @@
 import { URLPattern } from "urlpattern-polyfill";
 import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { traceMutation } from "../lib/trace-mutation";
 import type { JustDeleteMeEntry } from "./justdeleteme.generated";
@@ -39,6 +39,7 @@ import { ROACH_MOTEL_WARNINGS } from "./site-data.generated";
 import type { Rule } from "./types";
 
 const RULE_ID = "roach-motel-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
@@ -208,7 +209,7 @@ function apply(_root: ParentNode): void {
       );
     },
   );
-  log("roach-motel-annotate applied", {
+  log.info("roach-motel-annotate applied", {
     host: globalThis.location.hostname,
     difficulty: warning.difficulty,
   });
