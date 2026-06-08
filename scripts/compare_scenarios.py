@@ -205,7 +205,7 @@ def mint_run_id() -> str:
 def rebuild_extension() -> None:
     # Codegen + bundle + zip together take <2s on a clean tree; cheap enough
     # to do every run so source edits in rules/, data/sites/, or
-    # data/rule-defaults.json can't silently miss this comparison the way
+    # src/rules/rule-metadata.ts can't silently miss this comparison the way
     # they would with a stale zip on disk.
     ext_dir = REPO_ROOT / "extension"
     print("rebuilding extension (bun run build && bun run package)...")

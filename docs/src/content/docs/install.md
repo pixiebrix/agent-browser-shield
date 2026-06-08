@@ -62,12 +62,14 @@ The extension is now active. Reload any open tabs to pick up the content script.
 ## Customizing defaults at build time
 
 Which rules ship on by default is enumerated in
-[`extension/data/rule-defaults.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/rule-defaults.json).
+[`extension/src/rules/rule-metadata.ts`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/src/rules/rule-metadata.ts).
 For one-off changes, edit that file and rebuild.
 
 For infrastructure deployments where the same custom set of defaults should ship
 in every build (so an agent doesn't have to flip toggles in the Options page on
-each fresh session), pass a JSON override file to `bun run build`:
+each fresh session), pass a JSON override file to `bun run build`. A starting
+template lives at
+[`extension/data/defaults-overrides.example.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/defaults-overrides.example.json):
 
 ```sh
 cat > my-defaults.json <<'EOF'

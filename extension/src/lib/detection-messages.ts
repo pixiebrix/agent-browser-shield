@@ -10,7 +10,7 @@
 // the popup — keep this file dependency-free so it stays trivially
 // bundleable into each of those three entry points.
 
-import type { RuleId } from "../rules/rule-defaults.generated";
+import type { RuleId } from "../rules/rule-metadata";
 import type { RoachMotelDifficulty } from "../rules/site-data.generated";
 
 export type DetectionKind =

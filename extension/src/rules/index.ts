@@ -43,11 +43,11 @@ import { unicodeInvisiblesStripRule } from "./unicode-invisibles-strip";
 import { webdriverProbeAnnotateRule } from "./webdriver-probe-annotate";
 
 // Catalog of every rule's runtime (apply/teardown). Adding a rule: create the
-// file, add the import above, append below, then update
-// `data/rule-defaults.json` and rerun `bun run build-rule-defaults`.
+// file, add the import above, append below, then add an entry to
+// `rule-metadata.ts`.
 //
 // `RuleId` and `RULE_IDS` are the canonical id set, and they live in
-// `rule-defaults.generated.ts` so service-worker consumers (`lib/storage.ts`,
+// `rule-metadata.ts` so service-worker consumers (`lib/storage.ts`,
 // `background.ts`) can import them without pulling any rule file's top-level
 // DOM access into the worker bundle. The catalog invariants test verifies
 // `RULES.map(r => r.id)` matches `RULE_IDS` exactly.

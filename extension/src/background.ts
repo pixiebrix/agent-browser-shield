@@ -27,8 +27,8 @@ import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
 import { ruleStatesStorage } from "./lib/storage";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 import { installProbe } from "./lib/webdriver-probe-source";
-import type { RuleId } from "./rules/rule-defaults.generated";
-import { RULE_IDS } from "./rules/rule-defaults.generated";
+import type { RuleId } from "./rules/rule-metadata";
+import { RULE_IDS } from "./rules/rule-metadata";
 
 // Per-tab, per-frame, per-rule footprint counts. Each content script reports
 // its own frame's tally grouped by rule id; the badge shows the cross-frame

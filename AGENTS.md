@@ -121,12 +121,14 @@ itself, so name collisions and convention drift surface at lint time.
 ## Rule defaults
 
 The initial enabled/disabled state for each rule lives in
-`extension/data/rule-defaults.json`, not on the rule modules themselves. The
-codegen in `extension/scripts/build-rule-defaults.ts` validates that every
-registered rule id has a default (and that no unknown ids appear) and emits
-`extension/src/rules/rule-defaults.generated.ts`, which
-`extension/src/lib/storage.ts` imports. Adding a rule without picking a default
-fails the build; do not edit the generated file.
+`extension/src/rules/rule-metadata.ts`, not on the rule modules themselves.
+This hand-edited file is the source of truth for `RuleId`, `RULE_IDS`, and
+`RULE_DEFAULTS`; `extension/src/lib/storage.ts` imports it. It is kept out
+of `rules/index.ts` so the service-worker bundle doesn't pull rule files'
+top-level DOM access. Adding a rule means appending an entry both here and
+in `rules/index.ts`; the catalog test in
+`extension/src/rules/__tests__/catalog.test.ts` enforces that the two stay
+in sync.
 
 `extension/build.ts` accepts a `--defaults <path>` CLI flag (or
 `EXTENSION_DEFAULTS_FILE` env var) pointing at a JSON file in the same shape as

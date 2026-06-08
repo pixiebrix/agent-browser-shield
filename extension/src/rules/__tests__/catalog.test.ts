@@ -27,7 +27,7 @@ jest.mock("abort-utils", () => ({
 import { RULE_GROUPS } from "../../lib/rule-groups";
 import { RULE_LABELS } from "../../popup/rule-labels";
 import { RULE_IDS, RULES } from "..";
-import { RULE_DEFAULTS } from "../rule-defaults.generated";
+import { RULE_DEFAULTS } from "../rule-metadata";
 
 describe("rule catalog invariants", () => {
   it("ships at least one rule", () => {
@@ -56,10 +56,9 @@ describe("rule catalog invariants", () => {
     expect(typeof rule.apply).toBe("function");
   });
 
-  // Defaults live in extension/data/rule-defaults.json and flow through
-  // codegen into RULE_DEFAULTS. Codegen rejects mismatches at build time;
-  // this test is a belt-and-suspenders so adding a rule without picking a
-  // default fails fast in `bun run test` too.
+  // Defaults live in `rules/rule-metadata.ts` and are hand-edited. This
+  // test catches the case where a rule is registered in `rules/index.ts`
+  // without a corresponding metadata entry (or vice versa).
   it("declares a default for every rule and no extras", () => {
     const defaultsKeys = Object.keys(RULE_DEFAULTS).toSorted();
     expect(defaultsKeys).toEqual([...RULE_IDS].toSorted());

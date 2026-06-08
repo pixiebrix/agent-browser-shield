@@ -1,10 +1,15 @@
-// AUTO-GENERATED — do not edit by hand.
-// Source: extension/data/rule-defaults.json
-// Regenerate with `bun run build-rule-defaults`.
+// Copyright (c) 2026 PixieBrix, Inc.
+// Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Source of truth for `RuleId` and `RULE_IDS`. Lives outside `rules/index.ts`
-// so service-worker code (`lib/storage.ts`, `background.ts`) can import the
-// id set without pulling in any rule file's top-level DOM access.
+// Source of truth for `RuleId`, `RULE_IDS`, and ship-default state.
+// Hand-edited. Adding a rule: append an entry here AND register the
+// runtime in `rules/index.ts`. The catalog test in
+// `rules/__tests__/catalog.test.ts` enforces that the two stay in sync.
+//
+// Kept out of `rules/index.ts` so service-worker code (`lib/storage.ts`,
+// `background.ts`) can import id metadata without pulling rule files'
+// DOM access into the worker bundle (guarded by
+// `scripts/check-background-purity.ts`).
 
 export const RULE_DEFAULTS = {
   "pii-redact": true,

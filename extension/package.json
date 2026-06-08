@@ -27,7 +27,6 @@
     "fetch-justdeleteme": "uv run --directory .. scripts/fetch_justdeleteme.py",
     "build-site-data": "bun run scripts/build-site-data.ts",
     "build-injection-patterns": "bun run scripts/build-injection-patterns.ts",
-    "build-rule-defaults": "bun run scripts/build-rule-defaults.ts",
     "build-icons": "bun run scripts/build-icons.ts",
     "clean": "rm -rf dist",
     "test": "jest",
@@ -40,7 +39,7 @@
     "lint:eslint:fix": "eslint . --fix",
     "knip": "knip",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "preflight": "bun run build-site-data && bun run build-injection-patterns && bun run build-rule-defaults && bun run check && bun run typecheck && bun run knip && bun run test:coverage"
+    "preflight": "bun run build-site-data && bun run build-injection-patterns && bun run check && bun run typecheck && bun run knip && bun run test:coverage"
   },
   "dependencies": {
     "abort-utils": "^3.0.0",

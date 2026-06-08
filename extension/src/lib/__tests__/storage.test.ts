@@ -11,7 +11,7 @@
 // the freshly-derived defaults instead of any stale stored value from a
 // previous case.
 
-import { RULE_DEFAULTS as RAW_RULE_DEFAULTS } from "../../rules/rule-defaults.generated";
+import { RULE_DEFAULTS as RAW_RULE_DEFAULTS } from "../../rules/rule-metadata";
 import type * as Storage from "../storage";
 
 type StorageModule = typeof Storage;

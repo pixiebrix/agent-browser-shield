@@ -286,11 +286,11 @@ export default tseslint.config(
   },
   {
     // lib/ owns the runtime engine and shared helpers. It depends on the
-    // rule catalog (rules/index), the contract (rules/types), and the
-    // generated defaults table — never on a specific rule implementation.
-    // Reaching into one rule from lib quietly couples a helper to that
-    // rule's internals and makes the next rule that needs the same hook
-    // copy-paste instead of factor.
+    // rule catalog (rules/index), the contract (rules/types), the
+    // generated tables, and the hand-edited rule-metadata table — never on
+    // a specific rule implementation. Reaching into one rule from lib
+    // quietly couples a helper to that rule's internals and makes the next
+    // rule that needs the same hook copy-paste instead of factor.
     files: ["src/lib/**/*.ts", "src/lib/**/*.tsx"],
     ignores: ["src/lib/**/__tests__/**"],
     rules: {
@@ -302,11 +302,11 @@ export default tseslint.config(
               target: "./src/lib",
               from: "./src/rules/*.ts",
               except: [
-                rulePath("{index,types}.ts"),
+                rulePath("{index,types,rule-metadata}.ts"),
                 rulePath("*.generated.ts"),
               ],
               message:
-                "lib/ may only depend on rules/{index,types,*.generated} — not on a specific rule file.",
+                "lib/ may only depend on rules/{index,types,rule-metadata,*.generated} — not on a specific rule file.",
             },
           ],
         },
