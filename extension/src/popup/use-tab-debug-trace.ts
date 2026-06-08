@@ -10,8 +10,9 @@
 // during a fresh page interaction, and "show me what's piling up" is the
 // main reason a developer leaves the trace toggle on. The cursor walk
 // touches each record but doesn't transfer the full `outerHTML` payloads
-// — full entries are only fetched on `copyJson()`.
+// — full entries are only fetched on `exportJsonl()`.
 
+import { saveAs } from "file-saver";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearTab,
@@ -27,7 +28,7 @@ export interface TabDebugTrace {
   loading: boolean;
   reload: () => void;
   clear: () => Promise<void>;
-  copyJson: () => Promise<void>;
+  exportJsonl: () => Promise<void>;
 }
 
 export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
@@ -88,18 +89,29 @@ export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
     setByteSize(0);
   }, [tabId]);
 
-  const copyJson = useCallback(async () => {
+  // JSONL (one entry per line) instead of a JSON array: lets a developer
+  // stream the export through `jq -c`, grep for a rule id, or diff two
+  // captures without parsing the whole file. file-saver triggers an
+  // anchor-based download from the popup's extension origin — no
+  // chrome.downloads permission needed.
+  const exportJsonl = useCallback(async () => {
     if (tabId === null) {
       return;
     }
     const stored = await getEventsForTab(tabId);
-    const payload = JSON.stringify(
-      stored.map((record) => record.entry),
-      null,
-      2,
-    );
-    await navigator.clipboard.writeText(payload);
+    const payload = stored
+      .map((record) => JSON.stringify(record.entry))
+      .join("\n");
+    const blob = new Blob([payload], {
+      type: "application/x-ndjson;charset=utf-8",
+    });
+    const timestamp = new Date()
+      .toISOString()
+      .replaceAll(/[.:]/g, "-")
+      .replaceAll("T", "_")
+      .slice(0, 19);
+    saveAs(blob, `agent-browser-shield-trace-tab${tabId}-${timestamp}.jsonl`);
   }, [tabId]);
 
-  return { eventCount, byteSize, loading, reload, clear, copyJson };
+  return { eventCount, byteSize, loading, reload, clear, exportJsonl };
 }

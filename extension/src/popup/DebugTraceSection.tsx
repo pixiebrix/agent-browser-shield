@@ -4,7 +4,7 @@
 // Dev-mode trace summary. Visible only when the user has enabled the
 // "Debug trace" toggle. Shows a live count + byte size of the trace
 // piling up in IDB and exposes the three actions a developer needs:
-// Refresh (force-poll), Copy JSON (full payload to clipboard), Clear
+// Refresh (force-poll), Export (download full payload as JSONL), Clear
 // (drop this tab's trace).
 //
 // The per-event / per-segment render that used to live here was hidden
@@ -44,11 +44,11 @@ export function DebugTraceSection({ trace }: { trace: TabDebugTrace }) {
             type="button"
             className="debug-trace__action"
             onClick={() => {
-              void trace.copyJson();
+              void trace.exportJsonl();
             }}
             disabled={!hasEntries}
           >
-            Copy JSON
+            Export
           </button>
           <button
             type="button"

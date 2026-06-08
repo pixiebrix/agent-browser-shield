@@ -103,7 +103,7 @@ export interface TabTraceStats {
   // bookkeeping and don't represent "events" the user thinks about.
   eventCount: number;
   // Approximate disk footprint of every stored entry (segment markers
-  // included) — what `Copy JSON` would emit. JSON.stringify length is
+  // included) — what `Export` would emit. JSON.stringify length is
   // close enough for an order-of-magnitude readout.
   byteSize: number;
 }
