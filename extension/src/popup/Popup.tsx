@@ -9,7 +9,7 @@ import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DebugTraceSection } from "./DebugTraceSection";
 import { DetectionsSection } from "./DetectionsSection";
-import { HumanModeSection } from "./HumanModeSection";
+import { PerRuleCountsSection } from "./PerRuleCountsSection";
 import { useTabDebugTrace } from "./use-tab-debug-trace";
 import { useTabActivity } from "./use-tab-detections";
 
@@ -86,7 +86,7 @@ export function Popup() {
         Configure rules
       </button>
       <DetectionsSection detections={activity?.detections ?? []} />
-      <HumanModeSection entries={activity?.entries ?? []} />
+      <PerRuleCountsSection entries={activity?.entries ?? []} />
       <label className="options-button-toggle">
         <span className="options-button-toggle__text">
           <strong>On-page options button</strong>
