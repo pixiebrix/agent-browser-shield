@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { debugTraceStorage } from "../lib/debug-trace";
 import { enforcementStorage } from "../lib/enforcement";
 import { HelpLinks } from "../lib/HelpLinks";
-import { optionsButtonStorage } from "../lib/options-button-toggle";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DebugTraceSection } from "./DebugTraceSection";
 import { DetectionsSection } from "./DetectionsSection";
@@ -15,7 +14,6 @@ import { useTabActivity } from "./use-tab-detections";
 
 export function Popup() {
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
-  const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
   const debugTraceEnabled = useChromeStorageValue(debugTraceStorage);
   const activity = useTabActivity();
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
@@ -30,11 +28,7 @@ export function Popup() {
 
   const trace = useTabDebugTrace(debugTraceEnabled ? activeTabId : null);
 
-  if (
-    enforcementEnabled === null ||
-    optionsButtonEnabled === null ||
-    debugTraceEnabled === null
-  ) {
+  if (enforcementEnabled === null || debugTraceEnabled === null) {
     return <div className="loading">Loading…</div>;
   }
 
@@ -87,30 +81,10 @@ export function Popup() {
       </button>
       <DetectionsSection detections={activity?.detections ?? []} />
       <PerRuleCountsSection entries={activity?.entries ?? []} />
-      <label className="options-button-toggle">
-        <span className="options-button-toggle__text">
-          <strong>On-page options button</strong>
-          <span className="options-button-toggle__hint">
-            Floating shield button that lets browser-use agents open this
-            options page from the page itself.
-          </span>
-        </span>
-        <span className="switch" role="presentation">
-          <input
-            type="checkbox"
-            checked={optionsButtonEnabled}
-            onChange={(event) => {
-              void optionsButtonStorage.set(event.target.checked);
-            }}
-            aria-label="Show on-page options button"
-          />
-          <span className="switch__track" />
-        </span>
-      </label>
-      <label className="options-button-toggle">
-        <span className="options-button-toggle__text">
+      <label className="popup-toggle">
+        <span className="popup-toggle__text">
           <strong>Debug trace</strong>
-          <span className="options-button-toggle__hint">
+          <span className="popup-toggle__hint">
             Captures DOM snippets of removed content for debugging. Stored only
             in this browser.
           </span>
