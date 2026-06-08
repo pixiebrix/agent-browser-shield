@@ -7,21 +7,13 @@
 // content script can't reach it directly — it runs in the page origin and
 // would land in the page's IDB instead — so trace events ride a
 // `chrome.runtime.sendMessage` over to the background, which persists them
-// here.
+// here. IDB survives MV3 service-worker sleep, so the popup can read the
+// full trace even after the SW has restarted.
 //
-// Why IDB over an in-memory ring buffer:
-//   - MV3 service workers go to sleep between events. The popup must read
-//     the full trace even after the SW restarts, which an in-memory buffer
-//     would lose.
-//   - outerHTML snapshots are heavy (1–5 KB each); persisting them outside
-//     the SW heap means a busy page can accumulate hundreds of entries
-//     without growing the SW's resident memory.
-//
-// Schema is intentionally append-only with one record per event. The
-// `by-tab` index lets the popup pull a single tab's trace without
-// scanning the full store; pruning keeps each tab capped at
-// MAX_EVENTS_PER_TAB to bound disk growth on long-lived tabs that
-// trigger heavy rule activity.
+// Schema is append-only with one record per event. The `by-tab` index lets
+// the popup pull a single tab's trace without scanning the full store;
+// pruning keeps each tab capped at MAX_EVENTS_PER_TAB to bound disk growth
+// on long-lived tabs that trigger heavy rule activity.
 
 import type { DBSchema, IDBPDatabase } from "idb";
 import { openDB } from "idb";
@@ -88,7 +80,7 @@ export async function appendEvent(
     entry,
   };
   await db.add(STORE_NAME, stored);
-  await pruneTab(tabId, activeMaxPerTab);
+  await pruneTab(tabId);
 }
 
 // Get every stored event for a tab in insertion order. The autoincrement
@@ -142,26 +134,28 @@ export async function clearTab(tabId: number): Promise<void> {
   await tx.done;
 }
 
-export async function clearAll(): Promise<void> {
+// Test-only: wipe every tab between cases. Production callers should use
+// clearTab — there's no UI affordance for clearing all tabs at once.
+export async function __clearAllForTesting(): Promise<void> {
   const db = await getDb();
   await db.clear(STORE_NAME);
 }
 
 // Drop oldest events for `tabId` until the per-tab count is at or under
-// `maxCount`. Walks the by-tab index from the oldest end (autoincrement
-// keys grow monotonically, so the cursor in "next" direction starts at
-// the oldest record for this tab).
-async function pruneTab(tabId: number, maxCount: number): Promise<void> {
+// `activeMaxPerTab`. Walks the by-tab index from the oldest end
+// (autoincrement keys grow monotonically, so the cursor in "next"
+// direction starts at the oldest record for this tab).
+async function pruneTab(tabId: number): Promise<void> {
   const db = await getDb();
   const countTx = db.transaction(STORE_NAME, "readonly");
   const count = await countTx.store
     .index(BY_TAB_INDEX)
     .count(IDBKeyRange.only(tabId));
   await countTx.done;
-  if (count <= maxCount) {
+  if (count <= activeMaxPerTab) {
     return;
   }
-  const toDelete = count - maxCount;
+  const toDelete = count - activeMaxPerTab;
   const tx = db.transaction(STORE_NAME, "readwrite");
   const index = tx.store.index(BY_TAB_INDEX);
   let cursor = await index.openCursor(IDBKeyRange.only(tabId));

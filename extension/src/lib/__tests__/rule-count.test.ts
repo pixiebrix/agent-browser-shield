@@ -6,12 +6,9 @@
 // payload on pagehide. Throttling is covered with jest fake timers — the
 // 250 ms window is exercised by advancing the timer between mutations.
 
-import {
-  __resetDebugTraceForTesting,
-  __setDebugTraceEnabledForTesting,
-} from "../debug-trace";
+import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import type {
-  DebugTraceEventMessage,
   RuleApplicationEvent,
   RuleCountMessage,
 } from "../detection-messages";
@@ -21,13 +18,10 @@ import {
   startRuleCountReporter,
 } from "../rule-count";
 
-// Minimal chrome.runtime stub — only `sendMessage` is exercised by the
-// reporter. `@types/chrome` is loaded via the test tsconfig, so we shim
-// just the call path and cast through `unknown` when wiring it up.
-let sendMessage: jest.Mock;
+let stub: DebugTraceStub;
 
 function sentMessages(): RuleCountMessage[] {
-  return sendMessage.mock.calls
+  return stub.sendMessage.mock.calls
     .map(([message]) => message as { type: string })
     .filter(
       (message): message is RuleCountMessage => message.type === "rule-count",
@@ -35,13 +29,8 @@ function sentMessages(): RuleCountMessage[] {
 }
 
 function sentCssOnlyTraces(): RuleApplicationEvent[] {
-  return sendMessage.mock.calls
-    .map(([message]) => message as { type: string })
-    .filter(
-      (message): message is DebugTraceEventMessage =>
-        message.type === "debug-trace-event",
-    )
-    .map((message) => message.entry)
+  return stub
+    .sentEntries()
     .filter(
       (entry): entry is { type: "rule-application" } & RuleApplicationEvent =>
         entry.type === "rule-application" && entry.cssOnly === true,
@@ -65,17 +54,14 @@ let stop: (() => void) | null = null;
 beforeEach(() => {
   jest.useFakeTimers();
   document.body.innerHTML = "";
-  sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
+  stub = installDebugTraceStub();
 });
 
 afterEach(() => {
   stop?.();
   stop = null;
   jest.useRealTimers();
-  __resetDebugTraceForTesting();
+  stub.reset();
 });
 
 describe("startRuleCountReporter", () => {
@@ -138,7 +124,7 @@ describe("startRuleCountReporter", () => {
   });
 
   it("emits cssOnly trace events for CSS-first matches when the trace toggle is on", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     const widget = document.createElement("div");
     widget.id = "intercom-frame";
     document.body.append(widget);
@@ -160,7 +146,7 @@ describe("startRuleCountReporter", () => {
   });
 
   it("dedupes cssOnly trace events for the same element across recounts", async () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     const widget = document.createElement("div");
     widget.id = "intercom-frame";
     document.body.append(widget);
@@ -181,7 +167,7 @@ describe("startRuleCountReporter", () => {
   });
 
   it("emits no cssOnly trace events when the trace toggle is off", () => {
-    __setDebugTraceEnabledForTesting(false);
+    stub.setEnabled(false);
     const widget = document.createElement("div");
     widget.id = "intercom-frame";
     document.body.append(widget);

@@ -8,11 +8,12 @@
 // reproduced offline.
 //
 // The toggle gates emission at the source: when off, `recordRuleApplication`
-// and `recordSegment` are no-ops that do not even compute `outerHTML`
-// (which is the heavy part on a busy page). The chrome.runtime.sendMessage
-// transport is fire-and-forget — the background may be asleep, in which
-// case the rejection is swallowed exactly like the rule-count reporter
-// does for the same reason.
+// and `recordSegment` are no-ops. Callers that route through `traceMutation`
+// skip the outerHTML serialization entirely on the off path; direct callers
+// gate themselves before computing snapshots. The
+// `chrome.runtime.sendMessage` transport is fire-and-forget — the background
+// may be asleep, in which case the rejection is swallowed exactly like the
+// rule-count reporter does for the same reason.
 //
 // The segment counter ticks once per `recordSegment` call and is stamped
 // on every rule-application event so the background can group events by
@@ -44,11 +45,10 @@ let initPromise: Promise<void> | null = null;
 
 // Eagerly load the persisted toggle into the in-memory `enabled` flag
 // and install the change subscription. Idempotent — repeat calls return
-// the same promise. Startup paths (rule engine, segment tracker) should
-// await this before emitting their first event: a synchronous lazy load
-// kicks off the storage round-trip but `enabled` stays at the default
-// for the first few microtasks, which silently swallowed the entire
-// document_idle apply burst on page reload.
+// the same promise. Startup paths (rule engine, segment tracker) must
+// await this before emitting their first event so the document_idle
+// apply burst on page reload doesn't fire while `enabled` is still at
+// the default.
 export function initDebugTrace(): Promise<void> {
   if (initPromise) {
     return initPromise;
@@ -108,7 +108,7 @@ export function recordSegment(
   return segmentCounter;
 }
 
-export interface RuleApplicationInput {
+interface RuleApplicationInput {
   // string rather than `RuleId` — see the note on `RuleApplicationEvent`
   // in detection-messages.ts.
   ruleId: string;
@@ -120,10 +120,12 @@ export interface RuleApplicationInput {
   cssOnly?: boolean;
 }
 
-// Emit a rule-application event. Callers compute outerHTML themselves
-// only after this returns true via `isDebugTraceEnabled()` — see the
-// guard pattern in `placeholder.ts` / `selector-hide-rule.ts` so the
-// heavy serialization is skipped when the toggle is off.
+// Emit a rule-application event. Most callers route through
+// `traceMutation`, which captures outerHTML around the mutator. Direct
+// callers (the inline-placeholder text→element case in placeholder.ts
+// and the CSS-first sweep in rule-count.ts) gate on `isDebugTraceEnabled`
+// before computing outerHTML so they don't pay the serialization cost
+// when the toggle is off.
 export function recordRuleApplication(input: RuleApplicationInput): void {
   void initDebugTrace();
   if (!enabled) {

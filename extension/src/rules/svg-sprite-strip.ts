@@ -101,17 +101,14 @@ function scan(root: ParentNode): void {
     if (symbols.some((s) => referenced.has(s.id))) {
       continue;
     }
-    const parent = svg.parentElement;
-    if (parent === null) {
-      svg.remove();
-      continue;
-    }
     traceMutation(
       {
         ruleId: RULE_ID,
         kind: "strip",
         target: svg,
-        captureFrom: parent,
+        // svg.isConnected was checked above; querySelectorAll never
+        // returns the search root, so parentElement is non-null here.
+        captureFrom: svg.parentElement ?? svg,
       },
       () => {
         svg.remove();

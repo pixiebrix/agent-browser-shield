@@ -44,11 +44,6 @@ interface CssFirstUnion {
 const cssFirstRegistrations = new Map<string, Map<string, CssFirstUnion>>();
 let recountTrigger: (() => void) | null = null;
 
-function noop(): void {
-  // Returned from registerCssFirstSelectors when the caller passed an
-  // empty union — nothing to unregister.
-}
-
 // Register a CSS-first selector union with the counter so matches of
 // `union` are attributed to `ruleId` in the per-rule count. Returns an
 // unregister fn. Safe to call before `startRuleCountReporter` runs (the
@@ -58,7 +53,9 @@ export function registerCssFirstSelectors(
   union: string,
 ): () => void {
   if (union.length === 0) {
-    return noop;
+    return () => {
+      // empty union ⇒ nothing was registered ⇒ nothing to unregister
+    };
   }
   let unions = cssFirstRegistrations.get(ruleId);
   if (!unions) {

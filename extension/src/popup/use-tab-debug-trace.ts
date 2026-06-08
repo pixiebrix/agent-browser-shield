@@ -25,8 +25,6 @@ const POLL_INTERVAL_MS = 1000;
 export interface TabDebugTrace {
   eventCount: number;
   byteSize: number;
-  loading: boolean;
-  reload: () => void;
   clear: () => Promise<void>;
   exportJsonl: () => Promise<void>;
 }
@@ -34,51 +32,35 @@ export interface TabDebugTrace {
 export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
   const [eventCount, setEventCount] = useState(0);
   const [byteSize, setByteSize] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(
-    async (showLoading: boolean) => {
-      if (tabId === null) {
-        setEventCount(0);
-        setByteSize(0);
-        setLoading(false);
-        return;
-      }
-      if (showLoading) {
-        setLoading(true);
-      }
+  useEffect(() => {
+    if (tabId === null) {
+      setEventCount(0);
+      setByteSize(0);
+      return;
+    }
+    let cancelled = false;
+    const poll = async () => {
       try {
         const stats = await getTabStats(tabId);
-        setEventCount(stats.eventCount);
-        setByteSize(stats.byteSize);
+        if (!cancelled) {
+          setEventCount(stats.eventCount);
+          setByteSize(stats.byteSize);
+        }
       } catch {
         // Keep the previous values — a transient IDB error during a poll
         // shouldn't blank the readout the developer is watching.
-      } finally {
-        if (showLoading) {
-          setLoading(false);
-        }
       }
-    },
-    [tabId],
-  );
-
-  useEffect(() => {
-    void load(true);
-    if (tabId === null) {
-      return;
-    }
+    };
+    void poll();
     const intervalId = globalThis.setInterval(() => {
-      void load(false);
+      void poll();
     }, POLL_INTERVAL_MS);
     return () => {
+      cancelled = true;
       globalThis.clearInterval(intervalId);
     };
-  }, [tabId, load]);
-
-  const reload = useCallback(() => {
-    void load(true);
-  }, [load]);
+  }, [tabId]);
 
   const clear = useCallback(async () => {
     if (tabId === null) {
@@ -113,5 +95,5 @@ export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
     saveAs(blob, `agent-browser-shield-trace-tab${tabId}-${timestamp}.jsonl`);
   }, [tabId]);
 
-  return { eventCount, byteSize, loading, reload, clear, exportJsonl };
+  return { eventCount, byteSize, clear, exportJsonl };
 }

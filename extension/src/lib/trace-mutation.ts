@@ -33,14 +33,7 @@
 
 import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import type { RuleApplicationKind } from "./detection-messages";
-
-function defaultSelector(element: Element): string {
-  const tag = element.tagName.toLowerCase();
-  const id = element.id ? `#${element.id}` : "";
-  const classes =
-    element.classList.length > 0 ? `.${[...element.classList].join(".")}` : "";
-  return `${tag}${id}${classes}`;
-}
+import { describeElement } from "./element-describe";
 
 export interface TraceMutationOptions {
   ruleId: string;
@@ -74,7 +67,7 @@ export function traceMutation<T>(
   recordRuleApplication({
     ruleId: options.ruleId,
     kind: options.kind,
-    selector: options.selector ?? defaultSelector(options.target),
+    selector: options.selector ?? describeElement(options.target),
     beforeHtml,
     afterHtml,
   });

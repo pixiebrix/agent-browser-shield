@@ -5,14 +5,7 @@ import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import { REVEALED_ATTR, RULE_ATTR } from "./dom-markers";
 import { log } from "./log";
 import type { RuleId } from "./storage";
-
-function describeForTrace(element: Element): string {
-  const tag = element.tagName.toLowerCase();
-  const id = element.id ? `#${element.id}` : "";
-  const classes =
-    element.classList.length > 0 ? `.${[...element.classList].join(".")}` : "";
-  return `${tag}${id}${classes}`;
-}
+import { traceMutation } from "./trace-mutation";
 
 export const PLACEHOLDER_CLASS = "abs-placeholder";
 export const LABEL_CLASS = "abs-placeholder__label";
@@ -159,24 +152,26 @@ export function replaceWithBlockPlaceholder(
   }
 
   attachReveal(placeholder, element);
-  // outerHTML is non-trivial on large subtrees — only pay the cost when
-  // the dev-mode trace toggle is on. Capture before the swap so the
-  // serialization reflects the original tree, not the placeholder.
-  const beforeHtml = isDebugTraceEnabled() ? element.outerHTML : "";
-  const selector = isDebugTraceEnabled() ? describeForTrace(element) : "";
-  element.replaceWith(placeholder);
+  // Capture from the parent so the before-snapshot shows the original
+  // element in context and the after-snapshot shows the placeholder in
+  // the same position. `parentElement` is non-null in practice — callers
+  // only invoke this on connected elements.
+  traceMutation(
+    {
+      ruleId,
+      kind: "hide",
+      target: element,
+      captureFrom: element.parentElement ?? element,
+    },
+    () => {
+      element.replaceWith(placeholder);
+    },
+  );
   log("block placeholder created", {
     ruleId,
     label,
     hidden: describeNode(element),
     size: { width: rect.width, height: rect.height },
-  });
-  recordRuleApplication({
-    ruleId,
-    kind: "hide",
-    selector,
-    beforeHtml,
-    afterHtml: isDebugTraceEnabled() ? placeholder.outerHTML : "",
   });
   return placeholder;
 }

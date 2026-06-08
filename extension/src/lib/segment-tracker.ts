@@ -14,6 +14,7 @@
 
 import throttle from "lodash/throttle";
 import { initDebugTrace, recordSegment } from "./debug-trace";
+import { describeElement } from "./element-describe";
 import { subscribeRouteChange } from "./route-change";
 import { createSubtreeWatcher, setBurstFlushObserver } from "./subtree-watcher";
 
@@ -35,8 +36,7 @@ let unsubscribeRouteChange: (() => void) | null = null;
 
 function describeModal(element: Element): string {
   const role = element.getAttribute("role") ?? "";
-  const id = element.id ? `#${element.id}` : "";
-  return `${element.tagName.toLowerCase()}${id}[role="${role}"]`;
+  return describeElement(element, `[role="${role}"]`);
 }
 
 export function startSegmentTracker(): void {
@@ -45,13 +45,11 @@ export function startSegmentTracker(): void {
   }
   installed = true;
 
-  // Defer the initial-load marker until the debug-trace toggle has been
-  // loaded from storage. Emitting synchronously here would drop the
-  // marker the same way it dropped the document_idle rule fires — the
-  // in-memory `enabled` flag stays at the default for the first few
-  // microtasks of the page lifecycle. Route-change / modal / burst
-  // emissions happen later in the page lifetime and always see the
-  // resolved value, so they can be installed synchronously below.
+  // Defer the initial-load marker until the persisted toggle has been
+  // loaded from storage — emitting synchronously would race the storage
+  // read and drop the marker. Route-change / modal / burst emissions
+  // happen later in the page lifetime and always see the resolved value,
+  // so they install synchronously below.
   void initDebugTrace().then(() => {
     recordSegment("initial-load", { url: globalThis.location.href });
   });

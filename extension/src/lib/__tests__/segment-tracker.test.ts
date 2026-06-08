@@ -6,14 +6,9 @@
 // trace toggle is forced on for these tests so the recorder emits — the
 // trace's gating behavior itself is covered in debug-trace.test.ts.
 
-import {
-  __resetDebugTraceForTesting,
-  __setDebugTraceEnabledForTesting,
-} from "../debug-trace";
-import type {
-  DebugTraceEventMessage,
-  SegmentMarker,
-} from "../detection-messages";
+import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import type { SegmentMarker } from "../detection-messages";
 import { __resetRouteChangeForTesting } from "../route-change";
 import {
   __resetSegmentTrackerForTesting,
@@ -21,11 +16,11 @@ import {
 } from "../segment-tracker";
 import { __resetSubtreeWatcherForTesting } from "../subtree-watcher";
 
-let sendMessage: jest.Mock;
+let stub: DebugTraceStub;
 
 function segmentEvents(): SegmentMarker[] {
-  return sendMessage.mock.calls
-    .map(([message]) => (message as DebugTraceEventMessage).entry)
+  return stub
+    .sentEntries()
     .filter(
       (entry): entry is SegmentMarker & { type: "segment" } =>
         entry.type === "segment",
@@ -34,24 +29,20 @@ function segmentEvents(): SegmentMarker[] {
 
 beforeEach(() => {
   jest.useFakeTimers();
-  __resetDebugTraceForTesting();
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();
   __resetSegmentTrackerForTesting();
   document.body.innerHTML = "";
   history.replaceState(null, "", "/initial");
-  sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
-  __setDebugTraceEnabledForTesting(true);
+  stub = installDebugTraceStub();
+  stub.setEnabled(true);
 });
 
 afterEach(() => {
   __resetSegmentTrackerForTesting();
   __resetSubtreeWatcherForTesting();
   __resetRouteChangeForTesting();
-  __resetDebugTraceForTesting();
+  stub.reset();
   jest.useRealTimers();
 });
 

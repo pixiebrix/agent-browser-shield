@@ -3,15 +3,8 @@
 
 // Dev-mode trace summary. Visible only when the user has enabled the
 // "Debug trace" toggle. Shows a live count + byte size of the trace
-// piling up in IDB and exposes the three actions a developer needs:
-// Refresh (force-poll), Export (download full payload as JSONL), Clear
-// (drop this tab's trace).
-//
-// The per-event / per-segment render that used to live here was hidden
-// because the segment-grouped HTML inspector is more useful in a wider
-// surface than the 280px popup. Keeping the summary in the popup means
-// the developer can confirm trace capture is working without leaving
-// whatever page they're debugging.
+// piling up in IDB (polled by `useTabDebugTrace`) and exposes Export
+// (download full payload as JSONL) and Clear (drop this tab's trace).
 
 import type { TabDebugTrace } from "./use-tab-debug-trace";
 
@@ -35,14 +28,6 @@ export function DebugTraceSection({ trace }: { trace: TabDebugTrace }) {
           <button
             type="button"
             className="debug-trace__action"
-            onClick={trace.reload}
-            disabled={trace.loading}
-          >
-            Refresh
-          </button>
-          <button
-            type="button"
-            className="debug-trace__action"
             onClick={() => {
               void trace.exportJsonl();
             }}
@@ -62,9 +47,7 @@ export function DebugTraceSection({ trace }: { trace: TabDebugTrace }) {
           </button>
         </div>
       </header>
-      {trace.loading && !hasEntries ? (
-        <p className="debug-trace__empty">Loading trace…</p>
-      ) : hasEntries ? (
+      {hasEntries ? (
         <p className="debug-trace__meta">
           {trace.eventCount} event{trace.eventCount === 1 ? "" : "s"} captured (
           {formatBytes(trace.byteSize)}).

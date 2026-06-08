@@ -7,21 +7,16 @@
 // `captureFrom` override is honored for sibling-add patterns, and the
 // auto-derived selector falls back to the element's tag#id.class shape.
 
-import {
-  __resetDebugTraceForTesting,
-  __setDebugTraceEnabledForTesting,
-} from "../debug-trace";
-import type {
-  DebugTraceEventMessage,
-  RuleApplicationEvent,
-} from "../detection-messages";
+import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import type { RuleApplicationEvent } from "../detection-messages";
 import { traceMutation } from "../trace-mutation";
 
-let sendMessage: jest.Mock;
+let stub: DebugTraceStub;
 
 function ruleApplicationEvents(): RuleApplicationEvent[] {
-  return sendMessage.mock.calls
-    .map(([message]) => (message as DebugTraceEventMessage).entry)
+  return stub
+    .sentEntries()
     .filter(
       (entry): entry is { type: "rule-application" } & RuleApplicationEvent =>
         entry.type === "rule-application",
@@ -29,21 +24,17 @@ function ruleApplicationEvents(): RuleApplicationEvent[] {
 }
 
 beforeEach(() => {
-  __resetDebugTraceForTesting();
-  sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
+  stub = installDebugTraceStub();
   document.body.innerHTML = "";
 });
 
 afterEach(() => {
-  __resetDebugTraceForTesting();
+  stub.reset();
 });
 
 describe("traceMutation", () => {
   it("runs the mutator and emits nothing when the toggle is off", () => {
-    __setDebugTraceEnabledForTesting(false);
+    stub.setEnabled(false);
     const target = document.createElement("p");
     target.textContent = "before";
     document.body.append(target);
@@ -58,11 +49,11 @@ describe("traceMutation", () => {
 
     expect(result).toBe("done");
     expect(target.textContent).toBe("");
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(stub.sendMessage).not.toHaveBeenCalled();
   });
 
   it("captures outerHTML before and after when the toggle is on", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     const target = document.createElement("p");
     target.id = "msg";
     target.textContent = "before";
@@ -81,7 +72,7 @@ describe("traceMutation", () => {
   });
 
   it("captures from the parent when captureFrom is set, so sibling chips appear in after", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     const parent = document.createElement("div");
     parent.id = "row";
     const link = document.createElement("a");
@@ -111,7 +102,7 @@ describe("traceMutation", () => {
   });
 
   it("honors an explicit selector override", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     const target = document.createElement("div");
     document.body.append(target);
 

@@ -6,41 +6,27 @@
 // toggle is read through `debug-trace.ts`'s test-only override so the
 // chrome.storage round-trip stays out of the unit test.
 
-import {
-  __resetDebugTraceForTesting,
-  __setDebugTraceEnabledForTesting,
-  recordRuleApplication,
-  recordSegment,
-} from "../debug-trace";
+import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
+import { recordRuleApplication, recordSegment } from "../debug-trace";
 import type {
-  DebugTraceEventMessage,
   RuleApplicationEvent,
   SegmentMarker,
 } from "../detection-messages";
 
-let sendMessage: jest.Mock;
-
-function sentEntries(): DebugTraceEventMessage["entry"][] {
-  return sendMessage.mock.calls.map(
-    ([message]) => (message as DebugTraceEventMessage).entry,
-  );
-}
+let stub: DebugTraceStub;
 
 beforeEach(() => {
-  __resetDebugTraceForTesting();
-  sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
+  stub = installDebugTraceStub();
 });
 
 afterEach(() => {
-  __resetDebugTraceForTesting();
+  stub.reset();
 });
 
 describe("debug-trace recorder", () => {
   it("is a no-op when the toggle is off", () => {
-    __setDebugTraceEnabledForTesting(false);
+    stub.setEnabled(false);
 
     recordSegment("initial-load", { url: "https://example.com" });
     recordRuleApplication({
@@ -51,18 +37,18 @@ describe("debug-trace recorder", () => {
       afterHtml: "<div class='abs'></div>",
     });
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(stub.sendMessage).not.toHaveBeenCalled();
   });
 
   it("emits segment markers with monotonically increasing ids", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
 
     const first = recordSegment("initial-load", { url: "https://a.test" });
     const second = recordSegment("route-change", { to: "https://b.test" });
 
     expect(first).toBe(1);
     expect(second).toBe(2);
-    const entries = sentEntries();
+    const entries = stub.sentEntries();
     expect(entries).toHaveLength(2);
     expect((entries[0] as SegmentMarker).kind).toBe("initial-load");
     expect((entries[1] as SegmentMarker).kind).toBe("route-change");
@@ -71,7 +57,7 @@ describe("debug-trace recorder", () => {
   });
 
   it("attributes rule-application events to the current segment", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     recordSegment("initial-load", { url: "https://example.com" });
     recordRuleApplication({
       ruleId: "cookie-banner-hide",
@@ -89,7 +75,7 @@ describe("debug-trace recorder", () => {
       afterHtml: "<div class=abs></div>",
     });
 
-    const entries = sentEntries();
+    const entries = stub.sentEntries();
     const applications = entries.filter(
       (entry): entry is RuleApplicationEvent & { type: "rule-application" } =>
         entry.type === "rule-application",
@@ -99,8 +85,8 @@ describe("debug-trace recorder", () => {
   });
 
   it("swallows sendMessage rejections so a sleeping SW doesn't surface as unhandled", () => {
-    __setDebugTraceEnabledForTesting(true);
-    sendMessage.mockRejectedValueOnce(
+    stub.setEnabled(true);
+    stub.sendMessage.mockRejectedValueOnce(
       new Error("Receiving end does not exist"),
     );
 
@@ -110,16 +96,16 @@ describe("debug-trace recorder", () => {
   });
 
   it("resets the segment counter when the toggle is turned off", () => {
-    __setDebugTraceEnabledForTesting(true);
+    stub.setEnabled(true);
     recordSegment("initial-load", {});
     recordSegment("route-change", {});
 
-    __setDebugTraceEnabledForTesting(false);
+    stub.setEnabled(false);
     // No-op while off.
     recordSegment("modal-open", {});
-    expect(sentEntries()).toHaveLength(2);
+    expect(stub.sentEntries()).toHaveLength(2);
 
-    // Note: __setDebugTraceEnabledForTesting bypasses the storage
+    // Note: stub.setEnabled bypasses the storage
     // subscribe path that resets the counter; recordSegment off→on
     // continues from the previous id. The persistent storage flip is
     // covered in the integration of `subscribe`, exercised in

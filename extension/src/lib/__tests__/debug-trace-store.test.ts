@@ -8,10 +8,10 @@
 import "fake-indexeddb/auto";
 
 import {
+  __clearAllForTesting,
   __resetDebugTraceStoreForTesting,
   __setMaxEventsPerTabForTesting,
   appendEvent,
-  clearAll,
   clearTab,
   getEventsForTab,
   getTabStats,
@@ -42,7 +42,7 @@ function appEntry(segmentId: number): DebugTraceEntry {
 }
 
 beforeEach(async () => {
-  await clearAll();
+  await __clearAllForTesting();
   __resetDebugTraceStoreForTesting();
 });
 
@@ -100,13 +100,5 @@ describe("debug-trace store", () => {
     // a developer would weigh against exporting the trace.
     expect(tab1.byteSize).toBeGreaterThan(tab2.byteSize);
     expect(empty.byteSize).toBe(0);
-  });
-
-  it("clearAll wipes every tab", async () => {
-    await appendEvent(1, 0, segmentEntry(1));
-    await appendEvent(2, 0, segmentEntry(1));
-    await clearAll();
-    expect(await getEventsForTab(1)).toHaveLength(0);
-    expect(await getEventsForTab(2)).toHaveLength(0);
   });
 });
