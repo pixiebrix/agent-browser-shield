@@ -56,15 +56,20 @@ afterEach(() => {
 });
 
 describe("startSegmentTracker", () => {
-  it("emits an initial-load segment on start", () => {
+  it("emits an initial-load segment on start", async () => {
     startSegmentTracker();
+    // initial-load is deferred behind the debug-trace init promise so a
+    // page-reload doesn't fire it before the persisted toggle has been
+    // loaded — see segment-tracker.ts. Flush the microtask.
+    await Promise.resolve();
     const segments = segmentEvents();
     expect(segments).toHaveLength(1);
     expect(segments[0]?.kind).toBe("initial-load");
   });
 
-  it("emits a route-change segment when the URL changes", () => {
+  it("emits a route-change segment when the URL changes", async () => {
     startSegmentTracker();
+    await Promise.resolve();
     history.replaceState(null, "", "/next");
     globalThis.dispatchEvent(new Event("popstate"));
 
@@ -107,9 +112,10 @@ describe("startSegmentTracker", () => {
     expect(modalOpens).toHaveLength(1);
   });
 
-  it("idempotent — second startSegmentTracker call does not emit a second initial-load", () => {
+  it("idempotent — second startSegmentTracker call does not emit a second initial-load", async () => {
     startSegmentTracker();
     startSegmentTracker();
+    await Promise.resolve();
     const initials = segmentEvents().filter((s) => s.kind === "initial-load");
     expect(initials).toHaveLength(1);
   });

@@ -40,19 +40,22 @@ export const debugTraceStorage = createChromeStorageValue<boolean>({
 
 let enabled = DEBUG_TRACE_ENABLED_DEFAULT;
 let segmentCounter = 0;
-let storageSubscribed = false;
+let initPromise: Promise<void> | null = null;
 
-// Lazy first-use init: pay the storage round-trip once when something
-// tries to emit, not on module import. Avoids forcing every test that
-// imports a rule module to mock chrome.storage.
-function ensureSubscribed(): void {
-  if (storageSubscribed) {
-    return;
+// Eagerly load the persisted toggle into the in-memory `enabled` flag
+// and install the change subscription. Idempotent — repeat calls return
+// the same promise. Startup paths (rule engine, segment tracker) should
+// await this before emitting their first event: a synchronous lazy load
+// kicks off the storage round-trip but `enabled` stays at the default
+// for the first few microtasks, which silently swallowed the entire
+// document_idle apply burst on page reload.
+export function initDebugTrace(): Promise<void> {
+  if (initPromise) {
+    return initPromise;
   }
-  storageSubscribed = true;
-  void debugTraceStorage.get().then((value) => {
-    enabled = value;
-  });
+  initPromise = (async () => {
+    enabled = await debugTraceStorage.get();
+  })();
   debugTraceStorage.subscribe((next) => {
     enabled = next;
     if (!next) {
@@ -63,6 +66,7 @@ function ensureSubscribed(): void {
       segmentCounter = 0;
     }
   });
+  return initPromise;
 }
 
 function send(entry: DebugTraceEntry): void {
@@ -78,7 +82,7 @@ function send(entry: DebugTraceEntry): void {
 }
 
 export function isDebugTraceEnabled(): boolean {
-  ensureSubscribed();
+  void initDebugTrace();
   return enabled;
 }
 
@@ -89,7 +93,7 @@ export function recordSegment(
   kind: SegmentKind,
   meta: Record<string, string | number> = {},
 ): number {
-  ensureSubscribed();
+  void initDebugTrace();
   if (!enabled) {
     return segmentCounter;
   }
@@ -121,7 +125,7 @@ export interface RuleApplicationInput {
 // guard pattern in `placeholder.ts` / `selector-hide-rule.ts` so the
 // heavy serialization is skipped when the toggle is off.
 export function recordRuleApplication(input: RuleApplicationInput): void {
-  ensureSubscribed();
+  void initDebugTrace();
   if (!enabled) {
     return;
   }
@@ -144,12 +148,14 @@ export function recordRuleApplication(input: RuleApplicationInput): void {
 export function __resetDebugTraceForTesting(): void {
   enabled = DEBUG_TRACE_ENABLED_DEFAULT;
   segmentCounter = 0;
-  storageSubscribed = false;
+  initPromise = null;
 }
 
 // Test-only: bypass storage and force enabled on/off synchronously so
 // tests don't have to flush microtasks before exercising the recorder.
 export function __setDebugTraceEnabledForTesting(value: boolean): void {
   enabled = value;
-  storageSubscribed = true;
+  // Mark init as resolved so async callers don't trigger a real storage
+  // read in tests that mock chrome.runtime but not chrome.storage.
+  initPromise = Promise.resolve();
 }

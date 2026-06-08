@@ -13,7 +13,7 @@
 // the toggle is off.
 
 import throttle from "lodash/throttle";
-import { recordSegment } from "./debug-trace";
+import { initDebugTrace, recordSegment } from "./debug-trace";
 import { subscribeRouteChange } from "./route-change";
 import { createSubtreeWatcher, setBurstFlushObserver } from "./subtree-watcher";
 
@@ -45,7 +45,16 @@ export function startSegmentTracker(): void {
   }
   installed = true;
 
-  recordSegment("initial-load", { url: globalThis.location.href });
+  // Defer the initial-load marker until the debug-trace toggle has been
+  // loaded from storage. Emitting synchronously here would drop the
+  // marker the same way it dropped the document_idle rule fires — the
+  // in-memory `enabled` flag stays at the default for the first few
+  // microtasks of the page lifecycle. Route-change / modal / burst
+  // emissions happen later in the page lifetime and always see the
+  // resolved value, so they can be installed synchronously below.
+  void initDebugTrace().then(() => {
+    recordSegment("initial-load", { url: globalThis.location.href });
+  });
 
   unsubscribeRouteChange = subscribeRouteChange(() => {
     recordSegment("route-change", { to: globalThis.location.href });
