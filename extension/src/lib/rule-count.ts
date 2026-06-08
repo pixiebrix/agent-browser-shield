@@ -24,6 +24,7 @@
 // content script registers itself.
 
 import throttle from "lodash/throttle";
+import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import type { RuleCountMessage } from "./detection-messages";
 import { HIDDEN_ATTR, RULE_ATTR } from "./dom-markers";
 
@@ -33,8 +34,14 @@ const REPORT_THROTTLE_MS = 250;
 // Each entry maps a rule id to one of its registered CSS-first selector
 // unions. A rule may register more than once (separate union strings),
 // so we key by (ruleId, union) rather than by ruleId alone — see
-// `registerCssFirstSelectors`.
-const cssFirstRegistrations = new Map<string, Set<string>>();
+// `registerCssFirstSelectors`. Each union carries its own WeakSet of
+// elements the debug-trace recorder has already emitted an event for,
+// so the per-recount sweep doesn't re-emit the same match every 250 ms.
+interface CssFirstUnion {
+  union: string;
+  traced: WeakSet<Element>;
+}
+const cssFirstRegistrations = new Map<string, Map<string, CssFirstUnion>>();
 let recountTrigger: (() => void) | null = null;
 
 function noop(): void {
@@ -55,10 +62,12 @@ export function registerCssFirstSelectors(
   }
   let unions = cssFirstRegistrations.get(ruleId);
   if (!unions) {
-    unions = new Set<string>();
+    unions = new Map<string, CssFirstUnion>();
     cssFirstRegistrations.set(ruleId, unions);
   }
-  unions.add(union);
+  if (!unions.has(union)) {
+    unions.set(union, { union, traced: new WeakSet<Element>() });
+  }
   recountTrigger?.();
   return () => {
     const registered = cssFirstRegistrations.get(ruleId);
@@ -90,11 +99,41 @@ function currentCounts(): Record<string, number> {
   }
   // CSS-first hides have no marker attribute, so we run one QSA per
   // registered union and credit the rule that registered it.
+  //
+  // While we have the match list in hand, also emit a debug-trace
+  // `rule-application` event per newly-matched element when the trace
+  // toggle is on. CSS-first rules don't mutate the DOM (the stylesheet
+  // hides matches declaratively), so the `beforeHtml` / `afterHtml`
+  // snapshots are identical — `cssOnly: true` flags the event as
+  // "matched, not mutated" so the viewer doesn't try to highlight a
+  // non-existent diff. The whole point of these events is to surface
+  // false-positive matches (e.g., chat-widget-hide accidentally
+  // matching a non-chat element); the matched element's outerHTML is
+  // exactly what a reviewer needs to make that call.
+  const traceCssMatches = isDebugTraceEnabled();
   for (const [ruleId, unions] of cssFirstRegistrations) {
-    for (const union of unions) {
-      const matches = document.body.querySelectorAll(union).length;
-      if (matches > 0) {
-        counts[ruleId] = (counts[ruleId] ?? 0) + matches;
+    for (const reg of unions.values()) {
+      const matches = document.body.querySelectorAll(reg.union);
+      if (matches.length > 0) {
+        counts[ruleId] = (counts[ruleId] ?? 0) + matches.length;
+      }
+      if (!traceCssMatches) {
+        continue;
+      }
+      for (const element of matches) {
+        if (reg.traced.has(element)) {
+          continue;
+        }
+        reg.traced.add(element);
+        const html = element.outerHTML;
+        recordRuleApplication({
+          ruleId,
+          kind: "hide",
+          selector: reg.union,
+          beforeHtml: html,
+          afterHtml: html,
+          cssOnly: true,
+        });
       }
     }
   }

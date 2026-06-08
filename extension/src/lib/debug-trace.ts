@@ -113,6 +113,7 @@ export interface RuleApplicationInput {
   beforeHtml: string;
   afterHtml: string;
   beforeText?: string;
+  cssOnly?: boolean;
 }
 
 // Emit a rule-application event. Callers compute outerHTML themselves
@@ -134,6 +135,7 @@ export function recordRuleApplication(input: RuleApplicationInput): void {
     beforeHtml: input.beforeHtml,
     afterHtml: input.afterHtml,
     ...(input.beforeText === undefined ? {} : { beforeText: input.beforeText }),
+    ...(input.cssOnly ? { cssOnly: true } : {}),
   });
 }
 

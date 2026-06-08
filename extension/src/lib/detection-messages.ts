@@ -157,6 +157,14 @@ export interface RuleApplicationEvent {
   // Original text replaced by an inline placeholder. Only populated for
   // `mask` events (inline text replacement).
   beforeText?: string;
+  // True when the rule hides the element via an injected stylesheet
+  // instead of an element-level write. `beforeHtml` and `afterHtml`
+  // are identical for these events — there is no DOM mutation to
+  // diff — so the viewer can render them as "matched, not mutated"
+  // instead of trying to highlight a non-existent change. Set by the
+  // CSS-first detector in `rule-count.ts`; absent on every other
+  // event.
+  cssOnly?: boolean;
 }
 
 export type DebugTraceEntry =
