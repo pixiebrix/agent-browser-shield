@@ -32,8 +32,8 @@ If the user already has a run in hand and just wants the *why*, hand off to
 - `output/agent-browser-shield-extension.zip` is auto-rebuilt by
   `compare_scenarios.py` before each run (codegen + bundle + zip, \<2s on a
   clean tree), so source edits in `extension/src/rules/`,
-  `extension/data/sites/`, or `extension/src/rules/rule-metadata.ts` take effect on
-  the next comparison. Pass `--no-rebuild-extension` to opt out (useful when
+  `extension/data/sites/`, or `extension/src/rules/rule-metadata.ts` take effect
+  on the next comparison. Pass `--no-rebuild-extension` to opt out (useful when
   `--extension-zip` is pinned to a release artifact).
 - `OPENAI_API_KEY` is in `.env` (the judge always calls OpenAI directly,
   regardless of the agent model).
@@ -265,8 +265,8 @@ invokes all three codegens automatically.
 Before drawing conclusions from the re-run, confirm the change is actually in
 the bundle:
 
-- For default toggles or new rules: grep
-  `extension/src/rules/rule-metadata.ts` for the id.
+- For default toggles or new rules: grep `extension/src/rules/rule-metadata.ts`
+  for the id.
 - For site rules: grep `extension/src/rules/site-data.generated.ts` for the host
   or selector.
 - For built-in rule code edits: `bun run test -- <rule-id>` (or
@@ -339,8 +339,8 @@ verify:
 > agent followed in rep 2. Footer stripping accounts for the other -1,400 bytes
 > per article-page tree.
 >
-> **Proposal**: keep `search-url-helper` enabled (`rule-metadata.ts` shows
-> it's already true). Optionally add more Wikipedia URL templates to
+> **Proposal**: keep `search-url-helper` enabled (`rule-metadata.ts` shows it's
+> already true). Optionally add more Wikipedia URL templates to
 > `extension/data/sites/wikipedia.yaml` if other reps had been searching from
 > non-Main_Page entry points. Evidence: `output/results/cmp_<id>/cost_diff.md`,
 > `output/results/cmp_<id>/traces/.../steps.json` step 4.

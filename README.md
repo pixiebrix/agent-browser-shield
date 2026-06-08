@@ -76,12 +76,12 @@ bun run build
 ### Customize build-time defaults
 
 Which rules ship on by default is enumerated in
-[`extension/src/rules/rule-metadata.ts`](./extension/src/rules/rule-metadata.ts). To
-ship a build with a custom set without forking the repo, pass an override file
-to `bun run build`. The file is a flat JSON object whose keys are rule ids (same
-keys the Options-page export uses) plus a small set of reserved non-rule keys —
-currently `optionsButton` (boolean, default off) to enable the floating on-page
-button that opens the options page. See
+[`extension/src/rules/rule-metadata.ts`](./extension/src/rules/rule-metadata.ts).
+To ship a build with a custom set without forking the repo, pass an override
+file to `bun run build`. The file is a flat JSON object whose keys are rule ids
+(same keys the Options-page export uses) plus a small set of reserved non-rule
+keys — currently `optionsButton` (boolean, default off) to enable the floating
+on-page button that opens the options page. See
 [`extension/data/defaults-overrides.example.json`](./extension/data/defaults-overrides.example.json)
 for a starting template:
 
