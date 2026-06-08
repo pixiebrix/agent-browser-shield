@@ -22,6 +22,14 @@
 //    content nested under another element) target the parent Element
 //    and snapshot from there — the parent's `outerHTML` reflects the
 //    child's change.
+//
+// Known coverage gap: CSS-first hides (currently `chat-widget-hide`)
+// can't route through this wrapper because the mutation is a declarative
+// stylesheet injection, not an element-level write — there's no
+// "before/after" outerHTML to snapshot for any individual matched node.
+// Those rules continue to surface in the badge counter via
+// `registerCssFirstSelectors`, but they will not appear in the
+// structured trace.
 
 import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
 import type { RuleApplicationKind } from "./detection-messages";

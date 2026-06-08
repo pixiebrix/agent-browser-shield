@@ -16,6 +16,13 @@
 // browser parses them — no MutationObserver, no per-batch QSA, and lazily
 // injected widgets (HubSpot's conversations-embed.js, Intercom's loader,
 // etc.) are hidden at parse time without us doing anything.
+//
+// Debug-trace coverage: this rule does NOT emit `rule-application` events
+// because there is no element-level write to wrap with `traceMutation` —
+// the injected stylesheet does the hiding declaratively. The badge
+// counter still attributes matches to this rule via
+// `registerCssFirstSelectors`, so users see the widget was hidden, but
+// the trace can't show per-element before/after HTML for it.
 
 import type { HideStylesheet } from "../lib/css-hide-stylesheet";
 import { injectHideStylesheet } from "../lib/css-hide-stylesheet";
