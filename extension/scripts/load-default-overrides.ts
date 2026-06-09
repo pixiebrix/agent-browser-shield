@@ -25,12 +25,17 @@ export interface DefaultOverrides {
   rules: Record<string, boolean>;
   optionsButton?: boolean;
   runOnInactiveTabs?: boolean;
+  debugTrace?: boolean;
 }
 
 // Reserved top-level keys are not rule ids; the loader maps each one to a
 // typed field on `DefaultOverrides`. Add new build-time toggles here as they
 // appear.
-const RESERVED_KEYS = new Set<string>(["optionsButton", "runOnInactiveTabs"]);
+const RESERVED_KEYS = new Set<string>([
+  "optionsButton",
+  "runOnInactiveTabs",
+  "debugTrace",
+]);
 
 export function loadDefaultOverrides(
   options: LoadOverridesOptions,
@@ -77,10 +82,19 @@ export function loadDefaultOverrides(
         nonBooleanIds.push(key);
         continue;
       }
-      if (key === "optionsButton") {
-        result.optionsButton = value;
-      } else if (key === "runOnInactiveTabs") {
-        result.runOnInactiveTabs = value;
+      switch (key) {
+        case "optionsButton": {
+          result.optionsButton = value;
+          break;
+        }
+        case "runOnInactiveTabs": {
+          result.runOnInactiveTabs = value;
+          break;
+        }
+        case "debugTrace": {
+          result.debugTrace = value;
+          break;
+        }
       }
       continue;
     }

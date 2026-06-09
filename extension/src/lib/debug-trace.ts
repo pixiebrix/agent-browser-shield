@@ -36,15 +36,34 @@ import type {
 
 export const DEBUG_TRACE_ENABLED_DEFAULT = false;
 
+// `process.env.EXTENSION_DEBUG_TRACE_DEFAULT` is substituted by build.ts when
+// the operator passes a defaults file with a `debugTrace` field. Literal
+// `"true"` / `"false"` forces a value; empty string falls back to the
+// committed default above. The build-time toggle is the only knob that ships
+// debug trace on by default — operators who want every fresh `chrome.storage`
+// to start with the recorder enabled (e.g. for CDP-driven automation that
+// scrapes the trace from IDB) flip it via the defaults file rather than
+// touching the popup on every session.
+function resolveDefault(): boolean {
+  const raw = process.env.EXTENSION_DEBUG_TRACE_DEFAULT;
+  if (raw === "true") {
+    return true;
+  }
+  if (raw === "false") {
+    return false;
+  }
+  return DEBUG_TRACE_ENABLED_DEFAULT;
+}
+
 // Storage key intentionally matches the existing prefix; popup reads via
 // `useChromeStorageValue` and content script reads via a cached subscribe
 // (see `enabled` below).
 export const debugTraceStorage = createChromeStorageValue<boolean>({
   key: "agent-browser-shield.debug-trace-enabled",
-  defaultValue: DEBUG_TRACE_ENABLED_DEFAULT,
+  defaultValue: resolveDefault(),
 });
 
-let enabled = DEBUG_TRACE_ENABLED_DEFAULT;
+let enabled = resolveDefault();
 let segmentCounter = 0;
 let initPromise: Promise<void> | null = null;
 
@@ -153,7 +172,7 @@ export function recordRuleApplication(input: RuleApplicationInput): void {
 // Test-only: reset module state between cases. The subscribe install
 // would otherwise carry the storage listener across tests.
 export function __resetDebugTraceForTesting(): void {
-  enabled = DEBUG_TRACE_ENABLED_DEFAULT;
+  enabled = resolveDefault();
   segmentCounter = 0;
   initPromise = null;
 }
