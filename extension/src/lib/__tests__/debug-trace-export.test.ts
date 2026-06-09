@@ -136,15 +136,16 @@ function firstFixture(): DebugTraceStoredEntry {
 }
 
 describe("debug-trace JSONL export", () => {
-  it("strips addedAt and keeps tabId / frameId / entry", () => {
+  it("flattens stored records into entry + tabId + frameId", () => {
     const stored = firstFixture();
     const exported = toExportedRecord(stored);
     expect(exported).toEqual({
+      ...stored.entry,
       tabId: stored.tabId,
       frameId: stored.frameId,
-      entry: stored.entry,
     });
     expect(exported).not.toHaveProperty("addedAt");
+    expect(exported).not.toHaveProperty("entry");
   });
 
   it("produces one JSON-encoded record per line", () => {

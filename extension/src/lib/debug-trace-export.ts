@@ -1,25 +1,33 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// JSONL serialization for the popup's "Export" button. Lives in `lib/` so
-// the schema-conformance test can validate the output without dragging the
-// popup React hook into the test harness.
-//
-// Each line is the IDB-stored event minus `addedAt` (the background's
-// append timestamp is internal bookkeeping; each entry already carries its
-// own `timestamp` stamped at content-script emit time). The on-wire shape
-// matches `extension/data/debug-trace.schema.json` and the value returned
-// by `window.__abs_dumpTrace()`.
+// Public on-wire shape for the popup's JSONL export and the
+// `window.__abs_dumpTrace()` CDP path. Both surfaces serve the same
+// schema (`extension/data/debug-trace.schema.json`): the recorded
+// `DebugTraceEntry` plus the `tabId` / `frameId` it was captured in.
+// The IDB-internal `addedAt` is internal bookkeeping and is not exposed
+// — each entry already carries its own `timestamp` stamped at
+// content-script emit time, which is the field a consumer correlating
+// with page activity wants.
 
-import omit from "lodash/omit";
-import type { DebugTraceStoredEntry } from "./detection-messages";
+import type {
+  DebugTraceEntry,
+  DebugTraceStoredEntry,
+} from "./detection-messages";
 
-export type ExportedTraceRecord = Omit<DebugTraceStoredEntry, "addedAt">;
+export type ExportedTraceRecord = DebugTraceEntry & {
+  tabId: number;
+  frameId: number;
+};
 
 export function toExportedRecord(
   stored: DebugTraceStoredEntry,
 ): ExportedTraceRecord {
-  return omit(stored, "addedAt");
+  return {
+    ...stored.entry,
+    tabId: stored.tabId,
+    frameId: stored.frameId,
+  };
 }
 
 export function buildJsonl(stored: DebugTraceStoredEntry[]): string {

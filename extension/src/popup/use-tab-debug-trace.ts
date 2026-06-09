@@ -76,9 +76,10 @@ export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
   // stream the export through `jq -c`, grep for a rule id, or diff two
   // captures without parsing the whole file. file-saver triggers an
   // anchor-based download from the popup's extension origin — no
-  // chrome.downloads permission needed. Per-line shape is defined by
-  // `buildJsonl` and asserted against `data/debug-trace.schema.json` in
-  // `__tests__/debug-trace-export.test.ts`.
+  // chrome.downloads permission needed. Per-line shape is the
+  // `ExportedTraceRecord` defined by `lib/debug-trace-export.ts`
+  // (`DebugTraceEntry` + `tabId` + `frameId`), asserted against
+  // `data/debug-trace.schema.json` in `__tests__/debug-trace-export.test.ts`.
   const exportJsonl = useCallback(async () => {
     if (tabId === null) {
       return;

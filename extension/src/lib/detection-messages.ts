@@ -212,6 +212,9 @@ export interface GetTabDebugTraceRequest {
   type: "get-tab-debug-trace";
 }
 
+// Flat on-wire shape returned to the page world. Defined in
+// `lib/debug-trace-export.ts` so this messages module stays free of
+// the wire-shape helper.
 export interface GetTabDebugTraceResponse {
-  entries: DebugTraceStoredEntry[];
+  entries: Array<DebugTraceEntry & { tabId: number; frameId: number }>;
 }
