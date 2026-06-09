@@ -620,18 +620,13 @@ describe("encoded-payload-redact teardown", () => {
 
 // Loads a fresh copy of the rule with `process.env.EXTENSION_RULE_OPTIONS`
 // set to the given sub-rule overrides. The rule reads its options once at
-// module init via `getRuleOptions`, so testing the toggles requires a fresh
-// module graph per override.
+// module init via `getRuleOptions`, so testing the toggles or threshold
+// tuning requires a fresh module graph per override. Sub-rule values may be
+// a boolean (bare-boolean shorthand for `{ enabled }`) or an object with
+// `enabled` and/or named threshold overrides — same shape as the
+// build-time override file (ADR-0016, ADR-0017).
 async function loadRuleWithSubRuleOverrides(
-  subRules: Partial<{
-    base64: boolean;
-    hex: boolean;
-    percent: boolean;
-    substitutionCipher: boolean;
-    leetspeak: boolean;
-    nato: boolean;
-    morse: boolean;
-  }>,
+  subRules: Record<string, boolean | Record<string, number | boolean>>,
 ): Promise<typeof encodedPayloadRedactRule> {
   const previous = process.env.EXTENSION_RULE_OPTIONS;
   process.env.EXTENSION_RULE_OPTIONS = JSON.stringify({
@@ -733,5 +728,59 @@ describe("encoded-payload-redact sub-rule toggles", () => {
 
     expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`).length).toBe(0);
     rule.teardown();
+  });
+});
+
+describe("encoded-payload-redact threshold tuning", () => {
+  it("lowering nato.minWords matches a previously too-short candidate", async () => {
+    // Six NATO tokens — under the default minWords=10, so the default build
+    // leaves it alone. With minWords=6 the same run becomes a payload.
+    const shortNato = natoEncode("FOXBAT");
+    document.body.innerHTML = `<p>${shortNato}</p>`;
+
+    const defaultRule = await loadRuleWithSubRuleOverrides({});
+    defaultRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    defaultRule.teardown();
+
+    document.body.innerHTML = `<p>${shortNato}</p>`;
+    const tunedRule = await loadRuleWithSubRuleOverrides({
+      nato: { minWords: 6 },
+    });
+    tunedRule.apply(document.body);
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    tunedRule.teardown();
+  });
+
+  it("raising base64.minLength leaves a previously-matching payload visible", async () => {
+    const payload = base64Encode(LONG_PROSE);
+    document.body.innerHTML = `<p>${payload}</p>`;
+
+    const tunedRule = await loadRuleWithSubRuleOverrides({
+      base64: { minLength: payload.length + 1 },
+    });
+    tunedRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(payload);
+    tunedRule.teardown();
+  });
+
+  it("raising leetspeak.minCommonWords rejects a previously-matching payload", async () => {
+    const ciphertext = leetEncode(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+
+    // CIPHER_CLEARTEXT carries ~12 distinct common-word hits after deleet;
+    // raising the floor above that count rejects the payload.
+    const tunedRule = await loadRuleWithSubRuleOverrides({
+      leetspeak: { minCommonWords: 50 },
+    });
+    tunedRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(ciphertext);
+    tunedRule.teardown();
   });
 });

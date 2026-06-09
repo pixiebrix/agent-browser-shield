@@ -30,6 +30,7 @@ that is not supported by one of those citations.
 | [0014](./0014-css-first-hide-for-selector-only-rules.md)    | CSS-first hide for selector-only `removeEntirely` rules                                       | Accepted                                          |
 | [0015](./0015-calver-workflow-driven-release.md)            | CalVer + `workflow_dispatch`-driven extension release                                         | Accepted                                          |
 | [0016](./0016-eslint-style-per-rule-options-shape.md)       | ESLint-style per-rule build-time options shape                                                | Accepted                                          |
+| [0017](./0017-numeric-thresholds-as-rule-options.md)        | Numeric thresholds exposed as per-sub-rule options                                            | Accepted                                          |
 
 ## Conventions
 

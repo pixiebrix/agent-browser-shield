@@ -237,12 +237,22 @@ describe("loadDefaultOverrides", () => {
   });
 
   describe("per-rule options (ESLint-style object value)", () => {
+    // Fixture covers both leaf shapes the validator now supports: bare
+    // boolean (`base64`) and `{ enabled, ...thresholds }` per-sub-rule
+    // (`hex`, `leetspeak`).
     const RULE_OPTION_DEFAULTS = {
       "ads-hide": {
         subRules: {
           base64: true,
-          hex: true,
-          leetspeak: true,
+          hex: {
+            enabled: true,
+            minLength: 160,
+            printableRatio: 0.85,
+          },
+          leetspeak: {
+            enabled: true,
+            minSubstitutions: 4,
+          },
         },
       },
     } as const;
@@ -254,7 +264,7 @@ describe("loadDefaultOverrides", () => {
           "pii-redact": true,
           "ads-hide": {
             enabled: false,
-            subRules: { leetspeak: false },
+            subRules: { base64: false },
           },
         }),
       );
@@ -267,16 +277,21 @@ describe("loadDefaultOverrides", () => {
       ).toEqual({
         rules: { "pii-redact": true, "ads-hide": false },
         ruleOptions: {
-          "ads-hide": { subRules: { leetspeak: false } },
+          "ads-hide": { subRules: { base64: false } },
         },
       });
     });
 
-    it("treats a missing `enabled` field as unset (keeps committed default)", () => {
+    it("accepts numeric threshold overrides at number-typed leaves", () => {
       const file = writeFile(
-        "no-enabled.json",
+        "numeric-thresholds.json",
         JSON.stringify({
-          "ads-hide": { subRules: { hex: false } },
+          "ads-hide": {
+            subRules: {
+              hex: { minLength: 240, printableRatio: 0.9 },
+              leetspeak: { minSubstitutions: 6 },
+            },
+          },
         }),
       );
       expect(
@@ -288,7 +303,56 @@ describe("loadDefaultOverrides", () => {
       ).toEqual({
         rules: {},
         ruleOptions: {
-          "ads-hide": { subRules: { hex: false } },
+          "ads-hide": {
+            subRules: {
+              hex: { minLength: 240, printableRatio: 0.9 },
+              leetspeak: { minSubstitutions: 6 },
+            },
+          },
+        },
+      });
+    });
+
+    it("accepts a bare-boolean shorthand at a `{ enabled, ... }` sub-rule", () => {
+      const file = writeFile(
+        "boolean-shorthand.json",
+        JSON.stringify({
+          "ads-hide": {
+            subRules: { hex: false },
+          },
+        }),
+      );
+      expect(
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toEqual({
+        rules: {},
+        ruleOptions: {
+          "ads-hide": { subRules: { hex: { enabled: false } } },
+        },
+      });
+    });
+
+    it("treats a missing `enabled` field as unset (keeps committed default)", () => {
+      const file = writeFile(
+        "no-enabled.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { base64: false } },
+        }),
+      );
+      expect(
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toEqual({
+        rules: {},
+        ruleOptions: {
+          "ads-hide": { subRules: { base64: false } },
         },
       });
     });
@@ -323,6 +387,22 @@ describe("loadDefaultOverrides", () => {
       ).toThrow(/unknown option keys: ads-hide\.subRules\.bogus/);
     });
 
+    it("rejects unknown sub-fields under a `{ enabled, ... }` sub-rule", () => {
+      const file = writeFile(
+        "unknown-subfield.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { hex: { bogus: 1 } } },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/unknown option keys: ads-hide\.subRules\.hex\.bogus/);
+    });
+
     it("rejects unknown top-level keys under a rule object", () => {
       const file = writeFile(
         "unknown-group.json",
@@ -339,11 +419,11 @@ describe("loadDefaultOverrides", () => {
       ).toThrow(/unknown option keys: ads-hide\.unknownGroup/);
     });
 
-    it("rejects non-boolean sub-rule leaves with a path-qualified name", () => {
+    it("rejects non-boolean leaves at boolean-typed positions", () => {
       const file = writeFile(
         "nonbool-subrule.json",
         JSON.stringify({
-          "ads-hide": { subRules: { leetspeak: "off" } },
+          "ads-hide": { subRules: { base64: "off" } },
         }),
       );
       expect(() =>
@@ -352,7 +432,42 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/non-boolean option values for: ads-hide\.subRules\.leetspeak/);
+      ).toThrow(/mistyped option values for: ads-hide\.subRules\.base64/);
+    });
+
+    it("rejects non-number leaves at number-typed positions", () => {
+      const file = writeFile(
+        "nonnumber-threshold.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { hex: { minLength: "240" } } },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(
+        /mistyped option values for: ads-hide\.subRules\.hex\.minLength/,
+      );
+    });
+
+    it("rejects non-finite numbers (NaN / Infinity) at number-typed positions", () => {
+      const file = writeFile(
+        "infinity-threshold.json",
+        // JSON.stringify drops Infinity to null; build the literal directly.
+        '{"ads-hide": {"subRules": {"hex": {"minLength": 1e500 }}}}',
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(
+        /mistyped option values for: ads-hide\.subRules\.hex\.minLength/,
+      );
     });
 
     it("rejects a non-boolean `enabled` field", () => {

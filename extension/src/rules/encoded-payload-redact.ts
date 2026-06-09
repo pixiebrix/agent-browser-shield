@@ -38,63 +38,19 @@ import { defineInlineTextRedactRule } from "../lib/inline-text-redact";
 import type { InlineMatch } from "../lib/placeholder";
 import { getRuleOptions } from "../lib/rule-options";
 
+// Sub-rule on/off flags + tuning thresholds. Defaults and rationale for each
+// number live alongside the on/off shape in
+// `extension/src/rules/rule-metadata.ts` `RULE_OPTION_DEFAULTS`; operators
+// override them via the `--defaults` file (ADR-0017).
 const SUB_RULES = getRuleOptions("encoded-payload-redact").subRules;
-
-// Length floors per encoding. Tuned to sit above common hash/fingerprint
-// sizes (SHA-512 hex = 128, so 160 leaves headroom) and below typical
-// instruction-payload sizes seen in indirect-injection samples.
-const MIN_BASE64_LENGTH = 120;
-const MIN_HEX_LENGTH = 160;
-const MIN_PERCENT_TRIPLETS = 20;
-
-// Text-cipher candidate floor. Substitution ciphers (ROT13, Atbash,
-// leetspeak) and reverse need enough characters to carry a meaningful
-// instruction; under 80 chars the candidate is too short to clear the
-// common-word qualifier even when the decode is real.
-const MIN_TEXT_CIPHER_LENGTH = 80;
-
-// Leetspeak candidate floor. Smaller than the other ciphers because a
-// leet payload is denser (digit substitutions concentrate intent in
-// fewer chars). Combined with the digit-substitution count below, the
-// floor avoids matching ordinary text that happens to contain digits.
-const MIN_LEET_LENGTH = 40;
-const MIN_LEET_SUBSTITUTIONS = 4;
-
-// Distinct common-English-word hits required for the decoded output of
-// a text cipher to qualify as a payload. Three hits across a 40-char
-// decode is rare for random letter noise but routine for any English
-// sentence carrying a directive.
-const MIN_COMMON_WORDS = 3;
-
-// NATO and Morse minima — both encodings spell one letter per token, so
-// the token count IS the decoded length. Ten letters is the smallest
-// payload that can fit a single English directive verb plus its object.
-const MIN_NATO_WORDS = 10;
-const MIN_MORSE_TOKENS = 10;
-
-// Morse decoders that resolve to a known letter must clear this share
-// of the decoded tokens; below it the run is likely incidental dots and
-// dashes (ASCII art, bullets, repeated `---` separators) rather than a
-// payload.
-const MIN_MORSE_VALID_RATIO = 0.8;
 
 // Reject text nodes shorter than the smallest candidate window — cheap
 // per-node early-out. The smallest cipher floor (Morse: 10 tokens of
 // 1+ symbol each, separated by single whitespace) is ~19 chars; we use
 // 20 so the dispatcher sees every plausible cipher payload while still
-// skipping short text nodes (UI labels, tab text, badges).
+// skipping short text nodes (UI labels, tab text, badges). Not per-sub-rule
+// configurable because it gates the dispatcher itself.
 const MIN_TEXT_LENGTH = 20;
-
-// Decoded byte stream must be this fraction printable ASCII (space..~,
-// plus \t \n \r) to count as "decodes to readable text". Hashes and
-// binary blobs sit well below; UTF-8 prose (even with curly quotes /
-// em-dashes whose continuation bytes are non-ASCII) clears it because
-// the bulk of the bytes are still printable ASCII.
-const PRINTABLE_RATIO_THRESHOLD = 0.85;
-
-// After decoding, require at least this many bytes of mostly-printable
-// output. Filters short hashes that happen to score well on the ratio.
-const MIN_DECODED_LENGTH = 40;
 
 // JWT shape — `secrets-redact` redacts these with a `[jwt hidden]`
 // label. Skip so we don't double-process or override the more specific
@@ -106,11 +62,11 @@ const JWT_RE =
 // enough to clear the per-encoding floor; the printable-ratio filter
 // decides whether the run is a payload or random noise.
 const BASE64_CANDIDATE = new RegExp(
-  `[A-Za-z0-9+/=_-]{${MIN_BASE64_LENGTH},}`,
+  `[A-Za-z0-9+/=_-]{${SUB_RULES.base64.minLength},}`,
   "g",
 );
 const HEX_CANDIDATE = new RegExp(
-  String.raw`\b[0-9a-fA-F]{${MIN_HEX_LENGTH},}\b`,
+  String.raw`\b[0-9a-fA-F]{${SUB_RULES.hex.minLength},}\b`,
   "g",
 );
 // Percent-encoded: a run of `%XX` triplets (possibly interleaved with
@@ -474,15 +430,15 @@ const MORSE_MAP: Record<string, string> = {
 // anchored on alphanumerics so trailing punctuation doesn't drift the
 // match boundary into surrounding prose.
 const TEXT_CIPHER_CANDIDATE = new RegExp(
-  String.raw`[A-Za-z][A-Za-z\s.,'"!?:;\-]{${MIN_TEXT_CIPHER_LENGTH - 2},}[A-Za-z]`,
+  String.raw`[A-Za-z][A-Za-z\s.,'"!?:;\-]{${SUB_RULES.substitutionCipher.minLength - 2},}[A-Za-z]`,
   "g",
 );
 const LEET_CANDIDATE = new RegExp(
-  String.raw`[A-Za-z0-9@$!][A-Za-z0-9@$!\s.,'"?:;\-]{${MIN_LEET_LENGTH - 2},}[A-Za-z0-9@$!]`,
+  String.raw`[A-Za-z0-9@$!][A-Za-z0-9@$!\s.,'"?:;\-]{${SUB_RULES.leetspeak.minLength - 2},}[A-Za-z0-9@$!]`,
   "g",
 );
 const MORSE_CANDIDATE = new RegExp(
-  String.raw`(?:[.\-]{1,7}[ \t/]+){${MIN_MORSE_TOKENS - 1},}[.\-]{1,7}`,
+  String.raw`(?:[.\-]{1,7}[ \t/]+){${SUB_RULES.morse.minTokens - 1},}[.\-]{1,7}`,
   "g",
 );
 
@@ -498,10 +454,11 @@ interface CipherDecodeResult {
 function tryCipherDecode(
   candidate: string,
   decoder: (text: string) => string,
+  minCommonWords: number,
 ): CipherDecodeResult | null {
   const decoded = decoder(candidate);
   const commonWords = countDistinctCommonWords(decoded);
-  if (commonWords < MIN_COMMON_WORDS) {
+  if (commonWords < minCommonWords) {
     return null;
   }
   return { decoded, commonWords };
@@ -511,8 +468,8 @@ function tryCipherDecode(
 // already English — applying ROT13/Atbash/reverse to English prose
 // would produce gibberish (zero common-word hits), so this is only a
 // performance gate, not a correctness one.
-function alreadyEnglish(candidate: string): boolean {
-  return countDistinctCommonWords(candidate) >= MIN_COMMON_WORDS;
+function alreadyEnglish(candidate: string, minCommonWords: number): boolean {
+  return countDistinctCommonWords(candidate) >= minCommonWords;
 }
 
 interface NatoRun {
@@ -560,7 +517,10 @@ function findNatoRuns(text: string): NatoRun[] {
         current.letters += letter;
       }
     } else {
-      if (current !== null && current.letters.length >= MIN_NATO_WORDS) {
+      if (
+        current !== null &&
+        current.letters.length >= SUB_RULES.nato.minWords
+      ) {
         runs.push({
           start: current.start,
           end: current.end,
@@ -571,7 +531,7 @@ function findNatoRuns(text: string): NatoRun[] {
     }
     lastTokenEnd = end;
   }
-  if (current !== null && current.letters.length >= MIN_NATO_WORDS) {
+  if (current !== null && current.letters.length >= SUB_RULES.nato.minWords) {
     runs.push({
       start: current.start,
       end: current.end,
@@ -614,14 +574,18 @@ function decodeMorse(candidate: string): MorseDecodeResult {
   };
 }
 
-function qualifies(decoded: Uint8Array | null): boolean {
+function qualifies(
+  decoded: Uint8Array | null,
+  minDecodedLength: number,
+  printableRatioThreshold: number,
+): boolean {
   if (decoded === null) {
     return false;
   }
-  if (decoded.length < MIN_DECODED_LENGTH) {
+  if (decoded.length < minDecodedLength) {
     return false;
   }
-  return printableRatio(decoded) >= PRINTABLE_RATIO_THRESHOLD;
+  return printableRatio(decoded) >= printableRatioThreshold;
 }
 
 function collectJwtRanges(text: string): Array<[number, number]> {
@@ -651,7 +615,13 @@ function collectBase64(
     if (overlapsAny(start, end, jwtRanges)) {
       continue;
     }
-    if (qualifies(decodeBase64(m[0]))) {
+    if (
+      qualifies(
+        decodeBase64(m[0]),
+        SUB_RULES.base64.minDecodedLength,
+        SUB_RULES.base64.printableRatio,
+      )
+    ) {
       matches.push({ start, end, label: "[encoded payload hidden]" });
     }
   }
@@ -659,7 +629,13 @@ function collectBase64(
 
 function collectHex(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(HEX_CANDIDATE)) {
-    if (qualifies(decodeHex(m[0]))) {
+    if (
+      qualifies(
+        decodeHex(m[0]),
+        SUB_RULES.hex.minDecodedLength,
+        SUB_RULES.hex.printableRatio,
+      )
+    ) {
       matches.push({
         start: m.index,
         end: m.index + m[0].length,
@@ -699,14 +675,20 @@ function collectPercentRuns(
     runs.push(current);
   }
   return runs
-    .filter((run) => run.count >= MIN_PERCENT_TRIPLETS)
+    .filter((run) => run.count >= SUB_RULES.percent.minTriplets)
     .map(({ start, end }) => ({ start, end }));
 }
 
 function collectPercent(text: string, matches: InlineMatch[]): void {
   for (const run of collectPercentRuns(text)) {
     const slice = text.slice(run.start, run.end);
-    if (qualifies(decodePercent(slice))) {
+    if (
+      qualifies(
+        decodePercent(slice),
+        SUB_RULES.percent.minDecodedLength,
+        SUB_RULES.percent.printableRatio,
+      )
+    ) {
       matches.push({
         start: run.start,
         end: run.end,
@@ -733,11 +715,19 @@ function collectSubstitutionCiphers(
 ): void {
   for (const m of text.matchAll(TEXT_CIPHER_CANDIDATE)) {
     const candidate = m[0];
-    if (alreadyEnglish(candidate)) {
+    if (
+      alreadyEnglish(candidate, SUB_RULES.substitutionCipher.minCommonWords)
+    ) {
       continue;
     }
     for (const decoder of SUBSTITUTION_DECODERS) {
-      if (tryCipherDecode(candidate, decoder) !== null) {
+      if (
+        tryCipherDecode(
+          candidate,
+          decoder,
+          SUB_RULES.substitutionCipher.minCommonWords,
+        ) !== null
+      ) {
         matches.push({
           start: m.index,
           end: m.index + candidate.length,
@@ -752,10 +742,15 @@ function collectSubstitutionCiphers(
 function collectLeet(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(LEET_CANDIDATE)) {
     const candidate = m[0];
-    if (countLeetSubstitutions(candidate) < MIN_LEET_SUBSTITUTIONS) {
+    if (
+      countLeetSubstitutions(candidate) < SUB_RULES.leetspeak.minSubstitutions
+    ) {
       continue;
     }
-    if (tryCipherDecode(candidate, deleet) !== null) {
+    if (
+      tryCipherDecode(candidate, deleet, SUB_RULES.leetspeak.minCommonWords) !==
+      null
+    ) {
       matches.push({
         start: m.index,
         end: m.index + candidate.length,
@@ -782,10 +777,10 @@ function collectMorse(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(MORSE_CANDIDATE)) {
     const candidate = m[0];
     const { decoded, validRatio } = decodeMorse(candidate);
-    if (validRatio < MIN_MORSE_VALID_RATIO) {
+    if (validRatio < SUB_RULES.morse.validRatio) {
       continue;
     }
-    if (countDistinctCommonWords(decoded) < MIN_COMMON_WORDS) {
+    if (countDistinctCommonWords(decoded) < SUB_RULES.morse.minCommonWords) {
       continue;
     }
     matches.push({
@@ -800,26 +795,26 @@ function collectMatches(text: string): InlineMatch[] {
   const matches: InlineMatch[] = [];
   // JWT ranges are needed only to suppress overlapping base64 matches; skip
   // the scan when base64 is disabled.
-  const jwtRanges = SUB_RULES.base64 ? collectJwtRanges(text) : [];
-  if (SUB_RULES.base64) {
+  const jwtRanges = SUB_RULES.base64.enabled ? collectJwtRanges(text) : [];
+  if (SUB_RULES.base64.enabled) {
     collectBase64(text, jwtRanges, matches);
   }
-  if (SUB_RULES.hex) {
+  if (SUB_RULES.hex.enabled) {
     collectHex(text, matches);
   }
-  if (SUB_RULES.percent) {
+  if (SUB_RULES.percent.enabled) {
     collectPercent(text, matches);
   }
-  if (SUB_RULES.substitutionCipher) {
+  if (SUB_RULES.substitutionCipher.enabled) {
     collectSubstitutionCiphers(text, matches);
   }
-  if (SUB_RULES.leetspeak) {
+  if (SUB_RULES.leetspeak.enabled) {
     collectLeet(text, matches);
   }
-  if (SUB_RULES.nato) {
+  if (SUB_RULES.nato.enabled) {
     collectNato(text, matches);
   }
-  if (SUB_RULES.morse) {
+  if (SUB_RULES.morse.enabled) {
     collectMorse(text, matches);
   }
 

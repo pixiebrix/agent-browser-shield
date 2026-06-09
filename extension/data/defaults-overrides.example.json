@@ -7,7 +7,7 @@
     "enabled": true,
     "subRules": {
       "leetspeak": false,
-      "nato": false,
+      "nato": { "enabled": true, "minWords": 14 },
       "morse": false
     }
   },

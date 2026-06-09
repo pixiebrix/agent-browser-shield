@@ -147,10 +147,13 @@ describe("rule catalog invariants", () => {
     expect(missing).toEqual([]);
   });
 
-  it("RULE_OPTION_DEFAULTS sub-rule trees only contain boolean leaves", () => {
-    function findNonBooleanLeaves(node: unknown, prefix: string): string[] {
+  it("RULE_OPTION_DEFAULTS leaves are booleans or finite numbers", () => {
+    function findMistypedLeaves(node: unknown, prefix: string): string[] {
       if (typeof node === "boolean") {
         return [];
+      }
+      if (typeof node === "number") {
+        return Number.isFinite(node) ? [] : [prefix];
       }
       if (node === null || typeof node !== "object" || Array.isArray(node)) {
         return [prefix];
@@ -159,13 +162,13 @@ describe("rule catalog invariants", () => {
       for (const [key, value] of Object.entries(
         node as Record<string, unknown>,
       )) {
-        issues.push(...findNonBooleanLeaves(value, `${prefix}.${key}`));
+        issues.push(...findMistypedLeaves(value, `${prefix}.${key}`));
       }
       return issues;
     }
     const offenders: string[] = [];
     for (const [id, options] of Object.entries(RULE_OPTION_DEFAULTS)) {
-      offenders.push(...findNonBooleanLeaves(options, id));
+      offenders.push(...findMistypedLeaves(options, id));
     }
     expect(offenders).toEqual([]);
   });
