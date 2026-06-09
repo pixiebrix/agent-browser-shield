@@ -59,6 +59,12 @@ shield release.
     debug-trace recorder enabled, so the popup's Export button and the
     `window.__abs_dumpTrace` bridge are available without a human flipping the
     toggle.
+  - `placeholderAdaptivePalette` (boolean, default **off**, **experimental**) —
+    start with the per-placeholder ancestor-background sampling on, so
+    redactions on dark-themed pages render with a dark stripe palette instead of
+    the light default. Default off while the visual heuristic is still being
+    tuned; the same toggle is exposed in the Options page under *Placeholder
+    display* (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
 - **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key) and
   non-boolean values fail the build with a message naming them.
 - **FR-5.** The override file may be partial; rules not listed keep the
@@ -101,7 +107,8 @@ shield release.
 - FR-2, FR-3, FR-7: `extension/data/defaults-overrides.example.json`,
   `extension/src/lib/options-button-toggle.ts`,
   `extension/src/lib/run-on-inactive-tabs.ts`,
-  `extension/src/lib/debug-trace.ts`.
+  `extension/src/lib/debug-trace.ts`,
+  `extension/src/lib/placeholder-adaptive-palette.ts`.
 - FR-5, FR-6: `extension/src/lib/storage.ts` (`parseOverrides`,
   `DEFAULT_STATES`).
 - Default source-of-truth: `extension/src/rules/rule-metadata.ts`, validated by

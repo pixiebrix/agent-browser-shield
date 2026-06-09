@@ -9,7 +9,7 @@ import {
   subscribeRuleAvailability,
 } from "./availability";
 import { initDebugTrace } from "./debug-trace";
-import { PLACEHOLDER_MODE_ATTR } from "./dom-markers";
+import { PLACEHOLDER_MODE_ATTR, PLACEHOLDER_PALETTE_ATTR } from "./dom-markers";
 import {
   getEnforcementEnabled,
   subscribeEnforcementEnabled,
@@ -23,6 +23,10 @@ import {
   PLACEHOLDER_CLASS,
   revealAll,
 } from "./placeholder";
+import {
+  placeholderAdaptivePaletteStorage,
+  setAdaptivePaletteCache,
+} from "./placeholder-adaptive-palette";
 import type { PlaceholderDisplayMode } from "./placeholder-display";
 import {
   getPlaceholderDisplayMode,
@@ -38,21 +42,42 @@ import { getRuleStates, subscribe } from "./storage";
 // actionable in the a11y tree. The block container itself is a <div> because
 // position: sticky doesn't work on a <button>'s children — that broke the
 // "pinned to top" reveal button when we tried making the container a button.
+// Colors are exposed as CSS variables so the experimental adaptive-palette
+// path can swap them per-placeholder. When `placeholderAdaptivePalette` is
+// on, `placeholder.ts` stamps `data-abs-placeholder-palette="dark"` on each
+// placeholder whose ancestor background sampled dark; the override block
+// below redefines the same variables and the rest of the stylesheet picks
+// them up via `var(--abs-pl-…)`. With the toggle off, no placeholder carries
+// the attribute and the default light palette wins everywhere.
 const PLACEHOLDER_STYLES = `
 .${PLACEHOLDER_CLASS} {
+  --abs-pl-stripe-a: #f0f0f0;
+  --abs-pl-stripe-b: #e6e6e6;
+  --abs-pl-border: #999;
+  --abs-pl-text: #555;
+  --abs-pl-label-bg: #fff;
+  --abs-pl-hover-bg: #fff8c5;
   background: repeating-linear-gradient(
     45deg,
-    #f0f0f0,
-    #f0f0f0 6px,
-    #e6e6e6 6px,
-    #e6e6e6 12px
+    var(--abs-pl-stripe-a),
+    var(--abs-pl-stripe-a) 6px,
+    var(--abs-pl-stripe-b) 6px,
+    var(--abs-pl-stripe-b) 12px
   );
-  border: 1px dashed #999;
+  border: 1px dashed var(--abs-pl-border);
   border-radius: 3px;
-  color: #555;
+  color: var(--abs-pl-text);
   cursor: pointer;
   font-family: system-ui, sans-serif;
   font-size: 12px;
+}
+.${PLACEHOLDER_CLASS}[${PLACEHOLDER_PALETTE_ATTR}="dark"] {
+  --abs-pl-stripe-a: #2a2a2a;
+  --abs-pl-stripe-b: #1f1f1f;
+  --abs-pl-border: #555;
+  --abs-pl-text: #c8c8c8;
+  --abs-pl-label-bg: #1a1a1a;
+  --abs-pl-hover-bg: #3a3000;
 }
 .${PLACEHOLDER_CLASS}--inline {
   appearance: none;
@@ -78,8 +103,8 @@ const PLACEHOLDER_STYLES = `
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: #fff;
-  border: 1px solid #999;
+  background: var(--abs-pl-label-bg);
+  border: 1px solid var(--abs-pl-border);
   border-radius: 3px;
   color: inherit;
   font: inherit;
@@ -101,10 +126,10 @@ const PLACEHOLDER_STYLES = `
   padding: 4px;
 }
 .${PLACEHOLDER_CLASS}:hover {
-  background: #fff8c5;
+  background: var(--abs-pl-hover-bg);
 }
 .${LABEL_CLASS}:hover {
-  background: #fff8c5;
+  background: var(--abs-pl-hover-bg);
 }
 `;
 
@@ -265,13 +290,20 @@ export async function start(): Promise<void> {
   // the in-memory `enabled` flag is still its default (false) — the
   // storage round-trip resolves a tick later and the entire initial
   // burst gets silently dropped from the trace buffer.
-  const [rawStates, enforcementInitial, availabilityInitial] =
-    await Promise.all([
-      getRuleStates(),
-      getEnforcementEnabled(),
-      getRuleAvailabilityStates(),
-      initDebugTrace(),
-    ]);
+  const [
+    rawStates,
+    enforcementInitial,
+    availabilityInitial,
+    adaptivePaletteInitial,
+  ] = await Promise.all([
+    getRuleStates(),
+    getEnforcementEnabled(),
+    getRuleAvailabilityStates(),
+    placeholderAdaptivePaletteStorage.get(),
+    initDebugTrace(),
+  ]);
+  setAdaptivePaletteCache(adaptivePaletteInitial);
+  placeholderAdaptivePaletteStorage.subscribe(setAdaptivePaletteCache);
   let rawCurrent = rawStates;
   let enforcementCurrent = enforcementInitial;
   let availabilityCurrent = availabilityInitial;

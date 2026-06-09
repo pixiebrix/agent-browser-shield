@@ -34,6 +34,13 @@ export const HIDDEN_ATTR = "data-abs-hidden";
 // re-render against the right shape.
 export const PLACEHOLDER_MODE_ATTR = "data-abs-placeholder-mode";
 
+// Stamped by `placeholder.ts` on each placeholder when the experimental
+// adaptive-palette toggle is on and the surrounding background sampled as
+// dark. The placeholder stylesheet reads it as `[data-abs-placeholder-
+// palette="dark"]` to swap the stripe / chip palette. Absent when the toggle
+// is off or the background sampled light.
+export const PLACEHOLDER_PALETTE_ATTR = "data-abs-placeholder-palette";
+
 // Per-rule — set by exactly one rule's `apply` and read by its watcher /
 // teardown. Add new entries here when a new rule needs an attribute marker.
 

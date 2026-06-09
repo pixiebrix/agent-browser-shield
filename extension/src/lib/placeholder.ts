@@ -2,8 +2,13 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
-import { REVEALED_ATTR, RULE_ATTR } from "./dom-markers";
+import {
+  PLACEHOLDER_PALETTE_ATTR,
+  REVEALED_ATTR,
+  RULE_ATTR,
+} from "./dom-markers";
 import { createRuleLogger, log } from "./log";
+import { isAdaptivePaletteEnabled } from "./placeholder-adaptive-palette";
 import type { RuleId } from "./storage";
 import { traceMutation } from "./trace-mutation";
 
@@ -16,6 +21,77 @@ export interface InlineMatch {
   start: number;
   end: number;
   label: string;
+}
+
+// Adaptive palette: walk the placeholder's ancestor chain, find the first
+// non-transparent background color, and classify it as light or dark. Used
+// only when the experimental `placeholderAdaptivePalette` toggle is on —
+// otherwise placeholders take the committed light palette unconditionally.
+// Returned value is stamped as `data-abs-placeholder-palette="dark"` (or
+// omitted for light); the placeholder stylesheet swaps CSS variables based
+// on the attribute.
+export type PlaceholderPalette = "light" | "dark";
+
+// rgb(r,g,b), rgb(r,g,b,a), rgba(...) — getComputedStyle in Chrome/Firefox
+// normalises every color into one of these shapes. `oklch()` / `color()`
+// can leak through in newer engines, but the engines that support them also
+// normalise to the legacy `rgb()` form for `background-color` reads. If we
+// hit a value we don't understand we return null and the caller keeps
+// walking up the ancestor chain.
+const RGB_PATTERN =
+  /^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)(?:\s*,\s*([\d.]+))?\s*\)$/;
+
+function parseBackgroundBrightness(color: string): number | null {
+  const match = RGB_PATTERN.exec(color);
+  if (!match) {
+    return null;
+  }
+  const alpha = match[4] === undefined ? 1 : Number(match[4]);
+  // Treat near-transparent backgrounds as "no information" so the walker
+  // keeps climbing. 0.5 is the threshold the WebAIM contrast tooling uses
+  // for the same purpose; below that the underlying ancestor's background
+  // dominates the perceived color.
+  if (!Number.isFinite(alpha) || alpha < 0.5) {
+    return null;
+  }
+  const r = Number(match[1]);
+  const g = Number(match[2]);
+  const b = Number(match[3]);
+  // Perceived brightness (Rec. 601 weights). Cheap and stable; we only need
+  // a binary light/dark decision, not WCAG-grade relative luminance.
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+// Exported for unit tests. Brightness threshold of 0.5 splits "page chrome"
+// backgrounds cleanly: light pages typically land 0.95+, dark pages 0.1 or
+// below; the midpoint catches mid-gray pages the toggle isn't really aimed
+// at and falls back to light, matching the committed default.
+export function pickPaletteFromAncestor(
+  start: Element | null,
+): PlaceholderPalette {
+  let node: Element | null = start;
+  while (node) {
+    const bg = globalThis.getComputedStyle(node).backgroundColor;
+    const brightness = parseBackgroundBrightness(bg);
+    if (brightness !== null) {
+      return brightness < 0.5 ? "dark" : "light";
+    }
+    node = node.parentElement;
+  }
+  return "light";
+}
+
+function applyPalette(
+  placeholder: HTMLElement,
+  ancestor: Element | null,
+): void {
+  if (!isAdaptivePaletteEnabled()) {
+    return;
+  }
+  const palette = pickPaletteFromAncestor(ancestor);
+  if (palette === "dark") {
+    placeholder.setAttribute(PLACEHOLDER_PALETTE_ATTR, "dark");
+  }
 }
 
 function describeNode(node: Node): Record<string, unknown> {
@@ -144,6 +220,11 @@ export function replaceWithBlockPlaceholder(
 
   placeholder.append(createRevealButton(ruleId, label));
 
+  // Sample from the element being replaced — it still has its computed
+  // ancestor chain at this point — so the palette decision reflects the
+  // surrounding page chrome, not the placeholder's blank inserted state.
+  applyPalette(placeholder, element);
+
   placeholder.style.width = `${rect.width}px`;
   placeholder.style.minHeight = `${rect.height}px`;
   const display = computed.display;
@@ -188,6 +269,7 @@ export function replaceMatchesInTextNode(
   const text = textNode.nodeValue ?? "";
   const fragment = document.createDocumentFragment();
   let cursor = 0;
+  const ancestor = textNode.parentElement;
 
   for (const match of matches) {
     if (match.start < cursor) {
@@ -201,6 +283,7 @@ export function replaceMatchesInTextNode(
         ruleId,
         match.label,
         text.slice(match.start, match.end),
+        ancestor,
       ),
     );
     cursor = match.end;
@@ -217,6 +300,7 @@ function createInlinePlaceholder(
   ruleId: RuleId,
   label: string,
   originalText: string,
+  ancestor: Element | null,
 ): HTMLButtonElement {
   // Inline placeholders are short and have no scrollable area, so the
   // <button> serves as both the visual chip and the a11y-tree exposure.
@@ -225,6 +309,7 @@ function createInlinePlaceholder(
   placeholder.className = `${PLACEHOLDER_CLASS} ${PLACEHOLDER_CLASS}--inline`;
   placeholder.setAttribute(RULE_ATTR, ruleId);
   placeholder.textContent = label;
+  applyPalette(placeholder, ancestor);
   attachReveal(placeholder, document.createTextNode(originalText));
   createRuleLogger(ruleId).info("inline placeholder created", {
     ruleId,
@@ -334,6 +419,7 @@ export function replaceMatchesAcrossTextNodes(
       ruleId,
       match.label,
       matchedText,
+      nodes[match.startIndex]?.parentElement ?? null,
     );
     if (match.startIndex === match.endIndex) {
       pushSegment(match.startIndex, {

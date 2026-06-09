@@ -26,6 +26,7 @@ export interface DefaultOverrides {
   optionsButton?: boolean;
   runOnInactiveTabs?: boolean;
   debugTrace?: boolean;
+  placeholderAdaptivePalette?: boolean;
 }
 
 // Reserved top-level keys are not rule ids; the loader maps each one to a
@@ -35,6 +36,7 @@ const RESERVED_KEYS = new Set<string>([
   "optionsButton",
   "runOnInactiveTabs",
   "debugTrace",
+  "placeholderAdaptivePalette",
 ]);
 
 export function loadDefaultOverrides(
@@ -93,6 +95,10 @@ export function loadDefaultOverrides(
         }
         case "debugTrace": {
           result.debugTrace = value;
+          break;
+        }
+        case "placeholderAdaptivePalette": {
+          result.placeholderAdaptivePalette = value;
           break;
         }
       }

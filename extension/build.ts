@@ -106,7 +106,8 @@ async function build(): Promise<void> {
       Object.keys(overrides.rules).length +
       (overrides.optionsButton === undefined ? 0 : 1) +
       (overrides.runOnInactiveTabs === undefined ? 0 : 1) +
-      (overrides.debugTrace === undefined ? 0 : 1);
+      (overrides.debugTrace === undefined ? 0 : 1) +
+      (overrides.placeholderAdaptivePalette === undefined ? 0 : 1);
     console.log(
       `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
     );
@@ -184,6 +185,12 @@ async function build(): Promise<void> {
       "process.env.EXTENSION_DEBUG_TRACE_DEFAULT": JSON.stringify(
         overrides.debugTrace === undefined ? "" : String(overrides.debugTrace),
       ),
+      "process.env.EXTENSION_PLACEHOLDER_ADAPTIVE_PALETTE_DEFAULT":
+        JSON.stringify(
+          overrides.placeholderAdaptivePalette === undefined
+            ? ""
+            : String(overrides.placeholderAdaptivePalette),
+        ),
     },
   });
 

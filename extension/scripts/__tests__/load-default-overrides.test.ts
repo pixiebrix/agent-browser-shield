@@ -139,6 +139,42 @@ describe("loadDefaultOverrides", () => {
     ).toThrow(/non-boolean values for: debugTrace/);
   });
 
+  it("extracts the placeholderAdaptivePalette reserved key alongside rules", () => {
+    const file = writeFile(
+      "with-adaptive-palette.json",
+      JSON.stringify({ "pii-redact": true, placeholderAdaptivePalette: true }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: { "pii-redact": true },
+      placeholderAdaptivePalette: true,
+    });
+  });
+
+  it("accepts placeholderAdaptivePalette on its own", () => {
+    const file = writeFile(
+      "only-adaptive-palette.json",
+      JSON.stringify({ placeholderAdaptivePalette: false }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: {},
+      placeholderAdaptivePalette: false,
+    });
+  });
+
+  it("rejects a non-boolean placeholderAdaptivePalette value", () => {
+    const file = writeFile(
+      "bad-adaptive-palette.json",
+      JSON.stringify({ placeholderAdaptivePalette: "on" }),
+    );
+    expect(() =>
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toThrow(/non-boolean values for: placeholderAdaptivePalette/);
+  });
+
   it("throws when the file does not exist", () => {
     expect(() =>
       loadDefaultOverrides({
