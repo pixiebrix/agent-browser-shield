@@ -12,19 +12,21 @@
 // small set of reserved keys is also accepted for non-rule build-time toggles
 // (e.g. `optionsButton`).
 //
-// Validation is strict: unknown keys (neither a registered rule id nor a
-// reserved key) and ill-typed values fail the build. Infra operators want
-// loud failures, not silent drift if a rule was renamed.
+// Validation runs through a zod schema built dynamically from the supplied
+// `knownRuleIds` and `ruleOptionDefaults`. Strict objects at every level
+// reject any key not declared in those maps — infra operators want loud
+// failures, not silent drift if a rule was renamed.
 
 import { readFileSync } from "node:fs";
+import { z } from "zod";
 
 export interface LoadOverridesOptions {
   path: string;
   knownRuleIds: readonly string[];
   // Map of rule ids to their option-shape default tree. Rules absent from
   // this map only accept a plain boolean value in the override file. Walking
-  // this tree drives sub-rule validation (unknown keys / non-boolean leaves
-  // are reported with a path like `encoded-payload-redact.subRules.leetspeak`).
+  // this tree drives sub-rule validation; the structure mirrors
+  // `RULE_OPTION_DEFAULTS` exported from `src/rules/rule-metadata.ts`.
   ruleOptionDefaults?: Readonly<Record<string, unknown>>;
 }
 
@@ -32,7 +34,9 @@ export interface DefaultOverrides {
   rules: Record<string, boolean>;
   // Validated per-rule option values, keyed by rule id. Values are
   // structurally-validated subsets of the corresponding `ruleOptionDefaults`
-  // entry (only override-present leaves are included).
+  // entry (only override-present leaves are included). Bare-boolean
+  // shorthands at `{ enabled, ... }` sub-rule positions are normalized to
+  // `{ enabled: <boolean> }` before reaching this map.
   ruleOptions: Record<string, unknown>;
   optionsButton?: boolean;
   runOnInactiveTabs?: boolean;
@@ -40,82 +44,219 @@ export interface DefaultOverrides {
   placeholderAdaptivePalette?: boolean;
 }
 
-const RESERVED_KEYS = new Set<string>([
+const RESERVED_KEYS = [
   "optionsButton",
   "runOnInactiveTabs",
   "debugTrace",
   "placeholderAdaptivePalette",
-]);
+] as const;
 
-// Walks the per-rule override object against the rule's option-shape default
-// tree. Accepts boolean leaves at boolean default positions, finite-number
-// leaves at number default positions, object overrides at object positions
-// (recursed), and the bare-boolean shorthand `{ enabled: ... }` at object
-// positions whose `enabled` field is a boolean. Collects unknown-key and
-// mistyped-leaf paths into `unknownPaths` / `mistypedPaths` so the loader
-// can report them alongside any top-level issues in a single error message.
-function validateRuleOptions(
-  prefix: string,
-  defaultTree: Readonly<Record<string, unknown>>,
-  override: Record<string, unknown>,
-  unknownPaths: string[],
-  mistypedPaths: string[],
-): Record<string, unknown> {
-  const validated: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(override)) {
-    if (!(key in defaultTree)) {
-      unknownPaths.push(`${prefix}.${key}`);
+type ReservedKey = (typeof RESERVED_KEYS)[number];
+
+function isReservedKey(key: string): key is ReservedKey {
+  return (RESERVED_KEYS as readonly string[]).includes(key);
+}
+
+// Builds a zod schema for one position in the option-shape default tree.
+// Boolean defaults accept a boolean; number defaults accept a finite number
+// (zod 4's `z.number()` rejects NaN / Infinity by default); object defaults
+// recurse, with the bare-boolean shorthand expanded into `{ enabled }` when
+// the default object declares an `enabled` boolean.
+function leafSchema(defaultValue: unknown): z.ZodType {
+  if (typeof defaultValue === "boolean") {
+    return z.boolean();
+  }
+  if (typeof defaultValue === "number") {
+    return z.number();
+  }
+  if (defaultValue !== null && typeof defaultValue === "object") {
+    const defaultObject = defaultValue as Record<string, unknown>;
+    const objectSchema = z.strictObject(shapeFromDefaultTree(defaultObject));
+    if (typeof defaultObject.enabled === "boolean") {
+      return z.union([
+        z.boolean().transform((value) => ({ enabled: value })),
+        objectSchema,
+      ]);
+    }
+    return objectSchema;
+  }
+  return z.unknown();
+}
+
+function shapeFromDefaultTree(
+  tree: Record<string, unknown>,
+): Record<string, z.ZodType> {
+  const shape: Record<string, z.ZodType> = {};
+  for (const [key, value] of Object.entries(tree)) {
+    shape[key] = leafSchema(value).optional();
+  }
+  return shape;
+}
+
+// Builds the rule-value schema for one rule id. Rules without declared
+// options accept only a boolean; rules with declared options accept a
+// boolean (shorthand for the `enabled` toggle) or a strict object containing
+// `enabled?` and any subset of the option-shape tree.
+function ruleValueSchema(
+  ruleOptionDefault: Readonly<Record<string, unknown>> | undefined,
+): z.ZodType {
+  if (!ruleOptionDefault) {
+    return z.boolean();
+  }
+  return z.union([
+    z.boolean(),
+    z.strictObject({
+      enabled: z.boolean().optional(),
+      ...shapeFromDefaultTree(ruleOptionDefault as Record<string, unknown>),
+    }),
+  ]);
+}
+
+function buildOverridesSchema(options: LoadOverridesOptions): z.ZodType {
+  const { knownRuleIds, ruleOptionDefaults = {} } = options;
+  const shape: Record<string, z.ZodType> = {};
+  for (const reserved of RESERVED_KEYS) {
+    shape[reserved] = z.boolean().optional();
+  }
+  for (const id of knownRuleIds) {
+    shape[id] = ruleValueSchema(
+      ruleOptionDefaults[id] as Readonly<Record<string, unknown>> | undefined,
+    ).optional();
+  }
+  return z.strictObject(shape);
+}
+
+// Pulls leaf issues out of `invalid_union` aggregators. For our
+// `boolean | object` unions, when the operator supplies an object the
+// object-branch errors carry the actionable sub-path; the boolean-branch
+// error is always a single "expected boolean" at the union site and would
+// be noise. Picks the branch whose deepest leaf path (including the
+// trailing key on `unrecognized_keys`) reaches furthest into the tree.
+//
+// zod 4 reports branch-issue paths RELATIVE to the union site, so the
+// recursive walk threads a `prefix` that prepends every parent union's
+// path before formatting — without this, an `unrecognized_keys` deep
+// under a sub-rule loses the rule-id and sub-rule prefix.
+function flattenIssues(
+  issues: readonly z.core.$ZodIssue[],
+  prefix: readonly PropertyKey[] = [],
+): z.core.$ZodIssue[] {
+  const out: z.core.$ZodIssue[] = [];
+  for (const issue of issues) {
+    const prefixedIssue =
+      prefix.length === 0
+        ? issue
+        : { ...issue, path: [...prefix, ...issue.path] };
+    if (
+      issue.code === "invalid_union" &&
+      "errors" in issue &&
+      Array.isArray(issue.errors)
+    ) {
+      const innerPrefix = [...prefix, ...issue.path];
+      let best: z.core.$ZodIssue[] | undefined;
+      let bestDepth = -1;
+      for (const branchIssues of issue.errors as z.core.$ZodIssue[][]) {
+        const flat = flattenIssues(branchIssues, innerPrefix);
+        const depth = flat.reduce(
+          (max, sub) => Math.max(max, effectivePathLength(sub)),
+          0,
+        );
+        if (depth > bestDepth) {
+          bestDepth = depth;
+          best = flat;
+        }
+      }
+      if (best && best.length > 0) {
+        out.push(...best);
+        continue;
+      }
+    }
+    out.push(prefixedIssue);
+  }
+  return out;
+}
+
+function effectivePathLength(issue: z.core.$ZodIssue): number {
+  if (
+    issue.code === "unrecognized_keys" &&
+    "keys" in issue &&
+    Array.isArray(issue.keys)
+  ) {
+    return issue.path.length + 1;
+  }
+  return issue.path.length;
+}
+
+function formatIssue(issue: z.core.$ZodIssue): string[] {
+  if (
+    issue.code === "unrecognized_keys" &&
+    "keys" in issue &&
+    Array.isArray(issue.keys)
+  ) {
+    return issue.keys.map(
+      (key) => `  - ${[...issue.path, key].join(".")}: unrecognized key`,
+    );
+  }
+  const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+  return [`  - ${path}: ${issue.message}`];
+}
+
+function splitOverrides(parsed: Record<string, unknown>): DefaultOverrides {
+  const rules: Record<string, boolean> = {};
+  const ruleOptions: Record<string, unknown> = {};
+  const out: DefaultOverrides = { rules, ruleOptions };
+  for (const [key, value] of Object.entries(parsed)) {
+    if (value === undefined) {
       continue;
     }
-    const defaultValue = defaultTree[key];
-    const path = `${prefix}.${key}`;
-    if (typeof defaultValue === "boolean") {
-      if (typeof value !== "boolean") {
-        mistypedPaths.push(path);
-        continue;
+    if (isReservedKey(key)) {
+      switch (key) {
+        case "optionsButton": {
+          out.optionsButton = value as boolean;
+          break;
+        }
+        case "runOnInactiveTabs": {
+          out.runOnInactiveTabs = value as boolean;
+          break;
+        }
+        case "debugTrace": {
+          out.debugTrace = value as boolean;
+          break;
+        }
+        case "placeholderAdaptivePalette": {
+          out.placeholderAdaptivePalette = value as boolean;
+          break;
+        }
       }
-      validated[key] = value;
       continue;
     }
-    if (typeof defaultValue === "number") {
-      if (typeof value !== "number" || !Number.isFinite(value)) {
-        mistypedPaths.push(path);
-        continue;
-      }
-      validated[key] = value;
+    if (typeof value === "boolean") {
+      rules[key] = value;
       continue;
     }
-    if (defaultValue && typeof defaultValue === "object") {
-      // Bare-boolean shorthand at a nested object position whose `enabled`
-      // default is a boolean — interpret as `{ enabled: <boolean> }`.
-      const defaultObject = defaultValue as Readonly<Record<string, unknown>>;
-      if (
-        typeof value === "boolean" &&
-        typeof defaultObject.enabled === "boolean"
-      ) {
-        validated[key] = { enabled: value };
-        continue;
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const object = value as Record<string, unknown>;
+      if (typeof object.enabled === "boolean") {
+        rules[key] = object.enabled;
       }
-      if (value === null || typeof value !== "object" || Array.isArray(value)) {
-        mistypedPaths.push(path);
-        continue;
+      const optionsOnly: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(object)) {
+        if (k !== "enabled" && v !== undefined) {
+          optionsOnly[k] = v;
+        }
       }
-      validated[key] = validateRuleOptions(
-        path,
-        defaultObject,
-        value as Record<string, unknown>,
-        unknownPaths,
-        mistypedPaths,
-      );
+      if (Object.keys(optionsOnly).length > 0) {
+        ruleOptions[key] = optionsOnly;
+      }
     }
   }
-  return validated;
+  return out;
 }
 
 export function loadDefaultOverrides(
   options: LoadOverridesOptions,
 ): DefaultOverrides {
-  const { path, knownRuleIds, ruleOptionDefaults = {} } = options;
+  const { path } = options;
 
   let raw: string;
   try {
@@ -143,117 +284,15 @@ export function loadDefaultOverrides(
     );
   }
 
-  const known = new Set<string>(knownRuleIds);
-  const unknownIds: string[] = [];
-  const nonBooleanIds: string[] = [];
-  const objectsForRulesWithoutOptions: string[] = [];
-  const unknownOptionPaths: string[] = [];
-  const mistypedOptionPaths: string[] = [];
-  const rules: Record<string, boolean> = {};
-  const ruleOptions: Record<string, unknown> = {};
-  const result: DefaultOverrides = { rules, ruleOptions };
-
-  for (const [key, value] of Object.entries(
-    parsed as Record<string, unknown>,
-  )) {
-    if (RESERVED_KEYS.has(key)) {
-      if (typeof value !== "boolean") {
-        nonBooleanIds.push(key);
-        continue;
-      }
-      switch (key) {
-        case "optionsButton": {
-          result.optionsButton = value;
-          break;
-        }
-        case "runOnInactiveTabs": {
-          result.runOnInactiveTabs = value;
-          break;
-        }
-        case "debugTrace": {
-          result.debugTrace = value;
-          break;
-        }
-        case "placeholderAdaptivePalette": {
-          result.placeholderAdaptivePalette = value;
-          break;
-        }
-      }
-      continue;
-    }
-    if (!known.has(key)) {
-      unknownIds.push(key);
-      continue;
-    }
-    if (typeof value === "boolean") {
-      rules[key] = value;
-      continue;
-    }
-    // Object value — only allowed for rules with declared options.
-    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      const defaultsForRule = ruleOptionDefaults[key];
-      if (!defaultsForRule || typeof defaultsForRule !== "object") {
-        objectsForRulesWithoutOptions.push(key);
-        continue;
-      }
-      const valueObject = value as Record<string, unknown>;
-      // `enabled` is reserved at the rule-object root and projects back onto
-      // the flat boolean storage shape. It does not appear in the
-      // option-shape default tree, so peel it off before recursing.
-      if ("enabled" in valueObject) {
-        const enabled = valueObject.enabled;
-        if (typeof enabled === "boolean") {
-          rules[key] = enabled;
-        } else {
-          nonBooleanIds.push(`${key}.enabled`);
-        }
-      }
-      const optionsOnly: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(valueObject)) {
-        if (k !== "enabled") {
-          optionsOnly[k] = v;
-        }
-      }
-      const validated = validateRuleOptions(
-        key,
-        defaultsForRule as Readonly<Record<string, unknown>>,
-        optionsOnly,
-        unknownOptionPaths,
-        mistypedOptionPaths,
-      );
-      if (Object.keys(validated).length > 0) {
-        ruleOptions[key] = validated;
-      }
-      continue;
-    }
-    nonBooleanIds.push(key);
-  }
-
-  const issues: string[] = [];
-  if (unknownIds.length > 0) {
-    issues.push(`unknown keys: ${unknownIds.join(", ")}`);
-  }
-  if (objectsForRulesWithoutOptions.length > 0) {
-    issues.push(
-      `object value for rules without declared options: ${objectsForRulesWithoutOptions.join(", ")}`,
-    );
-  }
-  if (unknownOptionPaths.length > 0) {
-    issues.push(`unknown option keys: ${unknownOptionPaths.join(", ")}`);
-  }
-  if (nonBooleanIds.length > 0) {
-    issues.push(`non-boolean values for: ${nonBooleanIds.join(", ")}`);
-  }
-  if (mistypedOptionPaths.length > 0) {
-    issues.push(
-      `mistyped option values for: ${mistypedOptionPaths.join(", ")}`,
-    );
-  }
-  if (issues.length > 0) {
+  const schema = buildOverridesSchema(options);
+  const result = schema.safeParse(parsed);
+  if (!result.success) {
+    const lines = flattenIssues(result.error.issues).flatMap(formatIssue);
     throw new Error(
-      `Defaults file ${path} failed validation — ${issues.join("; ")}`,
+      `Defaults file ${path} failed validation:\n${lines.join("\n")}`,
+      { cause: result.error },
     );
   }
 
-  return result;
+  return splitOverrides(result.data as Record<string, unknown>);
 }

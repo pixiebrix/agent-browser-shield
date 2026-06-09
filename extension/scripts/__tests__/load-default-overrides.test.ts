@@ -80,7 +80,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/non-boolean values for: optionsButton/);
+    ).toThrow(/optionsButton: .*expected boolean/);
   });
 
   it("extracts the runOnInactiveTabs reserved key alongside rules", () => {
@@ -104,7 +104,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/non-boolean values for: runOnInactiveTabs/);
+    ).toThrow(/runOnInactiveTabs: .*expected boolean/);
   });
 
   it("extracts the debugTrace reserved key alongside rules", () => {
@@ -142,7 +142,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/non-boolean values for: debugTrace/);
+    ).toThrow(/debugTrace: .*expected boolean/);
   });
 
   it("extracts the placeholderAdaptivePalette reserved key alongside rules", () => {
@@ -180,7 +180,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/non-boolean values for: placeholderAdaptivePalette/);
+    ).toThrow(/placeholderAdaptivePalette: .*expected boolean/);
   });
 
   it("throws when the file does not exist", () => {
@@ -213,7 +213,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/unknown keys: bogus-rule/);
+    ).toThrow(/bogus-rule: unrecognized key/);
   });
 
   it("rejects non-boolean values", () => {
@@ -223,7 +223,7 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/non-boolean values for: pii-redact/);
+    ).toThrow(/pii-redact: .*expected boolean/);
   });
 
   it("reports unknown ids and non-boolean values together", () => {
@@ -233,7 +233,9 @@ describe("loadDefaultOverrides", () => {
     );
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toThrow(/unknown keys: bogus-rule.*non-boolean values for: pii-redact/);
+    ).toThrow(
+      /pii-redact: .*expected boolean[\s\S]*bogus-rule: unrecognized key/,
+    );
   });
 
   describe("per-rule options (ESLint-style object value)", () => {
@@ -368,7 +370,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/object value for rules without declared options: pii-redact/);
+      ).toThrow(/pii-redact: .*expected boolean/);
     });
 
     it("rejects unknown sub-rule keys with a path-qualified name", () => {
@@ -384,7 +386,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/unknown option keys: ads-hide\.subRules\.bogus/);
+      ).toThrow(/ads-hide\.subRules\.bogus: unrecognized key/);
     });
 
     it("rejects unknown sub-fields under a `{ enabled, ... }` sub-rule", () => {
@@ -400,7 +402,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/unknown option keys: ads-hide\.subRules\.hex\.bogus/);
+      ).toThrow(/ads-hide\.subRules\.hex\.bogus: unrecognized key/);
     });
 
     it("rejects unknown top-level keys under a rule object", () => {
@@ -416,7 +418,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/unknown option keys: ads-hide\.unknownGroup/);
+      ).toThrow(/ads-hide\.unknownGroup: unrecognized key/);
     });
 
     it("rejects non-boolean leaves at boolean-typed positions", () => {
@@ -432,7 +434,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/mistyped option values for: ads-hide\.subRules\.base64/);
+      ).toThrow(/ads-hide\.subRules\.base64: .*expected boolean/);
     });
 
     it("rejects non-number leaves at number-typed positions", () => {
@@ -448,9 +450,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(
-        /mistyped option values for: ads-hide\.subRules\.hex\.minLength/,
-      );
+      ).toThrow(/ads-hide\.subRules\.hex\.minLength: .*expected number/);
     });
 
     it("rejects non-finite numbers (NaN / Infinity) at number-typed positions", () => {
@@ -465,9 +465,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(
-        /mistyped option values for: ads-hide\.subRules\.hex\.minLength/,
-      );
+      ).toThrow(/ads-hide\.subRules\.hex\.minLength/);
     });
 
     it("rejects a non-boolean `enabled` field", () => {
@@ -483,7 +481,7 @@ describe("loadDefaultOverrides", () => {
           knownRuleIds: KNOWN_IDS,
           ruleOptionDefaults: RULE_OPTION_DEFAULTS,
         }),
-      ).toThrow(/non-boolean values for: ads-hide\.enabled/);
+      ).toThrow(/ads-hide\.enabled: .*expected boolean/);
     });
 
     it("omits the rule from ruleOptions when no sub-rule overrides are provided", () => {
