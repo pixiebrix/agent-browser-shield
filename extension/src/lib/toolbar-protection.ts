@@ -16,23 +16,33 @@ import { matchesDenylist } from "./site-denylist";
 
 export type ProtectionState =
   | { readonly off: false }
-  | { readonly off: true; readonly reason: "global" | "site" };
+  | { readonly off: true; readonly reason: "global" | "site" | "paused" };
 
 // `tabUrl` is null when the background hasn't yet learned the tab's URL
 // (e.g. a tab open before the service worker started, before the first
 // tabs.get / onUpdated). Treat unknown as protected — fail open, matching
 // the rule engine, rather than flashing an "off" badge on a tab whose state
 // we can't actually determine.
+//
+// `paused` is the resolved liveness of the tab-scoped recovery pause (ADR-0019)
+// — the background applies the `expiresAt` check before calling. It's checked
+// after the denylist so a denylisted-and-also-paused tab reports the more
+// durable `site` reason; in practice the popup only offers the pause when the
+// tab isn't denylisted, so the two don't overlap.
 export function computeProtectionState(input: {
   enforcementEnabled: boolean;
   tabUrl: string | null;
   denylist: readonly string[];
+  paused?: boolean;
 }): ProtectionState {
   if (!input.enforcementEnabled) {
     return { off: true, reason: "global" };
   }
   if (input.tabUrl !== null && matchesDenylist(input.tabUrl, input.denylist)) {
     return { off: true, reason: "site" };
+  }
+  if (input.paused) {
+    return { off: true, reason: "paused" };
   }
   return { off: false };
 }
@@ -67,9 +77,17 @@ export function actionTitle(state: ProtectionState): string {
   if (!state.off) {
     return "Agent Browser Shield";
   }
-  return state.reason === "global"
-    ? "Agent Browser Shield — enforcement off (all tabs)"
-    : "Agent Browser Shield — enforcement off on this site";
+  switch (state.reason) {
+    case "global": {
+      return "Agent Browser Shield — enforcement off (all tabs)";
+    }
+    case "site": {
+      return "Agent Browser Shield — enforcement off on this site";
+    }
+    case "paused": {
+      return "Agent Browser Shield — protection paused on this tab";
+    }
+  }
 }
 
 // Stable key for the icon/title appearance so the background only issues

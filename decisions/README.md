@@ -32,6 +32,7 @@ that is not supported by one of those citations.
 | [0016](./0016-eslint-style-per-rule-options-shape.md)       | ESLint-style per-rule build-time options shape                                                | Accepted                                          |
 | [0017](./0017-numeric-thresholds-as-rule-options.md)        | Numeric thresholds exposed as per-sub-rule options                                            | Accepted                                          |
 | [0018](./0018-per-site-enforcement-denylist.md)             | Per-site enforcement denylist authored from the popup; stored as URL Pattern strings          | Proposed                                          |
+| [0019](./0019-tab-scoped-enforcement-pause.md)              | Tab-scoped, non-persistent enforcement pause for fast recovery (reveal-everything + snooze)   | Proposed                                          |
 
 ## Conventions
 

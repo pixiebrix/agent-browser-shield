@@ -9,9 +9,10 @@ import {
   siteDenylistStorage,
 } from "../lib/site-denylist";
 
-// One control: a toggle that disables / re-enables the whole rule set on
-// the active tab's host. ADR-0018 §"Decision Outcome" — the affordance is
-// scoped per-site, not per-rule; "Re-enable on this site" removes every
+// The "this site · saved" row of the unified protection card
+// (ProtectionSection): one control that disables / re-enables the whole rule
+// set on the active tab's host. ADR-0018 §"Decision Outcome" — the affordance
+// is scoped per-site, not per-rule; "Re-enable on this site" removes every
 // pattern in the denylist that matches the active tab URL.
 //
 // Renders nothing while the tab URL or denylist is still loading. Renders
@@ -29,7 +30,8 @@ export function SiteDisableSection({
   }
   if (!isContentSchemeUrl(activeTabUrl)) {
     return (
-      <div className="site-disable site-disable--unavailable">
+      <div className="protection__row">
+        <span className="protection__cap">This site · saved</span>
         <button
           type="button"
           className="site-disable__button"
@@ -70,11 +72,10 @@ export function SiteDisableSection({
   return (
     <div
       className={
-        denylisted
-          ? "site-disable site-disable--off"
-          : "site-disable site-disable--on"
+        denylisted ? "protection__row protection__row--off" : "protection__row"
       }
     >
+      <span className="protection__cap">This site · saved</span>
       <button
         type="button"
         className="site-disable__button"

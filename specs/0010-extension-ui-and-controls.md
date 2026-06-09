@@ -35,6 +35,12 @@ all-or-nothing, and users pick "nothing."
 - As a **person hitting a false positive**, I want a one-click enforcement pause
   that disables every rule for every tab without losing my per-rule selections,
   so that I can finish my task and restore protection later.
+- As a **person whose shield just ate real content on this page**, I want a
+  one-click *Reveal everything on this page* panic button and a time-boxed
+  snooze (*this tab* / *15 min* / *1 hour*), both scoped to the tab and
+  automatically forgotten, so that I can recover the page or get through a
+  one-off checkout without hunting for a per-element reveal or leaving behind a
+  permanent denylist entry I'll never clean up.
 - As a **person whose shield is breaking one specific site**, I want a one-click
   *disable on this site* toggle in the popup that scopes the kill-switch to the
   active tab's host, so that I keep protection everywhere else without editing a
@@ -73,16 +79,19 @@ all-or-nothing, and users pick "nothing."
   count, the badge text falls back to `!` so the badge stays visible.
 - **FR-2a.** The toolbar action reflects per-tab **protection state** so a
   protected page and an unprotected page never look identical. A tab is *off*
-  when global enforcement is off (FR-5) **or** the active tab's top-frame URL
-  matches the per-site denylist (FR-7c). On an *off* tab the action shows the
-  greyed icon variant (`icons/icon-off-*.png`), an `off` badge in neutral grey
-  (`#6b7280` — deliberately not the amber detection color, so the three badge
-  meanings stay distinct), and a tooltip naming the scope (*"enforcement off
-  (all tabs)"* vs *"enforcement off on this site"*). The signal is recomputed
-  when enforcement toggles, the denylist changes, or the tab navigates; the
-  icon/tooltip are only re-issued when the on/off state flips, while the count
-  badge still refreshes on every rule-count message. The greyed icon is the
-  primary signal; the badge and tooltip reinforce it.
+  when global enforcement is off (FR-5), the active tab's top-frame URL matches
+  the per-site denylist (FR-7c), **or** a tab-scoped recovery pause is active
+  (FR-7e–FR-7h). On an *off* tab the action shows the greyed icon variant
+  (`icons/icon-off-*.png`), an `off` badge in neutral grey (`#6b7280` —
+  deliberately not the amber detection color, so the three badge meanings stay
+  distinct), and a tooltip naming the scope (*"enforcement off (all tabs)"* vs
+  *"enforcement off on this site"* vs *"protection paused on this tab"*). When a
+  tab is both denylisted and paused, the more durable *site* reason is reported.
+  The signal is recomputed when enforcement toggles, the denylist changes, the
+  recovery pause changes, or the tab navigates; the icon/tooltip are only
+  re-issued when the on/off state flips, while the count badge still refreshes
+  on every rule-count message. The greyed icon is the primary signal; the badge
+  and tooltip reinforce it.
 - **FR-3.** Top-level navigation drops stale per-frame counts so the new
   document starts from zero; content scripts in the new document report fresh
   numbers as rules run.
@@ -90,10 +99,11 @@ all-or-nothing, and users pick "nothing."
 ### Popup
 
 - **FR-4.** The popup renders a master **Enforcement** toggle, a **Site
-  disable** control (FR-7a), a **Configure rules** button that opens the Options
-  page, a **Heads up** detections section, a **Per-rule activity** section, a
-  **Debug trace** toggle, and an **Export** button (visible when the debug-trace
-  recorder is on).
+  disable** control (FR-7a), a **Recovery** control (*Reveal everything on this
+  page* + snooze, FR-7e–FR-7g), a **Configure rules** button that opens the
+  Options page, a **Heads up** detections section, a **Per-rule activity**
+  section, a **Debug trace** toggle, and an **Export** button (visible when the
+  debug-trace recorder is on).
 - **FR-5.** Toggling enforcement off pauses every rule for every tab. The
   per-rule selection is preserved in `chrome.storage` and restored when
   enforcement turns back on. The popup shows a hint when enforcement is off
@@ -137,6 +147,45 @@ all-or-nothing, and users pick "nothing."
   pushed to every frame in the tab. Subframes inherit the tab's enforcement
   state rather than matching their own URL against the denylist, so a denylisted
   top-frame pauses every frame regardless of cross-origin embedding.
+
+### Tab-scoped recovery and snooze
+
+Fast, reversible recovery for the "this page looks broken" case, distinct from
+the permanent per-site denylist (FR-7a). See
+[ADR-0019](../decisions/0019-tab-scoped-enforcement-pause.md).
+
+- **FR-7e.** The popup shows a *Reveal everything on this page* button when the
+  active tab is a content scheme (http/https/file) **and** not denylisted.
+  Clicking it writes a **page-scoped** recovery pause for the active tab, which
+  the rule engine treats exactly like enforcement-off: every hidden element is
+  revealed and re-hiding stops for the current page load. The pause is
+  non-persistent — cleared on the tab's next top-frame navigation, so a reload
+  restores protection. Nothing is written to the persistent denylist; this is
+  the zero-decision panic button, deliberately distinct from *Disable on this
+  site* (FR-7a).
+- **FR-7f.** The popup offers a time-boxed snooze with three presets: *Pause for
+  this tab* (no time limit, until the tab closes), *15 min*, and *1 hour*. A
+  snooze writes a **tab-scoped** recovery pause that survives navigation within
+  the tab — so a multi-page flow such as a checkout stays unblocked — until its
+  deadline passes or the tab closes.
+- **FR-7g.** While a recovery pause is active, the popup shows its status — for
+  a timed snooze, a live countdown of the time remaining — and a *Resume now*
+  control that clears the pause and re-engages protection immediately. When a
+  timed snooze expires on its own while the page is still open, the current page
+  stays revealed and protection re-engages on the **next navigation**: a timer
+  the user has forgotten never yanks content back mid-task.
+- **FR-7h.** The recovery pause is stored per tab in `chrome.storage.session`,
+  keyed by tabId — durable across service-worker restarts and auto-cleared on
+  browser restart, never persisted to disk (so there is no denylist-style
+  cleanup debt). Effective per-tab enforcement becomes
+  `globalEnforcement && !matchesAnyDenylistPattern(topFrameUrl) && !tabPaused`.
+  The popup offers the recovery controls only when the tab is actually enforced
+  (global on, not denylisted). Because content scripts can neither read the
+  `session` area nor know their own tabId, the background resolves liveness for
+  them: each content script seeds its state with a `get-tab-pause` message at
+  init, and the background pushes a `tab-pause-changed` message to every frame
+  in the tab when the popup edits the pause. A timed expiry produces no write
+  and hence no push — the mechanism behind FR-7g's resume-on-next-navigation.
 
 ### Options page
 
@@ -242,11 +291,12 @@ all-or-nothing, and users pick "nothing."
 - FR-1, FR-2, FR-3: `extension/src/background.ts` (`refreshBadge`,
   `recordFrameRuleCounts`, `recordDetection`, `clearTab`).
 - FR-2a: `extension/src/lib/toolbar-protection.ts` (pure
-  `computeProtectionState` / `actionTitle` / appearance constants, tested in
+  `computeProtectionState` / `actionTitle` / appearance constants, including the
+  `paused` reason, tested in
   `extension/src/lib/__tests__/toolbar-protection.test.ts`),
   `extension/src/background.ts` (`applyProtectionAppearance`, `refreshAllTabs`,
-  the `tabUrls` cache, and the enforcement/denylist subscriptions that drive
-  it), `extension/icons/icon-off.svg` (rendered to PNGs by
+  the `tabUrls` cache, and the enforcement/denylist/recovery-pause subscriptions
+  that drive it), `extension/icons/icon-off.svg` (rendered to PNGs by
   `extension/scripts/build-icons.ts`).
 - FR-4, FR-5, FR-6, FR-7: `extension/src/popup/Popup.tsx`,
   `extension/src/popup/PerRuleCountsSection.tsx`,
@@ -260,6 +310,18 @@ all-or-nothing, and users pick "nothing."
   `extension/src/background.ts` (per-tab effective enforcement computation +
   broadcast). See
   [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md).
+- FR-7e, FR-7f, FR-7g, FR-7h: `extension/src/lib/tab-pause.ts` (the
+  `chrome.storage.session` `StorageItemMap` keyed by tabId + pure
+  `isPauseActive`
+  - snooze presets, tested in `extension/src/lib/__tests__/tab-pause.test.ts`
+    and `.property.test.ts`), `extension/src/popup/RecoverySection.tsx` (panic
+    button + snooze + *Resume now*), `extension/src/popup/use-tab-pause.ts`
+    (popup-side read
+  - countdown), `extension/src/lib/effective-enforcement.ts` (the third input to
+    effective enforcement, latched per page load), `extension/src/background.ts`
+    (the `tabPauses` cache, `get-tab-pause` handler, `tab-pause-changed` bridge,
+    and page-scope/expiry/tab-close clearing). See
+    [ADR-0019](../decisions/0019-tab-scoped-enforcement-pause.md).
 - FR-8, FR-9, FR-10: `extension/src/options/Options.tsx`,
   `extension/src/options/Section.tsx`, `extension/src/options/parse-config.ts`,
   `extension/src/lib/RuleList.tsx`, `extension/src/lib/storage.ts`,
@@ -299,7 +361,8 @@ all-or-nothing, and users pick "nothing."
 
 - ADRs: [ADR-0009](../decisions/0009-rule-defaults-and-build-time-overrides.md),
   [ADR-0013](../decisions/0013-background-worker-purity-canary.md),
-  [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md).
+  [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md),
+  [ADR-0019](../decisions/0019-tab-scoped-enforcement-pause.md).
 - Docs:
   [`docs/src/content/docs/install.md`](../docs/src/content/docs/install.md)
   §"Customizing defaults at build time".

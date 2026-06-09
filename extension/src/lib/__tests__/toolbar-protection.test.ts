@@ -73,6 +73,38 @@ describe("computeProtectionState", () => {
       }),
     ).toEqual({ off: false });
   });
+
+  it("is off (paused) when the tab-scoped recovery pause is active", () => {
+    expect(
+      computeProtectionState({
+        enforcementEnabled: true,
+        tabUrl: "https://allowed.test/page",
+        denylist: DENYLIST,
+        paused: true,
+      }),
+    ).toEqual({ off: true, reason: "paused" });
+  });
+
+  it("reports the durable site reason when both denylisted and paused", () => {
+    expect(
+      computeProtectionState({
+        enforcementEnabled: true,
+        tabUrl: "https://denied.test/checkout",
+        denylist: DENYLIST,
+        paused: true,
+      }),
+    ).toEqual({ off: true, reason: "site" });
+  });
+
+  it("treats a missing paused flag as not paused", () => {
+    expect(
+      computeProtectionState({
+        enforcementEnabled: true,
+        tabUrl: "https://allowed.test/page",
+        denylist: [],
+      }),
+    ).toEqual({ off: false });
+  });
 });
 
 describe("actionTitle", () => {
@@ -89,6 +121,12 @@ describe("actionTitle", () => {
       "on this site",
     );
   });
+
+  it("names the tab-scoped pause when protection is paused", () => {
+    expect(actionTitle({ off: true, reason: "paused" })).toContain(
+      "paused on this tab",
+    );
+  });
 });
 
 describe("protectionAppearanceKey", () => {
@@ -96,10 +134,13 @@ describe("protectionAppearanceKey", () => {
     expect(protectionAppearanceKey({ off: false })).toBe("on");
   });
 
-  it("distinguishes the two off reasons so a global→site flip repaints", () => {
-    expect(protectionAppearanceKey({ off: true, reason: "global" })).not.toBe(
+  it("distinguishes the off reasons so a global→site→paused flip repaints", () => {
+    const keys = new Set([
+      protectionAppearanceKey({ off: true, reason: "global" }),
       protectionAppearanceKey({ off: true, reason: "site" }),
-    );
+      protectionAppearanceKey({ off: true, reason: "paused" }),
+    ]);
+    expect(keys.size).toBe(3);
   });
 });
 

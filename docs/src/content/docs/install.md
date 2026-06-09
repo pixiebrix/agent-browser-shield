@@ -72,8 +72,31 @@ have to open the popup:
   example, a hard-to-cancel subscription). When there's a detection but no
   count, the badge shows `!`.
 - **Greyed shield with an `off` badge** — enforcement is paused on this tab,
-  either because you turned the master switch off (every tab) or because the
-  site is on your *Disable on this site* list. Hover the icon to see which.
+  because you turned the master switch off (every tab), the site is on your
+  *Disable on this site* list, or you used a temporary recovery pause (*Reveal
+  everything on this page* or a snooze) on this tab. Hover the icon to see
+  which.
+
+### Recovering a page the shield broke
+
+If a rule hides something you actually wanted, open the popup for two quick,
+**temporary** escapes — both scoped to the current tab and forgotten on their
+own, so they never become a setting you have to remember to undo:
+
+- **Reveal everything on this page** — one click un-hides everything the shield
+  scrubbed on the current page and stops it re-hiding for this page view. It's
+  the panic button: reload the page (or navigate away) and protection comes
+  back.
+- **Pause protection** — snooze the shield on this tab for *15 min*, *1 hour*,
+  or until you close the tab. Unlike *Reveal everything*, a snooze carries
+  across page navigations in the same tab, so you can get through a multi-step
+  flow like a checkout. The popup shows the time remaining and a *Resume now*
+  button; when a timed snooze runs out while you're still on the page, the page
+  stays as-is and protection re-engages the next time you navigate.
+
+Both are deliberately separate from *Disable on this site*, which is a permanent
+choice saved until you remove it. Use the recovery controls for a one-off; use
+*Disable on this site* for a site you never want the shield to touch.
 
 ## Customizing defaults at build time
 
