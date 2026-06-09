@@ -63,13 +63,18 @@ function flush(): Promise<void> {
 // Dispatch a MessageEvent directly with the fields the bridge expects
 // so the test exercises the same code path a real same-origin page
 // would take. Returns the dispatched event for assertion convenience.
+// `MessageEvent.source` is typed as `MessageEventSource` (Window |
+// MessagePort | ServiceWorker), but TypeScript's `typeof globalThis`
+// doesn't structurally satisfy `Window` — same constraint the bridge
+// works around. Cast to a Window-typed alias once.
+const eventSource: Window = globalThis as unknown as Window;
 function dispatchBridgeMessage(data: unknown): MessageEvent {
   const event = new MessageEvent("message", {
     data,
-    source: globalThis,
-    origin: globalThis.location.origin,
+    source: eventSource,
+    origin: eventSource.location.origin,
   });
-  globalThis.dispatchEvent(event);
+  eventSource.dispatchEvent(event);
   return event;
 }
 
@@ -206,10 +211,10 @@ describe("startDumpTraceContentBridge", () => {
 
     const event = new MessageEvent("message", {
       data: { source: "abs-dump-trace", direction: "request", id: "x" },
-      source: globalThis,
+      source: eventSource,
       origin: "https://evil.example",
     });
-    globalThis.dispatchEvent(event);
+    eventSource.dispatchEvent(event);
     await flush();
 
     expect(sendMessage).not.toHaveBeenCalled();

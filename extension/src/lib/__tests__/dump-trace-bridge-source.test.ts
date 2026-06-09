@@ -31,13 +31,18 @@ function getBridgeWindow(): BridgeWindow {
 // `event.origin` to "" — both of which the bridge's response listener
 // rejects. Dispatch a MessageEvent directly with the fields the bridge
 // expects so the simulated response reaches the page-side resolver.
+// `MessageEvent.source` is typed as `MessageEventSource` (Window |
+// MessagePort | ServiceWorker), but TypeScript's `typeof globalThis`
+// doesn't structurally satisfy `Window` — same constraint the bridge
+// works around. Cast to a Window-typed alias once.
+const eventSource: Window = globalThis as unknown as Window;
 function dispatchResponse(data: unknown): void {
   const event = new MessageEvent("message", {
     data,
-    source: globalThis,
-    origin: globalThis.location.origin,
+    source: eventSource,
+    origin: eventSource.location.origin,
   });
-  globalThis.dispatchEvent(event);
+  eventSource.dispatchEvent(event);
 }
 
 // The bridge is install-once per window (production: each MAIN-world

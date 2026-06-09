@@ -27,6 +27,12 @@ import { log } from "./log";
 const SOURCE = "abs-dump-trace";
 const MAX_REQUEST_ID_LENGTH = 128;
 
+// `globalThis` is the lint-preferred reference to the script's own
+// global, but TypeScript types it as `typeof globalThis` which doesn't
+// overlap with `MessageEventSource` for the same-window check below.
+// Hold a Window-typed alias so the comparison type-checks.
+const selfWindow: Window = globalThis as unknown as Window;
+
 interface BridgeRequest {
   source: typeof SOURCE;
   direction: "request";
@@ -51,9 +57,9 @@ function postResponse(
   id: string,
   body: { entries?: unknown; error?: string },
 ): void {
-  window.postMessage(
+  selfWindow.postMessage(
     { source: SOURCE, direction: "response", id, ...body },
-    globalThis.location.origin,
+    selfWindow.location.origin,
   );
 }
 
@@ -74,10 +80,10 @@ async function forwardRequest(id: string): Promise<void> {
 }
 
 function bridgeListener(event: MessageEvent): void {
-  if (event.source !== globalThis) {
+  if (event.source !== selfWindow) {
     return;
   }
-  if (event.origin !== globalThis.location.origin) {
+  if (event.origin !== selfWindow.location.origin) {
     return;
   }
   if (!isBridgeRequest(event.data)) {
@@ -90,8 +96,8 @@ function bridgeListener(event: MessageEvent): void {
 // bridge lives for the document lifetime), but tests use it in
 // `afterEach` so stale listeners don't accumulate across cases.
 export function startDumpTraceContentBridge(): () => void {
-  window.addEventListener("message", bridgeListener);
+  selfWindow.addEventListener("message", bridgeListener);
   return () => {
-    window.removeEventListener("message", bridgeListener);
+    selfWindow.removeEventListener("message", bridgeListener);
   };
 }
