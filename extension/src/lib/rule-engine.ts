@@ -15,7 +15,7 @@ import {
   subscribeEnforcementEnabled,
 } from "./enforcement";
 import { isTopFrame } from "./frame";
-import { log } from "./log";
+import { createRuleLogger, log } from "./log";
 import {
   LABEL_CLASS,
   LABEL_ICON_CLASS,
@@ -177,7 +177,7 @@ function applyEnabled(
       continue;
     }
     if (states[rule.id]) {
-      log.info("applying rule", { ruleId: rule.id });
+      createRuleLogger(rule.id).info("applying rule");
       rule.apply(document.body);
     }
   }
@@ -226,13 +226,12 @@ function reconcile(
     if (isApplied === wasApplied) {
       continue;
     }
+    const ruleLog = createRuleLogger(rule.id);
     if (isApplied) {
-      log.info("rule enabled — applying", { ruleId: rule.id });
+      ruleLog.info("rule enabled — applying");
       rule.apply(document.body);
     } else {
-      log.info("rule disabled — revealing and tearing down", {
-        ruleId: rule.id,
-      });
+      ruleLog.info("rule disabled — revealing and tearing down");
       revealAll(rule.id);
       rule.teardown?.();
     }
