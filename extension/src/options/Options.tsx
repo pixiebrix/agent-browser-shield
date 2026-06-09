@@ -6,6 +6,7 @@ import { apiKeyStorage, HAS_BUILT_IN_OPENAI_KEY } from "../lib/api-key-storage";
 import { availabilitySource } from "../lib/availability";
 import { HelpLinks } from "../lib/HelpLinks";
 import { optionsButtonStorage } from "../lib/options-button-toggle";
+import { placeholderAdaptivePaletteStorage } from "../lib/placeholder-adaptive-palette";
 import type { PlaceholderDisplayMode } from "../lib/placeholder-display";
 import { placeholderDisplayStorage } from "../lib/placeholder-display";
 import { RuleList } from "../lib/RuleList";
@@ -23,6 +24,9 @@ export function Options() {
   const storedApiKey = useChromeStorageValue(apiKeyStorage);
   const optionsButtonEnabled = useChromeStorageValue(optionsButtonStorage);
   const runOnInactiveTabs = useChromeStorageValue(runOnInactiveTabsStorage);
+  const adaptivePalette = useChromeStorageValue(
+    placeholderAdaptivePaletteStorage,
+  );
 
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +49,8 @@ export function Options() {
     displayMode === null ||
     apiKeyDraft === null ||
     optionsButtonEnabled === null ||
-    runOnInactiveTabs === null
+    runOnInactiveTabs === null ||
+    adaptivePalette === null
   ) {
     return <div className="loading">Loading…</div>;
   }
@@ -92,6 +97,7 @@ export function Options() {
         <a href="#inactive-tabs">Inactive tabs</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
+        <a href="#experimental">Experimental</a>
         <a href="#disclaimer">Disclaimer</a>
       </nav>
 
@@ -277,6 +283,39 @@ export function Options() {
           .
         </p>
         <RuleList states={states} availability={availability} />
+      </Section>
+
+      <Section id="experimental" title="Experimental">
+        <p className="hint">
+          Features under evaluation. Behavior, defaults, and storage keys may
+          change between releases.
+        </p>
+        <label className="switch-row">
+          <span className="switch-row__text">
+            <strong>Adaptive placeholder palette</strong>
+            <span className="switch-row__state">
+              {adaptivePalette ? "On" : "Off"}
+            </span>
+            <span className="hint">
+              Sample each placeholder's surrounding background at insert time
+              and pick a light or dark stripe palette accordingly, so redactions
+              on dark-themed pages don't flare against the page chrome.
+            </span>
+          </span>
+          <span className="switch" role="presentation">
+            <input
+              type="checkbox"
+              checked={adaptivePalette}
+              onChange={(event) => {
+                void placeholderAdaptivePaletteStorage.set(
+                  event.target.checked,
+                );
+              }}
+              aria-label="Adaptive placeholder palette (experimental)"
+            />
+            <span className="switch__track" />
+          </span>
+        </label>
       </Section>
 
       <Section id="disclaimer" title="Disclaimer">
