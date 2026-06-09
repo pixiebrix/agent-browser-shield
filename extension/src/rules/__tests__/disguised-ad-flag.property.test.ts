@@ -119,6 +119,52 @@ describe("disguisedAdFlagRule feed-wrapper invariants (property)", () => {
     );
   });
 
+  it("a single card with N stacked wrapper divs is always hidden", () => {
+    // Regression for the follow-up to #228: stacking wrapper divs
+    // between the label and the heading+image+link content must not
+    // cause the rule to skip the card. The multi-card guard counts
+    // only outermost qualifying subtrees, so nested wrappers collapse
+    // to one and the card matches.
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 5 }),
+        fc.constantFrom(...LABEL_PHRASES),
+        (wrapperDepth, labelText) => {
+          document.body.innerHTML = "";
+          const card = document.createElement("article");
+          card.dataset.fixture = "card";
+          const label = document.createElement("span");
+          label.className = "label";
+          label.textContent = labelText;
+          card.append(label);
+          let cursor: HTMLElement = card;
+          for (let i = 0; i < wrapperDepth; i++) {
+            const wrapper = document.createElement("div");
+            wrapper.className = `wrapper-${i}`;
+            cursor.append(wrapper);
+            cursor = wrapper;
+          }
+          cursor.innerHTML = `
+            <h2><a href="/x">Title</a></h2>
+            <img alt="" src="/x.jpg" />
+            <p>Body copy that exceeds the eighty-character prose minimum the disguised-ad-flag rule applies to article-shape candidates.</p>
+          `;
+          document.body.append(card);
+
+          disguisedAdFlagRule.apply(document.body);
+
+          expect(document.querySelector('[data-fixture="card"]')).toBeNull();
+          expect(
+            document.querySelectorAll(`.${PLACEHOLDER_CLASS}`),
+          ).toHaveLength(1);
+
+          disguisedAdFlagRule.teardown();
+        },
+      ),
+      { numRuns: 30 },
+    );
+  });
+
   it("a role='feed' wrapper is never crossed by the walk-up", () => {
     fc.assert(
       fc.property(
