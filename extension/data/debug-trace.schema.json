@@ -1,13 +1,29 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pixiebrix.github.io/agent-browser-shield/schemas/debug-trace.schema.json",
-  "title": "Agent Browser Shield debug-trace entry",
-  "description": "One entry in the JSONL export produced by the popup's \"Export\" button when the debug-trace toggle is enabled. The export file contains one JSON-encoded entry per line in chronological order; this schema describes a single line. Entry shapes mirror the `DebugTraceEntry` union in extension/src/lib/detection-messages.ts.",
-  "oneOf": [
-    { "$ref": "#/$defs/SegmentEntry" },
-    { "$ref": "#/$defs/RuleApplicationEntry" },
-    { "$ref": "#/$defs/NavigationEntry" }
-  ],
+  "title": "Agent Browser Shield debug-trace stored event",
+  "description": "One stored event in the JSONL export produced by the popup's \"Export\" button when the debug-trace toggle is enabled. The export file contains one JSON-encoded stored event per line in chronological order; this schema describes a single line. The wrapper carries the tabId/frameId the background recorded against IDB; the nested `entry` mirrors the `DebugTraceEntry` union in extension/src/lib/detection-messages.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tabId", "frameId", "entry"],
+  "properties": {
+    "tabId": {
+      "type": "integer",
+      "description": "chrome.tabs id the event was recorded against."
+    },
+    "frameId": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Frame id within the tab. 0 for the top frame; positive for subframes. The `navigation` entry type is emitted only for the top frame."
+    },
+    "entry": {
+      "oneOf": [
+        { "$ref": "#/$defs/SegmentEntry" },
+        { "$ref": "#/$defs/RuleApplicationEntry" },
+        { "$ref": "#/$defs/NavigationEntry" }
+      ]
+    }
+  },
   "$defs": {
     "SegmentEntry": {
       "type": "object",
