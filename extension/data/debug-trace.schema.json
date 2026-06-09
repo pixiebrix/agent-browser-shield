@@ -1,21 +1,47 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pixiebrix.github.io/agent-browser-shield/schemas/debug-trace.schema.json",
-  "title": "Agent Browser Shield debug-trace entry",
-  "description": "One entry in the JSONL export produced by the popup's \"Export\" button when the debug-trace toggle is enabled. The export file contains one JSON-encoded entry per line in chronological order; this schema describes a single line. Entry shapes mirror the `DebugTraceEntry` union in extension/src/lib/detection-messages.ts.",
+  "title": "Agent Browser Shield debug-trace record",
+  "description": "One record returned by `window.__abs_dumpTrace()` or written as one line of the popup's JSONL export when the debug-trace toggle is enabled. Each record is a `DebugTraceEntry` (segment marker, rule application, or navigation) plus the `tabId` / `frameId` it was captured in. The IDB-internal `addedAt` is not exposed — every entry carries its own `timestamp` stamped at content-script emit time.",
   "oneOf": [
     { "$ref": "#/$defs/SegmentEntry" },
     { "$ref": "#/$defs/RuleApplicationEntry" },
     { "$ref": "#/$defs/NavigationEntry" }
   ],
   "$defs": {
+    "TabFrame": {
+      "type": "object",
+      "description": "Recording context shared by every record. Lets consumers attribute and group events across frames or concatenated tab traces.",
+      "required": ["tabId", "frameId"],
+      "properties": {
+        "tabId": {
+          "type": "integer",
+          "description": "chrome.tabs id the event was recorded against."
+        },
+        "frameId": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Frame id within the tab. 0 for the top frame; positive for subframes. `navigation` records are emitted only for the top frame."
+        }
+      }
+    },
     "SegmentEntry": {
       "type": "object",
-      "description": "Boundary marker emitted by the content script at the start of a logical segment (initial load, route change, modal open, mutation burst). Subsequent rule-application entries carry the same `segmentId` until the next marker.",
+      "description": "Boundary marker emitted by the content script at the start of a logical segment (initial load, route change, modal open, mutation burst). Subsequent rule-application records carry the same `segmentId` until the next marker.",
       "additionalProperties": false,
-      "required": ["type", "segmentId", "kind", "timestamp", "meta"],
+      "required": [
+        "type",
+        "tabId",
+        "frameId",
+        "segmentId",
+        "kind",
+        "timestamp",
+        "meta"
+      ],
       "properties": {
         "type": { "const": "segment" },
+        "tabId": { "$ref": "#/$defs/TabFrame/properties/tabId" },
+        "frameId": { "$ref": "#/$defs/TabFrame/properties/frameId" },
         "segmentId": {
           "type": "integer",
           "minimum": 1,
@@ -47,6 +73,8 @@
       "additionalProperties": false,
       "required": [
         "type",
+        "tabId",
+        "frameId",
         "segmentId",
         "ruleId",
         "kind",
@@ -57,6 +85,8 @@
       ],
       "properties": {
         "type": { "const": "rule-application" },
+        "tabId": { "$ref": "#/$defs/TabFrame/properties/tabId" },
+        "frameId": { "$ref": "#/$defs/TabFrame/properties/frameId" },
         "segmentId": {
           "type": "integer",
           "minimum": 0,
@@ -99,9 +129,11 @@
       "type": "object",
       "description": "Top-level navigation marker emitted by the background service worker on every chrome.tabs.onUpdated loading transition. Lets the trace span multiple page loads in the same tab.",
       "additionalProperties": false,
-      "required": ["type", "url", "timestamp"],
+      "required": ["type", "tabId", "frameId", "url", "timestamp"],
       "properties": {
         "type": { "const": "navigation" },
+        "tabId": { "$ref": "#/$defs/TabFrame/properties/tabId" },
+        "frameId": { "$ref": "#/$defs/TabFrame/properties/frameId" },
         "url": {
           "type": ["string", "null"],
           "description": "Tab URL at the moment the loading transition fired. May be the previous URL on a same-page reload, or the new URL on a cross-page navigation. Null when the tab has no URL yet (initial new-tab navigation)."

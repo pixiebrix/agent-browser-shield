@@ -4,6 +4,7 @@
 import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
 import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
 import { debugTraceStorage } from "./lib/debug-trace";
+import { toExportedRecord } from "./lib/debug-trace-export";
 import {
   appendEvent as appendDebugTraceEvent,
   clearTab as clearDebugTraceTab,
@@ -447,8 +448,13 @@ chrome.runtime.onMessage.addListener(
       // (up to its 10s timeout). `return true` keeps the message
       // channel open until `sendResponse` fires.
       void getDebugTraceForTab(tabId)
-        .then((entries) => {
-          const response: GetTabDebugTraceResponse = { entries };
+        .then((stored) => {
+          // Flatten to the public wire shape: `addedAt` is internal IDB
+          // bookkeeping and the tabId/frameId live on the entry, matching
+          // `extension/data/debug-trace.schema.json`.
+          const response: GetTabDebugTraceResponse = {
+            entries: stored.map((record) => toExportedRecord(record)),
+          };
           sendResponse(response);
         })
         .catch((error: unknown) => {

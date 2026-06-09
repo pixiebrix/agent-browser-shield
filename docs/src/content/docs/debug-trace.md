@@ -92,10 +92,12 @@ flip).
 
 ## Event shape
 
-Each entry returned by the dump (and each JSONL line in the export) matches the
+Each record returned by the dump (and each JSONL line in the export) matches the
 schema in
 [`extension/data/debug-trace.schema.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/debug-trace.schema.json).
-The three top-level entry types are:
+Every record carries the `tabId` and `frameId` it was recorded against, so
+traces from multiple frames (or concatenated across tabs) keep their
+attribution. The `type` discriminator picks one of three shapes:
 
 - **`segment`** — bookkeeping marker emitted at initial load, route changes,
   modal opens, and large mutation bursts. Subsequent rule-application entries
