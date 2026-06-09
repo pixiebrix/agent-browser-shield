@@ -91,6 +91,10 @@ keys:
   human flipping the toggle. Intended for automation builds (CDP, Browserbase).
   The export shape is documented in
   [`extension/data/debug-trace.schema.json`](./extension/data/debug-trace.schema.json).
+- `siteDenylist` (array of URL Pattern strings, default `[]`) — start with these
+  hosts already in the per-site enforcement denylist. When the active tab's
+  top-frame URL matches any entry, every rule is paused on that tab. Each entry
+  must satisfy `new URLPattern(entry)`; the build fails otherwise.
 
 See
 [`extension/data/defaults-overrides.example.json`](./extension/data/defaults-overrides.example.json)

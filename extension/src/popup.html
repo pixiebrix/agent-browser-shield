@@ -110,6 +110,54 @@
         outline: 2px solid #2563eb;
         outline-offset: 2px;
       }
+      .site-disable {
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border: 1px solid #e4e4e7;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+      .site-disable--off {
+        border-color: #fde68a;
+        background: #fffbeb;
+      }
+      .site-disable__button {
+        display: block;
+        width: 100%;
+        padding: 6px 8px;
+        font: inherit;
+        font-weight: 600;
+        color: #2563eb;
+        background: #fff;
+        border: 1px solid #2563eb;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .site-disable--off .site-disable__button {
+        color: #92400e;
+        border-color: #92400e;
+      }
+      .site-disable__button:hover {
+        background: #eff6ff;
+      }
+      .site-disable--off .site-disable__button:hover {
+        background: #fef3c7;
+      }
+      .site-disable__button:disabled {
+        color: #888;
+        border-color: #d4d4d8;
+        background: #f4f4f5;
+        cursor: not-allowed;
+      }
+      .site-disable__hint {
+        margin: 6px 0 0;
+        font-size: 11px;
+        color: #555;
+        line-height: 1.3;
+      }
+      .site-disable--off .site-disable__hint {
+        color: #92400e;
+      }
       .open-options {
         display: block;
         width: 100%;

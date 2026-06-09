@@ -31,6 +31,7 @@ that is not supported by one of those citations.
 | [0015](./0015-calver-workflow-driven-release.md)            | CalVer + `workflow_dispatch`-driven extension release                                         | Accepted                                          |
 | [0016](./0016-eslint-style-per-rule-options-shape.md)       | ESLint-style per-rule build-time options shape                                                | Accepted                                          |
 | [0017](./0017-numeric-thresholds-as-rule-options.md)        | Numeric thresholds exposed as per-sub-rule options                                            | Accepted                                          |
+| [0018](./0018-per-site-enforcement-denylist.md)             | Per-site enforcement denylist authored from the popup; stored as URL Pattern strings          | Proposed                                          |
 
 ## Conventions
 

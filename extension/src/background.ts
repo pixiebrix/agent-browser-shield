@@ -289,6 +289,19 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
+    if (message.type === "get-tab-url") {
+      // Subframe content scripts ask this once at startup so they can
+      // evaluate the per-site denylist (ADR-0018) against the tab's
+      // top-frame URL instead of their own iframe URL. `sender.tab.url`
+      // requires host permission for the URL — we have <all_urls>, so
+      // this is just a property read. Frames inside a tab whose URL the
+      // background can't resolve get `{ url: null }` and the requesting
+      // content script falls back to "URL unknown → fail open."
+      const url = sender.tab?.url ?? null;
+      sendResponse({ url });
+      return undefined;
+    }
+
     if (message.type === "inject-webdriver-probe") {
       const tabId = sender.tab?.id;
       if (typeof tabId !== "number") {

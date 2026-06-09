@@ -5,24 +5,29 @@ import { useEffect, useState } from "react";
 import { debugTraceStorage } from "../lib/debug-trace";
 import { enforcementStorage } from "../lib/enforcement";
 import { HelpLinks } from "../lib/HelpLinks";
+import { siteDenylistStorage } from "../lib/site-denylist";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DebugTraceSection } from "./DebugTraceSection";
 import { DetectionsSection } from "./DetectionsSection";
 import { PerRuleCountsSection } from "./PerRuleCountsSection";
+import { SiteDisableSection } from "./SiteDisableSection";
 import { useTabDebugTrace } from "./use-tab-debug-trace";
 import { useTabActivity } from "./use-tab-detections";
 
 export function Popup() {
   const enforcementEnabled = useChromeStorageValue(enforcementStorage);
   const debugTraceEnabled = useChromeStorageValue(debugTraceStorage);
+  const denylist = useChromeStorageValue(siteDenylistStorage);
   const activity = useTabActivity();
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
+  const [activeTabUrl, setActiveTabUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void chrome.tabs
       .query({ active: true, currentWindow: true })
       .then(([tab]) => {
         setActiveTabId(typeof tab?.id === "number" ? tab.id : null);
+        setActiveTabUrl(typeof tab?.url === "string" ? tab.url : "");
       });
   }, []);
 
@@ -68,6 +73,9 @@ export function Popup() {
           </p>
         )}
       </div>
+      {enforcementEnabled && (
+        <SiteDisableSection activeTabUrl={activeTabUrl} denylist={denylist} />
+      )}
       <button
         type="button"
         className="open-options"

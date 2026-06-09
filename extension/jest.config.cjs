@@ -81,6 +81,7 @@ module.exports = {
     "!src/lib/wait-for-settle.ts",
     "!src/lib/automation-element-reference.ts",
     "!src/lib/enforcement.ts",
+    "!src/lib/effective-enforcement.ts",
     "!src/lib/frame.ts",
     // `webdriver-probe-source.ts` defines `installProbe`, which the rule
     // serializes via `Function.prototype.toString` and ships into the

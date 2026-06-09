@@ -31,6 +31,13 @@ all-or-nothing, and users pick "nothing."
 - As a **person hitting a false positive**, I want a one-click enforcement pause
   that disables every rule for every tab without losing my per-rule selections,
   so that I can finish my task and restore protection later.
+- As a **person whose shield is breaking one specific site**, I want a one-click
+  *disable on this site* toggle in the popup that scopes the kill-switch to the
+  active tab's host, so that I keep protection everywhere else without editing a
+  config file.
+- As a **person auditing what I've scoped off**, I want the Options page to list
+  every site I've disabled the shield on, with a remove control per entry, so
+  that I can see and undo exceptions I no longer want.
 - As a **person tuning the rule set**, I want an Options page with each rule's
   label, description, and a toggle, so that I can pick exactly the defenses I
   want.
@@ -66,10 +73,11 @@ all-or-nothing, and users pick "nothing."
 
 ### Popup
 
-- **FR-4.** The popup renders a master **Enforcement** toggle, a **Configure
-  rules** button that opens the Options page, a **Heads up** detections section,
-  a **Per-rule activity** section, a **Debug trace** toggle, and an **Export**
-  button (visible when the debug-trace recorder is on).
+- **FR-4.** The popup renders a master **Enforcement** toggle, a **Site
+  disable** control (FR-7a), a **Configure rules** button that opens the Options
+  page, a **Heads up** detections section, a **Per-rule activity** section, a
+  **Debug trace** toggle, and an **Export** button (visible when the debug-trace
+  recorder is on).
 - **FR-5.** Toggling enforcement off pauses every rule for every tab. The
   per-rule selection is preserved in `chrome.storage` and restored when
   enforcement turns back on. The popup shows a hint when enforcement is off
@@ -85,6 +93,34 @@ all-or-nothing, and users pick "nothing."
   `extension/src/popup/rule-labels.ts`, which is kept in lockstep with rule
   labels by the `catalog.test.ts` invariant *"popup labels match each rule's own
   label"*.
+
+### Per-site enforcement denylist
+
+- **FR-7a.** The popup shows a *Disable on this site* button when the active
+  tab's top-frame URL is a content scheme (http/https/file) **and** no entry in
+  the site denylist matches that URL. Clicking it appends the pattern
+  `` `${activeUrl.protocol}//${activeUrl.host}/*` `` to the denylist storage. On
+  non-content tabs (`chrome://`, `about:`, `view-source:`) the control is
+  rendered disabled with a hint explaining why.
+- **FR-7b.** When at least one denylist entry matches the active tab's top-frame
+  URL, the popup shows a *Re-enable on this site* button in place of FR-7a.
+  Clicking it removes **every** denylist entry whose `URLPattern.test` returns
+  true for the active URL. The popup surfaces the count of matching entries
+  removed (e.g. *"Removed 2 patterns"*) so a user who had a wildcard plus a
+  specific entry knows both were dropped; the Options page (FR-10a) is the place
+  to re-add individual patterns.
+- **FR-7c.** Effective per-tab enforcement is
+  `globalEnforcement && !matchesAnyDenylistPattern(topFrameUrl)`. Global
+  enforcement (FR-5 / spec 0002 FR-14) remains the master kill-switch: toggling
+  it off pauses every tab regardless of denylist content, and toggling it back
+  on restores both per-rule selections and denylist scoping. The denylist
+  applies to the whole rule set; per-rule per-host scoping is not in scope (see
+  *Future work*).
+- **FR-7d.** Matching is evaluated against the **top-frame** URL only, and the
+  per-tab effective-enforcement signal is computed in the background worker and
+  pushed to every frame in the tab. Subframes inherit the tab's enforcement
+  state rather than matching their own URL against the denylist, so a denylisted
+  top-frame pauses every frame regardless of cross-origin embedding.
 
 ### Options page
 
@@ -103,6 +139,7 @@ all-or-nothing, and users pick "nothing."
   - **Export configuration** — download the current rule states as
     `agent-browser-shield-config.json`. Export shape matches the build-time
     overrides format so the same JSON works in both places.
+  - **Sites with enforcement disabled** — see FR-10a.
   - **Placeholder display** — choose between label and icon-only modes for
     click-to-reveal placeholders. Persisted in storage and applied via the
     `data-abs-placeholder-mode` attribute on `<html>`. Also exposes *Adaptive
@@ -120,6 +157,23 @@ all-or-nothing, and users pick "nothing."
   - **OpenAI API key** — input for the key that backs
     `irrelevant-sections-redact`. When a key is already bundled at build time
     (`HAS_BUILT_IN_OPENAI_KEY`), the field acts as an override.
+
+### Site denylist on the Options page
+
+- **FR-10a.** The Options page includes a *Sites with enforcement disabled*
+  section that:
+  - Lists every pattern in the denylist, sorted alphabetically. Each row has a
+    *Remove* button.
+  - Provides an *Add pattern* input that validates the string with
+    `new URLPattern(input)` and rejects invalid entries with a user-visible
+    error before saving. Power users can author patterns the popup wouldn't
+    write (subdomain wildcards, path scopes).
+  - Renders empty-state copy when the denylist has no entries.
+- **FR-10b.** The denylist is included in the *Export configuration* JSON
+  (FR-10) under a reserved `siteDenylist` key, and *Apply configuration* reads
+  the same key. The round-trip preserves both rule states and denylist patterns;
+  unknown reserved keys are surfaced with a parse-message rather than silently
+  dropped.
 
 ### Floating on-page options button
 
@@ -147,6 +201,14 @@ all-or-nothing, and users pick "nothing."
   enforces that every rule appears in exactly one group (FR-8 grouping is
   exhaustive and non-overlapping), and that every rule has a popup label
   matching its own `Rule.label`.
+- **FR-15.** The site denylist is persisted as a `string[]` under
+  `agent-browser-shield.site-denylist` in `chrome.storage.local`. On read,
+  entries that fail `new URLPattern(entry)` are dropped silently — mirroring the
+  silent-degrade behaviour of the rule-state and build-time-overrides loaders
+  (ADR-0009). The popup's write path can never produce an invalid entry because
+  it composes the pattern from a parsed `URL`; loud failure belongs on the
+  Options-page *Add pattern* input (FR-10a) and on the build-time defaults
+  loader (spec 0011).
 
 ## Non-functional requirements
 
@@ -169,12 +231,21 @@ all-or-nothing, and users pick "nothing."
   `extension/src/popup/DebugTraceSection.tsx`,
   `extension/src/popup/rule-labels.ts`,
   `extension/src/popup/use-tab-detections.ts`.
+- FR-7a, FR-7b, FR-7c, FR-7d: `extension/src/popup/Popup.tsx` (*Disable on this
+  site* / *Re-enable on this site* control),
+  `extension/src/lib/site-denylist.ts` (storage + `matchesDenylist` matcher),
+  `extension/src/background.ts` (per-tab effective enforcement computation +
+  broadcast). See
+  [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md).
 - FR-8, FR-9, FR-10: `extension/src/options/Options.tsx`,
   `extension/src/options/Section.tsx`, `extension/src/options/parse-config.ts`,
   `extension/src/lib/RuleList.tsx`, `extension/src/lib/storage.ts`,
   `extension/src/lib/placeholder-display.ts`,
   `extension/src/lib/placeholder-adaptive-palette.ts`,
   `extension/src/lib/api-key-storage.ts`, `extension/src/options/__tests__/`.
+- FR-10a, FR-10b: `extension/src/options/Options.tsx` (*Sites with enforcement
+  disabled* section), `extension/src/options/parse-config.ts` (`siteDenylist`
+  key in apply/export round-trip).
 - FR-11: `extension/src/lib/options-button-toggle.ts`,
   `extension/src/lib/options-badge.ts`.
 - FR-12: `extension/src/lib/run-on-inactive-tabs.ts`,
@@ -182,20 +253,30 @@ all-or-nothing, and users pick "nothing."
 - FR-13, FR-14: `extension/src/lib/chrome-storage-value.ts`,
   `extension/src/lib/rule-groups.ts`,
   `extension/src/rules/__tests__/catalog.test.ts`.
+- FR-15: `extension/src/lib/site-denylist.ts` (`siteDenylistStorage.normalize`
+  drops invalid entries), tested in
+  `extension/src/lib/__tests__/site-denylist.test.ts` (alongside a `fast-check`
+  property test that round-trips `addHostPattern` / `removeMatchingPatterns`
+  against arbitrary URLs).
 
 ## Future work
 
 - Detection promotion: when a detection-producing rule is off, surface a hint
   that turning it on would catch this kind of pattern. Not implemented;
   detections only render when their producing rule is on.
-- Per-host enable/disable for specific rules from the popup — only per-host
-  kill-switches today are baked into rule files (`hidden-affiliate-sanitize`,
-  `hidden-fee-annotate`); no UI surface.
+- **Per-rule** per-host enable/disable from the popup — the v1 site denylist
+  (FR-7a, FR-7c, [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md))
+  scopes the whole rule set, not individual rules. A user with one specific rule
+  misfiring on a site has to either silence every rule there or globally disable
+  just that rule. Per-host kill-switches *baked into* specific rule files
+  (`hidden-affiliate-sanitize`, `hidden-fee-annotate`) remain independent of the
+  user-facing denylist.
 
 ## Related
 
 - ADRs: [ADR-0009](../decisions/0009-rule-defaults-and-build-time-overrides.md),
-  [ADR-0013](../decisions/0013-background-worker-purity-canary.md).
+  [ADR-0013](../decisions/0013-background-worker-purity-canary.md),
+  [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md).
 - Docs:
   [`docs/src/content/docs/install.md`](../docs/src/content/docs/install.md)
   §"Customizing defaults at build time".

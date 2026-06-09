@@ -18,6 +18,7 @@
 // failures, not silent drift if a rule was renamed.
 
 import { readFileSync } from "node:fs";
+import { URLPattern } from "urlpattern-polyfill";
 import { z } from "zod";
 
 export interface LoadOverridesOptions {
@@ -42,19 +43,38 @@ export interface DefaultOverrides {
   runOnInactiveTabs?: boolean;
   debugTrace?: boolean;
   placeholderAdaptivePalette?: boolean;
+  // URL Pattern strings the per-site enforcement denylist (ADR-0018) is
+  // seeded with on fresh `chrome.storage`. Each entry must satisfy
+  // `new URLPattern(entry)`; the validator below fails the build loudly on
+  // a bad pattern (spec 0011 FR-4).
+  siteDenylist?: string[];
 }
 
-const RESERVED_KEYS = [
+const BOOLEAN_RESERVED_KEYS = [
   "optionsButton",
   "runOnInactiveTabs",
   "debugTrace",
   "placeholderAdaptivePalette",
 ] as const;
 
+const RESERVED_KEYS = [...BOOLEAN_RESERVED_KEYS, "siteDenylist"] as const;
+
 type ReservedKey = (typeof RESERVED_KEYS)[number];
 
 function isReservedKey(key: string): key is ReservedKey {
   return (RESERVED_KEYS as readonly string[]).includes(key);
+}
+
+// `new URLPattern(entry)` either parses or throws; zod's `.refine` only
+// accepts a predicate, so we wrap the throw in a boolean check here. Used
+// by the schema below for every `siteDenylist` entry.
+function isValidUrlPattern(entry: string): boolean {
+  try {
+    void new URLPattern(entry);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Builds a zod schema for one position in the option-shape default tree.
@@ -115,9 +135,17 @@ function ruleValueSchema(
 function buildOverridesSchema(options: LoadOverridesOptions): z.ZodType {
   const { knownRuleIds, ruleOptionDefaults = {} } = options;
   const shape: Record<string, z.ZodType> = {};
-  for (const reserved of RESERVED_KEYS) {
+  for (const reserved of BOOLEAN_RESERVED_KEYS) {
     shape[reserved] = z.boolean().optional();
   }
+  shape.siteDenylist = z
+    .array(
+      z.string().refine(isValidUrlPattern, {
+        message:
+          "expected URL Pattern string accepted by new URLPattern(entry)",
+      }),
+    )
+    .optional();
   for (const id of knownRuleIds) {
     shape[id] = ruleValueSchema(
       ruleOptionDefaults[id] as Readonly<Record<string, unknown>> | undefined,
@@ -225,6 +253,10 @@ function splitOverrides(parsed: Record<string, unknown>): DefaultOverrides {
         }
         case "placeholderAdaptivePalette": {
           out.placeholderAdaptivePalette = value as boolean;
+          break;
+        }
+        case "siteDenylist": {
+          out.siteDenylist = value as string[];
           break;
         }
       }

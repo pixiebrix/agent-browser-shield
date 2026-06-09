@@ -123,6 +123,19 @@ set of reserved keys is also accepted for non-rule build-time toggles:
   display* section so humans can flip it without rebuilding. Enable for
   deployments on consistently dark UIs.
 
+- `siteDenylist` (array of URL Pattern strings, default `[]`) — start with these
+  hosts already in the per-site enforcement denylist. When the active tab's
+  top-frame URL matches any entry, every rule is paused on that tab; subframes
+  inherit the tab's state. Each entry must satisfy `new URLPattern(entry)` (the
+  build fails otherwise) and accepts the full URL Pattern syntax — including
+  subdomain wildcards (`https://*.example.com/*`) and path scopes
+  (`https://example.com/admin/*`). The same key round-trips through the
+  Options-page *Export configuration* / *Apply configuration* surface so a tuned
+  extension's exported JSON can be fed back into the next build. Users author
+  entries one-click from the toolbar popup ("Disable on this site") and can
+  audit / remove them on the Options page under *Sites with enforcement
+  disabled*.
+
 A handful of rules expose sub-rule options in addition to the plain on/off
 toggle. For those, a rule's value may be an ESLint-style object instead of a
 boolean:

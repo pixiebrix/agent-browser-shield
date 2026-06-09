@@ -112,7 +112,8 @@ async function build(): Promise<void> {
       (overrides.optionsButton === undefined ? 0 : 1) +
       (overrides.runOnInactiveTabs === undefined ? 0 : 1) +
       (overrides.debugTrace === undefined ? 0 : 1) +
-      (overrides.placeholderAdaptivePalette === undefined ? 0 : 1);
+      (overrides.placeholderAdaptivePalette === undefined ? 0 : 1) +
+      (overrides.siteDenylist === undefined ? 0 : 1);
     console.log(
       `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
     );
@@ -199,6 +200,15 @@ async function build(): Promise<void> {
             ? ""
             : String(overrides.placeholderAdaptivePalette),
         ),
+      // Seed for `siteDenylistStorage`'s `defaultValue`. Encoded as a
+      // JSON-stringified array (then JSON.stringify'd again so the value
+      // lands as a string literal at the substitution site). Empty when
+      // no `siteDenylist` key is present in the overrides file.
+      "process.env.EXTENSION_DEFAULT_DENYLIST": JSON.stringify(
+        overrides.siteDenylist === undefined
+          ? ""
+          : JSON.stringify(overrides.siteDenylist),
+      ),
     },
   });
 

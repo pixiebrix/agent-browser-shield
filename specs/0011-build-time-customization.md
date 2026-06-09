@@ -79,10 +79,19 @@ shield release.
     the light default. Default off while the visual heuristic is still being
     tuned; the same toggle is exposed in the Options page under *Placeholder
     display* (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
+  - `siteDenylist` (`string[]`, default `[]`) — start with these URL Pattern
+    strings already in the per-site enforcement denylist (spec 0010 FR-7a /
+    FR-15, [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md)). Each
+    entry must parse via `new URLPattern(entry)` — invalid entries fail the
+    build under FR-4. The same key round-trips through the Options-page export /
+    apply (spec 0010 FR-10b) so a tuned extension's exported JSON can be fed
+    straight back into the next build.
 - **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key),
   unknown sub-rule or sub-field keys under a rule object, object values for
-  rules without declared options, and leaf values whose type does not match the
-  declared default (boolean → non-boolean, number → non-finite or non-number)
+  rules without declared options, leaf values whose type does not match the
+  declared default (boolean → non-boolean, number → non-finite or non-number),
+  and reserved-key values that fail their declared shape — `siteDenylist` not
+  being an array of strings each of which parses via `new URLPattern(entry)` —
   fail the build with a message naming the offending paths. The validator does
   not range-check numeric thresholds (FR-2a) — operators tuning thresholds are
   reading the rule source by definition.
@@ -105,11 +114,13 @@ shield release.
   literals at build time so the shipped JS contains no runtime `atob` of
   obfuscated strings. See
   [ADR-0011](../decisions/0011-build-time-decoded-injection-patterns.md).
-- **NFR-S-2.** The build-time `EXTENSION_DEFAULT_OVERRIDES` and
-  `EXTENSION_RULE_OPTIONS` values are parsed at content-script startup via
-  `JSON.parse` and validated against the rule registry / option-shape tree
-  respectively; a malformed value silently degrades to "no overrides" rather
-  than crashing the engine.
+- **NFR-S-2.** The build-time `EXTENSION_DEFAULT_OVERRIDES`,
+  `EXTENSION_RULE_OPTIONS`, and `EXTENSION_DEFAULT_DENYLIST` values are parsed
+  at content-script startup via `JSON.parse` and validated against the rule
+  registry / option-shape tree / `URLPattern` constructor respectively; a
+  malformed value silently degrades to "no overrides" rather than crashing the
+  engine. Loud failure happens at build time (FR-4), not at content-script
+  start.
 - **NFR-M-1.** Rule defaults and IDs live in a single hand-edited file
   (`extension/src/rules/rule-metadata.ts`). The `catalog.test.ts` invariant
   enforces parity with `rules/index.ts`. See
@@ -129,7 +140,10 @@ shield release.
   `extension/src/lib/options-button-toggle.ts`,
   `extension/src/lib/run-on-inactive-tabs.ts`,
   `extension/src/lib/debug-trace.ts`,
-  `extension/src/lib/placeholder-adaptive-palette.ts`.
+  `extension/src/lib/placeholder-adaptive-palette.ts`,
+  `extension/src/lib/site-denylist.ts` (reads
+  `process.env.EXTENSION_DEFAULT_DENYLIST` and seeds `siteDenylistStorage`'s
+  `defaultValue`).
 - FR-2a: `extension/src/rules/rule-metadata.ts` (`RULE_OPTION_DEFAULTS`),
   `extension/scripts/load-default-overrides.ts` (sub-rule validation),
   `extension/src/lib/rule-options.ts` (`getRuleOptions`, parses
@@ -142,8 +156,11 @@ shield release.
 
 ## Future work
 
-- Per-host default overrides — today overrides are flat and global; no way to
-  ship "rule X off on host Y" as a build-time default.
+- **Per-rule** per-host default overrides — the `siteDenylist` reserved key
+  (FR-3, [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md)) scopes
+  the whole rule set off on a host, not individual rules. Shipping "rule X off
+  on host Y" as a build-time default needs either a per-rule denylist map or
+  per-host rule overrides; neither is implemented.
 - Build-time API key bundling for `irrelevant-sections-redact` is supported via
   `OPENAI_API_KEY` at build time (see `extension/src/lib/api-key-storage.ts`)
   but is not part of the override file. Folding it into the same JSON shape
@@ -155,6 +172,7 @@ shield release.
   [ADR-0011](../decisions/0011-build-time-decoded-injection-patterns.md),
   [ADR-0016](../decisions/0016-eslint-style-per-rule-options-shape.md),
   [ADR-0017](../decisions/0017-numeric-thresholds-as-rule-options.md),
+  [ADR-0018](../decisions/0018-per-site-enforcement-denylist.md),
   [ADR-0013](../decisions/0013-background-worker-purity-canary.md).
 - Docs:
   [`docs/src/content/docs/install.md`](../docs/src/content/docs/install.md)

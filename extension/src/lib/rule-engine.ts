@@ -11,9 +11,9 @@ import {
 import { initDebugTrace } from "./debug-trace";
 import { PLACEHOLDER_MODE_ATTR, PLACEHOLDER_PALETTE_ATTR } from "./dom-markers";
 import {
-  getEnforcementEnabled,
-  subscribeEnforcementEnabled,
-} from "./enforcement";
+  initEffectiveEnforcement,
+  subscribeEffectiveEnforcement,
+} from "./effective-enforcement";
 import { isTopFrame } from "./frame";
 import { createRuleLogger, log } from "./log";
 import {
@@ -297,7 +297,7 @@ export async function start(): Promise<void> {
     adaptivePaletteInitial,
   ] = await Promise.all([
     getRuleStates(),
-    getEnforcementEnabled(),
+    initEffectiveEnforcement(),
     getRuleAvailabilityStates(),
     placeholderAdaptivePaletteStorage.get(),
     initDebugTrace(),
@@ -337,8 +337,8 @@ export async function start(): Promise<void> {
   subscribe((next) => {
     applyChange(next, enforcementCurrent, availabilityCurrent);
   });
-  subscribeEnforcementEnabled((enabled) => {
-    log.info("enforcement toggle changed", { enabled });
+  subscribeEffectiveEnforcement((enabled) => {
+    log.info("effective enforcement changed", { enabled });
     applyChange(rawCurrent, enabled, availabilityCurrent);
   });
   subscribeRuleAvailability((next) => {
