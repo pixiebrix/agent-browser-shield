@@ -24,12 +24,26 @@ import type {
   RuleDetectionMessage,
 } from "./lib/detection-messages";
 import { startDumpTraceBridgeRegistration } from "./lib/dump-trace-bridge-registration";
-import { subscribeEnforcementEnabled } from "./lib/enforcement";
+import {
+  getEnforcementEnabled,
+  subscribeEnforcementEnabled,
+} from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
 import { log } from "./lib/log";
 import { startShadowRootProbeRegistration } from "./lib/shadow-root-probe-registration";
 import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
+import { siteDenylistStorage } from "./lib/site-denylist";
 import { ruleStatesStorage } from "./lib/storage";
+import type { ProtectionState } from "./lib/toolbar-protection";
+import {
+  ACTION_ICON_OFF,
+  ACTION_ICON_ON,
+  actionTitle,
+  computeProtectionState,
+  PROTECTION_OFF_BADGE_COLOR,
+  PROTECTION_OFF_BADGE_TEXT,
+  protectionAppearanceKey,
+} from "./lib/toolbar-protection";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 import { installProbe } from "./lib/webdriver-probe-source";
 import type { RuleId } from "./rules/rule-metadata";
@@ -52,6 +66,26 @@ const KNOWN_RULE_IDS = new Set<string>(RULE_IDS);
 // next re-apply. Promote to chrome.storage.session if that becomes a
 // problem.
 const tabDetections = new Map<number, Map<DetectionKind, DetectionPayload>>();
+
+// Inputs to the per-tab "am I protected here?" signal (spec 0010 FR-2a):
+// the global enforcement kill-switch and the per-site denylist. Seeded from
+// storage at startup and kept current by the subscriptions below. Defaults
+// match the fail-open posture — assume protection is on until storage
+// resolves so we never flash an "off" badge on a tab that's actually
+// protected.
+let enforcementEnabled = true;
+let denylist: readonly string[] = [];
+
+// Last top-frame URL seen per tab, so the background can evaluate the
+// denylist for any tab without round-tripping the page. Captured from
+// tabs.onUpdated / onActivated / a startup tabs.query; dropped on tab close.
+const tabUrls = new Map<number, string>();
+
+// Memo of the icon/title appearance last applied per tab, keyed by
+// `protectionAppearanceKey`, so we only call setIcon/setTitle when the
+// on/off state actually flips. The numeric count badge still refreshes on
+// every rule-count message.
+const tabAppearanceKey = new Map<number, string>();
 
 // Maps each detection kind to the rule id that produces it. Used to clear
 // stale entries when a user toggles the rule off mid-session.
@@ -112,6 +146,29 @@ function hasDetections(tabId: number): boolean {
 }
 
 function refreshBadge(tabId: number): void {
+  const state = computeProtectionState({
+    enforcementEnabled,
+    tabUrl: tabUrls.get(tabId) ?? null,
+    denylist,
+  });
+  applyProtectionAppearance(tabId, state);
+  if (state.off) {
+    // Rules don't run (denylisted) or were revealed (global off) on this
+    // tab, so a count would be misleading. Show the explicit "off" badge
+    // instead, so a clean protected page and an unprotected page never look
+    // identical — that ambiguity is the whole reason this signal exists.
+    chrome.action
+      .setBadgeText({ tabId, text: PROTECTION_OFF_BADGE_TEXT })
+      .catch(() => {
+        // noop
+      });
+    chrome.action
+      .setBadgeBackgroundColor({ tabId, color: PROTECTION_OFF_BADGE_COLOR })
+      .catch(() => {
+        // noop
+      });
+    return;
+  }
   const placeholderText = formatBadge(totalForTab(tabId));
   const detection = hasDetections(tabId);
   // Detection without a placeholder count gets a single "!" so the badge
@@ -127,6 +184,54 @@ function refreshBadge(tabId: number): void {
       // noop
     });
   }
+}
+
+// Swap the toolbar icon + tooltip to match the tab's protection state, but
+// only when it changed — reissuing setIcon on every rule-count message would
+// be needless churn. The greyed icon is the primary "you're unprotected
+// here" signal; the badge reinforces it. Per-tab action settings persist for
+// the tab's lifetime, so each tab the user might look at must be painted at
+// least once (see refreshAllTabs and the tab listeners below).
+function applyProtectionAppearance(
+  tabId: number,
+  state: ProtectionState,
+): void {
+  const key = protectionAppearanceKey(state);
+  if (tabAppearanceKey.get(tabId) === key) {
+    return;
+  }
+  tabAppearanceKey.set(tabId, key);
+  chrome.action
+    .setIcon({ tabId, path: state.off ? ACTION_ICON_OFF : ACTION_ICON_ON })
+    .catch(() => {
+      // Restricted tabs (chrome://, Web Store) reject setIcon — swallow it.
+    });
+  chrome.action.setTitle({ tabId, title: actionTitle(state) }).catch(() => {
+    // noop
+  });
+}
+
+// Re-evaluate every open tab's toolbar appearance. Used when a *global*
+// input to the protection signal changes (enforcement toggle, denylist
+// edit): per-tab icons persist, so every tab the user might switch to has to
+// be repainted, not just the ones we're tracking counts for.
+function refreshAllTabs(): void {
+  chrome.tabs
+    .query({})
+    .then((tabs) => {
+      for (const tab of tabs) {
+        if (typeof tab.id !== "number") {
+          continue;
+        }
+        if (typeof tab.url === "string") {
+          tabUrls.set(tab.id, tab.url);
+        }
+        refreshBadge(tab.id);
+      }
+    })
+    .catch(() => {
+      // noop — tabs.query rejection shouldn't surface.
+    });
 }
 
 function recordFrameRuleCounts(
@@ -186,6 +291,8 @@ function clearDetectionsOfKind(kind: DetectionKind): void {
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabRuleCounts.delete(tabId);
   tabDetections.delete(tabId);
+  tabUrls.delete(tabId);
+  tabAppearanceKey.delete(tabId);
   // Fire-and-forget — IDB write may outlive the listener context.
   void clearDebugTraceTab(tabId).catch(() => {
     // noop
@@ -199,7 +306,20 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // the same toggle that gates content-script emission so the trace stays empty
 // when the toggle is off.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Keep the cached top-frame URL current so the denylist evaluation in
+  // refreshBadge sees the right URL — including the new document during a
+  // "loading" event, before clearTab repaints below.
+  if (typeof tab.url === "string") {
+    tabUrls.set(tabId, tab.url);
+  }
   if (changeInfo.status !== "loading") {
+    // A client-side URL change (SPA pushState / hash) arrives without a
+    // fresh "loading" status. The denylist is host-scoped so this rarely
+    // flips protection, but re-evaluate so the toolbar stays correct on
+    // cross-host in-page navigations.
+    if (typeof changeInfo.url === "string") {
+      refreshBadge(tabId);
+    }
     return;
   }
   clearTab(tabId);
@@ -221,26 +341,58 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   })();
 });
 
-// Re-render every tab's badge when enforcement is toggled. When disabled, the
-// rule engine reveals everything in each frame, which will eventually push
-// zero counts back — but doing this synchronously keeps the badge from
-// looking stale for the duration of those mutation observer cycles.
+// A newly-activated tab may be one we opened before the service worker
+// started (no onUpdated seen) — learn its URL and paint its toolbar state so
+// the icon/badge is right the moment the user looks at it.
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs
+    .get(tabId)
+    .then((tab) => {
+      if (typeof tab.url === "string") {
+        tabUrls.set(tabId, tab.url);
+      }
+      refreshBadge(tabId);
+    })
+    .catch(() => {
+      // Tab may have closed between the event and the get — ignore.
+    });
+});
+
+// Re-render every tab's toolbar state when global enforcement is toggled.
+// When disabled, the rule engine reveals everything and the cached per-tab
+// counts/detections are immediately stale, so drop them — neither the badge
+// nor the popup should show a number for paused rules. refreshAllTabs then
+// repaints every open tab (not just the tracked ones) so the greyed "off"
+// icon reaches tabs we weren't counting.
 subscribeEnforcementEnabled((enabled) => {
-  if (enabled) {
-    return;
+  enforcementEnabled = enabled;
+  if (!enabled) {
+    tabRuleCounts.clear();
+    tabDetections.clear();
   }
-  // Snapshot the union of tabs we're tracking before clearing — the badge
-  // for each needs to refresh, and we don't want to iterate a map we're
-  // mutating.
-  const affected = new Set<number>([
-    ...tabRuleCounts.keys(),
-    ...tabDetections.keys(),
-  ]);
-  tabRuleCounts.clear();
-  tabDetections.clear();
-  for (const tabId of affected) {
-    refreshBadge(tabId);
-  }
+  refreshAllTabs();
+});
+
+// The per-site denylist is the other input to the protection signal. A
+// denylist edit can flip any open tab between protected and off, so repaint
+// them all. (The content-side rule engine reacts to the same storage change
+// independently; this is purely the toolbar's view of it.)
+siteDenylistStorage.subscribe((next) => {
+  denylist = next;
+  refreshAllTabs();
+});
+
+// Seed the protection-signal caches from storage, then paint every open tab.
+// Service-worker IIFE — no top-level await, so chain `.get().then(...)`.
+// eslint-disable-next-line unicorn/prefer-top-level-await -- IIFE bundle, no TLA
+void getEnforcementEnabled().then((enabled) => {
+  enforcementEnabled = enabled;
+  refreshAllTabs();
+});
+// eslint-disable-next-line unicorn/prefer-top-level-await -- IIFE bundle, no TLA
+void siteDenylistStorage.get().then((next) => {
+  denylist = next;
+  refreshAllTabs();
 });
 
 // When a user disables one of the detection-producing rules mid-session,

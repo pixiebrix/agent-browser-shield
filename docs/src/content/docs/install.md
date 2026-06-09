@@ -59,6 +59,22 @@ Build output is written to `extension/dist/`.
 
 The extension is now active. Reload any open tabs to pick up the content script.
 
+### Reading the toolbar icon
+
+The toolbar icon answers "am I protected on this tab?" at a glance, so you don't
+have to open the popup:
+
+- **Blue shield, no badge** — protected, nothing scrubbed on this page yet.
+- **Blue shield with a number** — protected; the number is how many things the
+  shield acted on across all frames of the tab. A count over 999 shows as
+  `999+`.
+- **Amber badge** — a site-level detection worth opening the popup for (for
+  example, a hard-to-cancel subscription). When there's a detection but no
+  count, the badge shows `!`.
+- **Greyed shield with an `off` badge** — enforcement is paused on this tab,
+  either because you turned the master switch off (every tab) or because the
+  site is on your *Disable on this site* list. Hover the icon to see which.
+
 ## Customizing defaults at build time
 
 Which rules ship on by default is enumerated in

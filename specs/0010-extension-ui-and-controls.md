@@ -28,6 +28,10 @@ all-or-nothing, and users pick "nothing."
 - As a **person who wants to see what the shield did on this page**, I want a
   badge with a per-tab activity count and a popup listing per-rule footprint, so
   that I can verify protection is working at a glance.
+- As a **person who can't remember whether I paused the shield here**, I want
+  the toolbar icon itself to go grey with an *off* badge when enforcement is off
+  — globally or just on this site — so that "am I protected on this tab?" is
+  answerable without opening the popup.
 - As a **person hitting a false positive**, I want a one-click enforcement pause
   that disables every rule for every tab without losing my per-rule selections,
   so that I can finish my task and restore protection later.
@@ -67,6 +71,18 @@ all-or-nothing, and users pick "nothing."
   worth opening the popup for (roach-motel-annotate, webdriver-probe-annotate,
   closed-shadow-root-annotate). When a detection is present without an activity
   count, the badge text falls back to `!` so the badge stays visible.
+- **FR-2a.** The toolbar action reflects per-tab **protection state** so a
+  protected page and an unprotected page never look identical. A tab is *off*
+  when global enforcement is off (FR-5) **or** the active tab's top-frame URL
+  matches the per-site denylist (FR-7c). On an *off* tab the action shows the
+  greyed icon variant (`icons/icon-off-*.png`), an `off` badge in neutral grey
+  (`#6b7280` — deliberately not the amber detection color, so the three badge
+  meanings stay distinct), and a tooltip naming the scope (*"enforcement off
+  (all tabs)"* vs *"enforcement off on this site"*). The signal is recomputed
+  when enforcement toggles, the denylist changes, or the tab navigates; the
+  icon/tooltip are only re-issued when the on/off state flips, while the count
+  badge still refreshes on every rule-count message. The greyed icon is the
+  primary signal; the badge and tooltip reinforce it.
 - **FR-3.** Top-level navigation drops stale per-frame counts so the new
   document starts from zero; content scripts in the new document report fresh
   numbers as rules run.
@@ -225,6 +241,13 @@ all-or-nothing, and users pick "nothing."
 
 - FR-1, FR-2, FR-3: `extension/src/background.ts` (`refreshBadge`,
   `recordFrameRuleCounts`, `recordDetection`, `clearTab`).
+- FR-2a: `extension/src/lib/toolbar-protection.ts` (pure
+  `computeProtectionState` / `actionTitle` / appearance constants, tested in
+  `extension/src/lib/__tests__/toolbar-protection.test.ts`),
+  `extension/src/background.ts` (`applyProtectionAppearance`, `refreshAllTabs`,
+  the `tabUrls` cache, and the enforcement/denylist subscriptions that drive
+  it), `extension/icons/icon-off.svg` (rendered to PNGs by
+  `extension/scripts/build-icons.ts`).
 - FR-4, FR-5, FR-6, FR-7: `extension/src/popup/Popup.tsx`,
   `extension/src/popup/PerRuleCountsSection.tsx`,
   `extension/src/popup/DetectionsSection.tsx`,
