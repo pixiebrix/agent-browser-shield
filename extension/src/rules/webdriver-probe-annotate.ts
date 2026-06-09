@@ -45,12 +45,13 @@
 
 import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "webdriver-probe-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const EVENT_NAME = "abs:webdriver-probed";
 
@@ -95,7 +96,7 @@ function ensureLandmark(): void {
       document.body.prepend(buildLandmark());
     },
   );
-  log("webdriver-probe-annotate landmark added", {
+  log.info("webdriver-probe-annotate landmark added", {
     host: globalThis.location.hostname,
   });
   // Notify the background so the popup can show a human-visible entry.

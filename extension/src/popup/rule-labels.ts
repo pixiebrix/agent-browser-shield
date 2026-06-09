@@ -11,7 +11,7 @@
 // `rules/__tests__/catalog.test.ts`: adding a rule without adding its
 // label here fails the suite.
 
-import type { RuleId } from "../rules/rule-defaults.generated";
+import type { RuleId } from "../rules/rule-metadata";
 
 // Exported as `Record<RuleId, string>` (rather than the narrow literal-
 // keyed `as const` shape) so callers can look up via any `RuleId` value

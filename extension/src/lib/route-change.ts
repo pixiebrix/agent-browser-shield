@@ -38,7 +38,7 @@ function emit(): void {
   if (url === lastUrl) {
     return;
   }
-  log("route change", { from: lastUrl, to: url });
+  log.info("route change", { from: lastUrl, to: url });
   lastUrl = url;
   for (const listener of listeners) {
     listener();

@@ -16,7 +16,7 @@ grouping the options page uses; rule IDs here match the filenames in
 [`extension/src/rules/`](https://github.com/pixiebrix/agent-browser-shield/tree/main/extension/src/rules),
 which is the authoritative source for behavior. Initial enabled/disabled state
 for each rule lives in
-[`extension/data/rule-defaults.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/rule-defaults.json).
+[`extension/src/rules/rule-metadata.ts`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/src/rules/rule-metadata.ts).
 If this page disagrees with either, trust the source. The
 [Install page](/install/#customizing-defaults-at-build-time) covers how to
 override defaults at build time without forking the repo.

@@ -3,6 +3,7 @@
 
 import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
 import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
+import { debugTraceStorage } from "./lib/debug-trace";
 import {
   appendEvent as appendDebugTraceEvent,
   clearTab as clearDebugTraceTab,
@@ -27,8 +28,8 @@ import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
 import { ruleStatesStorage } from "./lib/storage";
 import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
 import { installProbe } from "./lib/webdriver-probe-source";
-import type { RuleId } from "./rules/rule-defaults.generated";
-import { RULE_IDS } from "./rules/rule-defaults.generated";
+import type { RuleId } from "./rules/rule-metadata";
+import { RULE_IDS } from "./rules/rule-metadata";
 
 // Per-tab, per-frame, per-rule footprint counts. Each content script reports
 // its own frame's tally grouped by rule id; the badge shows the cross-frame
@@ -189,13 +190,31 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 // On a top-level navigation, drop stale per-frame counts so the new document
 // starts from zero. The content script will report fresh numbers as rules run.
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === "loading") {
-    clearTab(tabId);
-    void clearDebugTraceTab(tabId).catch(() => {
-      // noop
-    });
+// The debug trace is *not* cleared — instead a `navigation` entry is appended
+// so a single export can span multiple page loads in the same tab. Gated on
+// the same toggle that gates content-script emission so the trace stays empty
+// when the toggle is off.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "loading") {
+    return;
   }
+  clearTab(tabId);
+  void (async () => {
+    try {
+      if (!(await debugTraceStorage.get())) {
+        return;
+      }
+      const entry: DebugTraceEntry = {
+        type: "navigation",
+        url: tab.url ?? null,
+        timestamp: Date.now(),
+      };
+      // Frame id 0 — top-level navigation is always the main frame.
+      await appendDebugTraceEvent(tabId, 0, entry);
+    } catch {
+      // noop — storage read or IDB write rejection shouldn't surface.
+    }
+  })();
 });
 
 // Re-render every tab's badge when enforcement is toggled. When disabled, the
@@ -293,7 +312,7 @@ chrome.runtime.onMessage.addListener(
           // disallowed) reject here. The primary registration silently
           // skips these origins via match-pattern filtering; the fallback
           // has to swallow the rejection explicitly.
-          log("inject-webdriver-probe executeScript failed", { error });
+          log.error("inject-webdriver-probe executeScript failed", { error });
         });
       return undefined;
     }
@@ -320,7 +339,7 @@ chrome.runtime.onMessage.addListener(
           func: installCheckoutCheckboxDefense,
         })
         .catch((error: unknown) => {
-          log("inject-checkout-checkbox-defense executeScript failed", {
+          log.error("inject-checkout-checkbox-defense executeScript failed", {
             error,
           });
         });
@@ -349,7 +368,7 @@ chrome.runtime.onMessage.addListener(
           func: installShadowRootProbe,
         })
         .catch((error: unknown) => {
-          log("inject-shadow-root-probe executeScript failed", { error });
+          log.error("inject-shadow-root-probe executeScript failed", { error });
         });
       return undefined;
     }
@@ -438,7 +457,7 @@ chrome.runtime.onMessage.addListener(
           frameId,
           entry as DebugTraceEntry,
         ).catch((error: unknown) => {
-          log("debug-trace IDB write failed", { error });
+          log.error("debug-trace IDB write failed", { error });
         });
       }
       return undefined;

@@ -5,17 +5,17 @@
 // JS has no dependency on the rule catalog — the rules index pulls in every
 // rule implementation file, some of which touch DOM constructors at top
 // level, which would crash the service-worker bundle. Runtime values
-// (RULE_IDS, RULE_DEFAULTS) come from the generated defaults module, which
-// is pure data. The post-build purity check
-// (`scripts/check-background-purity.ts`) guards against regressions.
+// (RULE_IDS, RULE_DEFAULTS) come from `rules/rule-metadata`, which is pure
+// data. The post-build purity check (`scripts/check-background-purity.ts`)
+// guards against regressions.
 import type { RuleId } from "../rules";
-import { RULE_DEFAULTS, RULE_IDS } from "../rules/rule-defaults.generated";
+import { RULE_DEFAULTS, RULE_IDS } from "../rules/rule-metadata";
 import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type RuleStates = Record<RuleId, boolean>;
 
-// Defaults come from extension/data/rule-defaults.json via codegen — one
-// scannable file lists every rule's initial state. Availability is resolved
+// Defaults come from `rules/rule-metadata.ts` — one scannable file lists
+// every rule's initial state. Availability is resolved
 // separately via `lib/availability.ts` (which supports reactive accessors),
 // and the rule engine gates application on it at apply time. We deliberately
 // don't mask unavailable rules' stored state here: if availability is
@@ -96,4 +96,4 @@ export async function setAllRuleStates(
 }
 
 export type { RuleId } from "../rules";
-export { RULE_IDS } from "../rules/rule-defaults.generated";
+export { RULE_IDS } from "../rules/rule-metadata";

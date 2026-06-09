@@ -2,11 +2,11 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 // parse-config.ts imports `RULE_IDS` from `lib/storage`, which re-exports it
-// from `rules/rule-defaults.generated`. Mock the generated module so the test
-// runs against a small id set (and so storage.ts's transitive
-// `rules/index.ts` import doesn't pull in every rule file — some of which
-// reach for ESM-only deps that ts-jest's CJS transform can't handle).
-jest.mock("../../rules/rule-defaults.generated", () => ({
+// from `rules/rule-metadata`. Mock the metadata module so the test runs
+// against a small id set (and so storage.ts's transitive `rules/index.ts`
+// import doesn't pull in every rule file — some of which reach for ESM-only
+// deps that ts-jest's CJS transform can't handle).
+jest.mock("../../rules/rule-metadata", () => ({
   RULE_DEFAULTS: { "rule-a": true, "rule-b": false },
   RULE_IDS: ["rule-a", "rule-b"],
 }));

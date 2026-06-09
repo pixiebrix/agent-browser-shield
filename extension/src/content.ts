@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { isTopFrame } from "./lib/frame";
+import { log } from "./lib/log";
 import { startOptionsBadge } from "./lib/options-badge";
 import { startRuleCountReporter } from "./lib/rule-count";
 import { start } from "./lib/rule-engine";
@@ -23,7 +24,7 @@ installShadowRootHook();
 // content-script entry, so a promise chain is required.
 // eslint-disable-next-line unicorn/prefer-top-level-await
 start().catch((error: unknown) => {
-  console.error("[abs] failed to start rule engine", error);
+  log.error("failed to start rule engine", error);
 });
 
 // Per-frame, per-rule footprint reporter — background aggregates across

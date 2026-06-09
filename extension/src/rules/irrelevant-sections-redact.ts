@@ -21,13 +21,14 @@ import {
 import { createApiKeyAvailability } from "../lib/availability";
 import { isInsidePlaceholder } from "../lib/dom-utils";
 import { classifyIrrelevantSections } from "../lib/llm-client";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { getPageTree } from "../lib/page-tree";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import { waitForSettle } from "../lib/wait-for-settle";
 import type { Rule } from "./types";
 
 const RULE_ID = "irrelevant-sections-redact";
+const log = createRuleLogger(RULE_ID);
 const SCROLL_DEBOUNCE_MS = 600;
 const SETTLE_TIMEOUT_MS = 3000;
 const SETTLE_QUIET_MS = 500;
@@ -148,14 +149,14 @@ function runClassification(): void {
   pruneReferences();
   const pageTree = serializePageTree();
   if (!pageTree) {
-    log("irrelevant-sections-redact skipped — empty page tree");
+    log.debug("irrelevant-sections-redact skipped — empty page tree");
     return;
   }
 
   const signal = lifecycleController.signal;
   classifyInFlight = true;
 
-  log("irrelevant-sections-redact classify start", {
+  log.debug("irrelevant-sections-redact classify start", {
     url: location.href,
     pageTreeBytes: pageTree.length,
   });
@@ -166,7 +167,7 @@ function runClassification(): void {
         return;
       }
 
-      log("irrelevant-sections-redact classify response", {
+      log.debug("irrelevant-sections-redact classify response", {
         count: response.irrelevant.length,
         entries: response.irrelevant,
       });
@@ -179,7 +180,7 @@ function runClassification(): void {
       }> = [];
       for (const entry of response.irrelevant) {
         if (seenRefs.has(entry.ref)) {
-          log("irrelevant-sections-redact ref skipped — duplicate", {
+          log.debug("irrelevant-sections-redact ref skipped — duplicate", {
             ref: entry.ref,
           });
           continue;
@@ -187,7 +188,7 @@ function runClassification(): void {
         seenRefs.add(entry.ref);
         const element = resolveReference(entry.ref);
         if (!element) {
-          log("irrelevant-sections-redact ref skipped — unresolved", {
+          log.debug("irrelevant-sections-redact ref skipped — unresolved", {
             ref: entry.ref,
             summary: entry.summary,
           });
@@ -195,7 +196,7 @@ function runClassification(): void {
         }
         const skipReason = checkHideable(element);
         if (skipReason !== null) {
-          log("irrelevant-sections-redact ref skipped — not hideable", {
+          log.debug("irrelevant-sections-redact ref skipped — not hideable", {
             ref: entry.ref,
             summary: entry.summary,
             reason: skipReason,
@@ -203,7 +204,7 @@ function runClassification(): void {
           });
           continue;
         }
-        log("irrelevant-sections-redact ref accepted as candidate", {
+        log.debug("irrelevant-sections-redact ref accepted as candidate", {
           ref: entry.ref,
           summary: entry.summary,
           element: describeElement(element),
@@ -220,20 +221,26 @@ function runClassification(): void {
         (candidate) => !outermost.includes(candidate),
       );
       for (const dropped of droppedByDedupe) {
-        log("irrelevant-sections-redact ref dropped by dedupe — has ancestor", {
-          ref: dropped.ref,
-          summary: dropped.summary,
-          element: describeElement(dropped.element),
-        });
+        log.debug(
+          "irrelevant-sections-redact ref dropped by dedupe — has ancestor",
+          {
+            ref: dropped.ref,
+            summary: dropped.summary,
+            element: describeElement(dropped.element),
+          },
+        );
       }
 
       let hiddenCount = 0;
       for (const { element, summary, ref } of outermost) {
         if (!element.isConnected) {
-          log("irrelevant-sections-redact ref skipped at hide — detached", {
-            ref,
-            summary,
-          });
+          log.debug(
+            "irrelevant-sections-redact ref skipped at hide — detached",
+            {
+              ref,
+              summary,
+            },
+          );
           continue;
         }
         const description = describeElement(element);
@@ -250,14 +257,14 @@ function runClassification(): void {
         placeholder.style.maxHeight = `${MAX_PLACEHOLDER_HEIGHT_PX}px`;
         placeholder.style.overflow = "hidden";
         hiddenCount++;
-        log("irrelevant-sections-redact ref hidden", {
+        log.debug("irrelevant-sections-redact ref hidden", {
           ref,
           summary,
           element: description,
         });
       }
 
-      log("irrelevant-sections-redact classify done", {
+      log.info("irrelevant-sections-redact classify done", {
         returned: response.irrelevant.length,
         candidates: candidates.length,
         deduped: outermost.length,
@@ -269,7 +276,9 @@ function runClassification(): void {
         return;
       }
       const message = error instanceof Error ? error.message : String(error);
-      log("irrelevant-sections-redact classify failed", { error: message });
+      log.error("irrelevant-sections-redact classify failed", {
+        error: message,
+      });
     })
     .finally(() => {
       classifyInFlight = false;
@@ -301,7 +310,7 @@ function stopScrollWatcher(): void {
 }
 
 function apply(_root: ParentNode): void {
-  log("irrelevant-sections-redact apply", { url: location.href });
+  log.info("irrelevant-sections-redact apply", { url: location.href });
   const signal = lifecycleController.signal;
 
   void waitForSettle({
@@ -310,10 +319,10 @@ function apply(_root: ParentNode): void {
     signal,
   }).then(() => {
     if (signal.aborted) {
-      log("irrelevant-sections-redact aborted before classify");
+      log.debug("irrelevant-sections-redact aborted before classify");
       return;
     }
-    log("irrelevant-sections-redact page settled — classifying");
+    log.info("irrelevant-sections-redact page settled — classifying");
     runClassification();
     startScrollWatcher();
   });

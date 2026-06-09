@@ -32,12 +32,13 @@ import {
   RULE_ATTR,
 } from "../lib/dom-markers";
 import { findInnermostMatches } from "../lib/dom-utils";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "cart-addon-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const FLAG_CLASS = "abs-cart-addon-annotate";
 
@@ -189,7 +190,7 @@ function scanAndFlag(root: ParentNode): void {
   for (const candidate of candidates) {
     flag(candidate);
   }
-  log("cart add-ons flagged", {
+  log.info("cart add-ons flagged", {
     count: candidates.length,
     labels: candidates.map((c) => c.label),
     url: globalThis.location.href,

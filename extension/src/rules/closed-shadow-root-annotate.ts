@@ -87,13 +87,14 @@
 
 import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "closed-shadow-root-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
@@ -192,7 +193,7 @@ function ensureLandmark(): void {
       document.body.prepend(buildLandmark());
     },
   );
-  log("closed-shadow-root-annotate landmark added", {
+  log.info("closed-shadow-root-annotate landmark added", {
     host: globalThis.location.hostname,
   });
   // Per-document dedupe: the landmark short-circuit above ensures we only

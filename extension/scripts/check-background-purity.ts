@@ -98,7 +98,7 @@ export function checkBackgroundPurity(): void {
       `${relative(ROOT, BUNDLE)} leaks ${leaks.length} rule implementation file(s):\n${sample}${tail}\n\n` +
         "The background service worker must not import rule files. Check that " +
         "any new lib/* code in the background's import graph uses " +
-        "`rules/rule-defaults.generated` for RuleId/RULE_IDS rather than " +
+        "`rules/rule-metadata` for RuleId/RULE_IDS rather than " +
         "`rules/index.ts`.",
     );
   }

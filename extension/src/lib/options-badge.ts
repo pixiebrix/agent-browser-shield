@@ -1,6 +1,7 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { log } from "./log";
 import { optionsButtonStorage } from "./options-button-toggle";
 
 const BADGE_SELECTOR = "data-abs";
@@ -54,7 +55,7 @@ function injectBadge(): void {
     chrome.runtime
       .sendMessage({ type: "open-options" })
       .catch((error: unknown) => {
-        console.error("[abs] failed to open options page", error);
+        log.error("failed to open options page", error);
       });
   });
 

@@ -1,0 +1,8 @@
+{
+  "reviews-redact": false,
+  "ads-hide": false,
+  "irrelevant-sections-redact": true,
+
+  "optionsButton": true,
+  "runOnInactiveTabs": false
+}

@@ -50,12 +50,13 @@ import {
   FORM_PREFILL_ANNOTATED_ATTR as FLAGGED_ATTR,
   RULE_ATTR,
 } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "form-prefill-annotate" as const;
+const log = createRuleLogger(RULE_ID);
 
 const FLAG_CLASS = "abs-form-prefill-annotate";
 
@@ -608,7 +609,7 @@ function scanAndFlag(root: ParentNode): void {
     flag(candidate);
     count++;
   }
-  log("form prefills flagged", {
+  log.info("form prefills flagged", {
     count,
     kinds: candidates.map((c) => c.kind),
     url: globalThis.location.href,

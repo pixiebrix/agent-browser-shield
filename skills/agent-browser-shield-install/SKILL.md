@@ -179,7 +179,8 @@ JSON override file instead of using the hosted ZIP.
 
 1. Write a JSON file mapping rule ids to booleans, plus any of the reserved
    non-rule keys below. Rules not listed keep their committed default from
-   `extension/data/rule-defaults.json`:
+   `extension/src/rules/rule-metadata.ts`. A starting template lives at
+   `extension/data/defaults-overrides.example.json`:
 
    ```json
    {

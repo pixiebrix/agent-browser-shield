@@ -16,13 +16,14 @@
 // by `bun run build-site-data`.
 
 import { RULE_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { traceMutation } from "../lib/trace-mutation";
 import { SEARCH_URL_HELPER_RECIPES } from "./site-data.generated";
 import type { Rule } from "./types";
 
 const RULE_ID = "search-url-helper" as const;
+const log = createRuleLogger(RULE_ID);
 
 const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
@@ -73,7 +74,7 @@ function apply(_root: ParentNode): void {
       document.body.prepend(buildLandmark(recipe));
     },
   );
-  log("search-url-helper applied", {
+  log.info("search-url-helper applied", {
     host: globalThis.location.hostname,
     recipeLength: recipe.length,
   });

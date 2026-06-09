@@ -48,7 +48,7 @@ async function isRegistered(): Promise<boolean> {
     // getRegisteredContentScripts throws if no script with the id exists
     // in some Chrome versions; treat that as "not registered" rather than
     // a failure mode that prevents registration.
-    log("webdriver-probe registration: getRegistered threw", { error });
+    log.warn("webdriver-probe registration: getRegistered threw", { error });
     return false;
   }
 }
@@ -70,20 +70,20 @@ async function register(): Promise<void> {
         persistAcrossSessions: true,
       },
     ]);
-    log("webdriver-probe registered at document_start (main world)");
+    log.info("webdriver-probe registered at document_start (main world)");
   } catch (error) {
-    log("webdriver-probe registration failed", { error });
+    log.error("webdriver-probe registration failed", { error });
   }
 }
 
 async function unregister(): Promise<void> {
   try {
     await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
-    log("webdriver-probe unregistered");
+    log.info("webdriver-probe unregistered");
   } catch (error) {
     // Unregister fails if the script wasn't registered to begin with;
     // that's a benign state, not a problem.
-    log("webdriver-probe unregister no-op", { error });
+    log.debug("webdriver-probe unregister no-op", { error });
   }
 }
 

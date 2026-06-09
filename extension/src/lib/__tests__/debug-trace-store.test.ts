@@ -41,6 +41,14 @@ function appEntry(segmentId: number): DebugTraceEntry {
   };
 }
 
+function navEntry(url: string | null): DebugTraceEntry {
+  return {
+    type: "navigation",
+    url,
+    timestamp: Date.now(),
+  };
+}
+
 beforeEach(async () => {
   await __clearAllForTesting();
   __resetDebugTraceStoreForTesting();
@@ -100,5 +108,25 @@ describe("debug-trace store", () => {
     // a developer would weigh against exporting the trace.
     expect(tab1.byteSize).toBeGreaterThan(tab2.byteSize);
     expect(empty.byteSize).toBe(0);
+  });
+
+  it("navigation entries persist and contribute to byteSize but not eventCount", async () => {
+    await appendEvent(1, 0, navEntry("https://example.com/a"));
+    await appendEvent(1, 0, appEntry(1));
+    await appendEvent(1, 0, navEntry("https://example.com/b"));
+
+    const stored = await getEventsForTab(1);
+    expect(stored.map((record) => record.entry.type)).toEqual([
+      "navigation",
+      "rule-application",
+      "navigation",
+    ]);
+
+    const stats = await getTabStats(1);
+    // Only the rule-application contributes to eventCount; navigation
+    // markers are bookkeeping like segment markers.
+    expect(stats.eventCount).toBe(1);
+    // All three entries contribute to the on-disk footprint readout.
+    expect(stats.byteSize).toBeGreaterThan(JSON.stringify(appEntry(1)).length);
   });
 });

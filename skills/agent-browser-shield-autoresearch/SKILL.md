@@ -32,8 +32,8 @@ If the user already has a run in hand and just wants the *why*, hand off to
 - `output/agent-browser-shield-extension.zip` is auto-rebuilt by
   `compare_scenarios.py` before each run (codegen + bundle + zip, \<2s on a
   clean tree), so source edits in `extension/src/rules/`,
-  `extension/data/sites/`, or `extension/data/rule-defaults.json` take effect on
-  the next comparison. Pass `--no-rebuild-extension` to opt out (useful when
+  `extension/data/sites/`, or `extension/src/rules/rule-metadata.ts` take effect
+  on the next comparison. Pass `--no-rebuild-extension` to opt out (useful when
   `--extension-zip` is pinned to a release artifact).
 - `OPENAI_API_KEY` is in `.env` (the judge always calls OpenAI directly,
   regardless of the agent model).
@@ -174,7 +174,7 @@ artificially attractive?
 
 Map what you observed to a concrete change. Pick one of:
 
-- **Tighten a built-in rule default** — `extension/data/rule-defaults.json`.
+- **Tighten a built-in rule default** — `extension/src/rules/rule-metadata.ts`.
   Disable a rule that's hurting more than it helps, or enable one that's
   off-by-default but would help.
 - **Add a site-specific rule** — `extension/data/sites/<host>.yaml`. Hand off to
@@ -205,13 +205,11 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
 
 ### Where each change lives
 
-- **Default rule toggles** — `extension/data/rule-defaults.json`. Flat map of
-  `<rule-id>` to boolean. The codegen
-  (`extension/scripts/build-rule-defaults.ts`) validates that every registered
-  id has a default and rejects unknown ids; do not edit the generated
-  `extension/src/rules/rule-defaults.generated.ts`. To flip
-  `irrelevant-sections-redact` on for one experiment, change `false` to `true`
-  here and rebuild.
+- **Default rule toggles** — `extension/src/rules/rule-metadata.ts`. Hand-
+  edited flat map of `<rule-id>` to boolean. The catalog test in
+  `extension/src/rules/__tests__/catalog.test.ts` enforces that every registered
+  id has a default and rejects unknown ids. To flip `irrelevant-sections-redact`
+  on for one experiment, change `false` to `true` here and rebuild.
 
 - **Site-specific rules** — `extension/data/sites/<host>.yaml`. Codegen
   (`extension/scripts/build-site-data.ts`) validates each YAML against
@@ -230,9 +228,9 @@ with no manual rebuild step. Pass `--no-rebuild-extension` only when
   is anchored.
 
 - **New defense rule** — create `extension/src/rules/<new-id>.ts`, import + add
-  it to the tuple in `extension/src/rules/index.ts`, add a default to
-  `extension/data/rule-defaults.json`. See the `agent-browser-shield` skill for
-  the rule contract.
+  it to the tuple in `extension/src/rules/index.ts`, add an entry to
+  `extension/src/rules/rule-metadata.ts`. See the `agent-browser-shield` skill
+  for the rule contract.
 
   Rule IDs are `<target>-<verb>`. Pick the verb by what the rule does to the
   DOM, not the threat:
@@ -267,8 +265,8 @@ invokes all three codegens automatically.
 Before drawing conclusions from the re-run, confirm the change is actually in
 the bundle:
 
-- For default toggles or new rules: grep the rebuilt
-  `extension/src/rules/rule-defaults.generated.ts` for the id.
+- For default toggles or new rules: grep `extension/src/rules/rule-metadata.ts`
+  for the id.
 - For site rules: grep `extension/src/rules/site-data.generated.ts` for the host
   or selector.
 - For built-in rule code edits: `bun run test -- <rule-id>` (or
@@ -341,8 +339,8 @@ verify:
 > agent followed in rep 2. Footer stripping accounts for the other -1,400 bytes
 > per article-page tree.
 >
-> **Proposal**: keep `search-url-helper` enabled (`rule-defaults.json` shows
-> it's already true). Optionally add more Wikipedia URL templates to
+> **Proposal**: keep `search-url-helper` enabled (`rule-metadata.ts` shows it's
+> already true). Optionally add more Wikipedia URL templates to
 > `extension/data/sites/wikipedia.yaml` if other reps had been searching from
 > non-Main_Page entry points. Evidence: `output/results/cmp_<id>/cost_diff.md`,
 > `output/results/cmp_<id>/traces/.../steps.json` step 4.

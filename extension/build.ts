@@ -5,7 +5,6 @@ import { readFileSync } from "node:fs";
 import { cp, mkdir, rm } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import { generateInjectionPatterns } from "./scripts/build-injection-patterns";
-import { generateRuleDefaults } from "./scripts/build-rule-defaults";
 import { generateSiteData } from "./scripts/build-site-data";
 import { checkBackgroundPurity } from "./scripts/check-background-purity";
 import { loadDefaultOverrides } from "./scripts/load-default-overrides";
@@ -83,19 +82,16 @@ const defaultsEnvPath = readEnvValue("EXTENSION_DEFAULTS_FILE");
 const defaultsPath = defaultsFlagPath ?? (defaultsEnvPath || undefined);
 
 async function build(): Promise<void> {
-  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml,
-  // src/rules/injection-patterns.generated.ts from data/injection-patterns.yaml,
-  // and src/rules/rule-defaults.generated.ts from data/rule-defaults.json.
+  // Regenerate src/rules/site-data.generated.ts from data/sites/*.yaml and
+  // src/rules/injection-patterns.generated.ts from data/injection-patterns.yaml.
   // Cheap and idempotent; ensures dev never forgets to rerun codegen.
   generateSiteData();
   generateInjectionPatterns();
-  generateRuleDefaults();
 
   // Resolve the optional --defaults / EXTENSION_DEFAULTS_FILE override
-  // against the codegen output's RULE_DEFAULTS so the validator knows the
-  // current rule registry. Importing the generated file after codegen above
-  // means the rule id set is always fresh.
-  const { RULE_DEFAULTS } = await import("./src/rules/rule-defaults.generated");
+  // against the hand-edited RULE_DEFAULTS so the validator knows the current
+  // rule registry.
+  const { RULE_DEFAULTS } = await import("./src/rules/rule-metadata");
   const knownRuleIds = Object.keys(RULE_DEFAULTS);
   const overrides = defaultsPath
     ? loadDefaultOverrides({

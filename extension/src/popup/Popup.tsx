@@ -85,8 +85,8 @@ export function Popup() {
         <span className="popup-toggle__text">
           <strong>Debug trace</strong>
           <span className="popup-toggle__hint">
-            Captures DOM snippets of removed content for debugging. Stored only
-            in this browser.
+            Captures DOM snippets of removed content and verbose console logs
+            for debugging. Stored only in this browser.
           </span>
         </span>
         <span className="switch" role="presentation">

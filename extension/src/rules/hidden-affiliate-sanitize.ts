@@ -46,12 +46,13 @@
 
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { HIDDEN_AFFILIATE_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
-import { log } from "../lib/log";
+import { createRuleLogger } from "../lib/log";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "hidden-affiliate-sanitize" as const;
+const log = createRuleLogger(RULE_ID);
 
 // Curated attribution name patterns. Whole-name regex match against
 // `input.name` (case-insensitive). Each entry pulls double duty in the
@@ -315,7 +316,7 @@ function scanAndClear(root: ParentNode): void {
     tryClearInput(input, outcome);
   }
   if (outcome.cleared > 0) {
-    log("hidden affiliate values cleared", {
+    log.info("hidden affiliate values cleared", {
       count: outcome.cleared,
       names: outcome.names,
       url: globalThis.location.href,
