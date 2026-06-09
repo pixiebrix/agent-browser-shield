@@ -90,8 +90,11 @@ async function build(): Promise<void> {
 
   // Resolve the optional --defaults / EXTENSION_DEFAULTS_FILE override
   // against the hand-edited RULE_DEFAULTS so the validator knows the current
-  // rule registry.
-  const { RULE_DEFAULTS } = await import("./src/rules/rule-metadata");
+  // rule registry. RULE_OPTION_DEFAULTS supplies the per-rule option shapes
+  // for any rule that takes ESLint-style sub-rule configuration.
+  const { RULE_DEFAULTS, RULE_OPTION_DEFAULTS } = await import(
+    "./src/rules/rule-metadata"
+  );
   const knownRuleIds = Object.keys(RULE_DEFAULTS);
   const overrides = defaultsPath
     ? loadDefaultOverrides({
@@ -99,11 +102,13 @@ async function build(): Promise<void> {
           ? defaultsPath
           : resolve(process.cwd(), defaultsPath),
         knownRuleIds,
+        ruleOptionDefaults: RULE_OPTION_DEFAULTS,
       })
-    : { rules: {} };
+    : { rules: {}, ruleOptions: {} };
   if (defaultsPath) {
     const changed =
       Object.keys(overrides.rules).length +
+      Object.keys(overrides.ruleOptions).length +
       (overrides.optionsButton === undefined ? 0 : 1) +
       (overrides.runOnInactiveTabs === undefined ? 0 : 1) +
       (overrides.debugTrace === undefined ? 0 : 1) +
@@ -171,6 +176,9 @@ async function build(): Promise<void> {
       ),
       "process.env.EXTENSION_DEFAULT_OVERRIDES": JSON.stringify(
         JSON.stringify(overrides.rules),
+      ),
+      "process.env.EXTENSION_RULE_OPTIONS": JSON.stringify(
+        JSON.stringify(overrides.ruleOptions),
       ),
       "process.env.EXTENSION_OPTIONS_BUTTON_DEFAULT": JSON.stringify(
         overrides.optionsButton === undefined

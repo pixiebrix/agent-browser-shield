@@ -48,8 +48,18 @@ shield release.
   substitution.
 - **FR-2.** The override file is a **flat JSON object**. Keys are either:
   - a registered rule ID mapped to a boolean (same shape as the Options-page
-    export), or
+    export),
+  - a registered rule ID mapped to an ESLint-style object
+    `{ "enabled"?: boolean, ...subRuleOptions }` for rules whose behaviour is
+    governed by sub-rule options (FR-2a), or
   - one of the reserved non-rule keys (FR-3).
+- **FR-2a.** Rules listed in `extension/src/rules/rule-metadata.ts`'s
+  `RULE_OPTION_DEFAULTS` may take an object value. `enabled` is optional and
+  projects back onto the flat boolean storage shape (Options-page export stays
+  flat-boolean). Sub-rule keys map to booleans only and are validated against
+  the rule's declared option-shape tree; the partial object merges over the
+  committed defaults so omitted sub-rules keep their defaults. Object values for
+  rules without declared options fail the build (FR-4).
 - **FR-3.** Reserved non-rule keys:
   - `optionsButton` (boolean, default **off**) — start with the floating on-page
     options button enabled.
@@ -65,8 +75,10 @@ shield release.
     the light default. Default off while the visual heuristic is still being
     tuned; the same toggle is exposed in the Options page under *Placeholder
     display* (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
-- **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key) and
-  non-boolean values fail the build with a message naming them.
+- **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key),
+  unknown sub-rule keys under a rule object, object values for rules without
+  declared options, and non-boolean values at any leaf position fail the build
+  with a message naming the offending paths.
 - **FR-5.** The override file may be partial; rules not listed keep the
   committed default from `extension/src/rules/rule-metadata.ts`.
 - **FR-6.** Build-time overrides only affect **fresh** `chrome.storage`. Users
@@ -86,9 +98,11 @@ shield release.
   literals at build time so the shipped JS contains no runtime `atob` of
   obfuscated strings. See
   [ADR-0011](../decisions/0011-build-time-decoded-injection-patterns.md).
-- **NFR-S-2.** The build-time `EXTENSION_DEFAULT_OVERRIDES` value is parsed at
-  content-script startup via `JSON.parse` and validated per-rule-ID; a malformed
-  value silently degrades to "no overrides" rather than crashing the engine.
+- **NFR-S-2.** The build-time `EXTENSION_DEFAULT_OVERRIDES` and
+  `EXTENSION_RULE_OPTIONS` values are parsed at content-script startup via
+  `JSON.parse` and validated against the rule registry / option-shape tree
+  respectively; a malformed value silently degrades to "no overrides" rather
+  than crashing the engine.
 - **NFR-M-1.** Rule defaults and IDs live in a single hand-edited file
   (`extension/src/rules/rule-metadata.ts`). The `catalog.test.ts` invariant
   enforces parity with `rules/index.ts`. See
@@ -109,6 +123,11 @@ shield release.
   `extension/src/lib/run-on-inactive-tabs.ts`,
   `extension/src/lib/debug-trace.ts`,
   `extension/src/lib/placeholder-adaptive-palette.ts`.
+- FR-2a: `extension/src/rules/rule-metadata.ts` (`RULE_OPTION_DEFAULTS`),
+  `extension/scripts/load-default-overrides.ts` (sub-rule validation),
+  `extension/src/lib/rule-options.ts` (`getRuleOptions`, parses
+  `EXTENSION_RULE_OPTIONS`). First consumer:
+  `extension/src/rules/encoded-payload-redact.ts`.
 - FR-5, FR-6: `extension/src/lib/storage.ts` (`parseOverrides`,
   `DEFAULT_STATES`).
 - Default source-of-truth: `extension/src/rules/rule-metadata.ts`, validated by

@@ -27,7 +27,7 @@ jest.mock("abort-utils", () => ({
 import { RULE_GROUPS } from "../../lib/rule-groups";
 import { RULE_LABELS } from "../../popup/rule-labels";
 import { RULE_IDS, RULES } from "..";
-import { RULE_DEFAULTS } from "../rule-metadata";
+import { RULE_DEFAULTS, RULE_OPTION_DEFAULTS } from "../rule-metadata";
 
 describe("rule catalog invariants", () => {
   it("ships at least one rule", () => {
@@ -133,6 +133,41 @@ describe("rule catalog invariants", () => {
       popup: labels[rule.id],
     }));
     expect(mismatches).toEqual([]);
+  });
+
+  // RULE_OPTION_DEFAULTS declares the ESLint-style sub-rule shape consumed by
+  // the build-time defaults loader. Every rule with options must also be in
+  // RULE_DEFAULTS (so the loader doesn't dangle); every leaf of the option
+  // tree must be a boolean (the loader and runtime accessor both assume that
+  // shape).
+  it("RULE_OPTION_DEFAULTS keys all appear in RULE_DEFAULTS", () => {
+    const missing = Object.keys(RULE_OPTION_DEFAULTS).filter(
+      (id) => !(id in RULE_DEFAULTS),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("RULE_OPTION_DEFAULTS sub-rule trees only contain boolean leaves", () => {
+    function findNonBooleanLeaves(node: unknown, prefix: string): string[] {
+      if (typeof node === "boolean") {
+        return [];
+      }
+      if (node === null || typeof node !== "object" || Array.isArray(node)) {
+        return [prefix];
+      }
+      const issues: string[] = [];
+      for (const [key, value] of Object.entries(
+        node as Record<string, unknown>,
+      )) {
+        issues.push(...findNonBooleanLeaves(value, `${prefix}.${key}`));
+      }
+      return issues;
+    }
+    const offenders: string[] = [];
+    for (const [id, options] of Object.entries(RULE_OPTION_DEFAULTS)) {
+      offenders.push(...findNonBooleanLeaves(options, id));
+    }
+    expect(offenders).toEqual([]);
   });
 
   // Reactive availability accessors must expose both `get` and `subscribe`
