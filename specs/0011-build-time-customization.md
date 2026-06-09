@@ -146,6 +146,7 @@ shield release.
 
 - ADRs: [ADR-0009](../decisions/0009-rule-defaults-and-build-time-overrides.md),
   [ADR-0011](../decisions/0011-build-time-decoded-injection-patterns.md),
+  [ADR-0016](../decisions/0016-eslint-style-per-rule-options-shape.md),
   [ADR-0013](../decisions/0013-background-worker-purity-canary.md).
 - Docs:
   [`docs/src/content/docs/install.md`](../docs/src/content/docs/install.md)

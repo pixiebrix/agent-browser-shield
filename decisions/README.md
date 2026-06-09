@@ -29,6 +29,7 @@ that is not supported by one of those citations.
 | [0013](./0013-background-worker-purity-canary.md)           | Keep rule files out of the background service worker; enforce with a build-time purity canary | Accepted                                          |
 | [0014](./0014-css-first-hide-for-selector-only-rules.md)    | CSS-first hide for selector-only `removeEntirely` rules                                       | Accepted                                          |
 | [0015](./0015-calver-workflow-driven-release.md)            | CalVer + `workflow_dispatch`-driven extension release                                         | Accepted                                          |
+| [0016](./0016-eslint-style-per-rule-options-shape.md)       | ESLint-style per-rule build-time options shape                                                | Accepted                                          |
 
 ## Conventions
 
