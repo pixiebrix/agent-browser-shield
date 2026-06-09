@@ -146,6 +146,14 @@ async function build(): Promise<void> {
       // on. See `lib/shadow-root-probe-source.ts` and
       // `lib/shadow-root-probe-registration.ts`.
       join(SRC, "shadow-root-probe.ts"),
+      // Standalone main-world bundle registered by the background worker
+      // whenever the debug-trace toggle is on. Exposes
+      // `window.__abs_dumpTrace()` for CDP-driven harnesses to scrape
+      // the IDB-backed trace mid-flow via `Runtime.evaluate` without
+      // needing the popup's Export button. See
+      // `lib/dump-trace-bridge-source.ts` and
+      // `lib/dump-trace-bridge-registration.ts`.
+      join(SRC, "dump-trace-bridge.ts"),
     ],
     outdir: DIST,
     target: "browser",

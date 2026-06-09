@@ -208,6 +208,16 @@ If none of those markers appear, the extension is not attached:
 - *Browserbase:* confirm the session was created with the `extensionId` from
   step 2 — there's no way to add the extension to an already-running session.
 
+## Investigating a false positive
+
+When a shield rule hides, masks, or rewrites something it shouldn't have, turn
+on the debug-trace recorder and pull the per-tab mutation record via
+`window.__abs_dumpTrace()` over the same CDP connection OpenClaw is using. Each
+entry tells you which rule fired, what it matched, and the `outerHTML` before
+and after the mutation — enough to reproduce the diagnosis offline. See
+[Debug trace](/agent-browser-shield/debug-trace/) for the recipes and event
+schema.
+
 ## Why not OpenClaw's managed profile?
 
 OpenClaw's `openclaw` profile launches a dedicated Chromium under its own

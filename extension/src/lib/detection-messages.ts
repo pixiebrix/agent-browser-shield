@@ -192,3 +192,26 @@ export interface DebugTraceEventMessage {
   type: "debug-trace-event";
   entry: DebugTraceEntry;
 }
+
+// Stored shape returned by `getEventsForTab`. Mirrors the `StoredEvent`
+// interface in `debug-trace-store.ts`; kept structurally parallel here
+// (instead of importing) so this messages module stays free of the IDB
+// dependency the rule modules don't need to pull in.
+export interface DebugTraceStoredEntry {
+  tabId: number;
+  frameId: number;
+  addedAt: number;
+  entry: DebugTraceEntry;
+}
+
+// Page-world bridge → background round-trip for `window.__abs_dumpTrace`.
+// The tabId comes from `sender.tab?.id` in the background — there is no
+// cross-tab caller, so the request body is empty other than the type
+// discriminator.
+export interface GetTabDebugTraceRequest {
+  type: "get-tab-debug-trace";
+}
+
+export interface GetTabDebugTraceResponse {
+  entries: DebugTraceStoredEntry[];
+}

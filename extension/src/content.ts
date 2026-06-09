@@ -1,6 +1,7 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
+import { startDumpTraceContentBridge } from "./lib/dump-trace-content-bridge";
 import { isTopFrame } from "./lib/frame";
 import { log } from "./lib/log";
 import { startOptionsBadge } from "./lib/options-badge";
@@ -39,4 +40,11 @@ startSegmentTracker();
 
 if (isTopFrame()) {
   startOptionsBadge();
+  // Isolated-world half of the `window.__abs_dumpTrace` bridge. The
+  // page-world half is registered separately by background when the
+  // debug-trace toggle is on; this listener is idle until a page
+  // actually calls the function (which only exists when the page-world
+  // half is registered). The returned unsubscribe handle is only used
+  // by tests — production runs for the document lifetime.
+  void startDumpTraceContentBridge();
 }

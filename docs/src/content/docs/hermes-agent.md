@@ -118,6 +118,16 @@ shield is loaded in the Chrome instance running against
 default profile. `/browser status` from the Hermes CLI confirms the CDP
 endpoint.
 
+## Investigating a false positive
+
+When a shield rule hides, masks, or rewrites something it shouldn't have, turn
+on the debug-trace recorder and pull the per-tab mutation record via
+`window.__abs_dumpTrace()` over the same CDP connection Hermes is using. Each
+entry tells you which rule fired, what it matched, and the `outerHTML` before
+and after the mutation — enough to reproduce the diagnosis offline. See
+[Debug trace](/agent-browser-shield/debug-trace/) for the recipes and event
+schema.
+
 ## Why not Hermes' default browser providers?
 
 Hermes' first-party browser providers — Browserbase via its own session manager,

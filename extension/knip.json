@@ -9,6 +9,7 @@
     "src/webdriver-probe.ts",
     "src/checkout-checkbox-defense.ts",
     "src/shadow-root-probe.ts",
+    "src/dump-trace-bridge.ts",
     "eslint-rules/index.js"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "eslint-rules/**/*.js"],
