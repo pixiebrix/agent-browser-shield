@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { load } from "js-yaml";
 import { z } from "zod";
+import { fileHasContent } from "./file-has-content";
 
 const ROOT = join(import.meta.dir, "..");
 const INPUT = join(ROOT, "data", "injection-patterns.yaml");
@@ -100,7 +101,13 @@ export function generateInjectionPatterns(): void {
     return { name: entry.name, source, flags: entry.flags };
   });
 
-  writeFileSync(OUTPUT, buildOutput(entries));
+  // Skip the write when nothing changed: the output lives under `src/`, which
+  // `build.ts --watch` watches recursively, so an unconditional write would
+  // re-trigger the watcher and loop forever. See ./file-has-content.
+  const output = buildOutput(entries);
+  if (!fileHasContent(OUTPUT, output)) {
+    writeFileSync(OUTPUT, output);
+  }
   console.log(
     `Generated ${relative(ROOT, OUTPUT)} from ${entries.length} patterns.`,
   );
