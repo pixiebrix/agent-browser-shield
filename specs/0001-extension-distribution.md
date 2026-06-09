@@ -37,8 +37,10 @@ Web Store install, prebuilt ZIP, and build-from-source paths.
 
 - **FR-1.** A published build is available on the Chrome Web Store under
   extension ID `gnejacdioaelglahihpagpfjpddpnamd`.
-- **FR-2.** The extension targets **Chromium 148+** (any Chromium-based browser:
-  Chrome, Edge, Brave, Arc, Opera).
+- **FR-2.** The extension targets the **latest stable Chromium** release (any
+  Chromium-based browser: Chrome, Edge, Brave, Arc, Opera). The current
+  `minimum_chrome_version` in `extension/src/manifest.json` tracks that baseline
+  and is bumped as the stable channel advances.
 - **FR-3.** Every GitHub Release attaches a prebuilt ZIP at the conventional URL
   `https://github.com/pixiebrix/agent-browser-shield/releases/latest/download/agent-browser-shield-extension.zip`.
   `manifest.json` sits at the ZIP root; the archive can be uploaded to
@@ -69,7 +71,8 @@ Web Store install, prebuilt ZIP, and build-from-source paths.
 
 ## Current implementation
 
-- FR-1, FR-2: `extension/src/manifest.json` (`minimum_chrome_version: 148`).
+- FR-1, FR-2: `extension/src/manifest.json` (`minimum_chrome_version` tracks the
+  latest stable Chromium release at the time of the build).
 - FR-3: GitHub Releases workflow; see
   [ADR-0015](../decisions/0015-calver-workflow-driven-release.md).
 - FR-4, FR-5: `extension/package.json` scripts (`build`, `package`, `watch`),
