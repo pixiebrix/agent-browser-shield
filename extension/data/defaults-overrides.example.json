@@ -3,6 +3,15 @@
   "ads-hide": false,
   "irrelevant-sections-redact": true,
 
+  "encoded-payload-redact": {
+    "enabled": true,
+    "subRules": {
+      "leetspeak": false,
+      "nato": false,
+      "morse": false
+    }
+  },
+
   "optionsButton": true,
   "runOnInactiveTabs": false,
   "debugTrace": false,

@@ -224,11 +224,28 @@ JSON override file instead of using the hosted ZIP.
    EXTENSION_DEFAULTS_FILE=/abs/path/to/defaults.json bun run build
    ```
 
-3. Unknown keys (neither a registered rule id nor a reserved key) and
-   non-boolean values fail the build with a clear error — catch typos before
-   shipping.
+3. Rules with sub-rule options accept an ESLint-style object value in addition
+   to a plain boolean. Today only `encoded-payload-redact` takes options (one
+   sub-rule per encoding family: `base64`, `hex`, `percent`,
+   `substitutionCipher`, `leetspeak`, `nato`, `morse`); turn off the
+   higher-false-positive text ciphers without losing the byte-encoding coverage:
 
-4. Package and deploy as usual (`bun run package` then upload via Path A / B / C
+   ```json
+   {
+     "encoded-payload-redact": {
+       "enabled": true,
+       "subRules": { "leetspeak": false, "nato": false, "morse": false }
+     }
+   }
+   ```
+
+   `enabled` is optional; omitted sub-rules keep their committed default.
+
+4. Unknown keys (rule ids, reserved keys, or sub-rule fields), object values for
+   rules without declared sub-rule options, and non-boolean values fail the
+   build with a clear error — catch typos before shipping.
+
+5. Package and deploy as usual (`bun run package` then upload via Path A / B / C
    above). The overrides are baked into the bundle.
 
 Build-time overrides apply only when `chrome.storage` is empty (fresh session).

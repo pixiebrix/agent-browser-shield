@@ -123,9 +123,38 @@ set of reserved keys is also accepted for non-rule build-time toggles:
   display* section so humans can flip it without rebuilding. Enable for
   deployments on consistently dark UIs.
 
+A handful of rules expose sub-rule options in addition to the plain on/off
+toggle. For those, a rule's value may be an ESLint-style object instead of a
+boolean:
+
+```json
+{
+  "encoded-payload-redact": {
+    "enabled": true,
+    "subRules": {
+      "leetspeak": false,
+      "nato": false,
+      "morse": false
+    }
+  }
+}
+```
+
+`enabled` is optional — when absent, the rule's committed default state is used.
+Sub-rule fields are merged over the committed sub-rule defaults; omitted
+sub-rules keep their default state. The rules that take sub-rule options and the
+fields each accepts are declared in
+[`extension/src/rules/rule-metadata.ts`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/src/rules/rule-metadata.ts)
+under `RULE_OPTION_DEFAULTS`. Today the only rule that takes options is
+`encoded-payload-redact`, which exposes one sub-rule per encoding family
+(`base64`, `hex`, `percent`, `substitutionCipher`, `leetspeak`, `nato`, `morse`)
+— useful for turning off the higher-false-positive text ciphers without losing
+coverage of the byte encodings.
+
 The file may be partial; rules not listed keep the committed default. Unknown
-keys (neither a registered rule id nor a reserved key) and non-boolean values
-fail the build with a message naming them.
+keys (rule ids, reserved keys, or sub-rule fields), object values for rules
+without declared sub-rule options, and non-boolean values fail the build with a
+message naming the offending paths.
 
 Build-time overrides only affect **fresh** `chrome.storage` — users who already
 toggled rules in the Options UI keep their preferences. The typical target is

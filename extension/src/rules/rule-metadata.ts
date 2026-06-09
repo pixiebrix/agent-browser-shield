@@ -56,3 +56,50 @@ export const RULE_DEFAULTS = {
 export type RuleId = keyof typeof RULE_DEFAULTS;
 
 export const RULE_IDS = Object.keys(RULE_DEFAULTS) as readonly RuleId[];
+
+// Per-rule build-time options. Rules whose behaviour is governed by more than
+// a single on/off toggle declare their option shape here. The override file
+// loader (`scripts/load-default-overrides.ts`) accepts an object value for any
+// rule listed below and validates it against this shape; rules absent from
+// this map only accept a plain boolean (existing behaviour).
+//
+// Sub-rule keys map to booleans only — option groups are nested objects of
+// booleans. The structure stays pure data so this module is safe to import
+// from the service worker (see file header).
+export const RULE_OPTION_DEFAULTS = {
+  "encoded-payload-redact": {
+    // Each sub-rule corresponds to one of the encoded-content detectors in
+    // `rules/encoded-payload-redact.ts` (`collectMatches`). The three
+    // substitution-cipher decoders (ROT13 / Atbash / reverse) share a single
+    // toggle because they share the candidate window and first-match-wins
+    // resolution; users disable them together or not at all.
+    subRules: {
+      base64: true,
+      hex: true,
+      percent: true,
+      substitutionCipher: true,
+      leetspeak: true,
+      nato: true,
+      morse: true,
+    },
+  },
+} as const satisfies Readonly<
+  Partial<
+    Record<RuleId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
+  >
+>;
+
+// `as const` narrows every leaf to the literal `true`, which would force
+// `no-unnecessary-condition` to flag every sub-rule gate at the call site
+// (the resolved option is intentionally `boolean` so the override file can
+// flip it to `false`). Widen booleans back to `boolean` at the type level.
+type WidenBooleanLeaves<T> = {
+  [K in keyof T]: T[K] extends boolean
+    ? boolean
+    : T[K] extends object
+      ? WidenBooleanLeaves<T[K]>
+      : T[K];
+};
+
+export type RuleOptions = WidenBooleanLeaves<typeof RULE_OPTION_DEFAULTS>;
+export type RuleWithOptionsId = keyof RuleOptions;

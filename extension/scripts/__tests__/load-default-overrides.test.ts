@@ -34,6 +34,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: { "pii-redact": true, "reviews-redact": false },
+      ruleOptions: {},
     });
   });
 
@@ -41,7 +42,7 @@ describe("loadDefaultOverrides", () => {
     const file = writeFile("empty.json", "{}");
     expect(
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
-    ).toEqual({ rules: {} });
+    ).toEqual({ rules: {}, ruleOptions: {} });
   });
 
   it("extracts the optionsButton reserved key alongside rules", () => {
@@ -53,6 +54,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: { "pii-redact": true },
+      ruleOptions: {},
       optionsButton: false,
     });
   });
@@ -66,6 +68,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: {},
+      ruleOptions: {},
       optionsButton: true,
     });
   });
@@ -89,6 +92,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: { "pii-redact": true },
+      ruleOptions: {},
       runOnInactiveTabs: true,
     });
   });
@@ -112,6 +116,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: { "pii-redact": true },
+      ruleOptions: {},
       debugTrace: true,
     });
   });
@@ -125,6 +130,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: {},
+      ruleOptions: {},
       debugTrace: false,
     });
   });
@@ -148,6 +154,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: { "pii-redact": true },
+      ruleOptions: {},
       placeholderAdaptivePalette: true,
     });
   });
@@ -161,6 +168,7 @@ describe("loadDefaultOverrides", () => {
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toEqual({
       rules: {},
+      ruleOptions: {},
       placeholderAdaptivePalette: false,
     });
   });
@@ -226,5 +234,158 @@ describe("loadDefaultOverrides", () => {
     expect(() =>
       loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
     ).toThrow(/unknown keys: bogus-rule.*non-boolean values for: pii-redact/);
+  });
+
+  describe("per-rule options (ESLint-style object value)", () => {
+    const RULE_OPTION_DEFAULTS = {
+      "ads-hide": {
+        subRules: {
+          base64: true,
+          hex: true,
+          leetspeak: true,
+        },
+      },
+    } as const;
+
+    it("accepts an object value with enabled and a partial sub-rule object", () => {
+      const file = writeFile(
+        "with-options.json",
+        JSON.stringify({
+          "pii-redact": true,
+          "ads-hide": {
+            enabled: false,
+            subRules: { leetspeak: false },
+          },
+        }),
+      );
+      expect(
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toEqual({
+        rules: { "pii-redact": true, "ads-hide": false },
+        ruleOptions: {
+          "ads-hide": { subRules: { leetspeak: false } },
+        },
+      });
+    });
+
+    it("treats a missing `enabled` field as unset (keeps committed default)", () => {
+      const file = writeFile(
+        "no-enabled.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { hex: false } },
+        }),
+      );
+      expect(
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toEqual({
+        rules: {},
+        ruleOptions: {
+          "ads-hide": { subRules: { hex: false } },
+        },
+      });
+    });
+
+    it("rejects an object value for a rule without declared options", () => {
+      const file = writeFile(
+        "wrong-rule.json",
+        JSON.stringify({ "pii-redact": { enabled: true } }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/object value for rules without declared options: pii-redact/);
+    });
+
+    it("rejects unknown sub-rule keys with a path-qualified name", () => {
+      const file = writeFile(
+        "unknown-subrule.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { bogus: false } },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/unknown option keys: ads-hide\.subRules\.bogus/);
+    });
+
+    it("rejects unknown top-level keys under a rule object", () => {
+      const file = writeFile(
+        "unknown-group.json",
+        JSON.stringify({
+          "ads-hide": { unknownGroup: { leetspeak: false } },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/unknown option keys: ads-hide\.unknownGroup/);
+    });
+
+    it("rejects non-boolean sub-rule leaves with a path-qualified name", () => {
+      const file = writeFile(
+        "nonbool-subrule.json",
+        JSON.stringify({
+          "ads-hide": { subRules: { leetspeak: "off" } },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/non-boolean option values for: ads-hide\.subRules\.leetspeak/);
+    });
+
+    it("rejects a non-boolean `enabled` field", () => {
+      const file = writeFile(
+        "nonbool-enabled.json",
+        JSON.stringify({
+          "ads-hide": { enabled: "yes" },
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toThrow(/non-boolean values for: ads-hide\.enabled/);
+    });
+
+    it("omits the rule from ruleOptions when no sub-rule overrides are provided", () => {
+      const file = writeFile(
+        "enabled-only.json",
+        JSON.stringify({ "ads-hide": { enabled: true } }),
+      );
+      expect(
+        loadDefaultOverrides({
+          path: file,
+          knownRuleIds: KNOWN_IDS,
+          ruleOptionDefaults: RULE_OPTION_DEFAULTS,
+        }),
+      ).toEqual({
+        rules: { "ads-hide": true },
+        ruleOptions: {},
+      });
+    });
   });
 });

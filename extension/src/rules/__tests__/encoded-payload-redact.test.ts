@@ -617,3 +617,121 @@ describe("encoded-payload-redact teardown", () => {
     );
   });
 });
+
+// Loads a fresh copy of the rule with `process.env.EXTENSION_RULE_OPTIONS`
+// set to the given sub-rule overrides. The rule reads its options once at
+// module init via `getRuleOptions`, so testing the toggles requires a fresh
+// module graph per override.
+async function loadRuleWithSubRuleOverrides(
+  subRules: Partial<{
+    base64: boolean;
+    hex: boolean;
+    percent: boolean;
+    substitutionCipher: boolean;
+    leetspeak: boolean;
+    nato: boolean;
+    morse: boolean;
+  }>,
+): Promise<typeof encodedPayloadRedactRule> {
+  const previous = process.env.EXTENSION_RULE_OPTIONS;
+  process.env.EXTENSION_RULE_OPTIONS = JSON.stringify({
+    "encoded-payload-redact": { subRules },
+  });
+  let reloaded: typeof encodedPayloadRedactRule | undefined;
+  await jest.isolateModulesAsync(async () => {
+    // The rule module's top-level `getRuleOptions` call reads
+    // EXTENSION_RULE_OPTIONS at evaluation time, so each override needs a
+    // fresh module graph.
+    const ruleModule = await import("../encoded-payload-redact");
+    reloaded = ruleModule.encodedPayloadRedactRule;
+  });
+  if (previous === undefined) {
+    delete process.env.EXTENSION_RULE_OPTIONS;
+  } else {
+    process.env.EXTENSION_RULE_OPTIONS = previous;
+  }
+  if (!reloaded) {
+    throw new Error("Failed to reload encoded-payload-redact rule");
+  }
+  return reloaded;
+}
+
+describe("encoded-payload-redact sub-rule toggles", () => {
+  it("with leetspeak disabled, leet payloads pass through unchanged", async () => {
+    const rule = await loadRuleWithSubRuleOverrides({ leetspeak: false });
+    const ciphertext = leetEncode(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${ciphertext}</p>`;
+    rule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(ciphertext);
+    rule.teardown();
+  });
+
+  it("with leetspeak disabled, base64 payloads still redact (sanity)", async () => {
+    const rule = await loadRuleWithSubRuleOverrides({ leetspeak: false });
+    const payload = base64Encode(LONG_PROSE);
+    document.body.innerHTML = `<p>${payload}</p>`;
+    rule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)?.textContent).toBe(
+      "[encoded payload hidden]",
+    );
+    rule.teardown();
+  });
+
+  it("with nato and morse disabled, those candidates pass through", async () => {
+    const rule = await loadRuleWithSubRuleOverrides({
+      nato: false,
+      morse: false,
+    });
+    const natoText = natoEncode("thequickbrownfox");
+    const morseText = morseEncode(
+      "you can see this from above and you know what",
+    );
+    document.body.innerHTML = `<p>${natoText}</p><p>${morseText}</p>`;
+    rule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(natoText);
+    rule.teardown();
+  });
+
+  it("with substitutionCipher disabled, ROT13 / Atbash / reverse all pass through", async () => {
+    const rule = await loadRuleWithSubRuleOverrides({
+      substitutionCipher: false,
+    });
+    const rot = rot13(CIPHER_CLEARTEXT);
+    const ats = atbash(CIPHER_CLEARTEXT);
+    const rev = reverseText(CIPHER_CLEARTEXT);
+    document.body.innerHTML = `<p>${rot}</p><p>${ats}</p><p>${rev}</p>`;
+    rule.apply(document.body);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`).length).toBe(0);
+    rule.teardown();
+  });
+
+  it("with all sub-rules disabled, the rule produces no matches", async () => {
+    const rule = await loadRuleWithSubRuleOverrides({
+      base64: false,
+      hex: false,
+      percent: false,
+      substitutionCipher: false,
+      leetspeak: false,
+      nato: false,
+      morse: false,
+    });
+    document.body.innerHTML = `
+      <p>${base64Encode(LONG_PROSE)}</p>
+      <p>${hexEncode(LONG_HEX_PROSE)}</p>
+      <p>${percentEncode(LONG_PERCENT_PROSE)}</p>
+      <p>${rot13(CIPHER_CLEARTEXT)}</p>
+      <p>${leetEncode(CIPHER_CLEARTEXT)}</p>
+      <p>${natoEncode("thequickbrownfox")}</p>
+    `;
+    rule.apply(document.body);
+
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`).length).toBe(0);
+    rule.teardown();
+  });
+});

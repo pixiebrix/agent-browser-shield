@@ -36,6 +36,9 @@
 
 import { defineInlineTextRedactRule } from "../lib/inline-text-redact";
 import type { InlineMatch } from "../lib/placeholder";
+import { getRuleOptions } from "../lib/rule-options";
+
+const SUB_RULES = getRuleOptions("encoded-payload-redact").subRules;
 
 // Length floors per encoding. Tuned to sit above common hash/fingerprint
 // sizes (SHA-512 hex = 128, so 160 leaves headroom) and below typical
@@ -795,14 +798,30 @@ function collectMorse(text: string, matches: InlineMatch[]): void {
 
 function collectMatches(text: string): InlineMatch[] {
   const matches: InlineMatch[] = [];
-  const jwtRanges = collectJwtRanges(text);
-  collectBase64(text, jwtRanges, matches);
-  collectHex(text, matches);
-  collectPercent(text, matches);
-  collectSubstitutionCiphers(text, matches);
-  collectLeet(text, matches);
-  collectNato(text, matches);
-  collectMorse(text, matches);
+  // JWT ranges are needed only to suppress overlapping base64 matches; skip
+  // the scan when base64 is disabled.
+  const jwtRanges = SUB_RULES.base64 ? collectJwtRanges(text) : [];
+  if (SUB_RULES.base64) {
+    collectBase64(text, jwtRanges, matches);
+  }
+  if (SUB_RULES.hex) {
+    collectHex(text, matches);
+  }
+  if (SUB_RULES.percent) {
+    collectPercent(text, matches);
+  }
+  if (SUB_RULES.substitutionCipher) {
+    collectSubstitutionCiphers(text, matches);
+  }
+  if (SUB_RULES.leetspeak) {
+    collectLeet(text, matches);
+  }
+  if (SUB_RULES.nato) {
+    collectNato(text, matches);
+  }
+  if (SUB_RULES.morse) {
+    collectMorse(text, matches);
+  }
 
   // Sort by start, then prefer the longest on ties so a base64 candidate
   // wins over a hex prefix of the same span. Merge by dropping any match
