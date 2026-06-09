@@ -28,7 +28,7 @@ constants.
 ## Decision Drivers
 
 - Tuning the false-positive band per sub-rule is the natural follow-on to the
-  on/off control ADR-0016 ships (PR #TBD §"Summary"). The same operators who
+  on/off control ADR-0016 ships (PR #233 §"Summary"). The same operators who
   disable NATO/Morse outright are the most likely to also want to keep them on
   at a stricter setting.
 - Threshold values already live in pure data — the existing file-level `MIN_*`
@@ -39,7 +39,7 @@ constants.
   design: an operator who already knows the boolean form should recognize the
   threshold form as a strict extension of it. No new top-level keys, no parallel
   mechanism.
-- Sophisticated-user policy: per the user directive recorded in PR #TBD
+- Sophisticated-user policy: per the user directive recorded in PR #233
   §"Scope", knob meanings stay in the rule source — no in-repo "knobs reference"
   doc — so the validation layer doesn't carry the maintenance burden of
   explaining what each number means.
@@ -67,7 +67,7 @@ Chosen option: **numeric leaves in the same tree, with each sub-rule value being
   source-of-truth for the threshold values themselves. The `MIN_*` constants
   currently inline in `encoded-payload-redact.ts` move into the per-sub-rule
   defaults; the rule reads its merged thresholds via `getRuleOptions(...)` at
-  module init (PR #TBD §"Implementation").
+  module init (PR #233 §"Implementation").
 - A sub-rule's value in the override file is either a boolean (existing
   behaviour from ADR-0016) or an object whose keys match the sub-rule's declared
   thresholds plus an optional `enabled`. A bare boolean is equivalent to
@@ -77,7 +77,7 @@ Chosen option: **numeric leaves in the same tree, with each sub-rule value being
   accept booleans only; positions whose default is a number accept finite
   numbers only. No range checks — operators who pass `minLength: -1` or
   `validRatio: 5` get the surprising-but-deterministic behaviour their number
-  produces. They are reading the source by definition (PR #TBD §"Scope":
+  produces. They are reading the source by definition (PR #233 §"Scope":
   "sophisticated users").
 - `enabled` at the sub-rule level remains optional; absent fields fall back to
   `RULE_OPTION_DEFAULTS`. This generalizes ADR-0016 FR-2a's "omitted sub-rules
@@ -92,16 +92,16 @@ Chosen option: **numeric leaves in the same tree, with each sub-rule value being
 - Good, because thresholds become discoverable via the same declarative source
   the on/off shape lives in (`RULE_OPTION_DEFAULTS`). A reader of
   `rule-metadata.ts` sees both the binary and the numeric configuration for each
-  sub-rule in one place (PR #TBD §"Implementation").
+  sub-rule in one place (PR #233 §"Implementation").
 - Good, because the rule code stops carrying duplicated default state — the
-  `MIN_*` constants relocate rather than fork (PR #TBD §"Refactor").
+  `MIN_*` constants relocate rather than fork (PR #233 §"Refactor").
 - Neutral, because the catalog-test invariant from ADR-0016 ("every leaf is a
   boolean") is replaced with "every leaf is `boolean | finite number`, and
-  override-type matches default-type at each position" (PR #TBD §"Test plan").
+  override-type matches default-type at each position" (PR #233 §"Test plan").
 - Bad, because the override file's failure modes grow: in addition to ADR-0016's
   path-qualified type errors, operators can now silently produce a non-matching
   rule by setting a threshold to a value that no realistic input would clear.
-  The mitigation is the sophisticated-user policy (PR #TBD §"Scope") — no range
+  The mitigation is the sophisticated-user policy (PR #233 §"Scope") — no range
   checks, knob meanings live in the source.
 - Bad, because the regex candidates that interpolate threshold constants
   (`BASE64_CANDIDATE`, `HEX_CANDIDATE`, `TEXT_CIPHER_CANDIDATE`,
@@ -114,14 +114,14 @@ Chosen option: **numeric leaves in the same tree, with each sub-rule value being
 - `extension/scripts/__tests__/load-default-overrides.test.ts` extends the
   ADR-0016 cases with numeric leaves: valid numeric override; non-number for a
   numeric leaf; boolean for a numeric leaf and vice-versa; partial threshold
-  object merges over defaults (PR #TBD §"Test plan").
+  object merges over defaults (PR #233 §"Test plan").
 - `extension/src/rules/__tests__/catalog.test.ts` invariant is widened: every
   leaf in `RULE_OPTION_DEFAULTS` is `boolean | finite number`, and no leaf is a
-  string or `null` (PR #TBD §"Test plan").
+  string or `null` (PR #233 §"Test plan").
 - `extension/src/rules/__tests__/encoded-payload-redact.test.ts` adds
   threshold-tuning cases: lowering `nato.minWords` matches a previously
   too-short candidate; raising `morse.validRatio` rejects a previously matching
-  payload (PR #TBD §"Test plan").
+  payload (PR #233 §"Test plan").
 
 ## Pros and Cons of the Options
 
@@ -161,7 +161,9 @@ Chosen option: **numeric leaves in the same tree, with each sub-rule value being
   [#232 — Add: ESLint-style per-rule build-time options (encoded-payload sub-rules)](https://github.com/pixiebrix/agent-browser-shield/pull/232)
   — the predecessor PR that introduced the boolean-only leaf invariant this ADR
   widens
-- PR #TBD — the implementation PR for this ADR; updates the catalog invariant,
+- PR
+  [#233 — Add: per-sub-rule threshold tuning in build-time override file](https://github.com/pixiebrix/agent-browser-shield/pull/233)
+  — the implementation PR for this ADR; updates the catalog invariant,
   validator, merge, and rule reads
 - [ADR-0016](./0016-eslint-style-per-rule-options-shape.md) — the parent
   decision that established the ESLint-style object shape; this ADR extends its
