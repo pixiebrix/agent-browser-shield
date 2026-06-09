@@ -344,6 +344,112 @@ describe("disguisedAdFlagRule false-positive guards", () => {
   });
 });
 
+describe("disguisedAdFlagRule feed-wrapper guard", () => {
+  it("does not replace a feed wrapper when one card lacks its own heading (#228)", () => {
+    // Repro from #228 — entire reddit feed replaced as one placeholder.
+    // Reddit's <shreddit-feed> contains multiple <shreddit-ad-post>
+    // cards. Each ad post carries its title in a
+    // <shreddit-dynamic-ad-link class="headline"> element. When a
+    // particular ad post momentarily lacks its own headline class (a
+    // different ad creative, a mid-hydration burst), the walk from that
+    // post's "Promoted" label skips past the post and reaches the feed.
+    // Pre-fix, the feed passed isArticleShaped because *sibling* ad
+    // posts carry headlines — so the rule replaced the whole feed.
+    document.body.innerHTML = `
+      <div class="feed" data-fixture="feed">
+        <div class="ad-post" data-fixture="ad-headless">
+          <span class="label">Promoted</span>
+          <img alt="" src="a.jpg" />
+          <a href="/a">Visit advertiser</a>
+          <p>Ad post body copy that satisfies the prose-length minimum but whose card boundary lacks any heading element.</p>
+        </div>
+        <div class="ad-post" data-fixture="ad-with-heading-1">
+          <span class="label">Promoted</span>
+          <h2><a href="/b">Buy our energy drink</a></h2>
+          <img alt="" src="b.jpg" />
+          <p>A long-form advertorial body that satisfies the prose-length check on its own card boundary.</p>
+        </div>
+        <div class="ad-post" data-fixture="ad-with-heading-2">
+          <span class="label">Promoted</span>
+          <h2><a href="/c">Drive the Acme Truck</a></h2>
+          <img alt="" src="c.jpg" />
+          <p>A second long-form advertorial body that satisfies the prose-length check on its own card boundary.</p>
+        </div>
+      </div>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+
+    // Feed wrapper survives.
+    expect(document.querySelector('[data-fixture="feed"]')).not.toBeNull();
+    // Cards with their own heading are hidden as individual placeholders.
+    expect(
+      document.querySelector('[data-fixture="ad-with-heading-1"]'),
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-fixture="ad-with-heading-2"]'),
+    ).toBeNull();
+    // The headless card is left alone (no article-shaped ancestor below
+    // the feed). That's the degraded but acceptable outcome — better
+    // than replacing the whole feed.
+    expect(
+      document.querySelector('[data-fixture="ad-headless"]'),
+    ).not.toBeNull();
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(2);
+  });
+
+  it("stops at a role='feed' wrapper", () => {
+    // ARIA infinite-scroll feed pattern — same boundary semantics as
+    // <main>. A label inside a feed item that doesn't resolve to a
+    // card-shaped ancestor *below* the feed must not climb to it.
+    document.body.innerHTML = `
+      <div role="feed" data-fixture="feed">
+        <div class="ad-post" data-fixture="ad-headless">
+          <span class="label">Promoted</span>
+          <img alt="" src="x.jpg" />
+          <a href="/x">Visit</a>
+          <p>Ad post body without any heading element inside its own card boundary.</p>
+        </div>
+        <article data-fixture="editorial">
+          <h2>Editorial story</h2>
+          <img alt="" src="y.jpg" />
+          <a href="/y">Read</a>
+          <p>Editorial copy that runs long enough to satisfy the prose-length minimum.</p>
+        </article>
+      </div>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+
+    expect(document.querySelector('[data-fixture="feed"]')).not.toBeNull();
+    expect(document.querySelector('[data-fixture="editorial"]')).not.toBeNull();
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(0);
+  });
+
+  it("does not match a container with multiple headings (long-form section landing)", () => {
+    // A wrapper that holds two headings — e.g. an editorial section
+    // header plus a card heading — is not a single advertorial card.
+    // Even with a "Sponsored" label inside, the rule should not
+    // collapse the whole wrapper.
+    document.body.innerHTML = `
+      <section data-fixture="section">
+        <h1>Section header</h1>
+        <article data-fixture="card">
+          <span class="label">Sponsored</span>
+          <h2><a href="/x">Card headline</a></h2>
+          <img alt="" src="x.jpg" />
+          <p>Card body copy that exceeds the eighty-character prose minimum required by the rule's article-shape check.</p>
+        </article>
+      </section>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+
+    // The card itself is the (single-heading) article-shaped ancestor —
+    // it gets hidden. The outer section is preserved.
+    expect(document.querySelector('[data-fixture="section"]')).not.toBeNull();
+    expect(document.querySelector('[data-fixture="card"]')).toBeNull();
+    expect(document.querySelectorAll(`.${PLACEHOLDER_CLASS}`)).toHaveLength(1);
+  });
+});
+
 describe("disguisedAdFlagRule reveal flow", () => {
   it("does not re-hide an article the user revealed via click", () => {
     document.body.innerHTML = articleCard({ label: "Sponsored" });

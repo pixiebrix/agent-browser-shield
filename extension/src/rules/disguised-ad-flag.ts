@@ -186,13 +186,16 @@ function isNavigationAncestor(element: Element): boolean {
 // Boundary tags we treat as "you've walked too far". Once we reach <main>,
 // <body>, or <html>, the label isn't sitting on an article card.
 // `<section>` is intentionally not a boundary — it's the natural wrapper
-// for an advertorial.
+// for an advertorial. `role="feed"` is the ARIA infinite-scroll pattern;
+// crossing it would let a label inside one card adopt sibling cards'
+// signals (see #228 — entire reddit feed replaced as one placeholder).
 function isPageBoundary(element: Element): boolean {
   const name = element.localName;
   if (name === "main" || name === "body" || name === "html") {
     return true;
   }
-  return element.getAttribute("role") === "main";
+  const role = element.getAttribute("role");
+  return role === "main" || role === "feed";
 }
 
 // Heading-equivalent selector. Beyond the literal h1–h6 set, accept two
@@ -209,13 +212,54 @@ function isPageBoundary(element: Element): boolean {
 const HEADING_SELECTOR =
   'h1, h2, h3, h4, h5, h6, [role="heading"], [class~="headline"]';
 
-// True if `element` looks like an article card: contains a heading, plus
-// at least one of an image or an outgoing link, plus enough prose text to
-// be confusable with editorial. The label text itself and headings are
-// excluded from the prose count so a label-only row doesn't qualify.
+// True if `element` contains a *sibling* card-shaped subtree — a
+// descendant outside `labelElement`'s ancestor chain that itself
+// carries both an image and an outgoing link. Used as the feed-wrapper
+// guard inside `isArticleShaped`: a single advertorial card has at
+// most one such subtree (its own); a feed wraps many. The image+link
+// pair is the cheapest stable signal for "card-ness" — every card-
+// shaped feed item in the wild carries a thumbnail and a click target,
+// and the pair is rare in non-card chrome.
+function hasOtherCardSubtree(element: Element, labelElement: Element): boolean {
+  for (const candidate of element.querySelectorAll("*")) {
+    if (candidate === labelElement) {
+      continue;
+    }
+    if (labelElement.contains(candidate)) {
+      continue;
+    }
+    if (candidate.contains(labelElement)) {
+      continue;
+    }
+    if (candidate.querySelector("img, picture") === null) {
+      continue;
+    }
+    if (candidate.querySelector("a[href]") === null) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+// True if `element` looks like an article card: contains a heading,
+// plus at least one of an image or an outgoing link, plus enough prose
+// text to be confusable with editorial. The label text itself and
+// headings are excluded from the prose count so a label-only row
+// doesn't qualify. The candidate must also not enclose a *second*
+// card-shaped subtree (see #228: when one ad post momentarily lacks
+// its own heading — different ad creative, mid-hydration — the walk
+// reaches the surrounding feed; pre-guard the feed passed every check
+// because *sibling* cards carry headings/images/links, and the entire
+// feed got replaced with one placeholder). The sibling-card guard lets
+// each card match on its own walk-up while keeping the feed wrapper
+// unmatched.
 function isArticleShaped(element: Element, labelElement: Element): boolean {
   const heading = element.querySelector(HEADING_SELECTOR);
   if (heading === null) {
+    return false;
+  }
+  if (hasOtherCardSubtree(element, labelElement)) {
     return false;
   }
   const hasImage = element.querySelector("img, picture") !== null;
