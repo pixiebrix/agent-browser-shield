@@ -20,7 +20,7 @@ describe("parseConfig", () => {
     const result = parseConfig(JSON.stringify({ [KNOWN_RULE_ID]: false }));
     expect(result).toEqual({
       ok: true,
-      value: { [KNOWN_RULE_ID]: false },
+      value: { rules: { [KNOWN_RULE_ID]: false } },
     });
   });
 
@@ -78,6 +78,78 @@ describe("parseConfig", () => {
   });
 
   it("accepts an empty object", () => {
-    expect(parseConfig("{}")).toEqual({ ok: true, value: {} });
+    expect(parseConfig("{}")).toEqual({ ok: true, value: { rules: {} } });
+  });
+
+  describe("siteDenylist", () => {
+    it("accepts an empty array", () => {
+      expect(parseConfig(JSON.stringify({ siteDenylist: [] }))).toEqual({
+        ok: true,
+        value: { rules: {}, siteDenylist: [] },
+      });
+    });
+
+    it("accepts an array of valid URL Pattern strings", () => {
+      const result = parseConfig(
+        JSON.stringify({
+          siteDenylist: ["https://example.test/*", "https://*.mail.test/*"],
+        }),
+      );
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          rules: {},
+          siteDenylist: ["https://example.test/*", "https://*.mail.test/*"],
+        },
+      });
+    });
+
+    it("coexists with rule entries", () => {
+      const result = parseConfig(
+        JSON.stringify({
+          [KNOWN_RULE_ID]: false,
+          siteDenylist: ["https://example.test/*"],
+        }),
+      );
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          rules: { [KNOWN_RULE_ID]: false },
+          siteDenylist: ["https://example.test/*"],
+        },
+      });
+    });
+
+    it("rejects a non-array siteDenylist", () => {
+      const result = parseConfig(
+        JSON.stringify({ siteDenylist: "https://example.test/*" }),
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: "siteDenylist must be an array of URL Pattern strings.",
+      });
+    });
+
+    it("rejects a non-string entry", () => {
+      const result = parseConfig(JSON.stringify({ siteDenylist: [42] }));
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBe(
+          "siteDenylist[0]: expected string, got number",
+        );
+      }
+    });
+
+    it("rejects an invalid URL Pattern entry", () => {
+      const result = parseConfig(
+        JSON.stringify({ siteDenylist: ["not-a-pattern!!! :::"] }),
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toBe(
+          "siteDenylist[0]: invalid URL Pattern (not-a-pattern!!! :::)",
+        );
+      }
+    });
   });
 });

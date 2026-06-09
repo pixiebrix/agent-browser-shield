@@ -215,6 +215,16 @@ JSON override file instead of using the hosted ZIP.
      against the page chrome. Off by default while the visual heuristic is still
      being tuned. Enable for deployments on consistently dark UIs.
 
+   - `siteDenylist` (array of URL Pattern strings, default `[]`) — start with
+     these hosts already in the per-site enforcement denylist. When the active
+     tab's top-frame URL matches any entry, every rule is paused on that tab;
+     subframes inherit. Each entry must satisfy `new URLPattern(entry)` (build
+     fails on a bad pattern) and supports the full URL Pattern grammar —
+     subdomain wildcards (`https://*.example.com/*`) and path scopes
+     (`https://example.com/admin/*`) included. Round-trips through the
+     Options-page export / apply so a tuned extension's exported JSON can be fed
+     back into the next build.
+
 2. Pass the path via CLI flag or env var to `bun run build`:
 
    ```sh

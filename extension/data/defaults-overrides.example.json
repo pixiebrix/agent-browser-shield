@@ -15,5 +15,7 @@
   "optionsButton": true,
   "runOnInactiveTabs": false,
   "debugTrace": false,
-  "placeholderAdaptivePalette": false
+  "placeholderAdaptivePalette": false,
+
+  "siteDenylist": ["https://staging.internal.example/*"]
 }

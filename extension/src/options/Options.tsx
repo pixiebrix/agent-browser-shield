@@ -11,11 +11,13 @@ import type { PlaceholderDisplayMode } from "../lib/placeholder-display";
 import { placeholderDisplayStorage } from "../lib/placeholder-display";
 import { RuleList } from "../lib/RuleList";
 import { runOnInactiveTabsStorage } from "../lib/run-on-inactive-tabs";
+import { siteDenylistStorage } from "../lib/site-denylist";
 import { ruleStatesStorage, setAllRuleStates } from "../lib/storage";
 import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { useTransientStatus } from "../lib/use-transient-status";
 import { parseConfig } from "./parse-config";
 import { Section } from "./Section";
+import { SitesDenylistSection } from "./SitesDenylistSection";
 
 export function Options() {
   const states = useChromeStorageValue(ruleStatesStorage);
@@ -27,6 +29,7 @@ export function Options() {
   const adaptivePalette = useChromeStorageValue(
     placeholderAdaptivePaletteStorage,
   );
+  const denylist = useChromeStorageValue(siteDenylistStorage);
 
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +53,23 @@ export function Options() {
     apiKeyDraft === null ||
     optionsButtonEnabled === null ||
     runOnInactiveTabs === null ||
-    adaptivePalette === null
+    adaptivePalette === null ||
+    denylist === null
   ) {
     return <div className="loading">Loading…</div>;
   }
 
+  // Same shape as the build-time overrides file (spec 0011 FR-3) so a
+  // tuned extension's export round-trips into the next build. Today
+  // that's rule states + siteDenylist; the reserved boolean keys
+  // (optionsButton, runOnInactiveTabs, etc.) are wired through their
+  // own storage and intentionally NOT round-tripped here.
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify(states, null, 2)], {
+    const exported: Record<string, unknown> = { ...states };
+    if (denylist.length > 0) {
+      exported.siteDenylist = denylist;
+    }
+    const blob = new Blob([JSON.stringify(exported, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
@@ -76,7 +89,10 @@ export function Options() {
       return;
     }
     setError(null);
-    await setAllRuleStates(result.value);
+    await setAllRuleStates(result.value.rules);
+    if (result.value.siteDenylist !== undefined) {
+      await siteDenylistStorage.set(result.value.siteDenylist);
+    }
     showStatus("Applied");
   };
 
@@ -96,6 +112,7 @@ export function Options() {
         <a href="#options-button">On-page options button</a>
         <a href="#inactive-tabs">Inactive tabs</a>
         <a href="#api-key">OpenAI API key</a>
+        <a href="#site-denylist">Sites with enforcement disabled</a>
         <a href="#rules">Rules</a>
         <a href="#disclaimer">Disclaimer</a>
       </nav>
@@ -105,6 +122,8 @@ export function Options() {
           Paste a JSON object mapping rule IDs to booleans, then click Apply.
           Replaces the full configuration: any rule not listed resets to its
           default (enabled). Unknown keys and non-boolean values are rejected.
+          An optional <code>siteDenylist</code> key (an array of URL Pattern
+          strings) replaces the per-site denylist.
         </p>
         <textarea
           className="json-input"
@@ -293,6 +312,10 @@ export function Options() {
             </span>
           )}
         </div>
+      </Section>
+
+      <Section id="site-denylist" title="Sites with enforcement disabled">
+        <SitesDenylistSection denylist={denylist} />
       </Section>
 
       <Section id="rules" title="Rules">

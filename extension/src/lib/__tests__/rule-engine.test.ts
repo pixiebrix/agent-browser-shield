@@ -46,10 +46,9 @@ jest.mock("../frame", () => ({
   isTopFrame: jest.fn(),
 }));
 
-jest.mock("../enforcement", () => ({
-  getEnforcementEnabled: jest.fn(() => Promise.resolve(true)),
-  subscribeEnforcementEnabled: jest.fn(() => () => undefined),
-  ENFORCEMENT_ENABLED_DEFAULT: true,
+jest.mock("../effective-enforcement", () => ({
+  initEffectiveEnforcement: jest.fn(() => Promise.resolve(true)),
+  subscribeEffectiveEnforcement: jest.fn(() => () => undefined),
 }));
 
 // Mock availability so tests can drive availability-flip reconciliation
@@ -76,7 +75,7 @@ import {
   getRuleAvailabilityStates,
   subscribeRuleAvailability,
 } from "../availability";
-import { subscribeEnforcementEnabled } from "../enforcement";
+import { subscribeEffectiveEnforcement } from "../effective-enforcement";
 import { isTopFrame } from "../frame";
 import { revealAll } from "../placeholder";
 import { start } from "../rule-engine";
@@ -91,8 +90,8 @@ const getAvailabilityMock = getRuleAvailabilityStates as jest.MockedFunction<
 >;
 const subscribeStorageMock = subscribe as jest.MockedFunction<typeof subscribe>;
 const subscribeEnforcementMock =
-  subscribeEnforcementEnabled as jest.MockedFunction<
-    typeof subscribeEnforcementEnabled
+  subscribeEffectiveEnforcement as jest.MockedFunction<
+    typeof subscribeEffectiveEnforcement
   >;
 const subscribeAvailabilityMock =
   subscribeRuleAvailability as jest.MockedFunction<

@@ -238,6 +238,71 @@ describe("loadDefaultOverrides", () => {
     );
   });
 
+  describe("siteDenylist reserved key", () => {
+    it("extracts a valid siteDenylist alongside rules", () => {
+      const file = writeFile(
+        "with-denylist.json",
+        JSON.stringify({
+          "pii-redact": true,
+          siteDenylist: ["https://example.test/*", "https://*.mail.test/*"],
+        }),
+      );
+      expect(
+        loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+      ).toEqual({
+        rules: { "pii-redact": true },
+        ruleOptions: {},
+        siteDenylist: ["https://example.test/*", "https://*.mail.test/*"],
+      });
+    });
+
+    it("accepts an empty siteDenylist", () => {
+      const file = writeFile(
+        "empty-denylist.json",
+        JSON.stringify({ siteDenylist: [] }),
+      );
+      expect(
+        loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+      ).toEqual({
+        rules: {},
+        ruleOptions: {},
+        siteDenylist: [],
+      });
+    });
+
+    it("rejects a non-array siteDenylist", () => {
+      const file = writeFile(
+        "non-array-denylist.json",
+        JSON.stringify({ siteDenylist: "https://example.test/*" }),
+      );
+      expect(() =>
+        loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+      ).toThrow(/siteDenylist: .*array/);
+    });
+
+    it("rejects an entry that is not a valid URL Pattern", () => {
+      const file = writeFile(
+        "bad-pattern.json",
+        JSON.stringify({
+          siteDenylist: ["https://example.test/*", "not-a-pattern!!! :::"],
+        }),
+      );
+      expect(() =>
+        loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+      ).toThrow(/siteDenylist\.1: .*URL Pattern/);
+    });
+
+    it("rejects a non-string entry", () => {
+      const file = writeFile(
+        "non-string-entry.json",
+        JSON.stringify({ siteDenylist: [42] }),
+      );
+      expect(() =>
+        loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+      ).toThrow(/siteDenylist\.0: .*string/);
+    });
+  });
+
   describe("per-rule options (ESLint-style object value)", () => {
     // Fixture covers both leaf shapes the validator now supports: bare
     // boolean (`base64`) and `{ enabled, ...thresholds }` per-sub-rule
