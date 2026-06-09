@@ -26,6 +26,16 @@ Ideas explored in this repository:
   irrelevant content, hiding user-generated comments which could contain
   prompt-injection attacks, etc.
 
+## Architecture decisions
+
+Load-bearing decisions are recorded as [MADR 4.0](https://adr.github.io/madr/)
+ADRs under [`decisions/`](./decisions/). Read the [index](./decisions/README.md)
+before making changes that touch a recorded decision — rule taxonomy, frame
+execution, DOM markers, the `lib/` ↔ `rules/` boundary, SPA re-scan,
+scrub-don't-detach, shadow-DOM coverage, rule defaults, telemetry posture,
+injection-pattern handling, lint stack, background-worker purity, CSS-first
+hide, and the release flow.
+
 ## Reference
 
 - Upload extension for use with browserbase:
