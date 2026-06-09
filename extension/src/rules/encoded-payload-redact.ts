@@ -321,9 +321,10 @@ function reverseText(text: string): string {
 
 // Leetspeak substitution table — only the substitutions that obscure a
 // letter behind a digit or symbol. Pure digits (`2nd`, `iPhone 13`) get
-// mapped too, which on its own would be a false positive; the
-// surrounding gate requires a minimum substitution count AND a decoded
-// common-word floor, so prose with incidental digits doesn't qualify.
+// mapped too, which on its own would be a false positive; the surrounding
+// gate requires a minimum substitution count, an already-English skip (so
+// prose carrying incidental version-number digits like `11.16.0` is left
+// alone), and a decoded common-word floor.
 const LEET_MAP: Record<string, string> = {
   "0": "o",
   "1": "i",
@@ -745,6 +746,16 @@ function collectLeet(text: string, matches: InlineMatch[]): void {
     if (
       countLeetSubstitutions(candidate) < SUB_RULES.leetspeak.minSubstitutions
     ) {
+      continue;
+    }
+    // Same already-English gate the substitution ciphers use: deleet leaves
+    // genuine letters untouched, so ordinary prose carrying incidental
+    // leet-shaped digits (version strings like `11.16.0`, dates) survives
+    // `deleet` essentially unchanged and would clear the common-word floor
+    // on its own. A real leet payload obscures its letters behind digits, so
+    // its *raw* form is not yet English. Skip candidates that already read as
+    // English — only an actual encode reveals a hidden directive.
+    if (alreadyEnglish(candidate, SUB_RULES.leetspeak.minCommonWords)) {
       continue;
     }
     if (

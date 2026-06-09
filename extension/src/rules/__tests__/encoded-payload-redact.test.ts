@@ -541,6 +541,22 @@ describe("encoded-payload-redact text-cipher false-positive guards", () => {
     expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
   });
 
+  it("leaves English prose carrying a leet-shaped version number alone", () => {
+    // Real changelog copy: a version string like "11.16.0" supplies four
+    // leet-shape digits (1,1,1,0), clearing the substitution-count floor.
+    // The text is already English, so `deleet` leaves it readable and it
+    // would clear the common-word floor on its own — the already-English
+    // gate is what keeps it visible. (github.blog npm v12 changelog FP.)
+    const prose =
+      "Upgrade to npm 11.16.0 or later, run your normal install, and " +
+      "review the warnings.";
+    document.body.innerHTML = `<p>${prose}</p>`;
+    encodedPayloadRedactRule.apply(document.body);
+
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).toBeNull();
+    expect(document.body.textContent).toContain(prose);
+  });
+
   it("leaves a sparse dot/dash ASCII-art run alone (Morse valid-ratio floor)", () => {
     // Repeating `--- . --- . ---` style separators — many tokens but
     // most decode to letters with no decoded common-word hits, and the
