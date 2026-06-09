@@ -22,7 +22,7 @@
 //   1. Primary: when the user toggles the rule on, the background worker
 //      registers `webdriver-probe.js` as a dynamic content script with
 //      `world: "MAIN"` and `runAt: "document_start"`
-//      (`background-webdriver-probe.ts`). Subsequent navigations get the
+//      (`lib/page-world-hooks.ts`). Subsequent navigations get the
 //      probe before the page's first script — early-parse reads ARE
 //      caught.
 //   2. Fallback: this rule's `apply` (at document_idle) asks the background

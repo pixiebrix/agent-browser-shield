@@ -15,7 +15,7 @@
 //   1. Main-world probe (primary). When the rule is enabled, the
 //      background worker registers `shadow-root-probe.js` as a
 //      `world: "MAIN"`, `runAt: "document_start"` content script
-//      (`lib/shadow-root-probe-registration.ts`) that wraps
+//      (`lib/page-world-hooks.ts`) that wraps
 //      `Element.prototype.attachShadow` in the page world. Any call
 //      with `init.mode === "closed"` dispatches an
 //      `abs:closed-shadow-attached` CustomEvent on the document; the

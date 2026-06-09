@@ -1,8 +1,6 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
-import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
 import { debugTraceStorage } from "./lib/debug-trace";
 import { toExportedRecord } from "./lib/debug-trace-export";
 import {
@@ -25,15 +23,16 @@ import type {
   RuleDetectionMessage,
   TabPauseChangedMessage,
 } from "./lib/detection-messages";
-import { startDumpTraceBridgeRegistration } from "./lib/dump-trace-bridge-registration";
 import {
   getEnforcementEnabled,
   subscribeEnforcementEnabled,
 } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
 import { log } from "./lib/log";
-import { startShadowRootProbeRegistration } from "./lib/shadow-root-probe-registration";
-import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
+import {
+  dispatchPageWorldInject,
+  startPageWorldHooks,
+} from "./lib/page-world-hooks";
 import { siteDenylistStorage } from "./lib/site-denylist";
 import { ruleStatesStorage } from "./lib/storage";
 import type { TabPause } from "./lib/tab-pause";
@@ -48,8 +47,6 @@ import {
   PROTECTION_OFF_BADGE_TEXT,
   protectionAppearanceKey,
 } from "./lib/toolbar-protection";
-import { startWebdriverProbeRegistration } from "./lib/webdriver-probe-registration";
-import { installProbe } from "./lib/webdriver-probe-source";
 import type { RuleId } from "./rules/rule-metadata";
 import { RULE_IDS } from "./rules/rule-metadata";
 
@@ -557,91 +554,16 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    if (message.type === "inject-webdriver-probe") {
-      const tabId = sender.tab?.id;
-      if (typeof tabId !== "number") {
-        return undefined;
-      }
-      const frameId = sender.frameId;
-      // executeScript with world: "MAIN" is exempt from page CSP the same
-      // way the registered content script is, so this lands on strict
-      // `script-src` origins where the rule's previous inline-<script>
-      // fallback was blocked. Targeting the sender's specific frameId
-      // keeps subframes that already received the registered probe from
-      // being re-invoked. installProbe's `__abs_webdriver_probe_installed`
-      // guard makes a redundant call a no-op in the page world.
-      chrome.scripting
-        .executeScript({
-          target: {
-            tabId,
-            frameIds: typeof frameId === "number" ? [frameId] : undefined,
-          },
-          world: "MAIN",
-          func: installProbe,
-        })
-        .catch((error: unknown) => {
-          // Restricted URLs (chrome://, Web Store, view-source:, file: when
-          // disallowed) reject here. The primary registration silently
-          // skips these origins via match-pattern filtering; the fallback
-          // has to swallow the rejection explicitly.
-          log.error("inject-webdriver-probe executeScript failed", { error });
-        });
-      return undefined;
-    }
-
-    if (message.type === "inject-checkout-checkbox-defense") {
-      const tabId = sender.tab?.id;
-      if (typeof tabId !== "number") {
-        return undefined;
-      }
-      const frameId = sender.frameId;
-      // Same shape as inject-webdriver-probe: the registered content
-      // script covers future navigations; this fallback runs the defense
-      // on the tab the user was already viewing when they toggled the
-      // rule on. installCheckoutCheckboxDefense's
-      // `__abs_checkout_checkbox_defense_installed` guard makes a
-      // redundant call a no-op in the page world.
-      chrome.scripting
-        .executeScript({
-          target: {
-            tabId,
-            frameIds: typeof frameId === "number" ? [frameId] : undefined,
-          },
-          world: "MAIN",
-          func: installCheckoutCheckboxDefense,
-        })
-        .catch((error: unknown) => {
-          log.error("inject-checkout-checkbox-defense executeScript failed", {
-            error,
-          });
-        });
-      return undefined;
-    }
-
-    if (message.type === "inject-shadow-root-probe") {
-      const tabId = sender.tab?.id;
-      if (typeof tabId !== "number") {
-        return undefined;
-      }
-      const frameId = sender.frameId;
-      // Same shape as the other main-world fallbacks: the registered
-      // content script covers future navigations; this round-trip wraps
-      // attachShadow / setHTMLUnsafe on the tab the user was already
-      // viewing when they toggled `closed-shadow-root-annotate` on.
-      // installShadowRootProbe's `__abs_shadow_root_probe_installed`
-      // guard makes a redundant call a no-op in the page world.
-      chrome.scripting
-        .executeScript({
-          target: {
-            tabId,
-            frameIds: typeof frameId === "number" ? [frameId] : undefined,
-          },
-          world: "MAIN",
-          func: installShadowRootProbe,
-        })
-        .catch((error: unknown) => {
-          log.error("inject-shadow-root-probe executeScript failed", { error });
-        });
+    // The page-world `inject-*` fallbacks (webdriver-probe,
+    // checkout-checkbox-defense, shadow-root-probe) share one executeScript
+    // shape — the registered content script covers future navigations, this
+    // round-trip runs the install fn on the tab the user was already viewing
+    // when they toggled the rule on. The table and the per-install
+    // `__abs_*_installed` page-world guards live in `lib/page-world-hooks.ts`.
+    if (
+      typeof message.type === "string" &&
+      dispatchPageWorldInject(message.type, sender)
+    ) {
       return undefined;
     }
 
@@ -797,35 +719,11 @@ function buildRuleCountsResponse(tabId: number): GetTabRuleCountsResponse {
 // `lib/llm-background.ts` for the per-port AbortController wiring.
 startClassifyPortListener();
 
-// Register/unregister the page-world `navigator.webdriver` probe as a
-// `world: "MAIN"`, `runAt: "document_start"` content script whenever the
-// `webdriver-probe-annotate` rule's effective state changes. Lets the
-// probe catch reads during the page's initial parse, which the rule's
-// content-script-side inline fallback can't reach. See
-// `lib/webdriver-probe-registration.ts`.
-startWebdriverProbeRegistration();
-
-// Same lifecycle for `checkout-checkbox-sanitize`'s page-world
-// `HTMLInputElement.prototype.checked` defense. The patch must live in
-// the page world to intercept React/Vue reconciles that drive
-// `node.checked = true` through the page's own prototype copy. See
-// `lib/checkout-checkbox-defense-registration.ts`.
-startCheckoutCheckboxDefenseRegistration();
-
-// Same lifecycle for `closed-shadow-root-annotate`'s page-world
-// shadow-root probe. Wraps `Element.prototype.attachShadow` and
-// `setHTMLUnsafe` in the page world so attachments issued by page
-// scripts (which hit the page's own prototype copies, not the
-// isolated-world ones the rule engine sees) emit the events the
-// isolated-world consumers in `lib/shadow-roots.ts` and
-// `rules/closed-shadow-root-annotate.ts` rely on. See
-// `lib/shadow-root-probe-registration.ts`.
-startShadowRootProbeRegistration();
-
-// Register/unregister the page-world `__abs_dumpTrace` bridge whenever
-// the debug-trace toggle flips. Exposes `window.__abs_dumpTrace()` for
-// CDP-driven harnesses to scrape the IDB-backed trace mid-flow without
-// the popup's Export button. See `lib/dump-trace-bridge-registration.ts`
-// for the lifecycle and `lib/dump-trace-bridge-source.ts` for the
-// page-world implementation.
-startDumpTraceBridgeRegistration();
+// Register/unregister every page-world (`world: "MAIN"`,
+// `runAt: "document_start"`) script as its gating toggle (and, for the
+// rule-gated ones, global enforcement) changes — the webdriver probe, the
+// checkout-checkbox defense, the shadow-root probe, and the `__abs_dumpTrace`
+// bridge. Each must run before the page's first script to wrap a page-world
+// prototype the isolated-world rule engine can't reach. The table of hooks
+// and their register/unregister life-cycle lives in `lib/page-world-hooks.ts`.
+startPageWorldHooks();
