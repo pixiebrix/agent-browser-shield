@@ -31,11 +31,39 @@ function parseRuleOptionsEnv(): Record<string, unknown> {
   return parsed as Record<string, unknown>;
 }
 
-// Recursively merges a validated override tree over a default tree. Only
-// boolean leaves at positions that exist in the default tree are accepted;
-// anything else falls back to the default — defence-in-depth against a
+// Recursively merges a validated override tree over a default tree. Accepts:
+//   - boolean override at a boolean default position
+//   - finite-number override at a number default position
+//   - object override at an object default position (recurse)
+//   - boolean override at an object default position whose `enabled` field is
+//     a boolean (the bare-boolean shorthand for `{ enabled: <boolean> }`,
+//     used at sub-rule positions; see ADR-0017)
+// Anything else falls back to the default — defence-in-depth against a
 // malformed bundle slipping past the build-time loader.
-function mergeBooleanTree<T>(defaults: T, overrides: unknown): T {
+function mergeOptionTree<T>(defaults: T, overrides: unknown): T {
+  if (overrides === undefined) {
+    return defaults;
+  }
+  if (typeof defaults === "boolean") {
+    return (typeof overrides === "boolean" ? overrides : defaults) as T;
+  }
+  if (typeof defaults === "number") {
+    return (
+      typeof overrides === "number" && Number.isFinite(overrides)
+        ? overrides
+        : defaults
+    ) as T;
+  }
+  if (defaults === null || typeof defaults !== "object") {
+    return defaults;
+  }
+  const defaultsObject = defaults as Record<string, unknown>;
+  // Bare-boolean shorthand at a sub-rule position: `{ enabled: false }` is
+  // equivalent to `false`. Generalizes the rule-level shorthand the loader
+  // applies at the top level.
+  if (typeof overrides === "boolean" && "enabled" in defaultsObject) {
+    return { ...defaultsObject, enabled: overrides } as T;
+  }
   if (
     overrides === null ||
     typeof overrides !== "object" ||
@@ -43,25 +71,14 @@ function mergeBooleanTree<T>(defaults: T, overrides: unknown): T {
   ) {
     return defaults;
   }
-  const result: Record<string, unknown> = {
-    ...(defaults as Record<string, unknown>),
-  };
-  for (const [key, defaultValue] of Object.entries(
-    defaults as Record<string, unknown>,
-  )) {
-    const candidate = (overrides as Record<string, unknown>)[key];
+  const overridesObject = overrides as Record<string, unknown>;
+  const result: Record<string, unknown> = { ...defaultsObject };
+  for (const [key, defaultValue] of Object.entries(defaultsObject)) {
+    const candidate = overridesObject[key];
     if (candidate === undefined) {
       continue;
     }
-    if (typeof defaultValue === "boolean") {
-      if (typeof candidate === "boolean") {
-        result[key] = candidate;
-      }
-      continue;
-    }
-    if (defaultValue && typeof defaultValue === "object") {
-      result[key] = mergeBooleanTree(defaultValue, candidate);
-    }
+    result[key] = mergeOptionTree(defaultValue, candidate);
   }
   return result as T;
 }
@@ -71,7 +88,7 @@ const ENV_OVERRIDES = parseRuleOptionsEnv();
 const RESOLVED_OPTIONS: RuleOptions = Object.fromEntries(
   Object.entries(RULE_OPTION_DEFAULTS).map(([id, defaults]) => [
     id,
-    mergeBooleanTree(defaults, ENV_OVERRIDES[id]),
+    mergeOptionTree(defaults, ENV_OVERRIDES[id]),
   ]),
 ) as RuleOptions;
 

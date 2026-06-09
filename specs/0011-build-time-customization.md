@@ -56,9 +56,13 @@ shield release.
 - **FR-2a.** Rules listed in `extension/src/rules/rule-metadata.ts`'s
   `RULE_OPTION_DEFAULTS` may take an object value. `enabled` is optional and
   projects back onto the flat boolean storage shape (Options-page export stays
-  flat-boolean). Sub-rule keys map to booleans only and are validated against
-  the rule's declared option-shape tree; the partial object merges over the
-  committed defaults so omitted sub-rules keep their defaults. Object values for
+  flat-boolean). Sub-rule values are either a boolean (sub-rule on/off,
+  equivalent to `{ "enabled": <boolean> }`) or an object whose fields match the
+  sub-rule's declared shape — `enabled?: boolean` plus any number of
+  finite-number tuning thresholds. Leaf types in the override file must match
+  the leaf type declared in `RULE_OPTION_DEFAULTS` at the same position (boolean
+  → boolean, number → finite number). Partial sub-rule objects merge over the
+  committed defaults so omitted fields keep their defaults. Object values for
   rules without declared options fail the build (FR-4).
 - **FR-3.** Reserved non-rule keys:
   - `optionsButton` (boolean, default **off**) — start with the floating on-page
@@ -76,9 +80,12 @@ shield release.
     tuned; the same toggle is exposed in the Options page under *Placeholder
     display* (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
 - **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key),
-  unknown sub-rule keys under a rule object, object values for rules without
-  declared options, and non-boolean values at any leaf position fail the build
-  with a message naming the offending paths.
+  unknown sub-rule or sub-field keys under a rule object, object values for
+  rules without declared options, and leaf values whose type does not match the
+  declared default (boolean → non-boolean, number → non-finite or non-number)
+  fail the build with a message naming the offending paths. The validator does
+  not range-check numeric thresholds (FR-2a) — operators tuning thresholds are
+  reading the rule source by definition.
 - **FR-5.** The override file may be partial; rules not listed keep the
   committed default from `extension/src/rules/rule-metadata.ts`.
 - **FR-6.** Build-time overrides only affect **fresh** `chrome.storage`. Users
@@ -147,6 +154,7 @@ shield release.
 - ADRs: [ADR-0009](../decisions/0009-rule-defaults-and-build-time-overrides.md),
   [ADR-0011](../decisions/0011-build-time-decoded-injection-patterns.md),
   [ADR-0016](../decisions/0016-eslint-style-per-rule-options-shape.md),
+  [ADR-0017](../decisions/0017-numeric-thresholds-as-rule-options.md),
   [ADR-0013](../decisions/0013-background-worker-purity-canary.md).
 - Docs:
   [`docs/src/content/docs/install.md`](../docs/src/content/docs/install.md)

@@ -48,15 +48,18 @@ const RESERVED_KEYS = new Set<string>([
 ]);
 
 // Walks the per-rule override object against the rule's option-shape default
-// tree. Collects unknown-key and non-boolean-leaf paths into `unknownPaths` /
-// `nonBooleanPaths` so the loader can report them alongside any top-level
-// issues in a single error message.
+// tree. Accepts boolean leaves at boolean default positions, finite-number
+// leaves at number default positions, object overrides at object positions
+// (recursed), and the bare-boolean shorthand `{ enabled: ... }` at object
+// positions whose `enabled` field is a boolean. Collects unknown-key and
+// mistyped-leaf paths into `unknownPaths` / `mistypedPaths` so the loader
+// can report them alongside any top-level issues in a single error message.
 function validateRuleOptions(
   prefix: string,
   defaultTree: Readonly<Record<string, unknown>>,
   override: Record<string, unknown>,
   unknownPaths: string[],
-  nonBooleanPaths: string[],
+  mistypedPaths: string[],
 ): Record<string, unknown> {
   const validated: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(override)) {
@@ -65,25 +68,44 @@ function validateRuleOptions(
       continue;
     }
     const defaultValue = defaultTree[key];
+    const path = `${prefix}.${key}`;
     if (typeof defaultValue === "boolean") {
       if (typeof value !== "boolean") {
-        nonBooleanPaths.push(`${prefix}.${key}`);
+        mistypedPaths.push(path);
+        continue;
+      }
+      validated[key] = value;
+      continue;
+    }
+    if (typeof defaultValue === "number") {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        mistypedPaths.push(path);
         continue;
       }
       validated[key] = value;
       continue;
     }
     if (defaultValue && typeof defaultValue === "object") {
+      // Bare-boolean shorthand at a nested object position whose `enabled`
+      // default is a boolean — interpret as `{ enabled: <boolean> }`.
+      const defaultObject = defaultValue as Readonly<Record<string, unknown>>;
+      if (
+        typeof value === "boolean" &&
+        typeof defaultObject.enabled === "boolean"
+      ) {
+        validated[key] = { enabled: value };
+        continue;
+      }
       if (value === null || typeof value !== "object" || Array.isArray(value)) {
-        nonBooleanPaths.push(`${prefix}.${key}`);
+        mistypedPaths.push(path);
         continue;
       }
       validated[key] = validateRuleOptions(
-        `${prefix}.${key}`,
-        defaultValue as Readonly<Record<string, unknown>>,
+        path,
+        defaultObject,
         value as Record<string, unknown>,
         unknownPaths,
-        nonBooleanPaths,
+        mistypedPaths,
       );
     }
   }
@@ -126,7 +148,7 @@ export function loadDefaultOverrides(
   const nonBooleanIds: string[] = [];
   const objectsForRulesWithoutOptions: string[] = [];
   const unknownOptionPaths: string[] = [];
-  const nonBooleanOptionPaths: string[] = [];
+  const mistypedOptionPaths: string[] = [];
   const rules: Record<string, boolean> = {};
   const ruleOptions: Record<string, unknown> = {};
   const result: DefaultOverrides = { rules, ruleOptions };
@@ -197,7 +219,7 @@ export function loadDefaultOverrides(
         defaultsForRule as Readonly<Record<string, unknown>>,
         optionsOnly,
         unknownOptionPaths,
-        nonBooleanOptionPaths,
+        mistypedOptionPaths,
       );
       if (Object.keys(validated).length > 0) {
         ruleOptions[key] = validated;
@@ -222,9 +244,9 @@ export function loadDefaultOverrides(
   if (nonBooleanIds.length > 0) {
     issues.push(`non-boolean values for: ${nonBooleanIds.join(", ")}`);
   }
-  if (nonBooleanOptionPaths.length > 0) {
+  if (mistypedOptionPaths.length > 0) {
     issues.push(
-      `non-boolean option values for: ${nonBooleanOptionPaths.join(", ")}`,
+      `mistyped option values for: ${mistypedOptionPaths.join(", ")}`,
     );
   }
   if (issues.length > 0) {

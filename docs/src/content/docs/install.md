@@ -151,10 +151,37 @@ under `RULE_OPTION_DEFAULTS`. Today the only rule that takes options is
 — useful for turning off the higher-false-positive text ciphers without losing
 coverage of the byte encodings.
 
-The file may be partial; rules not listed keep the committed default. Unknown
-keys (rule ids, reserved keys, or sub-rule fields), object values for rules
-without declared sub-rule options, and non-boolean values fail the build with a
-message naming the offending paths.
+Each sub-rule may also be an object carrying tuning thresholds — length floors,
+common-word counts, printable-byte ratios — that override the file-scope
+defaults in `rule-metadata.ts`:
+
+```json
+{
+  "encoded-payload-redact": {
+    "subRules": {
+      "leetspeak": false,
+      "nato": { "enabled": true, "minWords": 14 },
+      "morse": { "enabled": true, "validRatio": 0.9 }
+    }
+  }
+}
+```
+
+A bare boolean at a sub-rule is shorthand for `{ "enabled": <boolean> }`;
+omitted threshold fields keep their committed default. Threshold meanings (and
+the rationale for each shipping value) live in the rule source —
+`extension/src/rules/encoded-payload-redact.ts` and
+`extension/src/rules/rule-metadata.ts`. Threshold values are not range-checked
+at the validator; operators tuning them are reading the rule source by
+definition.
+
+The file may be partial; rules not listed keep the committed default. A bare
+boolean still works for any rule, including those with sub-rule options
+(`"encoded-payload-redact": false` disables the entire rule). Unknown keys (rule
+ids, reserved keys, sub-rule names, or threshold field names), object values for
+rules without declared sub-rule options, and leaf values whose type doesn't
+match the declared default (boolean → non-boolean, number → non-finite or
+non-number) fail the build with a message naming the offending paths.
 
 Build-time overrides only affect **fresh** `chrome.storage` — users who already
 toggled rules in the Options UI keep their preferences. The typical target is

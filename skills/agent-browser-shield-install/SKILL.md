@@ -225,25 +225,37 @@ JSON override file instead of using the hosted ZIP.
    ```
 
 3. Rules with sub-rule options accept an ESLint-style object value in addition
-   to a plain boolean. Today only `encoded-payload-redact` takes options (one
-   sub-rule per encoding family: `base64`, `hex`, `percent`,
-   `substitutionCipher`, `leetspeak`, `nato`, `morse`); turn off the
-   higher-false-positive text ciphers without losing the byte-encoding coverage:
+   to a plain boolean (a bare `"encoded-payload-redact": false` still works and
+   disables the entire rule). Today only `encoded-payload-redact` takes options
+   (one sub-rule per encoding family: `base64`, `hex`, `percent`,
+   `substitutionCipher`, `leetspeak`, `nato`, `morse`). Each sub-rule can be
+   `false` (off), `true` (on), or an object carrying `enabled` plus tuning
+   thresholds — length floors, common-word counts, printable-byte ratios — that
+   override the committed defaults from `rule-metadata.ts`:
 
    ```json
    {
      "encoded-payload-redact": {
        "enabled": true,
-       "subRules": { "leetspeak": false, "nato": false, "morse": false }
+       "subRules": {
+         "leetspeak": false,
+         "nato": { "enabled": true, "minWords": 14 },
+         "morse": { "enabled": true, "validRatio": 0.9 }
+       }
      }
    }
    ```
 
-   `enabled` is optional; omitted sub-rules keep their committed default.
+   `enabled` is optional; omitted sub-rules and omitted threshold fields keep
+   their committed defaults. Threshold meanings and shipping values live in
+   `extension/src/rules/rule-metadata.ts` and the rule source — operators tuning
+   thresholds are expected to read the source.
 
-4. Unknown keys (rule ids, reserved keys, or sub-rule fields), object values for
-   rules without declared sub-rule options, and non-boolean values fail the
-   build with a clear error — catch typos before shipping.
+4. Unknown keys (rule ids, reserved keys, sub-rule names, or threshold field
+   names), object values for rules without declared sub-rule options, and leaf
+   values whose type doesn't match the declared default (boolean → non-boolean,
+   number → non-finite or non-number) fail the build with a clear error — catch
+   typos before shipping.
 
 5. Package and deploy as usual (`bun run package` then upload via Path A / B / C
    above). The overrides are baked into the bundle.
