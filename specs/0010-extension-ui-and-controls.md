@@ -112,6 +112,15 @@ all-or-nothing, and users pick "nothing."
   - **OpenAI API key** — input for the key that backs
     `irrelevant-sections-redact`. When a key is already bundled at build time
     (`HAS_BUILT_IN_OPENAI_KEY`), the field acts as an override.
+  - **Experimental** — toggles for features under evaluation; defaults, storage
+    keys, and behavior may change between releases. Currently exposes *Adaptive
+    placeholder palette* (default **off**): when on, each placeholder samples
+    its ancestor backgrounds at insert time and stamps
+    `data-abs-placeholder-palette="dark"` when the surrounding chrome reads
+    dark, so the placeholder stylesheet swaps to a dark stripe palette via CSS
+    variables. The toggle's value is also accepted as the
+    `placeholderAdaptivePalette` reserved key in the build-time defaults file
+    (spec [0011](./0011-build-time-customization.md) FR-3).
 
 ### Floating on-page options button
 
@@ -165,6 +174,7 @@ all-or-nothing, and users pick "nothing."
   `extension/src/options/Section.tsx`, `extension/src/options/parse-config.ts`,
   `extension/src/lib/RuleList.tsx`, `extension/src/lib/storage.ts`,
   `extension/src/lib/placeholder-display.ts`,
+  `extension/src/lib/placeholder-adaptive-palette.ts`,
   `extension/src/lib/api-key-storage.ts`, `extension/src/options/__tests__/`.
 - FR-11: `extension/src/lib/options-button-toggle.ts`,
   `extension/src/lib/options-badge.ts`.

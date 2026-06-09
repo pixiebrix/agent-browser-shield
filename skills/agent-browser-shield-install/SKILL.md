@@ -209,6 +209,12 @@ JSON override file instead of using the hosted ZIP.
      that mutates while hidden (lazy widgets, periodic refreshes, late
      prompt-injection payloads) would otherwise reach the consumer unredacted.
 
+   - `placeholderAdaptivePalette` (boolean, default **off**, experimental) —
+     sample each placeholder's ancestor backgrounds at insert time and pick a
+     light or dark stripe palette so redactions on dark-themed pages don't flare
+     against the page chrome. Off by default while the visual heuristic is still
+     being tuned. Enable for deployments on consistently dark UIs.
+
 2. Pass the path via CLI flag or env var to `bun run build`:
 
    ```sh
