@@ -72,9 +72,100 @@ export class StorageItem<Base, Return = Base | undefined> {
   }
 }
 
+// In-memory stub mirroring `StorageItemMap`'s secondary-key model: each entry
+// is stored under `${key}:::${secondaryKey}` in a shared map so `get` round-
+// trips through `set`/`remove` and `onChanged` fires the (secondaryKey, value)
+// shape the real package emits (value undefined on removal).
+const mapValues = new Map<string, unknown>();
+const mapListeners = new Map<
+  string,
+  Set<(secondaryKey: string, value: unknown) => void>
+>();
+
 export class StorageItemMap<T> {
-  constructor(
-    public readonly key: string,
-    public readonly options: StorageItemOptions<T> = {},
-  ) {}
+  readonly prefix: string;
+  readonly defaultValue?: T;
+
+  constructor(key: string, options: StorageItemOptions<T> = {}) {
+    this.prefix = `${key}:::`;
+    if (options.defaultValue !== undefined) {
+      this.defaultValue = options.defaultValue;
+    }
+  }
+
+  has(secondaryKey: string): Promise<boolean> {
+    return Promise.resolve(mapValues.has(this.prefix + secondaryKey));
+  }
+
+  get(secondaryKey: string): Promise<T | undefined> {
+    const rawKey = this.prefix + secondaryKey;
+    const value = mapValues.has(rawKey)
+      ? mapValues.get(rawKey)
+      : this.defaultValue;
+    return Promise.resolve(value as T | undefined);
+  }
+
+  set(secondaryKey: string, value: T): Promise<void> {
+    mapValues.set(this.prefix + secondaryKey, value);
+    for (const listener of mapListeners.get(this.prefix) ?? []) {
+      listener(secondaryKey, value);
+    }
+    return Promise.resolve();
+  }
+
+  remove(secondaryKey: string): Promise<void> {
+    mapValues.delete(this.prefix + secondaryKey);
+    for (const listener of mapListeners.get(this.prefix) ?? []) {
+      listener(secondaryKey, undefined);
+    }
+    return Promise.resolve();
+  }
+
+  delete(secondaryKey: string): Promise<void> {
+    return this.remove(secondaryKey);
+  }
+
+  keys(): Promise<string[]> {
+    const result: string[] = [];
+    for (const rawKey of mapValues.keys()) {
+      if (rawKey.startsWith(this.prefix)) {
+        result.push(rawKey.slice(this.prefix.length));
+      }
+    }
+    return Promise.resolve(result);
+  }
+
+  clear(): Promise<void> {
+    for (const rawKey of mapValues.keys()) {
+      if (rawKey.startsWith(this.prefix)) {
+        mapValues.delete(rawKey);
+      }
+    }
+    return Promise.resolve();
+  }
+
+  async *entries(): AsyncIterableIterator<[string, T]> {
+    for (const secondaryKey of await this.keys()) {
+      yield [secondaryKey, (await this.get(secondaryKey)) as T];
+    }
+  }
+
+  onChanged(
+    callback: (secondaryKey: string, value: T) => void,
+    signal?: AbortSignal,
+  ): void {
+    const set = mapListeners.get(this.prefix) ?? new Set();
+    const wrapped = (secondaryKey: string, value: unknown) => {
+      callback(secondaryKey, value as T);
+    };
+    set.add(wrapped);
+    mapListeners.set(this.prefix, set);
+    signal?.addEventListener(
+      "abort",
+      () => {
+        set.delete(wrapped);
+      },
+      { once: true },
+    );
+  }
 }

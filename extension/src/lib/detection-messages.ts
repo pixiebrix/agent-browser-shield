@@ -87,6 +87,30 @@ export interface GetTabRuleCountsResponse {
   detections: DetectionPayload[];
 }
 
+// Content-script ↔ background messages for the tab-scoped enforcement pause
+// (ADR-0019). The pause lives in `chrome.storage.session` keyed by tabId —
+// which content scripts can't read and is keyed by a tabId they don't know — so
+// the background resolves liveness for them. `get-tab-pause` is the init fetch
+// a content script makes when its rule engine starts; `tab-pause-changed` is
+// the background's push when the popup edits the pause, so a still-open page
+// reveals (or, on manual resume, re-enforces) without waiting for a reload.
+export interface GetTabPauseRequest {
+  type: "get-tab-pause";
+}
+
+export interface GetTabPauseResponse {
+  // Resolved liveness for the requesting frame's tab — the background applies
+  // the `expiresAt` check so the content side never sees the raw record.
+  paused: boolean;
+}
+
+export interface TabPauseChangedMessage {
+  type: "tab-pause-changed";
+  // New resolved liveness for the tab, carried in the message so the content
+  // script needn't round-trip back for the value.
+  paused: boolean;
+}
+
 // Dev-mode structured trace of every rule-driven mutation. Captured only
 // when the user enables the "Debug trace" toggle in the popup; gated at
 // emission by `debug-trace.ts` so a disabled toggle drops the work

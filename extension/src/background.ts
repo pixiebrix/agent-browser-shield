@@ -18,10 +18,12 @@ import type {
   GetTabDebugTraceResponse,
   GetTabDetectionsRequest,
   GetTabDetectionsResponse,
+  GetTabPauseResponse,
   GetTabRuleCountsRequest,
   GetTabRuleCountsResponse,
   RuleCountEntry,
   RuleDetectionMessage,
+  TabPauseChangedMessage,
 } from "./lib/detection-messages";
 import { startDumpTraceBridgeRegistration } from "./lib/dump-trace-bridge-registration";
 import {
@@ -34,6 +36,8 @@ import { startShadowRootProbeRegistration } from "./lib/shadow-root-probe-regist
 import { installShadowRootProbe } from "./lib/shadow-root-probe-source";
 import { siteDenylistStorage } from "./lib/site-denylist";
 import { ruleStatesStorage } from "./lib/storage";
+import type { TabPause } from "./lib/tab-pause";
+import { isPauseActive, tabPauseMap } from "./lib/tab-pause";
 import type { ProtectionState } from "./lib/toolbar-protection";
 import {
   ACTION_ICON_OFF,
@@ -80,6 +84,13 @@ let denylist: readonly string[] = [];
 // denylist for any tab without round-tripping the page. Captured from
 // tabs.onUpdated / onActivated / a startup tabs.query; dropped on tab close.
 const tabUrls = new Map<number, string>();
+
+// In-memory mirror of the tab-scoped recovery pause map (ADR-0019), so
+// `refreshBadge` stays sync and the content bridge can resolve liveness without
+// an async read. Hydrated from `tabPauseMap` at startup and kept current by its
+// `onChanged`. The authoritative store is `chrome.storage.session`; this is the
+// same cache posture as `enforcementEnabled` / `denylist`.
+const tabPauses = new Map<number, TabPause>();
 
 // Memo of the icon/title appearance last applied per tab, keyed by
 // `protectionAppearanceKey`, so we only call setIcon/setTitle when the
@@ -150,6 +161,7 @@ function refreshBadge(tabId: number): void {
     enforcementEnabled,
     tabUrl: tabUrls.get(tabId) ?? null,
     denylist,
+    paused: isPauseActive(tabPauses.get(tabId) ?? null, Date.now()),
   });
   applyProtectionAppearance(tabId, state);
   if (state.off) {
@@ -293,6 +305,14 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   tabDetections.delete(tabId);
   tabUrls.delete(tabId);
   tabAppearanceKey.delete(tabId);
+  // Drop any recovery pause for the closed tab. The cache delete is immediate;
+  // the session-storage remove is fire-and-forget (the value is auto-cleared on
+  // browser restart regardless, this just keeps it tidy within the session).
+  if (tabPauses.delete(tabId)) {
+    void tabPauseMap.remove(String(tabId)).catch(() => {
+      // noop
+    });
+  }
   // Fire-and-forget — IDB write may outlive the listener context.
   void clearDebugTraceTab(tabId).catch(() => {
     // noop
@@ -321,6 +341,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       refreshBadge(tabId);
     }
     return;
+  }
+  // A top-frame navigation ends a "page"-scoped reveal (the panic button is
+  // current-page-only) and reaps any timed "tab" pause that has since expired.
+  // Active timed pauses survive so a multi-page flow stays unblocked.
+  const pause = tabPauses.get(tabId);
+  if (pause && (pause.scope === "page" || !isPauseActive(pause, Date.now()))) {
+    tabPauses.delete(tabId);
+    void tabPauseMap.remove(String(tabId)).catch(() => {
+      // noop
+    });
   }
   clearTab(tabId);
   void (async () => {
@@ -395,6 +425,52 @@ void siteDenylistStorage.get().then((next) => {
   refreshAllTabs();
 });
 
+// The tab-scoped recovery pause (ADR-0019) is the third input to the protection
+// signal — but only the popup and background write it, and content scripts
+// can't observe the session area, so the background bridges every change to the
+// tab's frames. On a popup edit (reveal/pause/snooze, or "Resume now") push the
+// new liveness so a still-open page reveals or re-enforces without a reload; a
+// *timed* expiry produces no write and hence no push, which is what leaves the
+// open page revealed until its next navigation.
+// webext-storage types the change value as non-undefined, but it IS undefined
+// when the entry was removed (resume / nav-clear / tab close). A wider param
+// type is contravariantly assignable — no cast needed.
+tabPauseMap.onChanged((key, value: TabPause | undefined) => {
+  const tabId = Number(key);
+  if (!Number.isInteger(tabId)) {
+    return;
+  }
+  if (value === undefined) {
+    tabPauses.delete(tabId);
+  } else {
+    tabPauses.set(tabId, value);
+  }
+  const paused = isPauseActive(tabPauses.get(tabId) ?? null, Date.now());
+  const message: TabPauseChangedMessage = { type: "tab-pause-changed", paused };
+  chrome.tabs.sendMessage(tabId, message).catch(() => {
+    // Tab has no content script (restricted URL) or has closed — ignore.
+  });
+  refreshBadge(tabId);
+});
+// Hydrate the cache from the session store so a service-worker restart doesn't
+// drop a still-active pause from the toolbar signal. Async generator over the
+// map's entries; tabIds are the secondary keys.
+// eslint-disable-next-line unicorn/prefer-top-level-await -- IIFE bundle, no TLA
+void (async () => {
+  try {
+    for await (const [key, value] of tabPauseMap.entries()) {
+      const tabId = Number(key);
+      if (Number.isInteger(tabId)) {
+        tabPauses.set(tabId, value);
+      }
+    }
+    refreshAllTabs();
+  } catch {
+    // Session storage unreadable at startup — the caches stay empty and the
+    // signal fails open to "protected", same posture as the other seeds.
+  }
+})();
+
 // When a user disables one of the detection-producing rules mid-session,
 // drop the now-stale entries from every tab so the popup matches the
 // current rule selection. Detections for the other (still-enabled) rule
@@ -452,6 +528,33 @@ chrome.runtime.onMessage.addListener(
       const url = sender.tab?.url ?? null;
       sendResponse({ url });
       return undefined;
+    }
+
+    if (message.type === "get-tab-pause") {
+      // Content scripts ask this once at rule-engine init to seed the
+      // tab-scoped recovery pause (ADR-0019). Read the session store directly
+      // rather than the in-memory cache so a request that lands before startup
+      // hydration still resolves accurately. The background applies the
+      // `expiresAt` check so the content side only ever sees a boolean.
+      const tabId = sender.tab?.id;
+      if (typeof tabId !== "number") {
+        const response: GetTabPauseResponse = { paused: false };
+        sendResponse(response);
+        return undefined;
+      }
+      void tabPauseMap
+        .get(String(tabId))
+        .then((value) => {
+          const response: GetTabPauseResponse = {
+            paused: isPauseActive(value ?? null, Date.now()),
+          };
+          sendResponse(response);
+        })
+        .catch(() => {
+          const response: GetTabPauseResponse = { paused: false };
+          sendResponse(response);
+        });
+      return true;
     }
 
     if (message.type === "inject-webdriver-probe") {

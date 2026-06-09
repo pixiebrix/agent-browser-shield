@@ -24,6 +24,11 @@
 // match is evaluated against the tab's top-frame URL and subframes
 // inherit.
 
+import type {
+  GetTabPauseRequest,
+  GetTabPauseResponse,
+  TabPauseChangedMessage,
+} from "./detection-messages";
 import { enforcementStorage, subscribeEnforcementEnabled } from "./enforcement";
 import { isTopFrame } from "./frame";
 import { matchesDenylist, siteDenylistStorage } from "./site-denylist";
@@ -31,6 +36,15 @@ import { matchesDenylist, siteDenylistStorage } from "./site-denylist";
 let cachedTopFrameUrl: string | null = null;
 let cachedGlobal = true;
 let cachedDenylist: string[] = [];
+// Tab-scoped recovery pause (ADR-0019). Unlike `cachedGlobal`/`cachedDenylist`,
+// this isn't storage-backed on the content side — content scripts can't read
+// `chrome.storage.session` and don't know their own tabId — so it's seeded by a
+// `get-tab-pause` round-trip at init and updated by `tab-pause-changed`
+// broadcasts. A *timed* snooze expiring produces no broadcast, so the open page
+// stays revealed until its next navigation re-reads fresh state at init
+// ("resume on next navigation"); only an explicit popup edit (pause/reveal, or
+// "Resume now") flips this mid-page.
+let cachedTabPaused = false;
 let lastEffective = true;
 const listeners = new Set<(enabled: boolean) => void>();
 
@@ -44,6 +58,9 @@ function readTopFrameUrl(): string | null {
 
 function computeEffective(): boolean {
   if (!cachedGlobal) {
+    return false;
+  }
+  if (cachedTabPaused) {
     return false;
   }
   const url = readTopFrameUrl();
@@ -90,20 +107,44 @@ async function fetchTopFrameUrl(): Promise<string | null> {
   return null;
 }
 
+// Unlike the URL fetch, every frame asks — the pause applies to the whole tab,
+// and the background resolves it from `sender.tab.id` regardless of frame.
+async function fetchTabPaused(): Promise<boolean> {
+  try {
+    const response: unknown = await chrome.runtime.sendMessage({
+      type: "get-tab-pause",
+    } satisfies GetTabPauseRequest);
+    if (
+      response &&
+      typeof response === "object" &&
+      "paused" in response &&
+      typeof (response as GetTabPauseResponse).paused === "boolean"
+    ) {
+      return (response as GetTabPauseResponse).paused;
+    }
+  } catch {
+    // Background unreachable → assume not paused (fail-open to protected),
+    // matching the URL fetch's posture.
+  }
+  return false;
+}
+
 // Resolves to the current effective enforcement boolean and installs the
 // underlying storage subscriptions. Idempotent: callers (rule-engine) only
 // call this once, but a second call would re-fetch + re-subscribe without
 // duplicating listeners (storage subscriptions are scoped to AbortControllers
 // held by the chrome-storage-value wrapper).
 export async function initEffectiveEnforcement(): Promise<boolean> {
-  const [global, denylist, topUrl] = await Promise.all([
+  const [global, denylist, topUrl, tabPaused] = await Promise.all([
     enforcementStorage.get(),
     siteDenylistStorage.get(),
     fetchTopFrameUrl(),
+    fetchTabPaused(),
   ]);
   cachedGlobal = global;
   cachedDenylist = denylist;
   cachedTopFrameUrl = topUrl;
+  cachedTabPaused = tabPaused;
   lastEffective = computeEffective();
 
   subscribeEnforcementEnabled((next) => {
@@ -113,6 +154,20 @@ export async function initEffectiveEnforcement(): Promise<boolean> {
   siteDenylistStorage.subscribe((next) => {
     cachedDenylist = next;
     notify();
+  });
+  // The background pushes the tab's pause liveness on every popup edit. Each
+  // frame listens independently so its own rule engine reveals / re-applies.
+  chrome.runtime.onMessage.addListener((message: unknown) => {
+    if (
+      message &&
+      typeof message === "object" &&
+      (message as { type?: unknown }).type === "tab-pause-changed" &&
+      typeof (message as TabPauseChangedMessage).paused === "boolean"
+    ) {
+      cachedTabPaused = (message as TabPauseChangedMessage).paused;
+      notify();
+    }
+    return undefined;
   });
 
   return lastEffective;

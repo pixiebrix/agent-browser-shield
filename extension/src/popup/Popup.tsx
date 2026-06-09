@@ -10,6 +10,7 @@ import { useChromeStorageValue } from "../lib/use-chrome-storage-value";
 import { DebugTraceSection } from "./DebugTraceSection";
 import { DetectionsSection } from "./DetectionsSection";
 import { PerRuleCountsSection } from "./PerRuleCountsSection";
+import { RecoverySection } from "./RecoverySection";
 import { SiteDisableSection } from "./SiteDisableSection";
 import { useTabDebugTrace } from "./use-tab-debug-trace";
 import { useTabActivity } from "./use-tab-detections";
@@ -75,6 +76,13 @@ export function Popup() {
       </div>
       {enforcementEnabled && (
         <SiteDisableSection activeTabUrl={activeTabUrl} denylist={denylist} />
+      )}
+      {enforcementEnabled && (
+        <RecoverySection
+          activeTabId={activeTabId}
+          activeTabUrl={activeTabUrl}
+          denylist={denylist}
+        />
       )}
       <button
         type="button"
