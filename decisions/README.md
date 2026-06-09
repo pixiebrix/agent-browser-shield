@@ -1,7 +1,7 @@
 # Architecture Decision Records
 
 This directory holds Architecture Decision Records (ADRs) for
-`agent-browser-shield`, written in the [MADR 3.0](https://adr.github.io/madr/)
+`agent-browser-shield`, written in the [MADR 4.0](https://adr.github.io/madr/)
 format.
 
 The records are a back-fill of load-bearing decisions reconstructed from merged
