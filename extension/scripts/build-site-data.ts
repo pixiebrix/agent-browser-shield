@@ -24,6 +24,7 @@ import {
   SiteFileSchema,
   toEntries,
 } from "../data/site-rules.schema";
+import { fileHasContent } from "./file-has-content";
 
 const ROOT = join(import.meta.dir, "..");
 const SITES_DIR = join(ROOT, "data", "sites");
@@ -313,7 +314,13 @@ export function generateSiteData(): void {
 
   const parsed = loadSites();
   const output = buildOutput(parsed);
-  writeFileSync(OUTPUT, output);
+  // Only write when the content actually changes. The output lives inside
+  // `src/`, which `build.ts --watch` watches recursively; an unconditional
+  // write would re-trigger the watcher on every build and spin into an
+  // infinite rebuild loop.
+  if (!fileHasContent(OUTPUT, output)) {
+    writeFileSync(OUTPUT, output);
+  }
   console.log(
     `Generated ${relative(ROOT, OUTPUT)} from ${parsed.length} site YAML files.`,
   );
