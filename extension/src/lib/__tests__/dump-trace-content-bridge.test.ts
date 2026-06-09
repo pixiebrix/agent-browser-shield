@@ -133,6 +133,36 @@ describe("startDumpTraceContentBridge", () => {
     });
   });
 
+  it("treats an undefined background reply as an empty trace", async () => {
+    // chrome.runtime.sendMessage resolves with `undefined` when the
+    // background listener returns without calling sendResponse — that
+    // happens in the get-tab-debug-trace branch when sender.tab?.id is
+    // missing. Earlier code dereferenced response.entries and crashed
+    // with TypeError; now it should post an empty-entries response.
+    sendMessage.mockResolvedValueOnce(undefined);
+    stopBridge = startDumpTraceContentBridge();
+    const capture = captureResponses();
+    stopCapture = capture.stop;
+    const { responses } = capture;
+
+    dispatchBridgeMessage({
+      source: "abs-dump-trace",
+      direction: "request",
+      id: "req-undef",
+    });
+    await flush();
+    await flush();
+
+    expect(responses).toHaveLength(1);
+    expect(responses[0]).toMatchObject({
+      source: "abs-dump-trace",
+      direction: "response",
+      id: "req-undef",
+      entries: [],
+    });
+    expect(responses[0]?.error).toBeUndefined();
+  });
+
   it("posts an error response when the background rejects", async () => {
     sendMessage.mockRejectedValueOnce(new Error("nope"));
     stopBridge = startDumpTraceContentBridge();

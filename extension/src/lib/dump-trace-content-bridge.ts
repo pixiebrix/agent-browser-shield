@@ -65,18 +65,23 @@ function postResponse(
 
 async function forwardRequest(id: string): Promise<void> {
   const request: GetTabDebugTraceRequest = { type: "get-tab-debug-trace" };
-  let response: GetTabDebugTraceResponse;
+  let response: GetTabDebugTraceResponse | undefined;
   try {
     response = await chrome.runtime.sendMessage<
       GetTabDebugTraceRequest,
-      GetTabDebugTraceResponse
+      GetTabDebugTraceResponse | undefined
     >(request);
   } catch (error) {
     log.warn("dump-trace bridge: background request failed", { error });
     postResponse(id, { error: String(error) });
     return;
   }
-  postResponse(id, { entries: response.entries });
+  // chrome.runtime.sendMessage resolves with `undefined` when the
+  // listener returns without calling sendResponse — that happens in
+  // the background's `get-tab-debug-trace` branch if sender.tab?.id is
+  // missing (rare, but possible for off-tab callers). Treat that as an
+  // empty trace rather than crashing the page-world promise.
+  postResponse(id, { entries: response?.entries ?? [] });
 }
 
 function bridgeListener(event: MessageEvent): void {
