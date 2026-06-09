@@ -48,7 +48,6 @@ jest.mock("../frame", () => ({
 
 jest.mock("../effective-enforcement", () => ({
   initEffectiveEnforcement: jest.fn(() => Promise.resolve(true)),
-  getEffectiveEnforcement: jest.fn(() => true),
   subscribeEffectiveEnforcement: jest.fn(() => () => undefined),
 }));
 

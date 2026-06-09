@@ -118,10 +118,6 @@ export async function initEffectiveEnforcement(): Promise<boolean> {
   return lastEffective;
 }
 
-export function getEffectiveEnforcement(): boolean {
-  return lastEffective;
-}
-
 export function subscribeEffectiveEnforcement(
   listener: (enabled: boolean) => void,
 ): () => void {
