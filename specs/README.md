@@ -8,12 +8,17 @@ called out under **Future work**.
 
 Specs are distinct from [Architecture Decision Records](../decisions/README.md):
 
-| Specs (this directory)                         | ADRs (`decisions/`)                                |
-| ---------------------------------------------- | -------------------------------------------------- |
-| **What** the system does today                 | **Why** we chose a particular path                 |
-| Updated as behavior changes                    | Immutable once accepted (or marked superseded)     |
-| User stories + acceptance criteria             | Context, drivers, considered options, consequences |
-| Forward-pointing: "future work" calls out gaps | Backward-looking: cites PRs, issues, doc passages  |
+| Specs (this directory)                               | ADRs (`decisions/`)                                |
+| ---------------------------------------------------- | -------------------------------------------------- |
+| **What** the system does and **why each one exists** | **Why** we chose a particular implementation path  |
+| Updated as behavior changes                          | Immutable once accepted (or marked superseded)     |
+| Problem + user stories + acceptance criteria         | Context, drivers, considered options, consequences |
+| Forward-pointing: "future work" calls out gaps       | Backward-looking: cites PRs, issues, doc passages  |
+
+Both kinds of doc carry a "why" — specs name the **product** why (the problem
+solved), ADRs name the **implementation** why (the path chosen). A spec
+shouldn't litigate alternative architectures; an ADR shouldn't restate the
+problem at user-story granularity.
 
 When a spec changes, check whether the change implies a new decision worth
 recording as an ADR.
@@ -59,22 +64,25 @@ A spec carries one of:
 
 Every spec follows the template at [`_template.md`](./_template.md):
 
-1. **Purpose** — one paragraph: what this spec is about and why it exists.
-2. **User stories** — separated into **Human users** and **AI agents** (the two
+1. **Purpose** — one paragraph: what this capability is and where it sits.
+2. **Problem** — the harm, friction, or risk this capability addresses. Phrased
+   so a reader can answer "what would go wrong without it?" The **product** why;
+   implementation choices belong in an ADR.
+3. **User stories** — separated into **Human users** and **AI agents** (the two
    reader classes the extension serves). Stories follow
    `As a … I want … so that …`.
-3. **Functional requirements** — numbered acceptance criteria. Each is a
+4. **Functional requirements** — numbered acceptance criteria. Each is a
    verifiable statement about current behavior (FR-1, FR-2, …).
-4. **Non-functional requirements** — qualities the capability holds itself to
+5. **Non-functional requirements** — qualities the capability holds itself to
    (NFR-P/S/O/U/M for performance, security, observability, usability,
    maintainability). Defer to [0014](./0014-non-functional-requirements.md) for
    cross-cutting bars.
-5. **Current implementation** — file pointers into the repo that back each
+6. **Current implementation** — file pointers into the repo that back each
    requirement.
-6. **Future work** — concrete gaps in current behavior, each tied to a tracking
+7. **Future work** — concrete gaps in current behavior, each tied to a tracking
    issue or a documented decision to defer. **No aspirational features without a
    tracking link.**
-7. **Related** — links to ADRs, docs, and other specs.
+8. **Related** — links to ADRs, docs, and other specs.
 
 ### Citation discipline
 

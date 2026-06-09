@@ -13,6 +13,17 @@ and **structured page data** (what DOM-walking agents read). The rules in this
 area annotate rather than remove, because the artifact itself is the thing under
 inspection.
 
+## Problem
+
+Phishing and impersonation pages exploit the gap between what humans see (a
+glyph, a logo, a "Verified" badge) and what DOM-walking agents see (an `href`,
+an `alt` text, a microdata field). An anchor that *displays* `paypal.com` but
+*points* at `paypa1.com`; a "Verified by Trustpilot" badge that's a static PNG
+with no schema.org markup; a homoglyph URL in the address bar. A vision-only
+agent reads the glyph and trusts it; a DOM-only agent reads the href and trusts
+it. Either reader class alone misses half of the spoof. A defense layer has to
+name the asymmetry explicitly so neither reader gets bluffed.
+
 ## User stories
 
 ### Human users

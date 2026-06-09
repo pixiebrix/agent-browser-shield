@@ -12,6 +12,17 @@ helping it complete the task — footers, cookie banners, chat widgets, ads,
 disguised native advertorials, dead SVG sprite definitions, and (opt-in)
 engagement rails identified by an LLM.
 
+## Problem
+
+Most of the bytes on a typical page — cookie banners, chat widgets, ads,
+footers, sidebar rails, dead SVG sprite definitions — aren't load-bearing for
+the task the agent was asked to do, but they all consume the agent's read
+budget. On a token-billed agent, a chrome-heavy page can burn through budget
+before the real content is reached; on a context-window-limited one, the actual
+task gets evicted to make room for cookie-policy boilerplate. Either way the
+agent gets dumber on pages the user picked precisely *because* the content was
+there.
+
 ## User stories
 
 ### Human users

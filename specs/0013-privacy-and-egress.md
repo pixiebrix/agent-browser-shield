@@ -12,6 +12,17 @@ call, and per-storage discipline that keeps user data on the device. This spec
 is the authoritative statement of what leaves the browser and under what
 conditions.
 
+## Problem
+
+A defensive extension installed to keep data away from agents must not itself
+become an exfiltration channel. The extension runs a `<all_urls>` content script
+that sees every page, holds API keys and per-tab detection state, and could
+plausibly phone home for "analytics" or "model improvement." Without a hard,
+inspectable zero-telemetry posture — written into the README, the docs, the
+Chrome Web Store listing, and the code — users have no way to verify the shield
+doesn't trade their data for the same reason they installed it. The bar is high
+precisely because the access is total.
+
 ## User stories
 
 ### Human users

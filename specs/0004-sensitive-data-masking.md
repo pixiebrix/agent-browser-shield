@@ -11,6 +11,16 @@ Replace credentials and personal identifiers with click-to-reveal placeholders
 before they reach a browser-use agent. The masking is in-place on text nodes —
 the page still renders normally for a human.
 
+## Problem
+
+Confirmation screens, account dashboards, billing pages, and developer consoles
+routinely render credit-card numbers, phone numbers, SSNs, API keys, JWTs, and
+OAuth tokens that a browser-use agent will faithfully copy into model context
+and downstream tool calls. The user doesn't see the leak — the page looks normal
+— but the agent has shipped PII or credentials into systems the user never
+named, with no audit trail at the point of exposure. A defense positioned at the
+agent's read path catches the leak before it leaves the browser.
+
 ## User stories
 
 ### Human users

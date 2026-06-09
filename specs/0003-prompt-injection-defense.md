@@ -14,6 +14,16 @@ via the user's prompt — generalized to LLM-driven web agents. Coverage spans
 rendered content, non-rendered DOM, page metadata, HTML attributes, and
 structured-data surfaces.
 
+## Problem
+
+A browser-use agent treats the page it reads as authoritative. Anyone who can
+get text onto that page — review fields, comment threads, profile bios, metadata
+tags, hidden inputs, encoded payloads — can issue instructions the agent will
+execute on the user's behalf. The instruction never crosses the user's prompt,
+so prompt-layer filtering never sees it. Without a defense layer between the
+page and the model, the user's threat surface for agentic browsing is every text
+input on every page the agent ever reads.
+
 ## User stories
 
 ### Human users

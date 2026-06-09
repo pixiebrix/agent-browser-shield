@@ -12,6 +12,16 @@ non-rule build-time toggles — without forking the repo or flipping toggles in
 the Options UI on every fresh session. Targets infra deployments (CDP,
 Browserbase, agent runtimes) where storage starts empty each session.
 
+## Problem
+
+Downstream embedders — PixieBrix, agent harness operators, CDP/Browserbase users
+— need different defaults than a human installer. Short-lived browser sessions
+start with empty storage every time, so any rule a harness wants on by default
+reverts to the ship state on every boot. Without build-time override hooks,
+every embedder forks the repo to flip defaults, or runs a brittle "set storage
+at startup" script before each session — and both strategies drift on every
+shield release.
+
 ## User stories
 
 ### Human users

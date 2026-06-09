@@ -12,6 +12,16 @@ to the agent so it isn't silently reading content the shield never saw. Covers
 shadow-DOM attachment paths (open vs closed), cross-origin embedded frames, and
 AI-targeted cloaking signals.
 
+## Problem
+
+A defense system that silently doesn't cover part of a page is worse than no
+defense — the user assumes protection where there is none. Closed shadow roots,
+cross-origin iframes, declarative shadow DOM, and AI-targeted cloaking all
+surface content the rule engine cannot read or rewrite. Without explicit
+landmarks naming those blind spots, agents act on partial information believing
+the shield ran, and humans don't know to look closer at the regions the shield
+couldn't see.
+
 ## User stories
 
 ### Human users

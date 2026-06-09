@@ -11,6 +11,16 @@ The user-facing surfaces of the extension: the toolbar action with its badge and
 popup, the Options page, the optional floating on-page options button, and the
 rule-state storage that backs them.
 
+## Problem
+
+A defensive extension has to be transparent and tunable, or it loses the user's
+trust the first time it gets in the way. Without a per-tab badge, users can't
+tell whether the shield is doing anything. Without a popup that lists which
+rules fired and how often, they can't reproduce a complaint to file a bug.
+Without fine-grained per-rule toggles backed by persistent storage, "the shield
+broke my page" turns into "I uninstalled the shield" — defenses are
+all-or-nothing, and users pick "nothing."
+
 ## User stories
 
 ### Human users

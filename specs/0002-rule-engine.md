@@ -11,6 +11,16 @@ The runtime that decides which rules apply, where they apply, and how the
 extension keeps page mutations in sync with user toggles, availability, and SPA
 navigation. The engine is the substrate every defense rule plugs into.
 
+## Problem
+
+Defenses must stay in sync with what the page renders and what the user has
+enabled — across every frame, through SPA route changes, and under bursts of DOM
+mutations. Without a shared runtime, individual rules duplicate MutationObserver
+wiring, leak listeners, drift in how they respond to toggles, and silently
+regress on late-mounted content. Each drift is a coverage hole the user can't
+see: a rule that fires on first paint but not after a React route change leaves
+the second page unprotected with no warning.
+
 ## User stories
 
 ### Human users

@@ -11,6 +11,17 @@ Cross-cutting quality bars that apply across the system. Capability-specific
 NFRs live in their own specs; this one names the standing requirements every
 spec inherits unless explicitly weakened.
 
+## Problem
+
+Quality bars that span the whole system — performance, privacy, observability,
+maintainability — drift fast when each capability's spec restates them in its
+own words. One spec relaxes the `document_idle` deadline because "it's a quick
+walk anyway," another adopts its own MutationObserver to "keep things simple,"
+and a third loosens the no-telemetry posture for a "small debug ping." A single
+cross-cutting spec is the source of truth other specs cite — "I inherit the
+rule-engine perf bar at NFR-P-1" — so when a bar tightens or loosens, one file
+changes and every capability inherits the change with one review pass.
+
 This spec has no user stories — non-functional bars are not user-facing
 behavior. They constrain how every functional requirement must be met.
 

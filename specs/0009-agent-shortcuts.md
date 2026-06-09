@@ -12,6 +12,17 @@ the human-facing UI — currently URL recipes for searches, filters, sorts, and
 direct lookups on a curated set of hosts. The agent reads the hint from the
 accessibility tree and decides whether to use it.
 
+## Problem
+
+Agents waste tokens and reliability fumbling through complex per-site UIs:
+search inputs that reject paste, faceted filter panels that re-render on each
+click, sort menus hidden behind a hamburger, autocomplete dropdowns that close
+on focus loss. Most of those same sites already expose deterministic URL
+parameters that get the same result in a single navigation. Without an in-page
+hint pointing the agent at the URL recipe, every agent re-discovers the URL
+shape from scratch — or, worse, gives up on the URL and grinds through the
+brittle UI path while the user pays for the tokens.
+
 ## User stories
 
 ### Human users

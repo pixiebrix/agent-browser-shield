@@ -11,6 +11,16 @@ How `agent-browser-shield` reaches end users and agent runtimes — the shipping
 formats, supported browser, and licensing posture that gate use. Covers Chrome
 Web Store install, prebuilt ZIP, and build-from-source paths.
 
+## Problem
+
+Users and agent runtimes need a low-friction, deterministic way to get the
+shield onto a browser at the moment defenses matter most — when an agent is
+already attached and acting. Without an auto-updating store install for humans,
+a pinnable prebuilt ZIP for CI/Browserbase, and a clear license posture for
+commercial embedders, the shield becomes hard to adopt: humans skip it because
+loading-unpacked is fiddly, harness operators can't pin to a known build, and
+commercial users won't ship code they can't reason about legally.
+
 ## User stories
 
 ### Human users

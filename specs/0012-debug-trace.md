@@ -14,6 +14,17 @@ or rewrote something it shouldn't have." Off by default; retrieved via the
 popup's *Export* button or, for CDP-driven harnesses, via
 `window.__abs_dumpTrace()`.
 
+## Problem
+
+Rules that hide, mask, or rewrite page content fail in two directions: they can
+cross-fire on legitimate content (false positive — the user notices something
+missing), or they can miss real injections (false negative — the agent quietly
+follows attacker text). Without a per-rule trace of "what selector matched, on
+which element, with what text before and after," neither failure mode is
+actionable: users can't reproduce reports beyond "the shield ate my form," and
+rule authors can't tell a tunable heuristic from a hard bug. The trace turns
+vague reports into evidence.
+
 ## User stories
 
 ### Human users

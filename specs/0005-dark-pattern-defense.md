@@ -12,6 +12,18 @@ browser-use agents — scarcity, urgency, sneaking, preselection, confirmshaming
 roach-motel signup flows, and nagging. Rules act on the DOM the agent reads
 rather than running a heuristic over the rendered pixels.
 
+## Problem
+
+Dark patterns are engineered to push humans into worse decisions, and
+browser-use agents inherit those decisions while skipping the human reaction
+that sometimes catches the trick — agents don't notice that the "decline" button
+changed wording, don't pause at a fake countdown, and don't recognize a
+preselected upsell. Without targeted defenses, an agent silently inherits
+pre-checked add-ons, agrees to roach-motel subscriptions during a signup, and
+completes checkouts with drip-pricing fees the user never approved. The
+asymmetry favors the attacker: one bad pattern × thousands of agent runs × no
+human-in-the-loop friction.
+
 ## User stories
 
 ### Human users

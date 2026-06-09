@@ -11,6 +11,13 @@ One paragraph. What this capability is, who it serves, and where it sits in the
 overall threat model or value proposition. No marketing copy — name the concrete
 user surface (a rule group, a UI control, a build flag).
 
+## Problem
+
+One paragraph (or 2–4 bullets). The harm, friction, or risk this capability
+exists to address — phrased so a reader can answer "what would go wrong without
+it?" Architectural rationale ("why we chose React over Lit") belongs in an ADR,
+not here; this section is the **product** why, not the **implementation** why.
+
 ## User stories
 
 ### Human users
