@@ -26,6 +26,7 @@ export default defineConfig({
       sidebar: [
         { label: "Install", slug: "install" },
         { label: "Rules reference", slug: "rules" },
+        { label: "Debug trace", slug: "debug-trace" },
         { label: "Use with browser-use", slug: "browser-use" },
         { label: "Use with Browserbase (Python)", slug: "browserbase-python" },
         { label: "Use with OpenClaw", slug: "openclaw" },

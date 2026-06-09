@@ -165,6 +165,16 @@ Any Python framework that accepts a CDP URL works the same way — pass
 `session.connect_url` to browser-use, LangChain's browser tools, or your own
 agent runner.
 
+## Investigating a false positive
+
+When a shield rule hides, masks, or rewrites something it shouldn't have, turn
+on the debug-trace recorder and pull the per-tab mutation record via
+`window.__abs_dumpTrace()` over CDP. Each entry tells you which rule fired, what
+it matched, and the `outerHTML` before and after the mutation — enough to
+reproduce the diagnosis offline. See
+[Debug trace](/agent-browser-shield/debug-trace/) for the Playwright + raw-CDP
+recipes and event schema.
+
 ## Brief the agent on what the shield changes
 
 The extension rewrites the DOM — masked text becomes `[PII masked]`, dark

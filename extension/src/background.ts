@@ -7,12 +7,14 @@ import { debugTraceStorage } from "./lib/debug-trace";
 import {
   appendEvent as appendDebugTraceEvent,
   clearTab as clearDebugTraceTab,
+  getEventsForTab as getDebugTraceForTab,
 } from "./lib/debug-trace-store";
 import type {
   DebugTraceEntry,
   DebugTraceEventMessage,
   DetectionKind,
   DetectionPayload,
+  GetTabDebugTraceResponse,
   GetTabDetectionsRequest,
   GetTabDetectionsResponse,
   GetTabRuleCountsRequest,
@@ -20,6 +22,7 @@ import type {
   RuleCountEntry,
   RuleDetectionMessage,
 } from "./lib/detection-messages";
+import { startDumpTraceBridgeRegistration } from "./lib/dump-trace-bridge-registration";
 import { subscribeEnforcementEnabled } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
 import { log } from "./lib/log";
@@ -434,6 +437,28 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
 
+    if (message.type === "get-tab-debug-trace") {
+      const tabId = sender.tab?.id;
+      if (typeof tabId !== "number") {
+        return undefined;
+      }
+      // Async response — the page-world bridge is awaiting via
+      // postMessage round-trip, so a missing reply hangs the caller
+      // (up to its 10s timeout). `return true` keeps the message
+      // channel open until `sendResponse` fires.
+      void getDebugTraceForTab(tabId)
+        .then((entries) => {
+          const response: GetTabDebugTraceResponse = { entries };
+          sendResponse(response);
+        })
+        .catch((error: unknown) => {
+          log.error("get-tab-debug-trace IDB read failed", { error });
+          const response: GetTabDebugTraceResponse = { entries: [] };
+          sendResponse(response);
+        });
+      return true;
+    }
+
     if (message.type === "debug-trace-event") {
       const tabId = sender.tab?.id;
       const frameId = sender.frameId;
@@ -522,3 +547,11 @@ startCheckoutCheckboxDefenseRegistration();
 // `rules/closed-shadow-root-annotate.ts` rely on. See
 // `lib/shadow-root-probe-registration.ts`.
 startShadowRootProbeRegistration();
+
+// Register/unregister the page-world `__abs_dumpTrace` bridge whenever
+// the debug-trace toggle flips. Exposes `window.__abs_dumpTrace()` for
+// CDP-driven harnesses to scrape the IDB-backed trace mid-flow without
+// the popup's Export button. See `lib/dump-trace-bridge-registration.ts`
+// for the lifecycle and `lib/dump-trace-bridge-source.ts` for the
+// page-world implementation.
+startDumpTraceBridgeRegistration();

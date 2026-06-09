@@ -200,6 +200,16 @@ If none of those markers appear, the extension is not attached:
   upload step — there's no way to add the extension to an already-running
   session.
 
+## Investigating a false positive
+
+When a shield rule hides, masks, or rewrites something it shouldn't have, turn
+on the debug-trace recorder and pull the per-tab mutation record via
+`window.__abs_dumpTrace()` through the browser-use session's `evaluate` (or any
+raw-CDP `Runtime.evaluate`). Each entry tells you which rule fired, what it
+matched, and the `outerHTML` before and after the mutation — enough to reproduce
+the diagnosis offline. See [Debug trace](/agent-browser-shield/debug-trace/) for
+the recipes and event schema.
+
 ## Why not browser-use's built-in `Browser()`?
 
 `Browser()` launches a fresh Chromium under browser-use's control and does not
