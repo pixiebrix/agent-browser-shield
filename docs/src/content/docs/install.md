@@ -119,9 +119,9 @@ set of reserved keys is also accepted for non-rule build-time toggles:
   each placeholder's ancestor backgrounds at insert time and pick a light or
   dark stripe palette so redactions on dark-themed pages don't flare against the
   page chrome. Off by default while the visual heuristic is still being tuned;
-  the toggle is also surfaced in the Options page under the *Experimental*
-  section so humans can flip it without rebuilding. Enable for deployments on
-  consistently dark UIs.
+  the toggle is also surfaced in the Options page under the *Placeholder
+  display* section so humans can flip it without rebuilding. Enable for
+  deployments on consistently dark UIs.
 
 The file may be partial; rules not listed keep the committed default. Unknown
 keys (neither a registered rule id nor a reserved key) and non-boolean values

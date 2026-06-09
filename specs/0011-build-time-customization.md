@@ -63,8 +63,8 @@ shield release.
     start with the per-placeholder ancestor-background sampling on, so
     redactions on dark-themed pages render with a dark stripe palette instead of
     the light default. Default off while the visual heuristic is still being
-    tuned; the same toggle is exposed in the Options page under *Experimental*
-    (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
+    tuned; the same toggle is exposed in the Options page under *Placeholder
+    display* (spec [0010](./0010-extension-ui-and-controls.md) FR-10).
 - **FR-4.** Unknown keys (neither a registered rule ID nor a reserved key) and
   non-boolean values fail the build with a message naming them.
 - **FR-5.** The override file may be partial; rules not listed keep the

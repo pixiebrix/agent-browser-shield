@@ -97,7 +97,6 @@ export function Options() {
         <a href="#inactive-tabs">Inactive tabs</a>
         <a href="#api-key">OpenAI API key</a>
         <a href="#rules">Rules</a>
-        <a href="#experimental">Experimental</a>
         <a href="#disclaimer">Disclaimer</a>
       </nav>
 
@@ -169,6 +168,34 @@ export function Options() {
             description="Shield icon plus a visible label describing what was hidden. Larger, but visually self-explanatory."
           />
         </fieldset>
+        <label className="switch-row">
+          <span className="switch-row__text">
+            <strong>Adaptive placeholder palette (experimental)</strong>
+            <span className="switch-row__state">
+              {adaptivePalette ? "On" : "Off"}
+            </span>
+            <span className="hint">
+              Sample each placeholder's surrounding background at insert time
+              and pick a light or dark stripe palette accordingly, so redactions
+              on dark-themed pages don't flare against the page chrome. Defaults
+              and storage key may change between releases while the visual
+              heuristic is tuned.
+            </span>
+          </span>
+          <span className="switch" role="presentation">
+            <input
+              type="checkbox"
+              checked={adaptivePalette}
+              onChange={(event) => {
+                void placeholderAdaptivePaletteStorage.set(
+                  event.target.checked,
+                );
+              }}
+              aria-label="Adaptive placeholder palette (experimental)"
+            />
+            <span className="switch__track" />
+          </span>
+        </label>
       </Section>
 
       <Section id="options-button" title="On-page options button">
@@ -283,39 +310,6 @@ export function Options() {
           .
         </p>
         <RuleList states={states} availability={availability} />
-      </Section>
-
-      <Section id="experimental" title="Experimental">
-        <p className="hint">
-          Features under evaluation. Behavior, defaults, and storage keys may
-          change between releases.
-        </p>
-        <label className="switch-row">
-          <span className="switch-row__text">
-            <strong>Adaptive placeholder palette</strong>
-            <span className="switch-row__state">
-              {adaptivePalette ? "On" : "Off"}
-            </span>
-            <span className="hint">
-              Sample each placeholder's surrounding background at insert time
-              and pick a light or dark stripe palette accordingly, so redactions
-              on dark-themed pages don't flare against the page chrome.
-            </span>
-          </span>
-          <span className="switch" role="presentation">
-            <input
-              type="checkbox"
-              checked={adaptivePalette}
-              onChange={(event) => {
-                void placeholderAdaptivePaletteStorage.set(
-                  event.target.checked,
-                );
-              }}
-              aria-label="Adaptive placeholder palette (experimental)"
-            />
-            <span className="switch__track" />
-          </span>
-        </label>
       </Section>
 
       <Section id="disclaimer" title="Disclaimer">

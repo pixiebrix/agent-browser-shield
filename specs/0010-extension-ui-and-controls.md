@@ -105,22 +105,21 @@ all-or-nothing, and users pick "nothing."
     overrides format so the same JSON works in both places.
   - **Placeholder display** — choose between label and icon-only modes for
     click-to-reveal placeholders. Persisted in storage and applied via the
-    `data-abs-placeholder-mode` attribute on `<html>`.
+    `data-abs-placeholder-mode` attribute on `<html>`. Also exposes *Adaptive
+    placeholder palette* (default **off**, experimental — defaults and storage
+    key may change between releases while the visual heuristic is tuned): when
+    on, each placeholder samples its ancestor backgrounds at insert time and
+    stamps `data-abs-placeholder-palette="dark"` when the surrounding chrome
+    reads dark, so the placeholder stylesheet swaps to a dark stripe palette via
+    CSS variables. The toggle's value is also accepted as the
+    `placeholderAdaptivePalette` reserved key in the build-time defaults file
+    (spec [0011](./0011-build-time-customization.md) FR-3).
   - **On-page options button** — toggle the optional floating shield button.
   - **Inactive tabs** — toggle whether the subtree-watcher keeps observing while
     the tab is hidden.
   - **OpenAI API key** — input for the key that backs
     `irrelevant-sections-redact`. When a key is already bundled at build time
     (`HAS_BUILT_IN_OPENAI_KEY`), the field acts as an override.
-  - **Experimental** — toggles for features under evaluation; defaults, storage
-    keys, and behavior may change between releases. Currently exposes *Adaptive
-    placeholder palette* (default **off**): when on, each placeholder samples
-    its ancestor backgrounds at insert time and stamps
-    `data-abs-placeholder-palette="dark"` when the surrounding chrome reads
-    dark, so the placeholder stylesheet swaps to a dark stripe palette via CSS
-    variables. The toggle's value is also accepted as the
-    `placeholderAdaptivePalette` reserved key in the build-time defaults file
-    (spec [0011](./0011-build-time-customization.md) FR-3).
 
 ### Floating on-page options button
 
