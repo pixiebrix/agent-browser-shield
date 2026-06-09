@@ -167,9 +167,26 @@ export interface RuleApplicationEvent {
   cssOnly?: boolean;
 }
 
+// Top-level navigation marker emitted by the background service worker on
+// every `chrome.tabs.onUpdated` loading transition. Lets the trace span
+// multiple page loads in the same tab — useful when a single user flow
+// crosses documents and the developer wants to see all of it in one
+// export. Timestamped in the background, so a single tab's events stay
+// chronologically ordered alongside content-script-emitted entries even
+// without a shared clock.
+export interface NavigationEvent {
+  // Tab URL at the moment the loading transition fired. May be the
+  // previous URL on a same-page reload, or the new URL on a cross-page
+  // navigation — Chrome updates `tab.url` lazily relative to `status`.
+  // Null when the tab has no URL yet (initial new-tab navigation).
+  url: string | null;
+  timestamp: number;
+}
+
 export type DebugTraceEntry =
   | ({ type: "segment" } & SegmentMarker)
-  | ({ type: "rule-application" } & RuleApplicationEvent);
+  | ({ type: "rule-application" } & RuleApplicationEvent)
+  | ({ type: "navigation" } & NavigationEvent);
 
 export interface DebugTraceEventMessage {
   type: "debug-trace-event";

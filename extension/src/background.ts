@@ -3,6 +3,7 @@
 
 import { startCheckoutCheckboxDefenseRegistration } from "./lib/checkout-checkbox-defense-registration";
 import { installCheckoutCheckboxDefense } from "./lib/checkout-checkbox-defense-source";
+import { debugTraceStorage } from "./lib/debug-trace";
 import {
   appendEvent as appendDebugTraceEvent,
   clearTab as clearDebugTraceTab,
@@ -189,13 +190,31 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 // On a top-level navigation, drop stale per-frame counts so the new document
 // starts from zero. The content script will report fresh numbers as rules run.
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === "loading") {
-    clearTab(tabId);
-    void clearDebugTraceTab(tabId).catch(() => {
-      // noop
-    });
+// The debug trace is *not* cleared — instead a `navigation` entry is appended
+// so a single export can span multiple page loads in the same tab. Gated on
+// the same toggle that gates content-script emission so the trace stays empty
+// when the toggle is off.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "loading") {
+    return;
   }
+  clearTab(tabId);
+  void (async () => {
+    try {
+      if (!(await debugTraceStorage.get())) {
+        return;
+      }
+      const entry: DebugTraceEntry = {
+        type: "navigation",
+        url: tab.url ?? null,
+        timestamp: Date.now(),
+      };
+      // Frame id 0 — top-level navigation is always the main frame.
+      await appendDebugTraceEvent(tabId, 0, entry);
+    } catch {
+      // noop — storage read or IDB write rejection shouldn't surface.
+    }
+  })();
 });
 
 // Re-render every tab's badge when enforcement is toggled. When disabled, the
