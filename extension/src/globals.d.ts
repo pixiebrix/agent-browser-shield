@@ -14,5 +14,9 @@ declare namespace NodeJS {
     // `"true"` / `"false"` to force a value, or empty string when the
     // defaults file did not set `optionsButton`.
     EXTENSION_OPTIONS_BUTTON_DEFAULT: string;
+    // Build-time default for the dev-mode debug-trace toggle. Literal
+    // `"true"` / `"false"` to force a value, or empty string when the
+    // defaults file did not set `debugTrace`.
+    EXTENSION_DEBUG_TRACE_DEFAULT: string;
   }
 }

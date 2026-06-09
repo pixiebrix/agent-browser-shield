@@ -4,5 +4,6 @@
   "irrelevant-sections-redact": true,
 
   "optionsButton": true,
-  "runOnInactiveTabs": false
+  "runOnInactiveTabs": false,
+  "debugTrace": false
 }

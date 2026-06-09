@@ -103,6 +103,42 @@ describe("loadDefaultOverrides", () => {
     ).toThrow(/non-boolean values for: runOnInactiveTabs/);
   });
 
+  it("extracts the debugTrace reserved key alongside rules", () => {
+    const file = writeFile(
+      "with-debug-trace.json",
+      JSON.stringify({ "pii-redact": true, debugTrace: true }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: { "pii-redact": true },
+      debugTrace: true,
+    });
+  });
+
+  it("accepts debugTrace on its own", () => {
+    const file = writeFile(
+      "only-debug-trace.json",
+      JSON.stringify({ debugTrace: false }),
+    );
+    expect(
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toEqual({
+      rules: {},
+      debugTrace: false,
+    });
+  });
+
+  it("rejects a non-boolean debugTrace value", () => {
+    const file = writeFile(
+      "bad-debug-trace.json",
+      JSON.stringify({ debugTrace: "on" }),
+    );
+    expect(() =>
+      loadDefaultOverrides({ path: file, knownRuleIds: KNOWN_IDS }),
+    ).toThrow(/non-boolean values for: debugTrace/);
+  });
+
   it("throws when the file does not exist", () => {
     expect(() =>
       loadDefaultOverrides({

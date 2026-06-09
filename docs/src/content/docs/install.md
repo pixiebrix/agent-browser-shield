@@ -104,6 +104,16 @@ set of reserved keys is also accepted for non-rule build-time toggles:
   accessibility-tree agents, sidebar extensions) — without this, a page that
   mutates while hidden could reach the consumer unredacted.
 
+- `debugTrace` (boolean, default **off**) — start with the dev-mode debug-trace
+  recorder enabled. The recorder captures every rule-driven mutation (selector,
+  before/after `outerHTML`, segment id) and persists it to IndexedDB at the
+  extension origin so the popup's **Export** button can dump a JSONL trace.
+  Enable in builds you ship to automation harnesses (CDP-driven browsers,
+  Browserbase sessions) where you want post-hoc visibility into what the
+  extension touched without a human flipping the popup toggle. The export shape
+  is documented in
+  [`extension/data/debug-trace.schema.json`](https://github.com/pixiebrix/agent-browser-shield/blob/main/extension/data/debug-trace.schema.json).
+
 The file may be partial; rules not listed keep the committed default. Unknown
 keys (neither a registered rule id nor a reserved key) and non-boolean values
 fail the build with a message naming them.

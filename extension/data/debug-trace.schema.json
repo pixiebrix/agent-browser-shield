@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixiebrix.github.io/agent-browser-shield/schemas/debug-trace.schema.json",
+  "title": "Agent Browser Shield debug-trace entry",
+  "description": "One entry in the JSONL export produced by the popup's \"Export\" button when the debug-trace toggle is enabled. The export file contains one JSON-encoded entry per line in chronological order; this schema describes a single line. Entry shapes mirror the `DebugTraceEntry` union in extension/src/lib/detection-messages.ts.",
+  "oneOf": [
+    { "$ref": "#/$defs/SegmentEntry" },
+    { "$ref": "#/$defs/RuleApplicationEntry" },
+    { "$ref": "#/$defs/NavigationEntry" }
+  ],
+  "$defs": {
+    "SegmentEntry": {
+      "type": "object",
+      "description": "Boundary marker emitted by the content script at the start of a logical segment (initial load, route change, modal open, mutation burst). Subsequent rule-application entries carry the same `segmentId` until the next marker.",
+      "additionalProperties": false,
+      "required": ["type", "segmentId", "kind", "timestamp", "meta"],
+      "properties": {
+        "type": { "const": "segment" },
+        "segmentId": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonically increasing within a single content script. Combined with tabId + frameId by the background to form a stable key."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "initial-load",
+            "route-change",
+            "modal-open",
+            "mutation-burst"
+          ]
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Unix epoch milliseconds at emit time (Date.now)."
+        },
+        "meta": {
+          "type": "object",
+          "description": "Per-kind context. URLs for route-change / initial-load, selectors for modal-open, pending count for mutation-burst.",
+          "additionalProperties": { "type": ["string", "number"] }
+        }
+      }
+    },
+    "RuleApplicationEntry": {
+      "type": "object",
+      "description": "Single rule-driven mutation captured around the mutator. `beforeHtml` / `afterHtml` are the outerHTML of the element pre/post mutation; `cssOnly` events match without mutating the DOM (stylesheet-driven hides).",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "segmentId",
+        "ruleId",
+        "kind",
+        "timestamp",
+        "selector",
+        "beforeHtml",
+        "afterHtml"
+      ],
+      "properties": {
+        "type": { "const": "rule-application" },
+        "segmentId": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Segment id this event is attributed to. Zero before the first explicit segment marker."
+        },
+        "ruleId": {
+          "type": "string",
+          "description": "Rule id as defined in extension/src/rules/rule-metadata.ts."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["hide", "mask", "strip", "sanitize", "flag", "embed"],
+          "description": "Mutation shape. Multiple rule labels can map to the same kind."
+        },
+        "timestamp": { "type": "integer" },
+        "selector": {
+          "type": "string",
+          "description": "Selector that matched the original element when known, otherwise a structural fingerprint from describeNode."
+        },
+        "beforeHtml": {
+          "type": "string",
+          "description": "outerHTML immediately before the mutation. Empty for inline placeholders, which store the raw text snippet in `beforeText`."
+        },
+        "afterHtml": {
+          "type": "string",
+          "description": "outerHTML of the replacement placeholder, or empty for in-place hides (the original node stays in the DOM, just display:none)."
+        },
+        "beforeText": {
+          "type": "string",
+          "description": "Original text replaced by an inline placeholder. Only populated for `mask` events."
+        },
+        "cssOnly": {
+          "type": "boolean",
+          "const": true,
+          "description": "Present and true when the rule hides via injected stylesheet rather than an element-level write. `beforeHtml` and `afterHtml` are identical for these events. Absent on every other event."
+        }
+      }
+    },
+    "NavigationEntry": {
+      "type": "object",
+      "description": "Top-level navigation marker emitted by the background service worker on every chrome.tabs.onUpdated loading transition. Lets the trace span multiple page loads in the same tab.",
+      "additionalProperties": false,
+      "required": ["type", "url", "timestamp"],
+      "properties": {
+        "type": { "const": "navigation" },
+        "url": {
+          "type": ["string", "null"],
+          "description": "Tab URL at the moment the loading transition fired. May be the previous URL on a same-page reload, or the new URL on a cross-page navigation. Null when the tab has no URL yet (initial new-tab navigation)."
+        },
+        "timestamp": { "type": "integer" }
+      }
+    }
+  }
+}

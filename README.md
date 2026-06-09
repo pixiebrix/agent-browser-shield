@@ -80,8 +80,19 @@ Which rules ship on by default is enumerated in
 To ship a build with a custom set without forking the repo, pass an override
 file to `bun run build`. The file is a flat JSON object whose keys are rule ids
 (same keys the Options-page export uses) plus a small set of reserved non-rule
-keys — currently `optionsButton` (boolean, default off) to enable the floating
-on-page button that opens the options page. See
+keys:
+
+- `optionsButton` (boolean, default off) — floating on-page button that opens
+  the options page.
+- `runOnInactiveTabs` (boolean, default off) — keep observing while the tab is
+  hidden.
+- `debugTrace` (boolean, default off) — start with the dev-mode trace recorder
+  enabled so the popup's **Export** button can dump a JSONL trace without a
+  human flipping the toggle. Intended for automation builds (CDP, Browserbase).
+  The export shape is documented in
+  [`extension/data/debug-trace.schema.json`](./extension/data/debug-trace.schema.json).
+
+See
 [`extension/data/defaults-overrides.example.json`](./extension/data/defaults-overrides.example.json)
 for a starting template:
 

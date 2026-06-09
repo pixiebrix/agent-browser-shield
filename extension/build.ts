@@ -105,7 +105,8 @@ async function build(): Promise<void> {
     const changed =
       Object.keys(overrides.rules).length +
       (overrides.optionsButton === undefined ? 0 : 1) +
-      (overrides.runOnInactiveTabs === undefined ? 0 : 1);
+      (overrides.runOnInactiveTabs === undefined ? 0 : 1) +
+      (overrides.debugTrace === undefined ? 0 : 1);
     console.log(
       `Applying ${changed} build-time default override(s) from ${defaultsPath}.`,
     );
@@ -171,6 +172,9 @@ async function build(): Promise<void> {
         overrides.runOnInactiveTabs === undefined
           ? ""
           : String(overrides.runOnInactiveTabs),
+      ),
+      "process.env.EXTENSION_DEBUG_TRACE_DEFAULT": JSON.stringify(
+        overrides.debugTrace === undefined ? "" : String(overrides.debugTrace),
       ),
     },
   });
