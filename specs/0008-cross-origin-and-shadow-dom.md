@@ -81,9 +81,12 @@ AI-targeted cloaking signals.
      filtered out — their tag names contain no hyphen.
 - **FR-5.** The heuristic path has a known false positive: a custom element that
   renders via canvas, WebGL, or `::before` background-image with no actual
-  shadow root will trip it. The landmark text reads "may contain content ABS
-  cannot see," not "this is definitely a closed shadow root." The main-world
-  probe is definitive when both signals are available.
+  shadow root will trip it. The landmark text is calibrated to that uncertainty
+  — it tells the reader that closed shadow content "is invisible to this
+  extension and may include text, controls, or instructions that are not
+  reflected in the rest of the page's accessible content," rather than asserting
+  a closed shadow root is definitely present. The main-world probe is definitive
+  when both signals are available.
 - **FR-6.** Declarative shadow DOM with `shadowrootmode="closed"` is not
   surfaced by either path — the parser materializes the shadow without going
   through `attachShadow`, so the probe doesn't see it; and the materialized

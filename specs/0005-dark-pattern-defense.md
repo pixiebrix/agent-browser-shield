@@ -60,20 +60,22 @@ rather than running a heuristic over the rendered pixels.
 ### Sneaking
 
 - **FR-3.** `cart-addon-annotate` (default **on**, top-frame only by effect of
-  checkout-URL gating) prepends a visible `[abs: likely cart add-on]` chip to
-  line items matching common sneak-into-basket patterns (protection plans,
+  checkout-URL gating) prepends a visible chip of the form
+  `[abs: likely cart add-on (<label>, matched "<phrase>") — verify you intended this charge before completing purchase]`
+  to line items matching common sneak-into-basket patterns (protection plans,
   extended warranties, AppleCare/SquareTrade/Asurion, insurance,
   donation/round-up, gift wrap, carbon offset, shipping/package protection,
   Route, Seel, Navidium, driver tips). The line item is **not** removed.
-- **FR-4.** `hidden-fee-annotate` (default **on**) prepends a visible
-  `[abs: drip-pricing fee]` chip to order-summary line items whose label matches
-  a curated mandatory-fee phrase set and that sit beside a currency amount.
-  Layered shape gates: whole-string regex on a small leaf-ish label,
-  order-summary ancestor (`<table>`, `[role="region"]` with order-summary
-  labeling, `<aside>`/`<section>` with cart-shaped class/id, or
-  `schema.org/Order` microdata), adjacent currency amount, and a
-  single-item-cart skip (utility-bill portals, court e-filing, DMV). The row is
-  **not** removed.
+- **FR-4.** `hidden-fee-annotate` (default **on**) prepends a visible chip of
+  the form
+  `[abs: drip-pricing fee (<phrase><amount-suffix>) — verify the total before completing checkout]`
+  to order-summary line items whose label matches a curated mandatory-fee phrase
+  set and that sit beside a currency amount. Layered shape gates: whole-string
+  regex on a small leaf-ish label, order-summary ancestor (`<table>`,
+  `[role="region"]` with order-summary labeling, `<aside>`/`<section>` with
+  cart-shaped class/id, or `schema.org/Order` microdata), adjacent currency
+  amount, and a single-item-cart skip (utility-bill portals, court e-filing,
+  DMV). The row is **not** removed.
 - **FR-5.** `hidden-affiliate-sanitize` (default **on**) clears `value` on
   `<input type="hidden">` whose `name` matches a curated affiliate/UTM/ referral
   attribution allowlist (`utm_source`, `utm_medium`, `utm_campaign`, `aff`,

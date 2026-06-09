@@ -39,10 +39,10 @@ accessibility tree and decides whether to use it.
   screen-reader-only landmark at the top of the page describing how to run
   searches, filters, sorts, and direct lookups via URL on a curated set of
   hosts.
-- **FR-2.** Covered hosts ship today (current set authoritatively listed in
-  `extension/data/sites/*.yaml`): Amazon, Best Buy, Etsy, IKEA, Home Depot, REI,
-  GitHub, Wikipedia, Hacker News, MDN, npm, weather.gov, arXiv, Python docs,
-  BBC.
+- **FR-2.** Covered hosts span shopping, search, news, reference, dev tools,
+  travel, and government/civic destinations. The authoritative current set is
+  the YAML directory `extension/data/sites/*.yaml`; sites are added by dropping
+  in a new YAML, not by editing this spec.
 - **FR-3.** Per-host recipes live in `extension/data/sites/*.yaml`, validated at
   build time by the zod schema at `extension/data/site-rules.schema.ts`, and
   emitted into `extension/src/rules/site-data.generated.ts` via

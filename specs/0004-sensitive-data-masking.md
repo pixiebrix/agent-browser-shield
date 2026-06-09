@@ -28,9 +28,9 @@ the page still renders normally for a human.
   credentials masked at read-time, so that I don't carry them into model context
   or downstream tool calls.
 - As a **browser-use agent that may decide to reveal a value**, I want per-value
-  placeholders labeled with the masked kind (e.g. "credit card"), so that I can
-  reason about whether to act on the redaction rather than guessing what was
-  hidden.
+  placeholders labeled with the masked kind (e.g. `[card hidden]`,
+  `[secret hidden]`), so that I can reason about whether to act on the redaction
+  rather than guessing what was hidden.
 
 ## Functional requirements
 
@@ -41,9 +41,11 @@ the page still renders normally for a human.
   JWTs, private-key blocks, and other high-entropy credential shapes in
   text-node content.
 - **FR-3.** Each masked value is replaced with an inline placeholder carrying
-  the masked kind in its label (e.g. *credit card*, *secret*). The placeholder
-  is a `<button>` element so screen readers and browser-use agents see it as
-  actionable in the accessibility tree.
+  the masked kind in its label, formatted `[<kind> hidden]` (e.g.
+  `[card hidden]`, `[ssn hidden]`, `[phone hidden]`, `[jwt hidden]`,
+  `[aws key hidden]`, `[secret hidden]`). The placeholder is a `<button>`
+  element so screen readers and browser-use agents see it as actionable in the
+  accessibility tree.
 - **FR-4.** A click (or programmatic equivalent issued by the agent on the
   button) reveals the original text node in place and stamps
   `data-abs-revealed="<rule-id>"` on the restored node so a subsequent

@@ -48,9 +48,10 @@ conditions.
   they're not flagged for redaction. The exact payload shape lives in
   `extension/src/lib/page-tree.ts`.
 - **FR-4.** The API key is stored in `chrome.storage` under
-  `agent-browser-shield.api-key`. The Options page reads and writes it via the
-  `apiKeyStorage` accessor. A build-time bundled key (`HAS_BUILT_IN_OPENAI_KEY`)
-  is treated as a fallback the user can override via the Options page.
+  `agent-browser-shield.openai-api-key`. The Options page reads and writes it
+  via the `apiKeyStorage` accessor. A build-time bundled key
+  (`HAS_BUILT_IN_OPENAI_KEY`) is treated as a fallback the user can override via
+  the Options page.
 - **FR-5.** Per-tab rule footprint counts and detection payloads (roach-motel,
   webdriver-probe, closed-shadow-root) are held in background-worker memory only
   and cleared on tab close, top-level navigation, and enforcement-off
