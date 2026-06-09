@@ -2,9 +2,10 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 // The "this page looks broken" recovery controls (ADR-0019, spec 0010
-// §"Recovery controls"). Two tab-scoped, non-persistent escapes that are
-// deliberately distinct from "Disable on this site" (which writes a permanent
-// denylist entry):
+// §"Recovery controls"). The "this tab · temporary" row of the unified
+// protection card (ProtectionSection). Two tab-scoped, non-persistent escapes,
+// deliberately distinct from the "this site · saved" row below ("Disable on
+// this site", which writes a permanent denylist entry):
 //   - "Reveal everything on this page" — the panic button. One click reveals
 //     all hidden content for the current page load; a reload restores it.
 //   - A snooze — pause protection for this tab, or for 15 min / 1 hour, so a
@@ -14,7 +15,8 @@
 // Writes the active tab's entry in `tabPauseMap` directly, exactly as
 // `SiteDisableSection` writes `siteDenylistStorage`. Renders nothing while the
 // tab is still loading, on non-content schemes, or when the site is already
-// denylisted (rules don't run there, so there's nothing to recover).
+// denylisted (rules don't run there, so there's nothing to recover) — in which
+// case the card shows only the site row.
 
 import { findMatchingPatterns, isContentSchemeUrl } from "../lib/site-denylist";
 import {
@@ -85,7 +87,7 @@ export function RecoverySection({
       status = `Protection is paused — ${formatRemaining(remainingMs)} left.`;
     }
     return (
-      <div className="recovery recovery--active">
+      <div className="protection__row protection__row--active">
         <p className="recovery__status">{status}</p>
         <button type="button" className="recovery__resume" onClick={resume}>
           Resume now
@@ -95,7 +97,8 @@ export function RecoverySection({
   }
 
   return (
-    <div className="recovery">
+    <div className="protection__row">
+      <span className="protection__cap">This tab · temporary</span>
       <button
         type="button"
         className="recovery__panic"
@@ -104,7 +107,7 @@ export function RecoverySection({
         Reveal everything on this page
       </button>
       <div className="recovery__snooze">
-        <span className="recovery__snooze-label">Pause protection</span>
+        <span className="recovery__snooze-label">Or pause this tab</span>
         <div className="recovery__snooze-buttons">
           <button
             type="button"
@@ -113,7 +116,7 @@ export function RecoverySection({
               snooze(null);
             }}
           >
-            This tab
+            Until closed
           </button>
           <button
             type="button"
@@ -135,10 +138,7 @@ export function RecoverySection({
           </button>
         </div>
       </div>
-      <p className="recovery__hint">
-        Temporary and only for this tab — nothing is saved. To pause a site for
-        good, use “Disable on this site” above.
-      </p>
+      <p className="recovery__hint">Temporary — nothing is saved.</p>
     </div>
   );
 }
