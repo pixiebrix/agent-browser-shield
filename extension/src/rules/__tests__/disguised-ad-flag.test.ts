@@ -181,6 +181,29 @@ describe("disguisedAdFlagRule positive cases", () => {
     expect(document.querySelector('[data-fixture="editorial"]')).not.toBeNull();
   });
 
+  it("hides a single card whose content sits inside a wrapper div", () => {
+    // Regression for the follow-up to #228: with the original
+    // `hasOtherCardSubtree` guard, any descendant outside the label's
+    // chain with both an `<img>` and an `<a href>` made the rule reject
+    // the card. A common card layout puts the label as a sibling to a
+    // single content wrapper that holds the heading + image + link,
+    // which would trip that guard. The card must still be hidden.
+    document.body.innerHTML = `
+      <article class="post" data-fixture="wrapped-card">
+        <span class="label">Sponsored</span>
+        <div class="card-body">
+          <h2><a href="/ad">Acme energy drinks are the future of hydration</a></h2>
+          <img src="hero.jpg" alt="" />
+          <p>A long-form look at how Acme reformulated its flagship beverage to taste less metallic while keeping the same caffeine load and electrolyte balance.</p>
+        </div>
+      </article>
+    `;
+    disguisedAdFlagRule.apply(document.body);
+
+    expect(document.querySelector('[data-fixture="wrapped-card"]')).toBeNull();
+    expect(document.querySelector(`.${PLACEHOLDER_CLASS}`)).not.toBeNull();
+  });
+
   it("dedupes when a card carries both a badge and a 'Paid for' caption", () => {
     document.body.innerHTML = `
       <article class="post" data-fixture="dual-label">

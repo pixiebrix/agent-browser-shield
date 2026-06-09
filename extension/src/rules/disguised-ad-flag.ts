@@ -212,23 +212,31 @@ function isPageBoundary(element: Element): boolean {
 const HEADING_SELECTOR =
   'h1, h2, h3, h4, h5, h6, [role="heading"], [class~="headline"]';
 
-// True if `element` contains a *sibling* card-shaped subtree — a
-// descendant outside `labelElement`'s ancestor chain that itself
-// carries both an image and an outgoing link. Used as the feed-wrapper
-// guard inside `isArticleShaped`: a single advertorial card has at
-// most one such subtree (its own); a feed wraps many. The image+link
-// pair is the cheapest stable signal for "card-ness" — every card-
-// shaped feed item in the wild carries a thumbnail and a click target,
-// and the pair is rare in non-card chrome.
-function hasOtherCardSubtree(element: Element, labelElement: Element): boolean {
+// True if `element` encloses two or more card-shaped subtrees — each
+// carrying both an image and an outgoing link. Used as the feed-
+// wrapper guard inside `isArticleShaped`: a single advertorial card
+// can legitimately stack wrapper `<div>`s between its label and its
+// content (one of which carries img+link), so any one such subtree
+// inside the candidate isn't enough to call it a wrapper. Two
+// non-overlapping subtrees — the label's own card boundary plus a
+// sibling card — is.
+//
+// Counts *outermost* qualifying subtrees: a nested wrapper inside an
+// already-counted candidate doesn't bump the count again, so
+// `<div><div><h2>` doesn't trip the guard by itself. The label's own
+// containing chain *is* counted: a feed wrapper where the label's
+// card is structurally complete still trips at count >= 2 because
+// the label's card plus a sibling card are two outermost subtrees.
+function hasMultipleCardSubtrees(
+  element: Element,
+  labelElement: Element,
+): boolean {
+  const matches: Element[] = [];
   for (const candidate of element.querySelectorAll("*")) {
     if (candidate === labelElement) {
       continue;
     }
     if (labelElement.contains(candidate)) {
-      continue;
-    }
-    if (candidate.contains(labelElement)) {
       continue;
     }
     if (candidate.querySelector("img, picture") === null) {
@@ -237,7 +245,13 @@ function hasOtherCardSubtree(element: Element, labelElement: Element): boolean {
     if (candidate.querySelector("a[href]") === null) {
       continue;
     }
-    return true;
+    if (matches.some((m) => m.contains(candidate))) {
+      continue;
+    }
+    matches.push(candidate);
+    if (matches.length >= 2) {
+      return true;
+    }
   }
   return false;
 }
@@ -246,20 +260,21 @@ function hasOtherCardSubtree(element: Element, labelElement: Element): boolean {
 // plus at least one of an image or an outgoing link, plus enough prose
 // text to be confusable with editorial. The label text itself and
 // headings are excluded from the prose count so a label-only row
-// doesn't qualify. The candidate must also not enclose a *second*
-// card-shaped subtree (see #228: when one ad post momentarily lacks
+// doesn't qualify. The candidate must also not enclose two or more
+// card-shaped subtrees (see #228: when one ad post momentarily lacks
 // its own heading — different ad creative, mid-hydration — the walk
 // reaches the surrounding feed; pre-guard the feed passed every check
 // because *sibling* cards carry headings/images/links, and the entire
-// feed got replaced with one placeholder). The sibling-card guard lets
+// feed got replaced with one placeholder). The multi-card guard lets
 // each card match on its own walk-up while keeping the feed wrapper
-// unmatched.
+// unmatched, and tolerates a single card whose content sits inside a
+// wrapper `<div>` (label as a sibling to one card-shaped subtree).
 function isArticleShaped(element: Element, labelElement: Element): boolean {
   const heading = element.querySelector(HEADING_SELECTOR);
   if (heading === null) {
     return false;
   }
-  if (hasOtherCardSubtree(element, labelElement)) {
+  if (hasMultipleCardSubtrees(element, labelElement)) {
     return false;
   }
   const hasImage = element.querySelector("img, picture") !== null;
