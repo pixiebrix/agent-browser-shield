@@ -17,7 +17,7 @@
 // the round-trip across the two postMessage boundaries.
 //
 // Registered only when the debug-trace toggle is on
-// (`lib/dump-trace-bridge-registration.ts`) — `window.__abs_dumpTrace`
+// (`lib/page-world-hooks.ts`) — `window.__abs_dumpTrace`
 // is undefined on every page in builds where the recorder is off, so
 // pages don't fingerprint the extension by probing the global.
 //
