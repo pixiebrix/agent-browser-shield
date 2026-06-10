@@ -3,6 +3,7 @@
 
 import type { CatalogRule } from "../rules";
 import { RULES } from "../rules";
+import { buildRuleRecord } from "../rules/rule-metadata";
 import type { RuleAvailabilityStates } from "./availability";
 import {
   getRuleAvailabilityStates,
@@ -265,12 +266,7 @@ function applyDisplayMode(mode: PlaceholderDisplayMode): void {
   document.documentElement.setAttribute(PLACEHOLDER_MODE_ATTR, mode);
 }
 
-// `Object.fromEntries` types its result as `{ [k: string]: false }`; every
-// `RuleId` is covered because the entries come from `RULES`, so the cast to the
-// exact `RuleStates` shape is sound.
-const ALL_DISABLED = Object.fromEntries(
-  RULES.map((rule) => [rule.id, false]),
-) as RuleStates;
+const ALL_DISABLED: RuleStates = buildRuleRecord(() => false);
 
 function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
   return enforcementEnabled ? states : ALL_DISABLED;

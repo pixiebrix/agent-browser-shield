@@ -9,7 +9,11 @@
 // data. The post-build purity check (`scripts/check-background-purity.ts`)
 // guards against regressions.
 import type { RuleId } from "../rules";
-import { RULE_DEFAULTS, RULE_IDS } from "../rules/rule-metadata";
+import {
+  buildRuleRecord,
+  RULE_DEFAULTS,
+  RULE_IDS,
+} from "../rules/rule-metadata";
 import { createChromeStorageValue } from "./chrome-storage-value";
 
 export type RuleStates = Record<RuleId, boolean>;
@@ -54,11 +58,9 @@ function parseOverrides(): Partial<RuleStates> {
 
 const OVERRIDES: Partial<RuleStates> = parseOverrides();
 
-// `RULE_IDS.map` covers every `RuleId`; `Object.fromEntries` widens the key to
-// `string`, so cast back to the exact `RuleStates` shape.
-const DEFAULT_STATES = Object.fromEntries(
-  RULE_IDS.map((id) => [id, OVERRIDES[id] ?? RULE_DEFAULTS[id]]),
-) as RuleStates;
+const DEFAULT_STATES: RuleStates = buildRuleRecord(
+  (id) => OVERRIDES[id] ?? RULE_DEFAULTS[id],
+);
 
 function normalize(raw: unknown): RuleStates {
   const result: RuleStates = { ...DEFAULT_STATES };
