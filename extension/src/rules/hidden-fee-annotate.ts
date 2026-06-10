@@ -43,9 +43,8 @@ import {
 } from "../lib/dom-markers";
 import { findInnermostMatches } from "../lib/dom-utils";
 import { createRuleLogger } from "../lib/log";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "hidden-fee-annotate" as const;
 const log = createRuleLogger(RULE_ID);
@@ -529,26 +528,10 @@ function scanAndFlag(root: ParentNode): void {
   });
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndFlag(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndFlag(root);
-  watcher.start(root);
-}
-
-export const hiddenFeeAnnotateRule = {
+export const hiddenFeeAnnotateRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndFlag,
   label: "Annotate Drip-Pricing Fees (Experimental)",
   description:
     "On checkout pages, flag mandatory fees that only surface inside the order summary (resort, service, convenience, processing, etc.) with a visible annotation. The row is not removed — the agent reads the annotation and verifies the total before completing the purchase.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

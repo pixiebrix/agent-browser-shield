@@ -72,10 +72,9 @@ import {
   visibleTextContent,
 } from "../lib/dom-utils";
 import { createRuleLogger } from "../lib/log";
+import { createScanRule } from "../lib/scan-rule";
 import { SR_ONLY_CLASS_NAMES, SR_ONLY_MAX_SIZE_PX } from "../lib/sr-only";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "hidden-text-strip" as const;
 const log = createRuleLogger(RULE_ID);
@@ -909,27 +908,11 @@ function scanAndStrip(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndStrip(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndStrip(root);
-  watcher.start(root);
-}
-
-export const hiddenTextStripRule = {
+export const hiddenTextStripRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndStrip,
+  skipPlaceholderSubtrees: true,
   label: "Strip Hidden Text",
   description:
     'Blank text invisible to humans but readable by agents. Defends against "unseeable" prompt injection; screen-reader-only text is preserved.',
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

@@ -37,10 +37,9 @@
 // lets the normal name calculation proceed. Same logic applies to
 // `title` and `alt`.
 
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
-import type { Rule } from "./types";
 
 const RULE_ID = "attribute-injection-sanitize" as const;
 
@@ -109,26 +108,10 @@ function scrub(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scrub(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scrub(root);
-  watcher.start(root);
-}
-
-export const attributeInjectionSanitizeRule = {
+export const attributeInjectionSanitizeRule = createScanRule({
   id: RULE_ID,
+  scan: scrub,
   label: "Scrub Attribute Injection",
   description:
     "Remove aria-label, alt, title, placeholder, and similar attributes carrying prompt-injection text.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

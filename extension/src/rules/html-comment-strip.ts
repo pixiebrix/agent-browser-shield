@@ -23,10 +23,9 @@
 // toggling the rule off requires a page reload to recover the original
 // comment text.
 
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
-import type { Rule } from "./types";
 
 const RULE_ID = "html-comment-strip" as const;
 const EXCLUDED_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]);
@@ -77,26 +76,10 @@ function stripComments(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      stripComments(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  stripComments(root);
-  watcher.start(root);
-}
-
-export const htmlCommentStripRule = {
+export const htmlCommentStripRule = createScanRule({
   id: RULE_ID,
+  scan: stripComments,
   label: "Strip HTML Comments",
   description:
     "Blank HTML comments that carry prompt-injection text. Invisible to humans but readable by agents.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

@@ -19,10 +19,9 @@
 // malformed JSON are left alone (we have no safe transform to apply and
 // the agent will not be able to use the data anyway).
 
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
-import type { Rule } from "./types";
 
 const RULE_ID = "json-ld-sanitize" as const;
 const SELECTOR = 'script[type="application/ld+json" i]';
@@ -93,26 +92,10 @@ function processRoot(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      processRoot(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  processRoot(root);
-  watcher.start(root);
-}
-
-export const jsonLdSanitizeRule = {
+export const jsonLdSanitizeRule = createScanRule({
   id: RULE_ID,
+  scan: processRoot,
   label: "Sanitize JSON-LD",
   description:
     "Strip prompt-injection text from JSON-LD structured data while preserving price, rating, and other useful fields.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});
