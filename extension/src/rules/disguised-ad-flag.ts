@@ -26,8 +26,7 @@ import {
 } from "../lib/dom-utils";
 import { createRuleLogger } from "../lib/log";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
-import type { Rule } from "./types";
+import { createScanRule } from "../lib/scan-rule";
 
 const RULE_ID = "disguised-ad-flag" as const;
 const log = createRuleLogger(RULE_ID);
@@ -464,27 +463,11 @@ function scanAndHide(root: ParentNode): void {
   });
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndHide(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndHide(root);
-  watcher.start(root);
-}
-
-export const disguisedAdFlagRule = {
+export const disguisedAdFlagRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndHide,
+  skipPlaceholderSubtrees: true,
   label: "Hide Disguised Ads (Native Advertorials)",
   description:
     "Hide article-shaped blocks that carry a visible 'Sponsored', 'Promoted', 'Advertorial', or 'Paid Post' disclosure label. Catches native advertorials that bypass network-level ad selectors (EasyList) because the publisher's own CMS renders them. Replaces the card with a click-to-reveal placeholder.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

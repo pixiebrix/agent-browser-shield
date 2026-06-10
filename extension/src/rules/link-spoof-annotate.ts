@@ -46,9 +46,8 @@ import {
 } from "../lib/dom-markers";
 import { registrableDomain } from "../lib/domain-trust";
 import { createRuleLogger } from "../lib/log";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "link-spoof-annotate" as const;
 const log = createRuleLogger(RULE_ID);
@@ -235,27 +234,11 @@ function scanAndFlag(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndFlag(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndFlag(root);
-  watcher.start(root);
-}
-
-export const linkSpoofAnnotateRule = {
+export const linkSpoofAnnotateRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndFlag,
+  skipPlaceholderSubtrees: true,
   label: "Flag Spoofed Links",
   description:
     "Annotate <a> elements whose visible text either (a) mixes scripts inside a word, (b) uses Cyrillic / Greek / Armenian letters to visually mimic a Latin domain (homograph / IDN spoof), or (c) shows a domain that differs from the link's actual host. Useful for vision-based agents; DOM-walking agents can spot the same discrepancies themselves.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

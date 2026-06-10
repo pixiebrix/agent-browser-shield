@@ -30,9 +30,8 @@
 // The scrub is not reversible within the current page load; toggling the
 // rule off requires a reload to recover the original fallback markup.
 
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "noscript-strip" as const;
 
@@ -63,26 +62,10 @@ function stripNoscript(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      stripNoscript(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  stripNoscript(root);
-  watcher.start(root);
-}
-
-export const noscriptStripRule = {
+export const noscriptStripRule = createScanRule({
   id: RULE_ID,
+  scan: stripNoscript,
   label: "Strip Noscript",
   description:
     "Blank <noscript> fallback markup. Never rendered when JS is on, but still readable by agents.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

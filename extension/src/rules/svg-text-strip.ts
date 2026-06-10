@@ -15,10 +15,9 @@
 // accessibility-tree consumers — keeping the element shell preserves the
 // structural mapping while the payload is gone.
 
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
 import { INJECTION_PATTERNS } from "./injection-patterns.generated";
-import type { Rule } from "./types";
 
 const RULE_ID = "svg-text-strip" as const;
 const SVG_TEXT_SELECTOR = "svg title, svg desc, svg text";
@@ -42,26 +41,10 @@ function scan(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scan(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scan(root);
-  watcher.start(root);
-}
-
-export const svgTextStripRule = {
+export const svgTextStripRule = createScanRule({
   id: RULE_ID,
+  scan,
   label: "Strip SVG Injection",
   description:
     "Clear injection-shaped text inside <svg> <title>, <desc>, and <text> elements.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

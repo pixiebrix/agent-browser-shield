@@ -30,9 +30,8 @@
 // MutationObserver re-runs on lazily injected subtrees.
 
 import { walkTextNodes } from "../lib/dom-utils";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "unicode-invisibles-strip" as const;
 
@@ -139,27 +138,11 @@ function scrub(root: ParentNode): void {
   scrubAttributes(root);
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scrub(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scrub(root);
-  watcher.start(root);
-}
-
-export const unicodeInvisiblesStripRule = {
+export const unicodeInvisiblesStripRule = createScanRule({
   id: RULE_ID,
+  scan: scrub,
+  skipPlaceholderSubtrees: true,
   label: "Strip Unicode Invisibles",
   description:
     "Remove Unicode tag, bidi-override, and zero-width characters that are invisible to humans but readable by agents.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

@@ -108,15 +108,26 @@ load, so anything that only ran in `apply` will never see post-navigation
 content — and most of our targets (PII, secrets, scarcity badges, hidden text)
 are exactly the kind of late-mounted content SPAs are built on.
 
-Default to wiring a `createSubtreeWatcher`
-(`extension/src/lib/subtree-watcher.ts`) into any rule that mutates the DOM,
-with `skipPlaceholderSubtrees: true` when the rule inserts placeholders. Mirror
-the pattern used in `pii-redact`, `secrets-redact`, `scarcity-redact`,
-`hidden-text-strip`, etc.: a shared `scanAndX(root)` function called by both
-`apply` and the watcher's `onSubtrees`, plus a `teardown` that calls
-`watcher.stop()`. Skip the watcher only when there is nothing to re-scan after
-initial load — e.g., a one-shot landmark injection — and call that out in a
-comment.
+Default to building any rule that mutates the DOM with the `createScanRule`
+factory (`extension/src/lib/scan-rule.ts`). Pass it the rule's `id` / `label` /
+`description`, a `scanAndX(root)` function, and `skipPlaceholderSubtrees: true`
+when the rule inserts placeholders; the factory owns the watcher lifecycle — the
+shared `createSubtreeWatcher`, the `apply` that scans then starts it, and the
+`teardown` that stops it — so callers don't re-hand-roll that skeleton (and
+can't forget the teardown or the placeholder skip). `scarcity-redact`,
+`json-ld-sanitize`, and `hidden-text-strip` are representative call sites.
+
+Reach for `createSubtreeWatcher` directly only when the lifecycle is more than
+scan-on-apply-and-rescan: a second watcher / head router
+(`meta-injection-strip`), a route / focus subscription
+(`form-prefill-annotate`), a deferred snapshot reconcile
+(`countdown-timer-redact`), an `onSubtrees` that re-scans `document.body`
+instead of the surfaced root (`cross-origin-frame-redact`, `svg-sprite-strip`),
+or a `teardown` that restores page state (`confirmshame-sanitize`). Text-node
+redaction rules (`pii-redact`, `secrets-redact`, `encoded-payload-redact`) have
+their own factory, `defineInlineTextRedactRule`. Skip a watcher entirely only
+when there is nothing to re-scan after initial load — e.g., a one-shot landmark
+injection — and call that out in a comment.
 
 ## DOM marker attributes
 

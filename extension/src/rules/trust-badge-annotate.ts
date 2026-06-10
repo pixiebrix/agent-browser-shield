@@ -30,9 +30,8 @@ import {
 } from "../lib/dom-markers";
 import { registrableDomain } from "../lib/domain-trust";
 import { createRuleLogger } from "../lib/log";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "trust-badge-annotate" as const;
 const log = createRuleLogger(RULE_ID);
@@ -298,27 +297,11 @@ function scanAndAnnotate(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndAnnotate(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndAnnotate(root);
-  watcher.start(root);
-}
-
-export const trustBadgeAnnotateRule = {
+export const trustBadgeAnnotateRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndAnnotate,
+  skipPlaceholderSubtrees: true,
   label: "Flag Trust Badges (Experimental)",
   description:
     "Annotate image-shaped trust badges (Norton Secured, McAfee SECURE, BBB Accredited, Verified Seller, and similar) whose accessible name carries a self-asserted trust claim that no transport-level signal backs. Useful for vision- and accessibility-tree-driven agents, which over-weight these badges as evidence of trustworthiness. Off by default while we gather real-world signal on false positives.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

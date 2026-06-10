@@ -37,6 +37,7 @@
 // publishers on those hosts are expected, not suspicious.
 
 import { SCHEMA_TRUST_UNVERIFIED_ATTR } from "../lib/dom-markers";
+import { createScanRule } from "../lib/scan-rule";
 import {
   isAnnotateOnlyAuthorityType,
   isAuthorityContextProperty,
@@ -46,9 +47,7 @@ import {
   shouldSkipPage,
   UNVERIFIED_AUTHORITY_KEY,
 } from "../lib/schema-trust";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "schema-trust-sanitize" as const;
 const JSON_LD_SELECTOR = 'script[type="application/ld+json" i]';
@@ -372,26 +371,10 @@ function processRoot(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      processRoot(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  processRoot(root);
-  watcher.start(root);
-}
-
-export const schemaTrustSanitizeRule = {
+export const schemaTrustSanitizeRule = createScanRule({
   id: RULE_ID,
+  scan: processRoot,
   label: "Sanitize Schema Trust Claims (Experimental)",
   description:
     "Blank schema.org Organization fields (name, url, @id) when the claim's URL is on a different registrable domain than the page. Defends against non-NYT pages asserting publisher = The New York Times, non-Snopes pages forging ClaimReview.author, and similar unearned-authority claims.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

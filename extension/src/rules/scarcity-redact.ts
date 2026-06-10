@@ -19,8 +19,7 @@
 import { REVEALED_ATTR } from "../lib/dom-markers";
 import { findInnermostMatches, isInsidePlaceholder } from "../lib/dom-utils";
 import { replaceWithBlockPlaceholder } from "../lib/placeholder";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
-import type { Rule } from "./types";
+import { createScanRule } from "../lib/scan-rule";
 
 const RULE_ID = "scarcity-redact" as const;
 
@@ -105,27 +104,11 @@ function scanAndHide(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  skipPlaceholderSubtrees: true,
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndHide(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndHide(root);
-  watcher.start(root);
-}
-
-export const scarcityRedactRule = {
+export const scarcityRedactRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndHide,
+  skipPlaceholderSubtrees: true,
   label: "Hide Scarcity Warnings",
   description:
     'Hide scarcity messages like "Only 3 left" or "12 viewing now". Out-of-stock indicators and bestseller badges stay visible.',
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});

@@ -47,9 +47,8 @@
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { HIDDEN_AFFILIATE_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
 import { createRuleLogger } from "../lib/log";
-import { createSubtreeWatcher } from "../lib/subtree-watcher";
+import { createScanRule } from "../lib/scan-rule";
 import { traceMutation } from "../lib/trace-mutation";
-import type { Rule } from "./types";
 
 const RULE_ID = "hidden-affiliate-sanitize" as const;
 const log = createRuleLogger(RULE_ID);
@@ -324,26 +323,10 @@ function scanAndClear(root: ParentNode): void {
   }
 }
 
-const watcher = createSubtreeWatcher({
-  onSubtrees: (roots) => {
-    for (const root of roots) {
-      scanAndClear(root);
-    }
-  },
-});
-
-function apply(root: ParentNode): void {
-  scanAndClear(root);
-  watcher.start(root);
-}
-
-export const hiddenAffiliateSanitizeRule = {
+export const hiddenAffiliateSanitizeRule = createScanRule({
   id: RULE_ID,
+  scan: scanAndClear,
   label: "Scrub Hidden Affiliate Metadata",
   description:
     "On checkout pages, clear `value` on hidden inputs whose name matches a curated affiliate / UTM / referral attribution allowlist. Promo / coupon / discount names are preserved (legitimate user discount). CSRF, session, cart, order, nonce, signature, and state fields are also preserved.",
-  apply,
-  teardown: () => {
-    watcher.stop();
-  },
-} satisfies Rule;
+});
