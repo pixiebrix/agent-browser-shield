@@ -6,6 +6,12 @@
 // trace toggle is forced on for these tests so the recorder emits — the
 // trace's gating behavior itself is covered in debug-trace.test.ts.
 
+// The recorder emits via the typed `lib/messenger` wrapper; mock it so
+// `installDebugTraceStub` can read the captured entries off a jest mock.
+jest.mock("../messenger", () => ({
+  reportDebugTraceEvent: jest.fn(),
+}));
+
 import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import type { SegmentMarker } from "../detection-messages";

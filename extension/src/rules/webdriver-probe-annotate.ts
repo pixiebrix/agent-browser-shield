@@ -43,9 +43,9 @@
 // rule's `teardown` only removes the landmark and the isolated-world
 // listener so re-enabling on the same page still picks up later reads.
 
-import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { createRuleLogger } from "../lib/log";
+import { recordDetection, requestPageWorldInject } from "../lib/messenger";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
@@ -59,8 +59,6 @@ const LANDMARK_SELECTOR = `section[${RULE_ATTR}="${RULE_ID}"]`;
 
 const LANDMARK_TEXT =
   "This page read navigator.webdriver. The site can distinguish AI-agent traffic from human traffic and may serve different content to agents than to people.";
-
-const INJECT_PROBE_MESSAGE = { type: "inject-webdriver-probe" } as const;
 
 let listenerAttached = false;
 
@@ -103,16 +101,10 @@ function ensureLandmark(): void {
   // The line-88 landmark short-circuit above doubles as a per-document
   // dedupe latch — we only get here once per document, no matter how
   // many times navigator.webdriver gets read.
-  const message: RuleDetectionMessage = {
-    type: "rule-detection",
-    payload: {
-      kind: "webdriver-probe",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
-    },
-  };
-  chrome.runtime.sendMessage(message).catch(() => {
-    // noop
+  recordDetection({
+    kind: "webdriver-probe",
+    host: globalThis.location.hostname,
+    url: globalThis.location.href,
   });
 }
 
@@ -121,13 +113,10 @@ function onProbed(): void {
 }
 
 function requestProbeInjection(): void {
-  // Service worker may be asleep / receiver not yet ready; swallow rejection
-  // so unhandled-promise warnings don't surface on every page load. The
-  // probe itself short-circuits on `__abs_webdriver_probe_installed`, so
-  // re-requests on the same document are no-ops in the page world.
-  chrome.runtime.sendMessage(INJECT_PROBE_MESSAGE).catch(() => {
-    // noop
-  });
+  // Fire-and-forget; a sleeping service worker just drops it. The probe itself
+  // short-circuits on `__abs_webdriver_probe_installed`, so re-requests on the
+  // same document are no-ops in the page world.
+  requestPageWorldInject("webdriver-probe");
 }
 
 function apply(_root: ParentNode): void {
@@ -169,4 +158,4 @@ export const webdriverProbeAnnotateRule = {
   teardown,
 } satisfies Rule;
 
-export { EVENT_NAME, INJECT_PROBE_MESSAGE };
+export { EVENT_NAME };

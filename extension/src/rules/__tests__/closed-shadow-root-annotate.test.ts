@@ -1,22 +1,23 @@
 /**
  * @jest-environment jsdom
  */
+// The rule reports via the typed `lib/messenger` wrappers; mock the module so
+// the suites assert on `requestPageWorldInject("shadow-root-probe")` and
+// `recordDetection({...})` rather than a wire envelope, and so the real
+// `webext-messenger` never loads in jsdom.
+jest.mock("../../lib/messenger", () => ({
+  recordDetection: jest.fn(),
+  requestPageWorldInject: jest.fn(),
+}));
+
+import { recordDetection, requestPageWorldInject } from "../../lib/messenger";
 import { closedShadowRootAnnotateRule } from "../closed-shadow-root-annotate";
 
 const LANDMARK_SELECTOR =
   'section[data-abs-rule="closed-shadow-root-annotate"]';
 
-// chrome.runtime.sendMessage is installed as jest.fn() on globalThis by
-// jest-webextension-mock.
-const sendMessageMock = chrome.runtime.sendMessage as unknown as jest.Mock;
-
-function detectionCalls(): unknown[] {
-  return sendMessageMock.mock.calls
-    .map(([message]: [unknown]) => message)
-    .filter(
-      (message) => (message as { type?: string }).type === "rule-detection",
-    );
-}
+const recordDetectionMock = recordDetection as jest.Mock;
+const requestInjectMock = requestPageWorldInject as jest.Mock;
 
 // A unique tag name per test avoids the global customElements registry
 // colliding across cases (defining the same name twice throws).
@@ -68,8 +69,6 @@ function mockZeroRect(element: Element): void {
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock.mockReset();
-  sendMessageMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -310,11 +309,7 @@ describe("closedShadowRootAnnotateRule main-world probe integration", () => {
   it("requests probe injection on apply (background fallback for the active tab)", () => {
     closedShadowRootAnnotateRule.apply(document.body);
 
-    const requested = sendMessageMock.mock.calls.some(
-      ([message]: [unknown]) =>
-        (message as { type?: string }).type === "inject-shadow-root-probe",
-    );
-    expect(requested).toBe(true);
+    expect(requestInjectMock).toHaveBeenCalledWith("shadow-root-probe");
   });
 
   it("does not re-stamp on subsequent probe events (per-document dedupe)", () => {
@@ -336,21 +331,18 @@ describe("closedShadowRootAnnotateRule main-world probe integration", () => {
     expect(document.querySelector(LANDMARK_SELECTOR)).toBeNull();
   });
 
-  it("emits exactly one rule-detection when the probe is the trigger", () => {
+  it("records exactly one detection when the probe is the trigger", () => {
     document.body.innerHTML = "<div><p>plain</p></div>";
     closedShadowRootAnnotateRule.apply(document.body);
-    sendMessageMock.mockClear();
+    recordDetectionMock.mockClear();
 
     document.dispatchEvent(new CustomEvent("abs:closed-shadow-attached"));
 
-    expect(detectionCalls()).toHaveLength(1);
-    expect(detectionCalls()[0]).toEqual({
-      type: "rule-detection",
-      payload: {
-        kind: "closed-shadow-root",
-        host: globalThis.location.hostname,
-        url: globalThis.location.href,
-      },
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
+    expect(recordDetectionMock).toHaveBeenCalledWith({
+      kind: "closed-shadow-root",
+      host: globalThis.location.hostname,
+      url: globalThis.location.href,
     });
   });
 });
@@ -359,10 +351,10 @@ describe("closedShadowRootAnnotateRule rule-detection emission", () => {
   it("does not emit on apply when no hosts match", () => {
     document.body.innerHTML = "<p>plain content</p>";
     closedShadowRootAnnotateRule.apply(document.body);
-    expect(detectionCalls()).toHaveLength(0);
+    expect(recordDetectionMock).not.toHaveBeenCalled();
   });
 
-  it("emits exactly one detection on first match", () => {
+  it("records exactly one detection on first match", () => {
     const tag = nextTagName();
     defineClosedShadowElement(tag);
     document.body.append(document.createElement(tag));
@@ -370,18 +362,15 @@ describe("closedShadowRootAnnotateRule rule-detection emission", () => {
 
     closedShadowRootAnnotateRule.apply(document.body);
 
-    expect(detectionCalls()).toHaveLength(1);
-    expect(detectionCalls()[0]).toEqual({
-      type: "rule-detection",
-      payload: {
-        kind: "closed-shadow-root",
-        host: globalThis.location.hostname,
-        url: globalThis.location.href,
-      },
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
+    expect(recordDetectionMock).toHaveBeenCalledWith({
+      kind: "closed-shadow-root",
+      host: globalThis.location.hostname,
+      url: globalThis.location.href,
     });
   });
 
-  it("does not re-emit on subsequent apply calls (landmark short-circuit)", () => {
+  it("does not re-record on subsequent apply calls (landmark short-circuit)", () => {
     const tag = nextTagName();
     defineClosedShadowElement(tag);
     document.body.append(document.createElement(tag));
@@ -389,11 +378,10 @@ describe("closedShadowRootAnnotateRule rule-detection emission", () => {
     closedShadowRootAnnotateRule.apply(document.body);
     closedShadowRootAnnotateRule.apply(document.body);
 
-    expect(detectionCalls()).toHaveLength(1);
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("swallows sendMessage rejections", () => {
-    sendMessageMock.mockRejectedValueOnce(new Error("no receiver"));
+  it("does not throw when reporting a detection", () => {
     const tag = nextTagName();
     defineClosedShadowElement(tag);
     document.body.append(document.createElement(tag));

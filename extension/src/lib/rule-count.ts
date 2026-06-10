@@ -25,8 +25,8 @@
 
 import throttle from "lodash/throttle";
 import { isDebugTraceEnabled, recordRuleApplication } from "./debug-trace";
-import type { RuleCountMessage } from "./detection-messages";
 import { HIDDEN_ATTR, RULE_ATTR } from "./dom-markers";
+import { reportRuleCounts } from "./messenger";
 
 const COUNT_SELECTOR = `[${RULE_ATTR}], [${HIDDEN_ATTR}]`;
 const REPORT_THROTTLE_MS = 250;
@@ -154,16 +154,9 @@ function shallowEqual(
 }
 
 function send(counts: Record<string, number>): void {
-  const message: RuleCountMessage = {
-    type: "rule-count",
-    counts,
-  };
-  // Service worker may be asleep / receiver not yet ready — swallow the
-  // resulting "Receiving end does not exist" rejection so it doesn't surface
-  // as an unhandled promise warning on every page load.
-  chrome.runtime.sendMessage(message).catch(() => {
-    // noop
-  });
+  // Fire-and-forget; a sleeping service worker (or a receiver not yet ready)
+  // just drops it — no "Receiving end does not exist" rejection to swallow.
+  reportRuleCounts(counts);
 }
 
 export function startRuleCountReporter(): () => void {

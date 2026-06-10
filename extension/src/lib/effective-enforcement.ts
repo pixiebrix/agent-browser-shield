@@ -24,13 +24,9 @@
 // match is evaluated against the tab's top-frame URL and subframes
 // inherit.
 
-import type {
-  GetTabPauseRequest,
-  GetTabPauseResponse,
-  TabPauseChangedMessage,
-} from "./detection-messages";
 import { enforcementStorage, subscribeEnforcementEnabled } from "./enforcement";
 import { isTopFrame } from "./frame";
+import { getTabPause, getTabUrl, registerMethods } from "./messenger";
 import { matchesDenylist, siteDenylistStorage } from "./site-denylist";
 
 let cachedTopFrameUrl: string | null = null;
@@ -89,45 +85,39 @@ async function fetchTopFrameUrl(): Promise<string | null> {
     return null;
   }
   try {
-    const response: unknown = await chrome.runtime.sendMessage({
-      type: "get-tab-url",
-    });
-    if (
-      response &&
-      typeof response === "object" &&
-      "url" in response &&
-      typeof response.url === "string"
-    ) {
-      return response.url;
-    }
+    return await getTabUrl();
   } catch {
     // Background may be asleep / restarting / unreachable. Fall through
     // to "unknown URL", which `computeEffective` interprets as fail-open.
+    return null;
   }
-  return null;
 }
 
 // Unlike the URL fetch, every frame asks — the pause applies to the whole tab,
 // and the background resolves it from `sender.tab.id` regardless of frame.
 async function fetchTabPaused(): Promise<boolean> {
   try {
-    const response: unknown = await chrome.runtime.sendMessage({
-      type: "get-tab-pause",
-    } satisfies GetTabPauseRequest);
-    if (
-      response &&
-      typeof response === "object" &&
-      "paused" in response &&
-      typeof (response as GetTabPauseResponse).paused === "boolean"
-    ) {
-      return (response as GetTabPauseResponse).paused;
-    }
+    return await getTabPause();
   } catch {
     // Background unreachable → assume not paused (fail-open to protected),
     // matching the URL fetch's posture.
+    return false;
   }
-  return false;
 }
+
+// The background pushes the tab's pause liveness to every frame on each popup
+// edit (reveal/pause/snooze, or "Resume now"), so a still-open page reveals or
+// re-enforces without a reload. A *timed* snooze expiring produces no push, so
+// the open page stays revealed until its next navigation re-reads fresh state.
+// Registered once at module load (rather than inside `initEffectiveEnforcement`)
+// so a never-missed push doesn't depend on init timing and a re-init can't
+// double-register.
+registerMethods({
+  setTabPause(paused: boolean) {
+    cachedTabPaused = paused;
+    notify();
+  },
+});
 
 // Resolves to the current effective enforcement boolean and installs the
 // underlying storage subscriptions. Idempotent: callers (rule-engine) only
@@ -155,20 +145,8 @@ export async function initEffectiveEnforcement(): Promise<boolean> {
     cachedDenylist = next;
     notify();
   });
-  // The background pushes the tab's pause liveness on every popup edit. Each
-  // frame listens independently so its own rule engine reveals / re-applies.
-  chrome.runtime.onMessage.addListener((message: unknown) => {
-    if (
-      message &&
-      typeof message === "object" &&
-      (message as { type?: unknown }).type === "tab-pause-changed" &&
-      typeof (message as TabPauseChangedMessage).paused === "boolean"
-    ) {
-      cachedTabPaused = (message as TabPauseChangedMessage).paused;
-      notify();
-    }
-    return undefined;
-  });
+  // The `setTabPause` push handler is registered at module load (above), so
+  // it's already live before this init resolves.
 
   return lastEffective;
 }

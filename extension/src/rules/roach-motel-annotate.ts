@@ -27,9 +27,9 @@
 // sr-only class allowlist plus the 1×1 + overflow:hidden inline envelope.
 
 import { URLPattern } from "urlpattern-polyfill";
-import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { createRuleLogger } from "../lib/log";
+import { recordDetection } from "../lib/messenger";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { traceMutation } from "../lib/trace-mutation";
 import type { JustDeleteMeEntry } from "./justdeleteme.generated";
@@ -215,21 +215,15 @@ function apply(_root: ParentNode): void {
   });
   // Tell the background so the popup can render a human-visible entry
   // for this tab. The line-181 landmark short-circuit already guarantees
-  // we only get here once per document. Service worker may be asleep —
-  // swallow the rejection per the rule-count.ts pattern.
-  const message: RuleDetectionMessage = {
-    type: "rule-detection",
-    payload: {
-      kind: "roach-motel",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
-      difficulty: warning.difficulty,
-      cancellationUrl: warning.cancellationUrl,
-      source: warning.source,
-    },
-  };
-  chrome.runtime.sendMessage(message).catch(() => {
-    // noop
+  // we only get here once per document. Fire-and-forget — a sleeping
+  // service worker just drops it.
+  recordDetection({
+    kind: "roach-motel",
+    host: globalThis.location.hostname,
+    url: globalThis.location.href,
+    difficulty: warning.difficulty,
+    cancellationUrl: warning.cancellationUrl,
+    source: warning.source,
   });
 }
 

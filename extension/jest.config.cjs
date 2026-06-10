@@ -39,6 +39,10 @@ module.exports = {
   moduleNameMapper: {
     "^webext-storage$": "<rootDir>/src/__test-mocks__/webext-storage.ts",
     "^abort-utils$": "<rootDir>/src/__test-mocks__/abort-utils.ts",
+    // webext-messenger is ESM-only too; the stub keeps the real `lib/messenger`
+    // loadable in jsdom (its wrappers go inert). Tests that assert on messaging
+    // mock `lib/messenger` directly.
+    "^webext-messenger$": "<rootDir>/src/__test-mocks__/webext-messenger.ts",
   },
   // - jest-webextension-mock: installs globalThis.chrome + browser with
   //   jest.fn() stubs for MV2/MV3 APIs the extension uses (runtime, storage,
@@ -71,6 +75,12 @@ module.exports = {
     "!src/lib/*.tsx",
     "!src/lib/options-badge.ts",
     "!src/lib/options-button-toggle.ts",
+    // Transport glue over `webext-messenger`: the typed method contract plus
+    // thin getMethod/getNotifier wrappers. Exercising it requires the loaded
+    // extension (real cross-context messaging); unit-testing it would just test
+    // the library. The runtime validation it gates lives in `message-schemas.ts`,
+    // which IS covered. Same posture as `effective-enforcement.ts` below.
+    "!src/lib/messenger.ts",
     "!src/lib/use-chrome-storage-value.ts",
     "!src/lib/use-transient-status.ts",
     "!src/lib/placeholder-count.ts",

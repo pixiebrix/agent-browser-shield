@@ -85,9 +85,9 @@
 //     and `shadow-root-probe-source.ts` (page world) register any
 //     open shadow materialized post-parse.
 
-import type { RuleDetectionMessage } from "../lib/detection-messages";
 import { RULE_ATTR } from "../lib/dom-markers";
 import { createRuleLogger } from "../lib/log";
+import { recordDetection, requestPageWorldInject } from "../lib/messenger";
 import { SR_ONLY_INLINE_STYLE } from "../lib/sr-only";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
@@ -102,8 +102,6 @@ const LANDMARK_TEXT =
   "This page renders content inside one or more closed shadow roots. The contents of those shadow roots are invisible to this extension and may include text, controls, or instructions that are not reflected in the rest of the page's accessible content.";
 
 const PROBE_EVENT = "abs:closed-shadow-attached";
-
-const INJECT_PROBE_MESSAGE = { type: "inject-shadow-root-probe" } as const;
 
 let probeListenerAttached = false;
 
@@ -197,18 +195,13 @@ function ensureLandmark(): void {
     host: globalThis.location.hostname,
   });
   // Per-document dedupe: the landmark short-circuit above ensures we only
-  // get here once, no matter how many hosts the page mounts.
-  const message: RuleDetectionMessage = {
-    type: "rule-detection",
-    payload: {
-      kind: "closed-shadow-root",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
-    },
-  };
-  chrome.runtime.sendMessage(message).catch(() => {
-    // noop — service worker may be asleep; the landmark is the load-bearing
-    // signal and survives a missed detection emit.
+  // get here once, no matter how many hosts the page mounts. Fire-and-forget —
+  // the landmark is the load-bearing signal and survives a missed emit to a
+  // sleeping service worker.
+  recordDetection({
+    kind: "closed-shadow-root",
+    host: globalThis.location.hostname,
+    url: globalThis.location.href,
   });
 }
 
@@ -243,13 +236,10 @@ function onClosedShadowAttached(): void {
 }
 
 function requestProbeInjection(): void {
-  // Service worker may be asleep / receiver not yet ready; swallow
-  // rejection so unhandled-promise warnings don't surface on every page
-  // load. installShadowRootProbe is idempotent via its FLAG sentinel, so
-  // re-requests on the same document are no-ops in the page world.
-  chrome.runtime.sendMessage(INJECT_PROBE_MESSAGE).catch(() => {
-    // noop
-  });
+  // Fire-and-forget; a sleeping service worker just drops it.
+  // installShadowRootProbe is idempotent via its FLAG sentinel, so re-requests
+  // on the same document are no-ops in the page world.
+  requestPageWorldInject("shadow-root-probe");
 }
 
 function apply(root: ParentNode): void {
@@ -295,4 +285,4 @@ export const closedShadowRootAnnotateRule = {
   teardown,
 } satisfies Rule;
 
-export { INJECT_PROBE_MESSAGE, PROBE_EVENT };
+export { PROBE_EVENT };

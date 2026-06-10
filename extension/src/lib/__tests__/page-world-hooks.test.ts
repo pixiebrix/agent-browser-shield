@@ -17,6 +17,11 @@ import {
   flushScriptingPromises,
   installScriptingRegistry,
 } from "../../__test-mocks__/chrome-scripting-registry";
+import type { PageWorldInjectType } from "../messenger";
+
+// `debug-trace` (pulled in transitively by the hook table) emits via the
+// typed messenger; mock it so the real `webext-messenger` never loads in jsdom.
+jest.mock("../messenger", () => ({ reportDebugTraceEvent: jest.fn() }));
 
 // See storage.test.ts for the rationale on these mocks — the storage module
 // pulls in the full rule catalog transitively.
@@ -41,11 +46,11 @@ interface HooksModule {
     scriptFile: string;
     logLabel: string;
     allFrames: boolean;
-    inject?: { messageType: string };
+    inject?: { injectType: PageWorldInjectType };
   }>;
   startPageWorldHooks: () => void;
   dispatchPageWorldInject: (
-    messageType: string,
+    injectType: PageWorldInjectType,
     sender: chrome.runtime.MessageSender,
   ) => boolean;
 }
@@ -96,17 +101,17 @@ describe("PAGE_WORLD_HOOKS table", () => {
     expect(byId["webdriver-probe-annotate-main-world"]).toMatchObject({
       scriptFile: "webdriver-probe.js",
       allFrames: false,
-      inject: { messageType: "inject-webdriver-probe" },
+      inject: { injectType: "webdriver-probe" },
     });
     expect(byId["checkout-checkbox-sanitize-main-world"]).toMatchObject({
       scriptFile: "checkout-checkbox-defense.js",
       allFrames: true,
-      inject: { messageType: "inject-checkout-checkbox-defense" },
+      inject: { injectType: "checkout-checkbox-defense" },
     });
     expect(byId["closed-shadow-root-annotate-main-world"]).toMatchObject({
       scriptFile: "shadow-root-probe.js",
       allFrames: true,
-      inject: { messageType: "inject-shadow-root-probe" },
+      inject: { injectType: "shadow-root-probe" },
     });
     // The dump-trace bridge has no on-demand inject fallback by design.
     expect(byId["dump-trace-bridge-main-world"]).toMatchObject({
@@ -174,7 +179,7 @@ describe("dispatchPageWorldInject", () => {
   it("routes a known inject message to executeScript and returns true", async () => {
     const module = await loadModule({});
 
-    const handled = module.dispatchPageWorldInject("inject-shadow-root-probe", {
+    const handled = module.dispatchPageWorldInject("shadow-root-probe", {
       tab: { id: 4 },
       frameId: 0,
     } as chrome.runtime.MessageSender);
@@ -189,12 +194,17 @@ describe("dispatchPageWorldInject", () => {
     );
   });
 
-  it("returns false for an unrecognized message and does not inject", async () => {
+  it("returns false for an unrecognized inject kind and does not inject", async () => {
     const module = await loadModule({});
 
-    const handled = module.dispatchPageWorldInject("rule-count", {
-      tab: { id: 4 },
-    } as chrome.runtime.MessageSender);
+    // Out-of-contract value — the background validates against `injectTypeSchema`
+    // before calling, but the dispatcher is defensive about unknown keys.
+    const handled = module.dispatchPageWorldInject(
+      "rule-count" as PageWorldInjectType,
+      {
+        tab: { id: 4 },
+      } as chrome.runtime.MessageSender,
+    );
 
     expect(handled).toBe(false);
     expect(chrome.scripting.executeScript).not.toHaveBeenCalled();
@@ -203,9 +213,12 @@ describe("dispatchPageWorldInject", () => {
   it("does not expose an inject route for the dump-trace bridge", async () => {
     const module = await loadModule({});
 
-    const handled = module.dispatchPageWorldInject("inject-dump-trace-bridge", {
-      tab: { id: 4 },
-    } as chrome.runtime.MessageSender);
+    const handled = module.dispatchPageWorldInject(
+      "dump-trace-bridge" as PageWorldInjectType,
+      {
+        tab: { id: 4 },
+      } as chrome.runtime.MessageSender,
+    );
 
     expect(handled).toBe(false);
   });

@@ -29,10 +29,10 @@
 import { createChromeStorageValue } from "./chrome-storage-value";
 import type {
   DebugTraceEntry,
-  DebugTraceEventMessage,
   RuleApplicationKind,
   SegmentKind,
 } from "./detection-messages";
+import { reportDebugTraceEvent } from "./messenger";
 
 export const DEBUG_TRACE_ENABLED_DEFAULT = false;
 
@@ -94,15 +94,8 @@ export function initDebugTrace(): Promise<void> {
 }
 
 function send(entry: DebugTraceEntry): void {
-  const message: DebugTraceEventMessage = {
-    type: "debug-trace-event",
-    entry,
-  };
-  // Service worker may be asleep or not yet ready — swallow the rejection
-  // exactly like `rule-count.ts:128`.
-  chrome.runtime.sendMessage(message).catch(() => {
-    // noop
-  });
+  // Fire-and-forget; a sleeping or not-yet-ready service worker just drops it.
+  reportDebugTraceEvent(entry);
 }
 
 export function isDebugTraceEnabled(): boolean {

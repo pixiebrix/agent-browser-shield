@@ -4,10 +4,9 @@
 import { useEffect, useState } from "react";
 import type {
   DetectionPayload,
-  GetTabRuleCountsRequest,
-  GetTabRuleCountsResponse,
   RuleCountEntry,
 } from "../lib/detection-messages";
+import { getTabRuleCounts } from "../lib/messenger";
 
 export interface TabActivity {
   entries: RuleCountEntry[];
@@ -51,16 +50,9 @@ async function fetchActivity(): Promise<TabActivity> {
   if (typeof tab?.id !== "number") {
     return { entries: [], detections: [] };
   }
-  const request: GetTabRuleCountsRequest = {
-    type: "get-tab-rule-counts",
-    tabId: tab.id,
-  };
-  const response = await chrome.runtime.sendMessage<
-    GetTabRuleCountsRequest,
-    GetTabRuleCountsResponse | undefined
-  >(request);
+  const response = await getTabRuleCounts(tab.id);
   return {
-    entries: response?.entries ?? [],
-    detections: response?.detections ?? [],
+    entries: response.entries,
+    detections: response.detections,
   };
 }

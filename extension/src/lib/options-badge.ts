@@ -2,6 +2,7 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { log } from "./log";
+import { openOptions } from "./messenger";
 import { optionsButtonStorage } from "./options-button-toggle";
 
 const BADGE_SELECTOR = "data-abs";
@@ -52,11 +53,9 @@ function injectBadge(): void {
     badge.style.opacity = "0.65";
   });
   badge.addEventListener("click", () => {
-    chrome.runtime
-      .sendMessage({ type: "open-options" })
-      .catch((error: unknown) => {
-        log.error("failed to open options page", error);
-      });
+    openOptions().catch((error: unknown) => {
+      log.error("failed to open options page", error);
+    });
   });
 
   document.body.append(badge);

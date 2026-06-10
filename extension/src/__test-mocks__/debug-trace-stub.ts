@@ -4,9 +4,17 @@
 // Shared setup for tests that exercise the debug-trace recorder, the
 // segment tracker, or anything downstream of `recordRuleApplication`.
 //
-// Installs a jest.fn() over `chrome.runtime.sendMessage`, resets the
-// recorder module state, and gives callers a typed accessor for the
-// captured trace entries. Use in beforeEach:
+// The recorder now emits via the typed `lib/messenger` wrapper
+// `reportDebugTraceEvent` instead of raw `chrome.runtime.sendMessage`. Tests
+// that use this stub MUST mock that module so the import below resolves to a
+// jest mock:
+//
+//   jest.mock("../../lib/messenger", () => ({
+//     reportDebugTraceEvent: jest.fn(),
+//     // ...any other messenger exports the test's code-under-test uses
+//   }));
+//
+// Usage:
 //
 //   let stub: DebugTraceStub;
 //   beforeEach(() => { stub = installDebugTraceStub(); });
@@ -16,36 +24,30 @@ import {
   __resetDebugTraceForTesting,
   __setDebugTraceEnabledForTesting,
 } from "../lib/debug-trace";
-import type {
-  DebugTraceEntry,
-  DebugTraceEventMessage,
-} from "../lib/detection-messages";
+import type { DebugTraceEntry } from "../lib/detection-messages";
+import { reportDebugTraceEvent } from "../lib/messenger";
 
 export interface DebugTraceStub {
-  sendMessage: jest.Mock;
   setEnabled: (value: boolean) => void;
-  // Every entry sent via the `debug-trace-event` message, in call order.
+  // The mocked `reportDebugTraceEvent` — assert call counts directly.
+  events: jest.Mock;
+  // Every entry passed to `reportDebugTraceEvent`, in call order.
   sentEntries: () => DebugTraceEntry[];
   reset: () => void;
 }
 
 export function installDebugTraceStub(): DebugTraceStub {
   __resetDebugTraceForTesting();
-  const sendMessage = jest.fn().mockResolvedValue(undefined);
-  (globalThis as { chrome: unknown }).chrome = {
-    runtime: { sendMessage },
-  };
+  const events = reportDebugTraceEvent as jest.Mock;
+  events.mockClear();
   return {
-    sendMessage,
     setEnabled: __setDebugTraceEnabledForTesting,
+    events,
     sentEntries: () =>
-      sendMessage.mock.calls
-        .map(([message]) => message as { type: string })
-        .filter(
-          (message): message is DebugTraceEventMessage =>
-            message.type === "debug-trace-event",
-        )
-        .map((message) => message.entry),
-    reset: __resetDebugTraceForTesting,
+      events.mock.calls.map(([entry]) => entry as DebugTraceEntry),
+    reset: () => {
+      __resetDebugTraceForTesting();
+      events.mockClear();
+    },
   };
 }

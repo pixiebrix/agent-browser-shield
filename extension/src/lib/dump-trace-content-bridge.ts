@@ -15,11 +15,8 @@
 //
 // Started from `content.ts` inside the existing `isTopFrame()` block.
 
-import type {
-  GetTabDebugTraceRequest,
-  GetTabDebugTraceResponse,
-} from "./detection-messages";
 import { log } from "./log";
+import { getTabDebugTrace } from "./messenger";
 
 // Protocol constants — kept as module-scope literals here. The MAIN-world
 // source mirrors them inline (no module imports cross the world
@@ -64,24 +61,16 @@ function postResponse(
 }
 
 async function forwardRequest(id: string): Promise<void> {
-  const request: GetTabDebugTraceRequest = { type: "get-tab-debug-trace" };
-  let response: GetTabDebugTraceResponse | undefined;
   try {
-    response = await chrome.runtime.sendMessage<
-      GetTabDebugTraceRequest,
-      GetTabDebugTraceResponse | undefined
-    >(request);
+    // The background resolves a missing `sender.tab?.id` to `{ entries: [] }`,
+    // so the only failure here is an unreachable worker (after the messenger's
+    // own retries), which throws.
+    const response = await getTabDebugTrace();
+    postResponse(id, { entries: response.entries });
   } catch (error) {
     log.warn("dump-trace bridge: background request failed", { error });
     postResponse(id, { error: String(error) });
-    return;
   }
-  // chrome.runtime.sendMessage resolves with `undefined` when the
-  // listener returns without calling sendResponse — that happens in
-  // the background's `get-tab-debug-trace` branch if sender.tab?.id is
-  // missing (rare, but possible for off-tab callers). Treat that as an
-  // empty trace rather than crashing the page-world promise.
-  postResponse(id, { entries: response?.entries ?? [] });
 }
 
 function bridgeListener(event: MessageEvent): void {
