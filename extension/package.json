@@ -82,6 +82,7 @@
     "js-yaml": "^4.1.0",
     "knip": "^6.15.0",
     "ts-jest": "^29",
+    "type-fest": "^5.7.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "8.60.0",
     "zod": "^4.4.3"

@@ -9,6 +9,7 @@
 // mock. All maps are dropped on a service-worker restart — the same fail-open
 // posture every cache below assumes.
 
+import type { Entries } from "type-fest";
 import type { RuleId } from "../../rules/rule-metadata";
 import type {
   DetectionKind,
@@ -121,10 +122,9 @@ export function createTabTracker(): TabTracker {
       return summed;
     }
     for (const frameCounts of frames.values()) {
-      for (const [ruleId, count] of Object.entries(frameCounts) as [
-        RuleId,
-        number,
-      ][]) {
+      for (const [ruleId, count] of Object.entries(frameCounts) as Entries<
+        Required<RuleCountMap>
+      >) {
         summed[ruleId] = (summed[ruleId] ?? 0) + count;
       }
     }

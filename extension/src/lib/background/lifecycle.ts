@@ -9,6 +9,7 @@
 // doesn't own — session-store writes and the content broadcast (content scripts
 // can't observe the session area, so the background bridges every change).
 
+import type { Entries } from "type-fest";
 // `rules/rule-metadata` (not `rules/index`) keeps this worker module free of
 // rule-file DOM access — see `check-background-purity.ts`.
 import type { RuleId } from "../../rules/rule-metadata";
@@ -200,10 +201,9 @@ export function startBackgroundLifecycle(tracker: TabTracker): void {
     if (previous === null) {
       return;
     }
-    for (const [kind, ruleId] of Object.entries(DETECTION_KIND_TO_RULE_ID) as [
-      DetectionKind,
-      RuleId,
-    ][]) {
+    for (const [kind, ruleId] of Object.entries(
+      DETECTION_KIND_TO_RULE_ID,
+    ) as Entries<typeof DETECTION_KIND_TO_RULE_ID>) {
       if (previous[ruleId] && !next[ruleId]) {
         tracker.clearDetectionsOfKind(kind);
       }
