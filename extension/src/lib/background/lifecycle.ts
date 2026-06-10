@@ -9,6 +9,9 @@
 // doesn't own — session-store writes and the content broadcast (content scripts
 // can't observe the session area, so the background bridges every change).
 
+// `rules/rule-metadata` (not `rules/index`) keeps this worker module free of
+// rule-file DOM access — see `check-background-purity.ts`.
+import type { RuleId } from "../../rules/rule-metadata";
 import { debugTraceStorage } from "../debug-trace";
 import {
   appendEvent as appendDebugTraceEvent,
@@ -32,7 +35,7 @@ const DETECTION_KIND_TO_RULE_ID = {
   "roach-motel": "roach-motel-annotate",
   "webdriver-probe": "webdriver-probe-annotate",
   "closed-shadow-root": "closed-shadow-root-annotate",
-} as const satisfies Record<DetectionKind, string>;
+} as const satisfies Record<DetectionKind, RuleId>;
 
 export function startBackgroundLifecycle(tracker: TabTracker): void {
   chrome.tabs.onRemoved.addListener((tabId) => {
@@ -199,9 +202,9 @@ export function startBackgroundLifecycle(tracker: TabTracker): void {
     }
     for (const [kind, ruleId] of Object.entries(DETECTION_KIND_TO_RULE_ID) as [
       DetectionKind,
-      string,
+      RuleId,
     ][]) {
-      if (previous[ruleId] === true && next[ruleId] === false) {
+      if (previous[ruleId] && !next[ruleId]) {
         tracker.clearDetectionsOfKind(kind);
       }
     }

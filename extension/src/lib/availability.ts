@@ -49,7 +49,9 @@ export async function getRuleAvailabilityStates(): Promise<RuleAvailabilityState
       async (rule) => [rule.id, await resolveAvailability(rule)] as const,
     ),
   );
-  return Object.fromEntries(entries);
+  // Entries cover every `RuleId` (keyed off `RULES`); `Object.fromEntries`
+  // widens the key back to `string`, so cast to the exact map shape.
+  return Object.fromEntries(entries) as RuleAvailabilityStates;
 }
 
 // Subscribe to changes in any rule's reactive availability. The listener is

@@ -1,10 +1,13 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Source of truth for `RuleId`, `RULE_IDS`, and ship-default state.
-// Hand-edited. Adding a rule: append an entry here AND register the
-// runtime in `rules/index.ts`. The catalog test in
-// `rules/__tests__/catalog.test.ts` enforces that the two stay in sync.
+// The single source of truth for `RuleId`, `RULE_IDS`, and ship-default state.
+// Hand-edited. Adding a rule: append an entry here AND register the runtime in
+// `rules/index.ts`. That file constrains its tuple against this `RuleId`
+// (`satisfies … { id: RuleId }` + a reverse exhaustiveness assertion), so a
+// mismatch in either direction is a compile error at author time. The catalog
+// test in `rules/__tests__/catalog.test.ts` keeps the same checks at runtime as
+// belt-and-suspenders.
 //
 // Kept out of `rules/index.ts` so service-worker code (`lib/storage.ts`,
 // `background.ts`) can import id metadata without pulling rule files'

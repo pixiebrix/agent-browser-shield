@@ -1,19 +1,21 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import type { Rule, RuleId } from "../rules";
+import type { CatalogRule, RuleId } from "../rules";
 import { RULES } from "../rules";
 import type { RuleAvailabilityStates } from "./availability";
 import { RULE_GROUPS } from "./rule-groups";
 import type { RuleStates } from "./storage";
 import { setRuleEnabled } from "./storage";
 
-const RULES_BY_ID = new Map<RuleId, Rule>(RULES.map((rule) => [rule.id, rule]));
+const RULES_BY_ID = new Map<RuleId, CatalogRule>(
+  RULES.map((rule) => [rule.id, rule]),
+);
 
 // The catalog invariant test (`places every rule in exactly one group`)
 // guarantees every group id resolves; this throws loudly if anyone ever
 // breaks that invariant by adding a rule without updating `RULE_GROUPS`.
-function ruleById(id: RuleId): Rule {
+function ruleById(id: RuleId): CatalogRule {
   const rule = RULES_BY_ID.get(id);
   if (!rule) {
     throw new Error(`Rule ${id} listed in RULE_GROUPS but not in RULES`);
@@ -43,7 +45,7 @@ export function RuleList({
             {group.ruleIds.map((ruleId) => {
               const rule = ruleById(ruleId);
               const snapshot = availability[rule.id];
-              const unavailable = !snapshot?.available;
+              const unavailable = !snapshot.available;
               return (
                 <li
                   key={rule.id}
@@ -65,7 +67,7 @@ export function RuleList({
                           <span className="badge">Unavailable</span>
                         )}
                       </strong>
-                      {unavailable && snapshot?.reason && (
+                      {unavailable && snapshot.reason && (
                         <p className="unavailable-reason">{snapshot.reason}</p>
                       )}
                       <p>{rule.description}</p>

@@ -27,8 +27,11 @@ export interface SiteRule {
   selectors: string[];
 }
 
-interface SelectorHideRuleOptions {
-  id: RuleId;
+interface SelectorHideRuleOptions<Id extends RuleId = RuleId> {
+  // Generic over the literal id so `rule.id` keeps its narrow `RuleId` literal
+  // (inferred from the call site) instead of widening to `RuleId` — the rule
+  // catalog's compile-time agreement check in `rules/index.ts` depends on it.
+  id: Id;
   label: string;
   description: string;
   // Text shown on the placeholder's reveal button. Required unless
@@ -53,16 +56,16 @@ interface SelectorHideRuleOptions {
   topFrameOnly?: boolean;
 }
 
-export interface SelectorHideRule {
-  rule: Rule;
+export interface SelectorHideRule<Id extends RuleId = RuleId> {
+  rule: Rule & { id: Id };
   // Exposed so each rule file can re-export it for tests that assert
   // URL-gated selector composition.
   selectorsFor: (url: string) => string[];
 }
 
-export function createSelectorHideRule(
-  options: SelectorHideRuleOptions,
-): SelectorHideRule {
+export function createSelectorHideRule<Id extends RuleId>(
+  options: SelectorHideRuleOptions<Id>,
+): SelectorHideRule<Id> {
   const {
     id,
     label,
@@ -252,7 +255,7 @@ export function createSelectorHideRule(
     }
   }
 
-  const rule: Rule = watchSubtrees
+  const rule: Rule & { id: Id } = watchSubtrees
     ? {
         id,
         label,

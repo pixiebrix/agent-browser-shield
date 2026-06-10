@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  chatWidgetHideRule.teardown?.();
+  chatWidgetHideRule.teardown();
 });
 
 describe("chatWidgetHideRule", () => {
@@ -140,7 +140,7 @@ describe("chatWidgetHideRule", () => {
 
     it("teardown removes the stylesheet so later additions stay visible", () => {
       chatWidgetHideRule.apply(document.body);
-      chatWidgetHideRule.teardown?.();
+      chatWidgetHideRule.teardown();
 
       const container = document.createElement("div");
       container.id = "intercom-container";

@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  adsHideRule.teardown?.();
+  adsHideRule.teardown();
   jest.useRealTimers();
 });
 
@@ -142,7 +142,7 @@ describe("adsHideRule EasyList stylesheet", () => {
   it("removes the EasyList stylesheet on teardown()", () => {
     adsHideRule.apply(document.body);
     expect(document.querySelector(`#${EASYLIST_STYLE_ID}`)).not.toBeNull();
-    adsHideRule.teardown?.();
+    adsHideRule.teardown();
     expect(document.querySelector(`#${EASYLIST_STYLE_ID}`)).toBeNull();
   });
 

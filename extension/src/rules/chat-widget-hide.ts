@@ -30,7 +30,7 @@ import { injectHideStylesheet } from "../lib/css-hide-stylesheet";
 import { registerCssFirstSelectors } from "../lib/rule-count";
 import type { Rule } from "./types";
 
-const RULE_ID = "chat-widget-hide";
+const RULE_ID = "chat-widget-hide" as const;
 const STYLE_ID = "abs-chat-widget-hide";
 
 const SELECTORS: readonly string[] = [
@@ -75,7 +75,7 @@ const UNION_SELECTOR = SELECTORS.join(",");
 let stylesheet: HideStylesheet | null = null;
 let unregisterCount: (() => void) | null = null;
 
-export const chatWidgetHideRule: Rule = {
+export const chatWidgetHideRule = {
   id: RULE_ID,
   label: "Remove Chat Widgets",
   description: "Remove live-chat widgets (Intercom, Drift, Zendesk, etc.).",
@@ -85,7 +85,10 @@ export const chatWidgetHideRule: Rule = {
   // descending into it. Running this rule inside vendor iframes would also
   // try to delete the vendor's own UI.
   topFrameOnly: true,
-  apply() {
+  // Param matches `Rule.apply` even though this rule ignores the root (it
+  // injects a document-level stylesheet). Without it, `satisfies Rule` would
+  // infer `() => void` and callers passing a root would fail to type-check.
+  apply(_root: ParentNode) {
     // Idempotent — `injectHideStylesheet` re-uses the existing <style> if
     // it's still connected, and `registerCssFirstSelectors` no-ops on
     // duplicate registration (Set semantics).
@@ -101,4 +104,4 @@ export const chatWidgetHideRule: Rule = {
     unregisterCount?.();
     unregisterCount = null;
   },
-};
+} satisfies Rule;

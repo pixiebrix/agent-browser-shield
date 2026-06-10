@@ -150,9 +150,9 @@ const { rule: baseRule } = createSelectorHideRule({
 const baseApply = baseRule.apply;
 const baseTeardown = baseRule.teardown;
 
-export const adsHideRule: Rule = {
+export const adsHideRule = {
   ...baseRule,
-  apply(root) {
+  apply(root: ParentNode) {
     injectEasyListStylesheet();
     baseApply(root);
   },
@@ -160,4 +160,4 @@ export const adsHideRule: Rule = {
     baseTeardown?.();
     removeEasyListStylesheet();
   },
-};
+} satisfies Rule;

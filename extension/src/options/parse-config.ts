@@ -2,10 +2,16 @@
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
 import { isValidPattern } from "../lib/site-denylist";
-import type { RuleStates } from "../lib/storage";
+import type { RuleId, RuleStates } from "../lib/storage";
 import { RULE_IDS } from "../lib/storage";
 
-const RULE_ID_SET = new Set<string>(RULE_IDS);
+const RULE_ID_SET: ReadonlySet<string> = new Set<string>(RULE_IDS);
+
+// Narrowing membership test so a validated key indexes `RuleStates` as a
+// `RuleId` rather than a bare `string`.
+function isRuleId(key: string): key is RuleId {
+  return RULE_ID_SET.has(key);
+}
 
 // Reserved non-rule keys the Options-page *Apply configuration* round-trip
 // understands. Mirrors the reserved-keys set in the build-time defaults
@@ -56,7 +62,7 @@ export function parseConfig(input: string): ParseResult {
       }
       continue;
     }
-    if (!RULE_ID_SET.has(key)) {
+    if (!isRuleId(key)) {
       errors.push(`Unknown rule: ${key}`);
       continue;
     }
