@@ -1,7 +1,7 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-import type { Rule } from "../rules";
+import type { CatalogRule } from "../rules";
 import { RULES } from "../rules";
 import type { RuleAvailabilityStates } from "./availability";
 import {
@@ -155,11 +155,11 @@ function injectStyles(): void {
 }
 
 function isApplicableHere(
-  rule: Rule,
+  rule: CatalogRule,
   topFrame: boolean,
   availability: RuleAvailabilityStates,
 ): boolean {
-  if (!availability[rule.id]?.available) {
+  if (!availability[rule.id].available) {
     return false;
   }
   // topFrameOnly rules target page-wide concepts (site footer, cookie/newsletter
@@ -213,14 +213,12 @@ function applyEnabled(
 // (storage toggle, enforcement switch, availability flip) routes through the
 // same diff logic.
 function effectivelyApplied(
-  rule: Rule,
+  rule: CatalogRule,
   states: RuleStates,
   topFrame: boolean,
   availability: RuleAvailabilityStates,
 ): boolean {
-  return (
-    isApplicableHere(rule, topFrame, availability) && Boolean(states[rule.id])
-  );
+  return isApplicableHere(rule, topFrame, availability) && states[rule.id];
 }
 
 function reconcile(
@@ -267,9 +265,12 @@ function applyDisplayMode(mode: PlaceholderDisplayMode): void {
   document.documentElement.setAttribute(PLACEHOLDER_MODE_ATTR, mode);
 }
 
-const ALL_DISABLED: RuleStates = Object.fromEntries(
+// `Object.fromEntries` types its result as `{ [k: string]: false }`; every
+// `RuleId` is covered because the entries come from `RULES`, so the cast to the
+// exact `RuleStates` shape is sound.
+const ALL_DISABLED = Object.fromEntries(
   RULES.map((rule) => [rule.id, false]),
-);
+) as RuleStates;
 
 function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
   return enforcementEnabled ? states : ALL_DISABLED;

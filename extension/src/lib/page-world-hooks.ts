@@ -39,7 +39,7 @@ function ruleEnabledAndEnforced(ruleId: RuleId): () => Promise<boolean> {
       getRuleStates(),
       getEnforcementEnabled(),
     ]);
-    return enforcementEnabled && Boolean(states[ruleId]);
+    return enforcementEnabled && states[ruleId];
   };
 }
 

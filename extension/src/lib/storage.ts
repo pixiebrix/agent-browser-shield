@@ -54,9 +54,11 @@ function parseOverrides(): Partial<RuleStates> {
 
 const OVERRIDES: Partial<RuleStates> = parseOverrides();
 
-const DEFAULT_STATES: RuleStates = Object.fromEntries(
+// `RULE_IDS.map` covers every `RuleId`; `Object.fromEntries` widens the key to
+// `string`, so cast back to the exact `RuleStates` shape.
+const DEFAULT_STATES = Object.fromEntries(
   RULE_IDS.map((id) => [id, OVERRIDES[id] ?? RULE_DEFAULTS[id]]),
-);
+) as RuleStates;
 
 function normalize(raw: unknown): RuleStates {
   const result: RuleStates = { ...DEFAULT_STATES };

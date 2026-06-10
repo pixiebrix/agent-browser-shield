@@ -41,8 +41,11 @@ import type { RuleId } from "./storage";
 import { createSubtreeWatcher } from "./subtree-watcher";
 import { walkTextNodeGroupsChunked } from "./yielding-text-walk";
 
-export interface InlineTextRedactRuleOptions {
-  id: RuleId;
+export interface InlineTextRedactRuleOptions<Id extends RuleId = RuleId> {
+  // Generic over the literal id so `rule.id` keeps its narrow `RuleId` literal
+  // (inferred from the call site) rather than widening to `RuleId`. The rule
+  // catalog's compile-time agreement check in `rules/index.ts` relies on it.
+  id: Id;
   label: string;
   description: string;
   // Skip text nodes shorter than this — cheap per-node early-out before
@@ -56,11 +59,14 @@ export interface InlineTextRedactRuleOptions {
 // Tighter than `Rule` — the factory always installs a teardown, so callers
 // (notably tests that call `rule.teardown()` directly in `afterEach`) don't
 // need to widen with `?.()` or assertion.
-export type InlineTextRedactRule = Rule & { teardown: () => void };
+export type InlineTextRedactRule<Id extends RuleId = RuleId> = Rule & {
+  id: Id;
+  teardown: () => void;
+};
 
-export function defineInlineTextRedactRule(
-  options: InlineTextRedactRuleOptions,
-): InlineTextRedactRule {
+export function defineInlineTextRedactRule<Id extends RuleId>(
+  options: InlineTextRedactRuleOptions<Id>,
+): InlineTextRedactRule<Id> {
   const { id, label, description, minLength, collectMatches } = options;
 
   const lifecycle = new ReusableAbortController();
@@ -110,7 +116,7 @@ export function defineInlineTextRedactRule(
       unsubscribeRouteChange?.();
       unsubscribeRouteChange = null;
     },
-  } satisfies InlineTextRedactRule;
+  } satisfies InlineTextRedactRule<Id>;
 }
 
 // Bucket a chunk of group-tagged text nodes into runs of consecutive

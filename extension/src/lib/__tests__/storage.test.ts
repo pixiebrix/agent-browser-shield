@@ -11,6 +11,7 @@
 // the freshly-derived defaults instead of any stale stored value from a
 // previous case.
 
+import type { RuleId } from "../../rules/rule-metadata";
 import { RULE_DEFAULTS as RAW_RULE_DEFAULTS } from "../../rules/rule-metadata";
 import type * as Storage from "../storage";
 
@@ -66,10 +67,10 @@ describe("storage default states", () => {
     // defaults happen to lean.
     const trueRule = Object.entries(RULE_DEFAULTS).find(
       ([, value]) => value,
-    )?.[0];
+    )?.[0] as RuleId | undefined;
     const falseRule = Object.entries(RULE_DEFAULTS).find(
       ([, value]) => !value,
-    )?.[0];
+    )?.[0] as RuleId | undefined;
     if (trueRule === undefined || falseRule === undefined) {
       throw new Error(
         "Expected RULE_DEFAULTS to include at least one true and one false default for this test.",
@@ -88,7 +89,7 @@ describe("storage default states", () => {
       if (id === trueRule || id === falseRule) {
         continue;
       }
-      expect(states[id]).toBe(value);
+      expect(states[id as RuleId]).toBe(value);
     }
   });
 
@@ -100,7 +101,7 @@ describe("storage default states", () => {
   });
 
   it("ignores non-boolean override values without throwing", async () => {
-    const someRule = Object.keys(RULE_DEFAULTS)[0] as string;
+    const someRule = Object.keys(RULE_DEFAULTS)[0] as RuleId;
     process.env.EXTENSION_DEFAULT_OVERRIDES = JSON.stringify({
       [someRule]: "yes",
     });
@@ -136,8 +137,8 @@ describe("storage default states", () => {
 describe("normalize via getRuleStates", () => {
   // Pick stable rule ids off the live catalog so the test doesn't tie itself
   // to the iteration order of RULE_DEFAULTS.
-  function pickRuleIds(): { first: string; second: string } {
-    const ids = Object.keys(RULE_DEFAULTS);
+  function pickRuleIds(): { first: RuleId; second: RuleId } {
+    const ids = Object.keys(RULE_DEFAULTS) as RuleId[];
     const first = ids[0];
     const second = ids[1];
     if (!first || !second) {
@@ -164,7 +165,11 @@ describe("normalize via getRuleStates", () => {
   it("fills in missing rule ids from defaults when stored state is partial", async () => {
     const { getRuleStates, ruleStatesStorage } = await loadStorage();
     const { first } = pickRuleIds();
-    await ruleStatesStorage.set({ [first]: !RULE_DEFAULTS[first] });
+    // A single-key object types as `{ [x: string]: boolean }`; cast to the full
+    // shape (the stub stores it verbatim, then `normalize()` fills the rest).
+    await ruleStatesStorage.set({
+      [first]: !RULE_DEFAULTS[first],
+    } as Storage.RuleStates);
 
     const states = await getRuleStates();
     expect(states[first]).toBe(!RULE_DEFAULTS[first]);
@@ -173,7 +178,7 @@ describe("normalize via getRuleStates", () => {
       if (id === first) {
         continue;
       }
-      expect(states[id]).toBe(value);
+      expect(states[id as RuleId]).toBe(value);
     }
   });
 });
@@ -181,7 +186,7 @@ describe("normalize via getRuleStates", () => {
 describe("setRuleEnabled", () => {
   it("flips one rule while preserving the others", async () => {
     const { getRuleStates, setRuleEnabled } = await loadStorage();
-    const target = Object.keys(RULE_DEFAULTS)[0];
+    const target = Object.keys(RULE_DEFAULTS)[0] as RuleId | undefined;
     if (!target) {
       throw new Error("RULE_DEFAULTS must have at least one entry");
     }
@@ -195,13 +200,13 @@ describe("setRuleEnabled", () => {
       if (id === target) {
         continue;
       }
-      expect(states[id]).toBe(value);
+      expect(states[id as RuleId]).toBe(value);
     }
   });
 
   it("notifies subscribers when state changes", async () => {
     const { setRuleEnabled, subscribe } = await loadStorage();
-    const target = Object.keys(RULE_DEFAULTS)[0];
+    const target = Object.keys(RULE_DEFAULTS)[0] as RuleId | undefined;
     if (!target) {
       throw new Error("RULE_DEFAULTS must have at least one entry");
     }
@@ -220,7 +225,7 @@ describe("setRuleEnabled", () => {
 describe("setAllRuleStates", () => {
   it("normalizes partial input before writing — missing ids fill from defaults", async () => {
     const { getRuleStates, setAllRuleStates } = await loadStorage();
-    const target = Object.keys(RULE_DEFAULTS)[0];
+    const target = Object.keys(RULE_DEFAULTS)[0] as RuleId | undefined;
     if (!target) {
       throw new Error("RULE_DEFAULTS must have at least one entry");
     }
@@ -233,22 +238,24 @@ describe("setAllRuleStates", () => {
       if (id === target) {
         continue;
       }
-      expect(states[id]).toBe(value);
+      expect(states[id as RuleId]).toBe(value);
     }
   });
 
   it("drops non-boolean values via normalize before writing", async () => {
     const { getRuleStates, setAllRuleStates } = await loadStorage();
-    const target = Object.keys(RULE_DEFAULTS)[0];
+    const target = Object.keys(RULE_DEFAULTS)[0] as RuleId | undefined;
     if (!target) {
       throw new Error("RULE_DEFAULTS must have at least one entry");
     }
 
-    // Cast to bypass the typed shape — normalize() inside setAllRuleStates
-    // is responsible for dropping the corrupt string value.
+    // `"junk"` is a deliberately corrupt (non-boolean) value; normalize()
+    // inside setAllRuleStates is responsible for dropping it. (A computed
+    // `[target]` key widens the literal away, so this needs no cast to pass the
+    // `Partial<RuleStates>` shape.)
     await setAllRuleStates({
       [target]: "junk",
-    } as unknown as Partial<Storage.RuleStates>);
+    });
 
     // junk replaced with default → stored map equals defaults.
     await expect(getRuleStates()).resolves.toEqual(RULE_DEFAULTS);
@@ -258,7 +265,7 @@ describe("setAllRuleStates", () => {
 describe("subscribe", () => {
   it("stops invoking the listener after the returned cleanup runs", async () => {
     const { setRuleEnabled, subscribe } = await loadStorage();
-    const target = Object.keys(RULE_DEFAULTS)[0];
+    const target = Object.keys(RULE_DEFAULTS)[0] as RuleId | undefined;
     if (!target) {
       throw new Error("RULE_DEFAULTS must have at least one entry");
     }

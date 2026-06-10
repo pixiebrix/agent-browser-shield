@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import type { Rule } from "../../rules/types";
+import type { AvailabilitySnapshot, Rule } from "../../rules/types";
 
 // Storage and RULES are mocked because the real engine pulls in the full rule
 // catalog (and via that, the EasyList stylesheet — multi-MB of CSS text). The
@@ -79,7 +79,18 @@ import { subscribeEffectiveEnforcement } from "../effective-enforcement";
 import { isTopFrame } from "../frame";
 import { revealAll } from "../placeholder";
 import { start } from "../rule-engine";
+import type { RuleStates } from "../storage";
 import { getRuleStates, subscribe } from "../storage";
+
+// The engine is unit-tested against a synthetic 3-rule catalog (FAKE_RULES), so
+// these fixtures use ids outside the real `RuleId` union. Route them through
+// these helpers to satisfy the strict `RuleStates` / `RuleAvailabilityStates`
+// shapes without scattering casts at every call site.
+const asStates = (states: Record<string, boolean>): RuleStates =>
+  states as RuleStates;
+const asAvailability = (
+  availability: Record<string, AvailabilitySnapshot>,
+): RuleAvailabilityStates => availability as RuleAvailabilityStates;
 
 const getRuleStatesMock = getRuleStates as jest.MockedFunction<
   typeof getRuleStates
@@ -99,17 +110,17 @@ const subscribeAvailabilityMock =
   >;
 const revealAllMock = revealAll as jest.MockedFunction<typeof revealAll>;
 
-const ALL_AVAILABLE: RuleAvailabilityStates = {
+const ALL_AVAILABLE = asAvailability({
   "all-frame-rule": { available: true },
   "top-only-rule": { available: true },
   "unavailable-rule": { available: false, reason: "unavailable" },
-};
+});
 
-const allEnabled = {
+const allEnabled = asStates({
   "all-frame-rule": true,
   "top-only-rule": true,
   "unavailable-rule": true,
-};
+});
 
 function setFrame(isTop: boolean): void {
   // jsdom locks `window.top` as a non-configurable getter, so we mock the
@@ -182,10 +193,9 @@ describe("rule engine — reconciliation", () => {
   }
 
   it("applies a rule when storage flips it on", async () => {
-    getRuleStatesMock.mockResolvedValue({
-      ...allEnabled,
-      "all-frame-rule": false,
-    });
+    getRuleStatesMock.mockResolvedValue(
+      asStates({ ...allEnabled, "all-frame-rule": false }),
+    );
     const { onStorageChange } = await startAndCaptureListeners();
     expect(allFrameRule.apply).not.toHaveBeenCalled();
 
@@ -199,7 +209,7 @@ describe("rule engine — reconciliation", () => {
     const { onStorageChange } = await startAndCaptureListeners();
     expect(allFrameRule.apply).toHaveBeenCalledTimes(1);
 
-    onStorageChange({ ...allEnabled, "all-frame-rule": false });
+    onStorageChange(asStates({ ...allEnabled, "all-frame-rule": false }));
 
     expect(revealAllMock).toHaveBeenCalledWith("all-frame-rule");
     expect(allFrameRule.teardown).toHaveBeenCalledTimes(1);
@@ -243,10 +253,12 @@ describe("rule engine — reconciliation", () => {
     const { onAvailabilityChange } = await startAndCaptureListeners();
     expect(allFrameRule.apply).toHaveBeenCalledTimes(1);
 
-    onAvailabilityChange({
-      ...ALL_AVAILABLE,
-      "all-frame-rule": { available: false, reason: "now unavailable" },
-    });
+    onAvailabilityChange(
+      asAvailability({
+        ...ALL_AVAILABLE,
+        "all-frame-rule": { available: false, reason: "now unavailable" },
+      }),
+    );
 
     expect(allFrameRule.teardown).toHaveBeenCalledTimes(1);
   });
@@ -256,10 +268,12 @@ describe("rule engine — reconciliation", () => {
     // unavailable-rule started unavailable → never applied at start().
     expect(unavailableRule.apply).not.toHaveBeenCalled();
 
-    onAvailabilityChange({
-      ...ALL_AVAILABLE,
-      "unavailable-rule": { available: true },
-    });
+    onAvailabilityChange(
+      asAvailability({
+        ...ALL_AVAILABLE,
+        "unavailable-rule": { available: true },
+      }),
+    );
 
     expect(unavailableRule.apply).toHaveBeenCalledTimes(1);
   });
@@ -288,7 +302,7 @@ describe("rule engine — missing document.body", () => {
     (allFrameRule.teardown as jest.Mock).mockClear();
 
     document.body.remove();
-    onStorageChange({ ...allEnabled, "all-frame-rule": false });
+    onStorageChange(asStates({ ...allEnabled, "all-frame-rule": false }));
 
     expect(allFrameRule.apply).not.toHaveBeenCalled();
     expect(allFrameRule.teardown).not.toHaveBeenCalled();

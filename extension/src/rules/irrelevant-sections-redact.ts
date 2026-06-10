@@ -27,7 +27,7 @@ import { replaceWithBlockPlaceholder } from "../lib/placeholder";
 import { waitForSettle } from "../lib/wait-for-settle";
 import type { Rule } from "./types";
 
-const RULE_ID = "irrelevant-sections-redact";
+const RULE_ID = "irrelevant-sections-redact" as const;
 const log = createRuleLogger(RULE_ID);
 const SCROLL_DEBOUNCE_MS = 600;
 const SETTLE_TIMEOUT_MS = 3000;
