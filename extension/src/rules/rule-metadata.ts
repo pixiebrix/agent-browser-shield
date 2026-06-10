@@ -60,6 +60,21 @@ export type RuleId = keyof typeof RULE_DEFAULTS;
 
 export const RULE_IDS = Object.keys(RULE_DEFAULTS) as readonly RuleId[];
 
+// Build a record that holds an entry for every `RuleId`. `Object.fromEntries`
+// types its result with a `string` key, so the assertion back to
+// `Record<RuleId, V>` lives here once rather than at each call site. Key
+// coverage is guaranteed (the keys come from `RULE_IDS`, the canonical list)
+// and `V` is inferred from `value`, so callers keep a checked value type
+// instead of a blanket `as` cast over the whole map.
+export function buildRuleRecord<V>(
+  value: (id: RuleId) => V,
+): Record<RuleId, V> {
+  return Object.fromEntries(RULE_IDS.map((id) => [id, value(id)])) as Record<
+    RuleId,
+    V
+  >;
+}
+
 // Per-rule build-time options. Rules whose behaviour is governed by more than
 // a single on/off toggle declare their option shape here. The override file
 // loader (`scripts/load-default-overrides.ts`) accepts an object value for any

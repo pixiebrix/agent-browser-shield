@@ -5,11 +5,18 @@
 // from `rules/rule-metadata`. Mock the metadata module so the test runs
 // against a small id set (and so storage.ts's transitive `rules/index.ts`
 // import doesn't pull in every rule file — some of which reach for ESM-only
-// deps that ts-jest's CJS transform can't handle).
-jest.mock("../../rules/rule-metadata", () => ({
-  RULE_DEFAULTS: { "rule-a": true, "rule-b": false },
-  RULE_IDS: ["rule-a", "rule-b"],
-}));
+// deps that ts-jest's CJS transform can't handle). `buildRuleRecord` is mocked
+// too because storage.ts calls it at module-init to build its default state;
+// the stub mirrors the real helper over the small id set above.
+jest.mock("../../rules/rule-metadata", () => {
+  const RULE_IDS = ["rule-a", "rule-b"];
+  return {
+    RULE_DEFAULTS: { "rule-a": true, "rule-b": false },
+    RULE_IDS,
+    buildRuleRecord: (value: (id: string) => unknown) =>
+      Object.fromEntries(RULE_IDS.map((id) => [id, value(id)])),
+  };
+});
 
 import { parseConfig } from "../parse-config";
 

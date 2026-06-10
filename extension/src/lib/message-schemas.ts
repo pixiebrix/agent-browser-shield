@@ -13,6 +13,7 @@
 // bundles — the senders pass typed payloads; the worker is the only context
 // that validates.
 
+import type { IsEqual } from "type-fest";
 import { z } from "zod";
 import type { RuleId } from "../rules/rule-metadata";
 import { RULE_IDS } from "../rules/rule-metadata";
@@ -22,9 +23,10 @@ import type { MessengerMeta, PageWorldInjectType } from "./messenger";
 
 const KNOWN_RULE_IDS = new Set<string>(RULE_IDS);
 
-// Bidirectional `extends` ≈ structural equality — a drift guard that fails the
-// build if a schema and the hand-written wire type stop agreeing.
-type AssertExtends<A extends B, B> = A extends B ? true : never;
+// Compile-time drift guard: `IsEqual` is true only when the schema's inferred
+// type and the hand-written wire type are structurally identical, so the build
+// fails the moment they stop agreeing.
+type AssertTrue<T extends true> = T;
 
 // ── rule-detection payload (discriminated union mirrors DetectionPayload) ──
 const detectionPayloadSchema = z.discriminatedUnion("kind", [
@@ -47,15 +49,10 @@ const detectionPayloadSchema = z.discriminatedUnion("kind", [
     url: z.string(),
   }),
 ]);
-// Fails to compile if `DetectionPayload` and the schema diverge in either
-// direction (a new kind, a renamed field, a widened enum).
-type _DetectionParityA = AssertExtends<
-  z.infer<typeof detectionPayloadSchema>,
-  DetectionPayload
->;
-type _DetectionParityB = AssertExtends<
-  DetectionPayload,
-  z.infer<typeof detectionPayloadSchema>
+// Fails to compile if `DetectionPayload` and the schema diverge (a new kind, a
+// renamed field, a widened enum).
+type _DetectionParity = AssertTrue<
+  IsEqual<z.infer<typeof detectionPayloadSchema>, DetectionPayload>
 >;
 
 // ── per-frame rule counts ──
