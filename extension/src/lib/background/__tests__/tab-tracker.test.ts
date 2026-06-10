@@ -30,27 +30,36 @@ beforeEach(() => {
 // Most-recent value passed for `tabId` to a single-object-arg chrome.action
 // setter, reading the typed field off the recorded call.
 function lastValueForTab(
-  setter: typeof chrome.action.setBadgeText,
+  setter: jest.Mock,
   tabId: number,
   field: "text" | "color",
 ): string | undefined {
-  const calls = (setter as jest.Mock).mock.calls as Array<
+  const calls = setter.mock.calls as Array<
     [{ tabId?: number; text?: string; color?: string }]
   >;
   for (let i = calls.length - 1; i >= 0; i--) {
-    if (calls[i][0].tabId === tabId) {
-      return calls[i][0][field];
+    const details = calls[i]?.[0];
+    if (details?.tabId === tabId) {
+      return details[field];
     }
   }
   return undefined;
 }
 
 function lastBadgeText(tabId: number): string | undefined {
-  return lastValueForTab(chrome.action.setBadgeText, tabId, "text");
+  return lastValueForTab(
+    chrome.action.setBadgeText as jest.Mock,
+    tabId,
+    "text",
+  );
 }
 
 function lastBadgeColor(tabId: number): string | undefined {
-  return lastValueForTab(chrome.action.setBadgeBackgroundColor, tabId, "color");
+  return lastValueForTab(
+    chrome.action.setBadgeBackgroundColor as jest.Mock,
+    tabId,
+    "color",
+  );
 }
 
 describe("createTabTracker — badge math", () => {
