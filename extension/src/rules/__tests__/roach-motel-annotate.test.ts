@@ -2,22 +2,23 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://www.nytimes.com/subscription/all-access"}
  */
+// Rule's `apply` reports a detection via the typed `lib/messenger` wrapper.
+// Mock the module so the suite asserts on the semantic `recordDetection({...})`
+// call and the real `webext-messenger` never loads in jsdom.
+jest.mock("../../lib/messenger", () => ({
+  recordDetection: jest.fn(),
+}));
+
+import { recordDetection } from "../../lib/messenger";
 import { hiddenTextStripRule } from "../hidden-text-strip";
 import { findWarning, roachMotelAnnotateRule } from "../roach-motel-annotate";
 
 const LANDMARK_SELECTOR = 'section[data-abs-rule="roach-motel-annotate"]';
 
-// Rule's `apply` sends a `rule-detection` runtime message after landing
-// the landmark. jest-webextension-mock provides chrome.runtime.sendMessage
-// as a jest.fn() on globalThis.chrome; cast to jest.Mock to expose the
-// mock-control surface (assertion against typeof's overloaded signature
-// resolves to `never`-arg, which blocks .mockResolvedValue).
-const sendMessageMock = chrome.runtime.sendMessage as unknown as jest.Mock;
+const recordDetectionMock = recordDetection as jest.Mock;
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock.mockReset();
-  sendMessageMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -119,30 +120,27 @@ describe("roachMotelAnnotateRule.apply (on nytimes.com/subscription/all-access)"
     expect(document.querySelectorAll(LANDMARK_SELECTOR)).toHaveLength(1);
   });
 
-  it("emits a rule-detection runtime message with the matched payload", () => {
+  it("records a detection with the matched payload", () => {
     roachMotelAnnotateRule.apply(document.body);
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(1);
-    expect(sendMessageMock).toHaveBeenCalledWith({
-      type: "rule-detection",
-      payload: {
-        kind: "roach-motel",
-        host: "www.nytimes.com",
-        url: "https://www.nytimes.com/subscription/all-access",
-        difficulty: "hard",
-        cancellationUrl:
-          "https://help.nytimes.com/hc/en-us/articles/115014679508",
-        source: "curated",
-      },
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
+    expect(recordDetectionMock).toHaveBeenCalledWith({
+      kind: "roach-motel",
+      host: "www.nytimes.com",
+      url: "https://www.nytimes.com/subscription/all-access",
+      difficulty: "hard",
+      cancellationUrl:
+        "https://help.nytimes.com/hc/en-us/articles/115014679508",
+      source: "curated",
     });
   });
 
-  it("does not re-emit the runtime message on repeated apply", () => {
+  it("does not re-record on repeated apply", () => {
     roachMotelAnnotateRule.apply(document.body);
     roachMotelAnnotateRule.apply(document.body);
     roachMotelAnnotateRule.apply(document.body);
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
   });
 
   it("teardown removes the landmark", () => {

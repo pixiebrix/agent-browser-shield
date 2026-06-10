@@ -6,6 +6,13 @@
 // toggle is read through `debug-trace.ts`'s test-only override so the
 // chrome.storage round-trip stays out of the unit test.
 
+// The recorder emits via the typed `lib/messenger` wrapper; mock it so the
+// suite reads the captured entries through `installDebugTraceStub` and the real
+// `webext-messenger` never loads in jsdom.
+jest.mock("../messenger", () => ({
+  reportDebugTraceEvent: jest.fn(),
+}));
+
 import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import { recordRuleApplication, recordSegment } from "../debug-trace";
@@ -37,7 +44,7 @@ describe("debug-trace recorder", () => {
       afterHtml: "<div class='abs'></div>",
     });
 
-    expect(stub.sendMessage).not.toHaveBeenCalled();
+    expect(stub.events).not.toHaveBeenCalled();
   });
 
   it("emits segment markers with monotonically increasing ids", () => {
@@ -84,15 +91,15 @@ describe("debug-trace recorder", () => {
     expect(applications[1]?.segmentId).toBe(2);
   });
 
-  it("swallows sendMessage rejections so a sleeping SW doesn't surface as unhandled", () => {
+  it("emits as a fire-and-forget notification (recorder never throws)", () => {
     stub.setEnabled(true);
-    stub.sendMessage.mockRejectedValueOnce(
-      new Error("Receiving end does not exist"),
-    );
 
     expect(() => {
       recordSegment("initial-load", { url: "https://example.com" });
     }).not.toThrow();
+    // The notifier handles a sleeping service worker; the recorder just hands
+    // the entry off.
+    expect(stub.events).toHaveBeenCalledTimes(1);
   });
 
   it("resets the segment counter when the toggle is turned off", () => {

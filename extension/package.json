@@ -51,6 +51,7 @@
     "react-dom": "19.2.6",
     "tldts": "^7.4.2",
     "urlpattern-polyfill": "10.1.0",
+    "webext-messenger": "^0.35.0",
     "webext-storage": "^3.1.0"
   },
   "devDependencies": {

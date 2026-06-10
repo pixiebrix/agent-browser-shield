@@ -1,13 +1,15 @@
 // Copyright (c) 2026 PixieBrix, Inc.
 // Licensed under PolyForm Shield 1.0.0 — see LICENSE.
 
-// Shared payload + message types for surfacing rule detections to the
-// popup. Rules that hide their findings in the a11y tree (sr-only
-// landmarks) emit a `rule-detection` message at the same moment they
-// stamp the landmark; the background keeps a per-tab record so the popup
-// can render a human-visible "Detected on this page" list. Imported by
-// the rule modules (content world), the background service worker, and
-// the popup — keep this file dependency-free so it stays trivially
+// Shared payload + response shapes for the cross-context messages defined in
+// `lib/messenger.ts`. Rules that hide their findings in the a11y tree (sr-only
+// landmarks) report a detection at the same moment they stamp the landmark; the
+// background keeps a per-tab record so the popup can render a human-visible
+// "Detected on this page" list. The message *names* and dispatch live in
+// `messenger.ts`; this file is just the data carried by those calls.
+//
+// Imported by the rule modules (content world), the background service worker,
+// and the popup — keep this file dependency-free so it stays trivially
 // bundleable into each of those three entry points.
 
 import type { RuleId } from "../rules/rule-metadata";
@@ -44,71 +46,19 @@ export type DetectionPayload =
   | WebdriverProbeDetectionPayload
   | ClosedShadowRootDetectionPayload;
 
-export interface RuleDetectionMessage {
-  type: "rule-detection";
-  payload: DetectionPayload;
-}
-
-export interface GetTabDetectionsRequest {
-  type: "get-tab-detections";
-  tabId: number;
-}
-
-export interface GetTabDetectionsResponse {
-  detections: DetectionPayload[];
-}
-
-// Per-frame, per-rule footprint reported by the content script. The shape is
-// a partial record so a frame with no activity sends an empty object — the
-// background uses that as the cue to drop the frame's entry, mirroring the
-// `count <= 0` cleanup the previous single-number reporter used. Keys are
-// `RuleId` values; bad keys are filtered by the background.
-export interface RuleCountMessage {
-  type: "rule-count";
-  counts: Partial<Record<RuleId, number>>;
-}
-
-export interface GetTabRuleCountsRequest {
-  type: "get-tab-rule-counts";
-  tabId: number;
-}
-
 export interface RuleCountEntry {
   ruleId: RuleId;
   count: number;
 }
 
-// Combined snapshot for the popup. Folds frame-summed redaction/annotation
-// counts (`entries`, sorted by count desc) with the existing one-shot
-// detection payloads (`detections`) so the popup makes a single round-trip
-// to render both the per-rule list and the rich "Heads up" cards.
+// Combined snapshot for the popup, returned by the `getTabRuleCounts` method.
+// Folds frame-summed redaction/annotation counts (`entries`, sorted by count
+// desc) with the one-shot detection payloads (`detections`) so the popup makes
+// a single round-trip to render both the per-rule list and the rich "Heads up"
+// cards.
 export interface GetTabRuleCountsResponse {
   entries: RuleCountEntry[];
   detections: DetectionPayload[];
-}
-
-// Content-script ↔ background messages for the tab-scoped enforcement pause
-// (ADR-0019). The pause lives in `chrome.storage.session` keyed by tabId —
-// which content scripts can't read and is keyed by a tabId they don't know — so
-// the background resolves liveness for them. `get-tab-pause` is the init fetch
-// a content script makes when its rule engine starts; `tab-pause-changed` is
-// the background's push when the popup edits the pause, so a still-open page
-// reveals (or, on manual resume, re-enforces) without waiting for a reload.
-export interface GetTabPauseRequest {
-  type: "get-tab-pause";
-}
-
-export interface GetTabPauseResponse {
-  // Resolved liveness for the requesting frame's tab — the background applies
-  // the `expiresAt` check so the content side never sees the raw record.
-  paused: boolean;
-}
-
-export interface TabPauseChangedMessage {
-  type: "tab-pause-changed";
-  // New resolved liveness for the tab, carried in the message so the content
-  // script needn't round-trip back for the value.
-  paused: boolean;
 }
 
 // Dev-mode structured trace of every rule-driven mutation. Captured only
@@ -212,11 +162,6 @@ export type DebugTraceEntry =
   | ({ type: "rule-application" } & RuleApplicationEvent)
   | ({ type: "navigation" } & NavigationEvent);
 
-export interface DebugTraceEventMessage {
-  type: "debug-trace-event";
-  entry: DebugTraceEntry;
-}
-
 // Stored shape returned by `getEventsForTab`. Mirrors the `StoredEvent`
 // interface in `debug-trace-store.ts`; kept structurally parallel here
 // (instead of importing) so this messages module stays free of the IDB
@@ -228,17 +173,9 @@ export interface DebugTraceStoredEntry {
   entry: DebugTraceEntry;
 }
 
-// Page-world bridge → background round-trip for `window.__abs_dumpTrace`.
-// The tabId comes from `sender.tab?.id` in the background — there is no
-// cross-tab caller, so the request body is empty other than the type
-// discriminator.
-export interface GetTabDebugTraceRequest {
-  type: "get-tab-debug-trace";
-}
-
-// Flat on-wire shape returned to the page world. Defined in
-// `lib/debug-trace-export.ts` so this messages module stays free of
-// the wire-shape helper.
+// Flat on-wire shape returned to the page world by the `getTabDebugTrace`
+// method. Defined in `lib/debug-trace-export.ts` so this messages module stays
+// free of the wire-shape helper.
 export interface GetTabDebugTraceResponse {
   entries: Array<DebugTraceEntry & { tabId: number; frameId: number }>;
 }

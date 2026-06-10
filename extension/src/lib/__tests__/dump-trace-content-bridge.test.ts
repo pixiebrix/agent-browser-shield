@@ -8,15 +8,23 @@
 // Tests for the isolated-world content-script half of the
 // `window.__abs_dumpTrace` bridge. The listener accepts
 // `{ source: "abs-dump-trace", direction: "request", id }` messages
-// from the page world, forwards a `get-tab-debug-trace` runtime
-// message to the background, and posts the response (or error) back
-// keyed by id.
+// from the page world, calls the typed `getTabDebugTrace` messenger method
+// against the background, and posts the response (or error) back keyed by id.
 //
 // jsdom's single-world model means a message posted with
 // `window.postMessage` reaches the bridge's listener the same way a
 // page-world script would in production.
 
+// Mock the messenger so the suite drives `getTabDebugTrace` directly and the
+// real `webext-messenger` never loads in jsdom.
+jest.mock("../messenger", () => ({
+  getTabDebugTrace: jest.fn(),
+}));
+
 import { startDumpTraceContentBridge } from "../dump-trace-content-bridge";
+import { getTabDebugTrace } from "../messenger";
+
+const getTabDebugTraceMock = getTabDebugTrace as jest.Mock;
 
 interface ResponseBody {
   source?: unknown;
@@ -49,7 +57,7 @@ function captureResponses(): { responses: ResponseBody[]; stop: () => void } {
 
 // Wait for one tick of the macrotask queue so jsdom's queued postMessage
 // dispatches and any pending microtasks settle. A single `setTimeout(0)`
-// flush is enough for the request → sendMessage → response chain in
+// flush is enough for the request → getTabDebugTrace → response chain in
 // these tests because each hop only adds microtasks beyond the
 // already-queued message event.
 function flush(): Promise<void> {
@@ -78,13 +86,10 @@ function dispatchBridgeMessage(data: unknown): MessageEvent {
   return event;
 }
 
-let sendMessage: jest.Mock;
 let stopBridge: () => void;
 let stopCapture: () => void;
 
 beforeEach(() => {
-  sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
-  sendMessage.mockReset();
   stopBridge = () => {
     // noop until a test starts the bridge
   };
@@ -108,7 +113,7 @@ describe("startDumpTraceContentBridge", () => {
         entry: { type: "segment", segmentId: 1, kind: "initial-load" },
       },
     ];
-    sendMessage.mockResolvedValueOnce({ entries: fakeEntries });
+    getTabDebugTraceMock.mockResolvedValueOnce({ entries: fakeEntries });
     stopBridge = startDumpTraceContentBridge();
     const capture = captureResponses();
     stopCapture = capture.stop;
@@ -122,8 +127,7 @@ describe("startDumpTraceContentBridge", () => {
     await flush();
     await flush();
 
-    expect(sendMessage).toHaveBeenCalledTimes(1);
-    expect(sendMessage).toHaveBeenCalledWith({ type: "get-tab-debug-trace" });
+    expect(getTabDebugTraceMock).toHaveBeenCalledTimes(1);
     expect(responses).toHaveLength(1);
     expect(responses[0]).toMatchObject({
       source: "abs-dump-trace",
@@ -133,13 +137,10 @@ describe("startDumpTraceContentBridge", () => {
     });
   });
 
-  it("treats an undefined background reply as an empty trace", async () => {
-    // chrome.runtime.sendMessage resolves with `undefined` when the
-    // background listener returns without calling sendResponse — that
-    // happens in the get-tab-debug-trace branch when sender.tab?.id is
-    // missing. Earlier code dereferenced response.entries and crashed
-    // with TypeError; now it should post an empty-entries response.
-    sendMessage.mockResolvedValueOnce(undefined);
+  it("echoes an empty trace back when the background has none", async () => {
+    // The background resolves a missing `sender.tab?.id` to `{ entries: [] }`,
+    // so the bridge posts an empty-entries response rather than crashing.
+    getTabDebugTraceMock.mockResolvedValueOnce({ entries: [] });
     stopBridge = startDumpTraceContentBridge();
     const capture = captureResponses();
     stopCapture = capture.stop;
@@ -164,7 +165,7 @@ describe("startDumpTraceContentBridge", () => {
   });
 
   it("posts an error response when the background rejects", async () => {
-    sendMessage.mockRejectedValueOnce(new Error("nope"));
+    getTabDebugTraceMock.mockRejectedValueOnce(new Error("nope"));
     stopBridge = startDumpTraceContentBridge();
     const capture = captureResponses();
     stopCapture = capture.stop;
@@ -193,7 +194,7 @@ describe("startDumpTraceContentBridge", () => {
     });
     await flush();
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(getTabDebugTraceMock).not.toHaveBeenCalled();
   });
 
   it("ignores messages with a non-string id", async () => {
@@ -206,7 +207,7 @@ describe("startDumpTraceContentBridge", () => {
     });
     await flush();
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(getTabDebugTraceMock).not.toHaveBeenCalled();
   });
 
   it("ignores response-direction messages so it doesn't echo its own replies", async () => {
@@ -220,7 +221,7 @@ describe("startDumpTraceContentBridge", () => {
     });
     await flush();
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(getTabDebugTraceMock).not.toHaveBeenCalled();
   });
 
   it("ignores messages whose id exceeds the length cap", async () => {
@@ -233,7 +234,7 @@ describe("startDumpTraceContentBridge", () => {
     });
     await flush();
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(getTabDebugTraceMock).not.toHaveBeenCalled();
   });
 
   it("ignores cross-origin messages even with the right source literal", async () => {
@@ -247,6 +248,6 @@ describe("startDumpTraceContentBridge", () => {
     eventSource.dispatchEvent(event);
     await flush();
 
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(getTabDebugTraceMock).not.toHaveBeenCalled();
   });
 });

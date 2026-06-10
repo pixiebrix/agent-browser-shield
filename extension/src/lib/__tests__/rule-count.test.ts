@@ -6,13 +6,21 @@
 // payload on pagehide. Throttling is covered with jest fake timers — the
 // 250 ms window is exercised by advancing the timer between mutations.
 
+// The reporter emits via the typed `lib/messenger` wrappers. Mock the module
+// so the suite asserts on the `reportRuleCounts(counts)` argument and so the
+// real `webext-messenger` never loads in jsdom. `reportDebugTraceEvent` is also
+// mocked because `installDebugTraceStub` reads it for the css-only trace
+// assertions.
+jest.mock("../messenger", () => ({
+  reportRuleCounts: jest.fn(),
+  reportDebugTraceEvent: jest.fn(),
+}));
+
 import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
-import type {
-  RuleApplicationEvent,
-  RuleCountMessage,
-} from "../detection-messages";
+import type { RuleApplicationEvent } from "../detection-messages";
 import { HIDDEN_ATTR, RULE_ATTR } from "../dom-markers";
+import { reportRuleCounts } from "../messenger";
 import {
   registerCssFirstSelectors,
   startRuleCountReporter,
@@ -20,12 +28,11 @@ import {
 
 let stub: DebugTraceStub;
 
-function sentMessages(): RuleCountMessage[] {
-  return stub.sendMessage.mock.calls
-    .map(([message]) => message as { type: string })
-    .filter(
-      (message): message is RuleCountMessage => message.type === "rule-count",
-    );
+// The `counts` argument of each `reportRuleCounts` call, in order.
+function sentCounts(): Array<Record<string, number>> {
+  return (reportRuleCounts as jest.Mock).mock.calls.map(
+    ([counts]) => counts as Record<string, number>,
+  );
 }
 
 function sentCssOnlyTraces(): RuleApplicationEvent[] {
@@ -75,23 +82,19 @@ describe("startRuleCountReporter", () => {
 
     stop = startRuleCountReporter();
 
-    const sent = sentMessages();
+    const sent = sentCounts();
     expect(sent).toHaveLength(1);
     expect(sent[0]).toEqual({
-      type: "rule-count",
-      counts: {
-        "pii-redact": 2,
-        "cookie-banner-hide": 1,
-        "ads-hide": 1,
-      },
+      "pii-redact": 2,
+      "cookie-banner-hide": 1,
+      "ads-hide": 1,
     });
   });
 
   it("sends an empty payload when the document has no markers", () => {
     stop = startRuleCountReporter();
 
-    const sent = sentMessages();
-    expect(sent).toEqual([{ type: "rule-count", counts: {} }]);
+    expect(sentCounts()).toEqual([{}]);
   });
 
   it("dedups identical re-counts so quiet pages send one message", async () => {
@@ -106,7 +109,7 @@ describe("startRuleCountReporter", () => {
     await Promise.resolve();
     jest.advanceTimersByTime(300);
 
-    const sent = sentMessages();
+    const sent = sentCounts();
     expect(sent).toHaveLength(1);
   });
 
@@ -118,9 +121,9 @@ describe("startRuleCountReporter", () => {
     await Promise.resolve();
     jest.advanceTimersByTime(300);
 
-    const sent = sentMessages();
+    const sent = sentCounts();
     expect(sent).toHaveLength(2);
-    expect(sent.at(-1)?.counts).toEqual({ "pii-redact": 2 });
+    expect(sent.at(-1)).toEqual({ "pii-redact": 2 });
   });
 
   it("emits cssOnly trace events for CSS-first matches when the trace toggle is on", () => {
@@ -188,7 +191,6 @@ describe("startRuleCountReporter", () => {
 
     globalThis.dispatchEvent(new Event("pagehide"));
 
-    const sent = sentMessages();
-    expect(sent.at(-1)).toEqual({ type: "rule-count", counts: {} });
+    expect(sentCounts().at(-1)).toEqual({});
   });
 });

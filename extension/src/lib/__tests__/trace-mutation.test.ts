@@ -3,9 +3,16 @@
 
 // Covers the shared `traceMutation` wrapper that ~24 rules now route their
 // DOM mutations through. Verifies: gate-off short-circuit (no serialization
-// or sendMessage), before/after `outerHTML` reflects the mutation, the
+// or emission), before/after `outerHTML` reflects the mutation, the
 // `captureFrom` override is honored for sibling-add patterns, and the
 // auto-derived selector falls back to the element's tag#id.class shape.
+
+// The recorder emits via the typed `lib/messenger` wrapper; mock it so the
+// real `webext-messenger` never loads in jsdom and `installDebugTraceStub` can
+// read the captured entries.
+jest.mock("../messenger", () => ({
+  reportDebugTraceEvent: jest.fn(),
+}));
 
 import type { DebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
 import { installDebugTraceStub } from "../../__test-mocks__/debug-trace-stub";
@@ -49,7 +56,7 @@ describe("traceMutation", () => {
 
     expect(result).toBe("done");
     expect(target.textContent).toBe("");
-    expect(stub.sendMessage).not.toHaveBeenCalled();
+    expect(stub.events).not.toHaveBeenCalled();
   });
 
   it("captures outerHTML before and after when the toggle is on", () => {

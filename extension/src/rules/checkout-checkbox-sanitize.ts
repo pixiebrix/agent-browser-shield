@@ -27,16 +27,13 @@
 import { isCheckoutUrl } from "../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../lib/dom-markers";
 import { createRuleLogger } from "../lib/log";
+import { requestPageWorldInject } from "../lib/messenger";
 import { createSubtreeWatcher } from "../lib/subtree-watcher";
 import { traceMutation } from "../lib/trace-mutation";
 import type { Rule } from "./types";
 
 const RULE_ID = "checkout-checkbox-sanitize" as const;
 const log = createRuleLogger(RULE_ID);
-
-const INJECT_DEFENSE_MESSAGE = {
-  type: "inject-checkout-checkbox-defense",
-} as const;
 
 // React/Vue track checked state internally; setting `.checked` directly skips
 // their value-tracker, so onChange handlers never fire and totals don't
@@ -117,13 +114,10 @@ const watcher = createSubtreeWatcher({
 });
 
 function requestDefenseInjection(): void {
-  // Service worker may be asleep / receiver not yet ready; swallow rejection
-  // so unhandled-promise warnings don't surface on every page load. The
-  // defense itself short-circuits on `__abs_checkout_checkbox_defense_installed`,
-  // so re-requests on the same document are no-ops in the page world.
-  chrome.runtime.sendMessage(INJECT_DEFENSE_MESSAGE).catch(() => {
-    // noop
-  });
+  // Fire-and-forget; a sleeping service worker just drops it. The defense
+  // itself short-circuits on `__abs_checkout_checkbox_defense_installed`, so
+  // re-requests on the same document are no-ops in the page world.
+  requestPageWorldInject("checkout-checkbox-defense");
 }
 
 function apply(root: ParentNode): void {
@@ -142,5 +136,3 @@ export const checkoutCheckboxSanitizeRule = {
     watcher.stop();
   },
 } satisfies Rule;
-
-export { INJECT_DEFENSE_MESSAGE };

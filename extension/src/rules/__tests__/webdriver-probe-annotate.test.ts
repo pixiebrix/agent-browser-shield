@@ -1,11 +1,21 @@
 /**
  * @jest-environment jsdom
  */
+// The rule now reports via the typed `lib/messenger` wrappers instead of raw
+// `chrome.runtime.sendMessage`. Mock the module so the suites assert on the
+// semantic call (`requestPageWorldInject("webdriver-probe")`,
+// `recordDetection({...})`) rather than a wire envelope — and so the real
+// `webext-messenger` never loads in jsdom.
+jest.mock("../../lib/messenger", () => ({
+  recordDetection: jest.fn(),
+  requestPageWorldInject: jest.fn(),
+}));
+
+import { recordDetection, requestPageWorldInject } from "../../lib/messenger";
 import { installProbe } from "../../lib/webdriver-probe-source";
 import { hiddenTextStripRule } from "../hidden-text-strip";
 import {
   EVENT_NAME,
-  INJECT_PROBE_MESSAGE,
   webdriverProbeAnnotateRule,
 } from "../webdriver-probe-annotate";
 
@@ -15,33 +25,15 @@ function dispatchProbe(): void {
   document.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
 
-// chrome.runtime.sendMessage is installed as jest.fn() on globalThis by
-// jest-webextension-mock. Cast to jest.Mock for the control surface.
-const sendMessageMock = chrome.runtime.sendMessage as unknown as jest.Mock;
-
-// The rule fires two distinct sendMessage flows: `inject-webdriver-probe`
-// on every apply (background-side executeScript fallback) and
-// `rule-detection` after a landmark is stamped (popup detections panel).
-// Helpers below filter the mock's call log by type so the suites can
-// assert on each flow independently.
-function callsOfType(type: string): unknown[] {
-  return sendMessageMock.mock.calls
-    .map(([message]: [unknown]) => message)
-    .filter((message) => (message as { type?: string }).type === type);
-}
-
-function injectCalls(): unknown[] {
-  return callsOfType("inject-webdriver-probe");
-}
-
-function detectionCalls(): unknown[] {
-  return callsOfType("rule-detection");
-}
+// The rule drives two distinct flows: `requestPageWorldInject` on every apply
+// (background-side executeScript fallback) and `recordDetection` after a
+// landmark is stamped (popup detections panel). `clearMocks: true` resets both
+// between tests.
+const requestInjectMock = requestPageWorldInject as jest.Mock;
+const recordDetectionMock = recordDetection as jest.Mock;
 
 beforeEach(() => {
   document.body.innerHTML = "";
-  sendMessageMock.mockReset();
-  sendMessageMock.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -127,15 +119,15 @@ describe("webdriverProbeAnnotateRule.apply", () => {
   });
 });
 
-describe("webdriverProbeAnnotateRule inject-probe message", () => {
+describe("webdriverProbeAnnotateRule inject-probe request", () => {
   // The rule's apply asks the background worker to run installProbe on
-  // the active frame via chrome.scripting.executeScript. The message is
+  // the active frame via chrome.scripting.executeScript. The request is
   // the only thing the rule controls; the actual injection is asserted
   // by inspection at the background-side handler.
   it("asks the background worker to inject the probe on apply", () => {
     webdriverProbeAnnotateRule.apply(document.body);
-    expect(injectCalls()).toHaveLength(1);
-    expect(injectCalls()[0]).toEqual(INJECT_PROBE_MESSAGE);
+    expect(requestInjectMock).toHaveBeenCalledTimes(1);
+    expect(requestInjectMock).toHaveBeenCalledWith("webdriver-probe");
   });
 
   // Re-apply after teardown should ask again — the page-world probe is
@@ -147,40 +139,34 @@ describe("webdriverProbeAnnotateRule inject-probe message", () => {
     webdriverProbeAnnotateRule.teardown();
     webdriverProbeAnnotateRule.apply(document.body);
 
-    expect(injectCalls()).toHaveLength(2);
+    expect(requestInjectMock).toHaveBeenCalledTimes(2);
   });
 
-  // The service worker may be asleep when apply runs and reject with
-  // "Receiving end does not exist". The rule must swallow that so it
-  // doesn't surface as an unhandled-promise warning.
-  it("swallows sendMessage rejections", async () => {
-    sendMessageMock.mockRejectedValueOnce(new Error("no receiver"));
+  // Resilience to a sleeping service worker now lives in the messenger's
+  // notifier (fire-and-forget, no rejection), so apply can't throw from the
+  // request path.
+  it("does not throw when requesting injection", () => {
     expect(() => {
       webdriverProbeAnnotateRule.apply(document.body);
     }).not.toThrow();
-    // Let the microtask flush so an unhandled rejection would surface.
-    await Promise.resolve();
   });
 });
 
 describe("webdriverProbeAnnotateRule rule-detection emission", () => {
   it("does not emit on apply alone — only on observed reads", () => {
     webdriverProbeAnnotateRule.apply(document.body);
-    expect(detectionCalls()).toHaveLength(0);
+    expect(recordDetectionMock).not.toHaveBeenCalled();
   });
 
-  it("sends a rule-detection on the first probe event", () => {
+  it("records a detection on the first probe event", () => {
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
 
-    expect(detectionCalls()).toHaveLength(1);
-    expect(detectionCalls()[0]).toEqual({
-      type: "rule-detection",
-      payload: {
-        kind: "webdriver-probe",
-        host: globalThis.location.hostname,
-        url: globalThis.location.href,
-      },
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
+    expect(recordDetectionMock).toHaveBeenCalledWith({
+      kind: "webdriver-probe",
+      host: globalThis.location.hostname,
+      url: globalThis.location.href,
     });
   });
 
@@ -190,19 +176,19 @@ describe("webdriverProbeAnnotateRule rule-detection emission", () => {
     dispatchProbe();
     dispatchProbe();
 
-    expect(detectionCalls()).toHaveLength(1);
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
   });
 
   it("re-emits after teardown + re-apply on the same document", () => {
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
-    expect(detectionCalls()).toHaveLength(1);
+    expect(recordDetectionMock).toHaveBeenCalledTimes(1);
 
     webdriverProbeAnnotateRule.teardown();
     webdriverProbeAnnotateRule.apply(document.body);
     dispatchProbe();
 
-    expect(detectionCalls()).toHaveLength(2);
+    expect(recordDetectionMock).toHaveBeenCalledTimes(2);
   });
 });
 

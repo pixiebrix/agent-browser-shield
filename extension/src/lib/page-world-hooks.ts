@@ -23,6 +23,7 @@ import {
   getEnforcementEnabled,
   subscribeEnforcementEnabled,
 } from "./enforcement";
+import type { PageWorldInjectType } from "./messenger";
 import type { PageWorldHookConfig } from "./page-world-hook";
 import { createPageWorldHook, injectPageWorldScript } from "./page-world-hook";
 import { installShadowRootProbe } from "./shadow-root-probe-source";
@@ -47,13 +48,14 @@ const RULE_SUBSCRIPTIONS = [subscribe, subscribeEnforcementEnabled];
 
 interface PageWorldHookEntry extends PageWorldHookConfig {
   /**
-   * Optional on-demand fallback: the `inject-*` message the rule's `apply`
-   * sends so the already-open tab picks up the script without a reload.
-   * Absent for the dump-trace bridge, whose trace recorder also only starts
-   * collecting on the next navigation, so a reload is already implied.
+   * Optional on-demand fallback: the page-world inject the rule's `apply`
+   * requests (via `requestPageWorldInject`) so the already-open tab picks up
+   * the script without a reload. Absent for the dump-trace bridge, whose trace
+   * recorder also only starts collecting on the next navigation, so a reload is
+   * already implied.
    */
   readonly inject?: {
-    readonly messageType: string;
+    readonly injectType: PageWorldInjectType;
     readonly installFn: (this: Window) => void;
   };
 }
@@ -71,7 +73,7 @@ export const PAGE_WORLD_HOOKS: readonly PageWorldHookEntry[] = [
     shouldRegister: ruleEnabledAndEnforced("webdriver-probe-annotate"),
     subscribe: RULE_SUBSCRIPTIONS,
     inject: {
-      messageType: "inject-webdriver-probe",
+      injectType: "webdriver-probe",
       installFn: installProbe,
     },
   },
@@ -89,7 +91,7 @@ export const PAGE_WORLD_HOOKS: readonly PageWorldHookEntry[] = [
     shouldRegister: ruleEnabledAndEnforced("checkout-checkbox-sanitize"),
     subscribe: RULE_SUBSCRIPTIONS,
     inject: {
-      messageType: "inject-checkout-checkbox-defense",
+      injectType: "checkout-checkbox-defense",
       installFn: installCheckoutCheckboxDefense,
     },
   },
@@ -105,7 +107,7 @@ export const PAGE_WORLD_HOOKS: readonly PageWorldHookEntry[] = [
     shouldRegister: ruleEnabledAndEnforced("closed-shadow-root-annotate"),
     subscribe: RULE_SUBSCRIPTIONS,
     inject: {
-      messageType: "inject-shadow-root-probe",
+      injectType: "shadow-root-probe",
       installFn: installShadowRootProbe,
     },
   },
@@ -128,9 +130,9 @@ export const PAGE_WORLD_HOOKS: readonly PageWorldHookEntry[] = [
 
 const hooks = PAGE_WORLD_HOOKS.map((entry) => createPageWorldHook(entry));
 
-const injectorsByMessageType = new Map(
+const injectorsByType = new Map(
   PAGE_WORLD_HOOKS.flatMap((entry) =>
-    entry.inject ? [[entry.inject.messageType, entry.inject] as const] : [],
+    entry.inject ? [[entry.inject.injectType, entry.inject] as const] : [],
   ),
 );
 
@@ -142,17 +144,18 @@ export function startPageWorldHooks(): void {
   }
 }
 
-// Route an `inject-*` message to its page-world installer. Returns true when
-// `messageType` is a recognized inject request (and the injection was kicked
-// off), false otherwise so the caller's onMessage chain continues.
+// Route a validated page-world inject request to its installer. The background
+// only calls this after `injectTypeSchema` has confirmed `injectType` is one of
+// the known kinds, so an unrecognized value here is a programming error, not
+// untrusted input — it returns false and is otherwise a no-op.
 export function dispatchPageWorldInject(
-  messageType: string,
+  injectType: PageWorldInjectType,
   sender: chrome.runtime.MessageSender,
 ): boolean {
-  const injector = injectorsByMessageType.get(messageType);
+  const injector = injectorsByType.get(injectType);
   if (!injector) {
     return false;
   }
-  injectPageWorldScript(sender, injector.installFn, injector.messageType);
+  injectPageWorldScript(sender, injector.installFn, injector.injectType);
   return true;
 }

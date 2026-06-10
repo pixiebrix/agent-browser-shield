@@ -2,10 +2,21 @@
  * @jest-environment jsdom
  * @jest-environment-options {"url": "https://shop.example.com/checkout"}
  */
+// The rule requests page-world injection via the typed `lib/messenger` wrapper;
+// mock the module so the suite asserts on
+// `requestPageWorldInject("checkout-checkbox-defense")` and the real
+// `webext-messenger` never loads in jsdom.
+jest.mock("../../lib/messenger", () => ({
+  requestPageWorldInject: jest.fn(),
+}));
+
 import { installCheckoutCheckboxDefense } from "../../lib/checkout-checkbox-defense-source";
 import { isCheckoutUrl } from "../../lib/checkout-url";
 import { CHECKOUT_CHECKBOX_CLEARED_ATTR as CLEARED_ATTR } from "../../lib/dom-markers";
+import { requestPageWorldInject } from "../../lib/messenger";
 import { checkoutCheckboxSanitizeRule } from "../checkout-checkbox-sanitize";
+
+const requestInjectMock = requestPageWorldInject as jest.Mock;
 
 const MUTATION_THROTTLE_MS = 250;
 
@@ -116,24 +127,16 @@ describe("checkoutCheckboxSanitizeRule.apply", () => {
     expect(text.value).toBe("hello");
   });
 
-  it("requests page-world defense injection via chrome.runtime.sendMessage", () => {
+  it("requests page-world defense injection on apply", () => {
     document.body.innerHTML = `<input type="checkbox" checked />`;
-    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
-    sendMessage.mockReset();
-    sendMessage.mockResolvedValue(undefined);
 
     checkoutCheckboxSanitizeRule.apply(document.body);
 
-    expect(sendMessage).toHaveBeenCalledWith({
-      type: "inject-checkout-checkbox-defense",
-    });
+    expect(requestInjectMock).toHaveBeenCalledWith("checkout-checkbox-defense");
   });
 
-  it("swallows sendMessage rejections so the rule still scans", async () => {
+  it("still scans even though the inject request is fire-and-forget", async () => {
     document.body.innerHTML = `<input id="x" type="checkbox" checked />`;
-    const sendMessage = chrome.runtime.sendMessage as unknown as jest.Mock;
-    sendMessage.mockReset();
-    sendMessage.mockRejectedValue(new Error("no receiver"));
 
     checkoutCheckboxSanitizeRule.apply(document.body);
     await flushMutations();

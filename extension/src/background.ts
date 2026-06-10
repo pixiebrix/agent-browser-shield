@@ -10,18 +10,10 @@ import {
 } from "./lib/debug-trace-store";
 import type {
   DebugTraceEntry,
-  DebugTraceEventMessage,
   DetectionKind,
   DetectionPayload,
-  GetTabDebugTraceResponse,
-  GetTabDetectionsRequest,
-  GetTabDetectionsResponse,
-  GetTabPauseResponse,
-  GetTabRuleCountsRequest,
   GetTabRuleCountsResponse,
   RuleCountEntry,
-  RuleDetectionMessage,
-  TabPauseChangedMessage,
 } from "./lib/detection-messages";
 import {
   getEnforcementEnabled,
@@ -29,6 +21,17 @@ import {
 } from "./lib/enforcement";
 import { startClassifyPortListener } from "./lib/llm-background";
 import { log } from "./lib/log";
+import type { RuleCountMap } from "./lib/message-schemas";
+import {
+  debugTraceEntrySchema,
+  detectionPayloadSchema,
+  injectTypeSchema,
+  ruleCountsSchema,
+  tabIdSchema,
+  validatedNotification,
+} from "./lib/message-schemas";
+import type { MessengerMeta } from "./lib/messenger";
+import { notifyTabPause, registerMethods } from "./lib/messenger";
 import {
   dispatchPageWorldInject,
   startPageWorldHooks,
@@ -48,15 +51,13 @@ import {
   protectionAppearanceKey,
 } from "./lib/toolbar-protection";
 import type { RuleId } from "./rules/rule-metadata";
-import { RULE_IDS } from "./rules/rule-metadata";
 
 // Per-tab, per-frame, per-rule footprint counts. Each content script reports
 // its own frame's tally grouped by rule id; the badge shows the cross-frame
 // sum across all rules, and the popup renders per-rule entries derived from
-// the same map.
-type RuleCountMap = Partial<Record<RuleId, number>>;
+// the same map. The reported counts are sanitized against the known rule ids
+// by `ruleCountsSchema` before they reach `recordFrameRuleCounts`.
 const tabRuleCounts = new Map<number, Map<number, RuleCountMap>>();
-const KNOWN_RULE_IDS = new Set<string>(RULE_IDS);
 
 // Per-tab record of rule detections surfaced to the popup. One entry per
 // kind per tab — both contributing rules are topFrameOnly and self-dedupe
@@ -443,10 +444,10 @@ tabPauseMap.onChanged((key, value: TabPause | undefined) => {
     tabPauses.set(tabId, value);
   }
   const paused = isPauseActive(tabPauses.get(tabId) ?? null, Date.now());
-  const message: TabPauseChangedMessage = { type: "tab-pause-changed", paused };
-  chrome.tabs.sendMessage(tabId, message).catch(() => {
-    // Tab has no content script (restricted URL) or has closed — ignore.
-  });
+  // Broadcast to every frame in the tab. The notifier is fire-and-forget: a tab
+  // with no content script (restricted URL) or one that has closed just drops
+  // the message.
+  notifyTabPause(tabId, paused);
   refreshBadge(tabId);
 });
 // Hydrate the cache from the session store so a service-worker restart doesn't
@@ -497,196 +498,138 @@ void ruleStatesStorage.get().then((initial) => {
   previousRuleStates ??= { ...initial };
 });
 
-chrome.runtime.onMessage.addListener(
-  (rawMessage: unknown, sender, sendResponse) => {
-    if (!rawMessage || typeof rawMessage !== "object") {
-      return undefined;
-    }
-    const message = rawMessage as {
-      type?: unknown;
-      counts?: unknown;
-    };
-
-    if (message.type === "open-options") {
-      chrome.runtime.openOptionsPage(() => {
-        sendResponse({ ok: true });
-      });
-      return true;
-    }
-
-    if (message.type === "get-tab-url") {
-      // Subframe content scripts ask this once at startup so they can
-      // evaluate the per-site denylist (ADR-0018) against the tab's
-      // top-frame URL instead of their own iframe URL. `sender.tab.url`
-      // requires host permission for the URL — we have <all_urls>, so
-      // this is just a property read. Frames inside a tab whose URL the
-      // background can't resolve get `{ url: null }` and the requesting
-      // content script falls back to "URL unknown → fail open."
-      const url = sender.tab?.url ?? null;
-      sendResponse({ url });
-      return undefined;
-    }
-
-    if (message.type === "get-tab-pause") {
-      // Content scripts ask this once at rule-engine init to seed the
-      // tab-scoped recovery pause (ADR-0019). Read the session store directly
-      // rather than the in-memory cache so a request that lands before startup
-      // hydration still resolves accurately. The background applies the
-      // `expiresAt` check so the content side only ever sees a boolean.
-      const tabId = sender.tab?.id;
-      if (typeof tabId !== "number") {
-        const response: GetTabPauseResponse = { paused: false };
-        sendResponse(response);
-        return undefined;
-      }
-      void tabPauseMap
-        .get(String(tabId))
-        .then((value) => {
-          const response: GetTabPauseResponse = {
-            paused: isPauseActive(value ?? null, Date.now()),
-          };
-          sendResponse(response);
-        })
-        .catch(() => {
-          const response: GetTabPauseResponse = { paused: false };
-          sendResponse(response);
-        });
-      return true;
-    }
-
-    // The page-world `inject-*` fallbacks (webdriver-probe,
-    // checkout-checkbox-defense, shadow-root-probe) share one executeScript
-    // shape — the registered content script covers future navigations, this
-    // round-trip runs the install fn on the tab the user was already viewing
-    // when they toggled the rule on. The table and the per-install
-    // `__abs_*_installed` page-world guards live in `lib/page-world-hooks.ts`.
-    if (
-      typeof message.type === "string" &&
-      dispatchPageWorldInject(message.type, sender)
-    ) {
-      return undefined;
-    }
-
-    if (message.type === "rule-count") {
-      const tabId = sender.tab?.id;
-      const frameId = sender.frameId;
-      const raw = message.counts;
-      if (
-        typeof tabId === "number" &&
-        typeof frameId === "number" &&
-        typeof raw === "object" &&
-        raw !== null
-      ) {
-        // Sanitize: drop unknown rule ids and non-positive counts so a
-        // misbehaving content script can't poison the popup or badge.
-        const sanitized: RuleCountMap = {};
-        for (const [key, value] of Object.entries(
-          raw as Record<string, unknown>,
-        )) {
-          if (
-            KNOWN_RULE_IDS.has(key) &&
-            typeof value === "number" &&
-            Number.isFinite(value) &&
-            value > 0
-          ) {
-            sanitized[key as RuleId] = Math.floor(value);
-          }
-        }
-        recordFrameRuleCounts(tabId, frameId, sanitized);
-      }
-      return undefined;
-    }
-
-    if (message.type === "rule-detection") {
-      const tabId = sender.tab?.id;
+// The typed message router. Every method below is the receiving half of a
+// `lib/messenger.ts` call; the sender's payload is decoded through its
+// `message-schemas.ts` validator before it touches any state. `this.trace[0]`
+// is the immediate sender (`chrome.runtime.MessageSender`) — the content
+// script's tabId / frameId / url are read from there, never from the payload.
+registerMethods({
+  // Record a rule's a11y-tree detection so the popup can surface it.
+  recordDetection: validatedNotification(
+    detectionPayloadSchema,
+    (payload, meta) => {
+      const tabId = meta.trace[0]?.tab?.id;
       if (typeof tabId === "number") {
-        recordDetection(tabId, (message as RuleDetectionMessage).payload);
+        recordDetection(tabId, payload);
       }
-      return undefined;
-    }
+    },
+  ),
 
-    if (message.type === "get-tab-detections") {
-      const request = message as unknown as GetTabDetectionsRequest;
-      const entry =
-        typeof request.tabId === "number"
-          ? tabDetections.get(request.tabId)
-          : undefined;
-      const response: GetTabDetectionsResponse = {
-        detections: entry ? [...entry.values()] : [],
-      };
-      sendResponse(response);
-      return undefined;
+  // Per-frame rule footprint. `ruleCountsSchema` has already dropped unknown
+  // rule ids and non-positive counts, so a misbehaving content script can't
+  // poison the badge or popup.
+  reportRuleCounts: validatedNotification(ruleCountsSchema, (counts, meta) => {
+    const tabId = meta.trace[0]?.tab?.id;
+    const frameId = meta.trace[0]?.frameId;
+    if (typeof tabId === "number" && typeof frameId === "number") {
+      recordFrameRuleCounts(tabId, frameId, counts);
     }
+  }),
 
-    if (message.type === "get-tab-rule-counts") {
-      const request = message as unknown as GetTabRuleCountsRequest;
-      const response: GetTabRuleCountsResponse =
-        typeof request.tabId === "number"
-          ? buildRuleCountsResponse(request.tabId)
-          : { entries: [], detections: [] };
-      sendResponse(response);
-      return undefined;
-    }
-
-    if (message.type === "get-tab-debug-trace") {
-      const tabId = sender.tab?.id;
-      if (typeof tabId !== "number") {
-        return undefined;
+  // Dev-mode trace event → IndexedDB. Fire-and-forget: the IDB write is async
+  // but the handler shouldn't block on disk; pruning happens inside
+  // `appendEvent`.
+  reportDebugTraceEvent: validatedNotification(
+    debugTraceEntrySchema,
+    (entry, meta) => {
+      const tabId = meta.trace[0]?.tab?.id;
+      const frameId = meta.trace[0]?.frameId;
+      if (typeof tabId !== "number" || typeof frameId !== "number") {
+        return;
       }
-      // Async response — the page-world bridge is awaiting via
-      // postMessage round-trip, so a missing reply hangs the caller
-      // (up to its 10s timeout). `return true` keeps the message
-      // channel open until `sendResponse` fires.
-      void getDebugTraceForTab(tabId)
-        .then((stored) => {
-          // Flatten to the public wire shape: `addedAt` is internal IDB
-          // bookkeeping and the tabId/frameId live on the entry, matching
-          // `extension/data/debug-trace.schema.json`.
-          const response: GetTabDebugTraceResponse = {
-            entries: stored.map((record) => toExportedRecord(record)),
-          };
-          sendResponse(response);
-        })
-        .catch((error: unknown) => {
-          log.error("get-tab-debug-trace IDB read failed", { error });
-          const response: GetTabDebugTraceResponse = { entries: [] };
-          sendResponse(response);
-        });
-      return true;
-    }
+      // `entry` is a validated debug-trace entry; the cast only bridges
+      // `exactOptionalPropertyTypes` (zod infers `key?: T | undefined` for the
+      // optional fields where the interface declares `key?: T`).
+      void appendDebugTraceEvent(
+        tabId,
+        frameId,
+        entry as DebugTraceEntry,
+      ).catch((error: unknown) => {
+        log.error("debug-trace IDB write failed", { error });
+      });
+    },
+  ),
 
-    if (message.type === "debug-trace-event") {
-      const tabId = sender.tab?.id;
-      const frameId = sender.frameId;
-      // `entry` is typed as `unknown` rather than `DebugTraceEntry` so the
-      // runtime guards below are actually type-meaningful — a malformed
-      // sendMessage payload could carry `entry: null` (typeof null is
-      // "object") or omit it entirely, and the cast on the message
-      // envelope wouldn't catch either.
-      const entry: unknown = (message as unknown as DebugTraceEventMessage)
-        .entry;
-      if (
-        typeof tabId === "number" &&
-        typeof frameId === "number" &&
-        typeof entry === "object" &&
-        entry !== null
-      ) {
-        // Fire-and-forget — IDB writes are async, but the message handler
-        // shouldn't block on disk. Pruning happens inside `appendEvent`.
-        void appendDebugTraceEvent(
-          tabId,
-          frameId,
-          entry as DebugTraceEntry,
-        ).catch((error: unknown) => {
-          log.error("debug-trace IDB write failed", { error });
-        });
+  // Run a page-world install fn on the tab the user was already viewing when
+  // they toggled a rule on — dynamic registrations only take effect on the next
+  // navigation. The table and the per-install `__abs_*_installed` page-world
+  // guards live in `lib/page-world-hooks.ts`.
+  requestPageWorldInject: validatedNotification(
+    injectTypeSchema,
+    (injectType, meta) => {
+      const sender = meta.trace[0];
+      if (sender) {
+        dispatchPageWorldInject(injectType, sender);
       }
-      return undefined;
-    }
+    },
+  ),
 
-    return undefined;
+  // Subframe content scripts ask this once at startup so they can evaluate the
+  // per-site denylist (ADR-0018) against the tab's top-frame URL instead of
+  // their own iframe URL. `sender.tab.url` requires host permission — we have
+  // <all_urls>, so this is just a property read. A frame whose tab URL the
+  // background can't resolve gets `null` and falls back to "URL unknown → fail
+  // open."
+  getTabUrl(this: MessengerMeta) {
+    return this.trace[0]?.tab?.url ?? null;
   },
-);
+
+  // Content scripts ask this once at rule-engine init to seed the tab-scoped
+  // recovery pause (ADR-0019). Read the session store directly rather than the
+  // in-memory cache so a request that lands before startup hydration still
+  // resolves accurately. The background applies the `expiresAt` check so the
+  // content side only ever sees a boolean.
+  async getTabPause(this: MessengerMeta) {
+    const tabId = this.trace[0]?.tab?.id;
+    if (typeof tabId !== "number") {
+      return false;
+    }
+    try {
+      const value = await tabPauseMap.get(String(tabId));
+      return isPauseActive(value ?? null, Date.now());
+    } catch {
+      return false;
+    }
+  },
+
+  // Combined per-rule + detection snapshot the popup renders on open.
+  getTabRuleCounts(
+    this: MessengerMeta,
+    tabId: number,
+  ): GetTabRuleCountsResponse {
+    const parsed = tabIdSchema.safeParse(tabId);
+    return parsed.success
+      ? buildRuleCountsResponse(parsed.data)
+      : { entries: [], detections: [] };
+  },
+
+  // Page-world `__abs_dumpTrace` bridge → IDB read. Flattened to the public
+  // wire shape: `addedAt` is internal IDB bookkeeping and the tabId/frameId
+  // live on the entry, matching `extension/data/debug-trace.schema.json`.
+  async getTabDebugTrace(this: MessengerMeta) {
+    const tabId = this.trace[0]?.tab?.id;
+    if (typeof tabId !== "number") {
+      return { entries: [] };
+    }
+    try {
+      const stored = await getDebugTraceForTab(tabId);
+      return { entries: stored.map((record) => toExportedRecord(record)) };
+    } catch (error: unknown) {
+      log.error("get-tab-debug-trace IDB read failed", { error });
+      return { entries: [] };
+    }
+  },
+
+  // Popup / page badge → open the options page.
+  async openOptions() {
+    await new Promise<void>((resolve) => {
+      chrome.runtime.openOptionsPage(() => {
+        resolve();
+      });
+    });
+    return { ok: true } as const;
+  },
+});
 
 // Build the combined per-rule + detection snapshot the popup renders.
 // Entries are sorted by count desc, breaking ties by rule id for a stable
