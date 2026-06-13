@@ -175,7 +175,7 @@ jobs:
           # `origin/<base>...HEAD` — the default shallow checkout lacks the
           # merge base on most PRs.
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v8.1.0
+      - uses: astral-sh/setup-uv@v8.2.0
       - name: Set up Python
         run: uv python install 3.14
       - name: Ruff lint
