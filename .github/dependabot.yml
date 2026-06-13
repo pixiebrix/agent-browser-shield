@@ -1,4 +1,8 @@
 version: 2
+
+# Group rules are evaluated in order: a dependency joins the first group whose
+# rules it satisfies. `react` comes first so the React family travels together
+# (across prod + dev) instead of being split by dependency-type.
 updates:
   - package-ecosystem: bun
     directory: /extension
@@ -8,6 +12,19 @@ updates:
       default-days: 7
     open-pull-requests-limit: 5
     groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - react-router*
+          - "@types/react"
+          - "@types/react-dom"
+          - "@vitejs/plugin-react"
+          - eslint-plugin-react-hooks
+        update-types: [minor, patch]
+      production-deps:
+        dependency-type: production
+        update-types: [patch]
       dev-deps:
         dependency-type: development
         update-types: [minor, patch]
@@ -20,6 +37,19 @@ updates:
       default-days: 7
     open-pull-requests-limit: 5
     groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - react-router*
+          - "@types/react"
+          - "@types/react-dom"
+          - "@vitejs/plugin-react"
+          - eslint-plugin-react-hooks
+        update-types: [minor, patch]
+      production-deps:
+        dependency-type: production
+        update-types: [patch]
       dev-deps:
         dependency-type: development
         update-types: [minor, patch]
@@ -32,6 +62,9 @@ updates:
       default-days: 7
     open-pull-requests-limit: 5
     groups:
+      production-deps:
+        dependency-type: production
+        update-types: [patch]
       dev-deps:
         dependency-type: development
         update-types: [minor, patch]
@@ -44,6 +77,13 @@ updates:
       default-days: 7
 
   - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: pre-commit
     directory: /
     schedule:
       interval: weekly
