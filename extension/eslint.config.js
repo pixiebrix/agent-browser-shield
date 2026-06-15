@@ -32,6 +32,7 @@ export default tseslint.config(
       "src/**/*.generated.*",
       "eslint-rules/**",
       "eslint.config.js",
+      "stylelint.config.js",
       "jest.config.cjs",
     ],
   },
