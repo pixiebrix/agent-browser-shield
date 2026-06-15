@@ -99,6 +99,25 @@ repos:
         files: ^demo-site/.*\.(ts|tsx|js|mjs|cjs)$
         exclude: ^demo-site/dist/
         pass_filenames: false
+      # Stylelint lints CSS that Biome doesn't reach: the <style> blocks inside
+      # extension/src/*.html and the demo-site stylesheet. Each hook globs via
+      # its package script (pass_filenames: false), so the regex only decides
+      # when to invoke. docs/ has no hook here — the pre-commit CI job installs
+      # only extension + demo-site deps; docs CSS is covered by the docs CI check.
+      - id: stylelint
+        name: Stylelint (extension — popup/options CSS)
+        language: system
+        entry: bash -c 'cd extension && bun run lint:stylelint'
+        files: ^extension/src/.*\.(css|html)$
+        exclude: ^extension/dist/|\.generated\.
+        pass_filenames: false
+      - id: stylelint-demo-site
+        name: Stylelint (demo-site CSS)
+        language: system
+        entry: bash -c 'cd demo-site && bun run lint:stylelint'
+        files: ^demo-site/src/.*\.css$
+        exclude: ^demo-site/dist/
+        pass_filenames: false
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.16

@@ -9,18 +9,22 @@
         font-size: 13px;
         color: #222;
       }
+
       body {
         margin: 0;
         width: 280px;
       }
+
       .popup {
         padding: 12px 14px;
       }
+
       .popup h1 {
         margin: 0 0 10px;
         font-size: 14px;
         font-weight: 600;
       }
+
       .enforcement {
         margin: 0 0 12px;
         padding: 8px 10px;
@@ -28,14 +32,17 @@
         border-radius: 6px;
         background: #fafafa;
       }
+
       .enforcement--on {
         border-color: #bfdbfe;
         background: #eff6ff;
       }
+
       .enforcement--off {
         border-color: #fde68a;
         background: #fffbeb;
       }
+
       .enforcement__label {
         display: flex;
         align-items: center;
@@ -43,30 +50,36 @@
         cursor: pointer;
         margin: 0;
       }
+
       .enforcement__text {
         display: inline-flex;
         flex-direction: column;
         gap: 1px;
         flex: 1;
       }
+
       .enforcement__text strong {
         font-size: 13px;
       }
+
       .enforcement__state {
         font-size: 11px;
         color: #555;
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
+
       .enforcement--off .enforcement__state {
         color: #92400e;
       }
+
       .enforcement__hint {
         margin: 6px 0 0;
         font-size: 11px;
         color: #92400e;
         line-height: 1.3;
       }
+
       .switch {
         position: relative;
         display: inline-block;
@@ -74,6 +87,7 @@
         height: 18px;
         flex: none;
       }
+
       .switch input {
         position: absolute;
         inset: 0;
@@ -81,6 +95,7 @@
         margin: 0;
         cursor: pointer;
       }
+
       .switch__track {
         position: absolute;
         inset: 0;
@@ -88,6 +103,7 @@
         border-radius: 999px;
         transition: background 120ms ease;
       }
+
       .switch__track::after {
         content: "";
         position: absolute;
@@ -97,19 +113,23 @@
         height: 14px;
         background: #fff;
         border-radius: 50%;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
         transition: transform 120ms ease;
       }
+
       .switch input:checked + .switch__track {
         background: #2563eb;
       }
+
       .switch input:checked + .switch__track::after {
         transform: translateX(14px);
       }
+
       .switch input:focus-visible + .switch__track {
         outline: 2px solid #2563eb;
         outline-offset: 2px;
       }
+
       /* Unified protection card: one bordered box holding a scope ladder of
          rows (ProtectionSection). The row divider is an adjacent-sibling rule
          so it appears only when both the recovery and site rows are present. */
@@ -120,16 +140,20 @@
         background: #fafafa;
         overflow: hidden;
       }
+
       .protection__row {
         padding: 8px 10px;
       }
+
       .protection__row + .protection__row {
         border-top: 1px solid #ececef;
       }
+
       .protection__row--active,
       .protection__row--off {
         background: #fffbeb;
       }
+
       .protection__cap {
         display: block;
         margin: 0 0 6px;
@@ -139,6 +163,7 @@
         letter-spacing: 0.05em;
         color: #9ca3af;
       }
+
       .site-disable__button {
         display: block;
         width: 100%;
@@ -151,31 +176,38 @@
         border-radius: 6px;
         cursor: pointer;
       }
+
       .protection__row--off .site-disable__button {
         color: #92400e;
         border-color: #92400e;
       }
+
       .site-disable__button:hover {
         background: #eff6ff;
       }
+
       .protection__row--off .site-disable__button:hover {
         background: #fef3c7;
       }
+
       .site-disable__button:disabled {
         color: #888;
         border-color: #d4d4d8;
         background: #f4f4f5;
         cursor: not-allowed;
       }
+
       .site-disable__hint {
         margin: 6px 0 0;
         font-size: 11px;
         color: #555;
         line-height: 1.3;
       }
+
       .protection__row--off .site-disable__hint {
         color: #92400e;
       }
+
       /* The panic button is the only orange element in the popup; an outline
          (not a fill) keeps it findable without letting the most ephemeral,
          narrowest-scope action dominate the card. */
@@ -191,16 +223,20 @@
         border-radius: 6px;
         cursor: pointer;
       }
+
       .recovery__panic:hover {
         background: #fff7ed;
       }
+
       .recovery__panic:focus-visible {
         outline: 2px solid #d97706;
         outline-offset: 2px;
       }
+
       .recovery__snooze {
         margin: 8px 0 0;
       }
+
       .recovery__snooze-label {
         display: block;
         margin: 0 0 4px;
@@ -210,10 +246,12 @@
         letter-spacing: 0.04em;
         color: #555;
       }
+
       .recovery__snooze-buttons {
         display: flex;
         gap: 6px;
       }
+
       .recovery__snooze-button {
         flex: 1;
         padding: 5px 4px;
@@ -226,19 +264,23 @@
         border-radius: 6px;
         cursor: pointer;
       }
+
       .recovery__snooze-button:hover {
         background: #eff6ff;
       }
+
       .recovery__snooze-button:focus-visible {
         outline: 2px solid #2563eb;
         outline-offset: 2px;
       }
+
       .recovery__hint {
         margin: 8px 0 0;
         font-size: 11px;
         color: #666;
         line-height: 1.3;
       }
+
       .recovery__status {
         margin: 0 0 8px;
         font-size: 12px;
@@ -246,6 +288,7 @@
         color: #92400e;
         line-height: 1.3;
       }
+
       .recovery__resume {
         display: block;
         width: 100%;
@@ -258,13 +301,16 @@
         border-radius: 6px;
         cursor: pointer;
       }
+
       .recovery__resume:hover {
         background: #fef3c7;
       }
+
       .recovery__resume:focus-visible {
         outline: 2px solid #92400e;
         outline-offset: 2px;
       }
+
       .open-options {
         display: block;
         width: 100%;
@@ -278,17 +324,21 @@
         border-radius: 6px;
         cursor: pointer;
       }
+
       .open-options:hover {
         background: #1d4ed8;
         border-color: #1d4ed8;
       }
+
       .open-options:focus-visible {
         outline: 2px solid #2563eb;
         outline-offset: 2px;
       }
+
       .detections {
         margin: 0 0 12px;
       }
+
       .detections__heading {
         margin: 0 0 6px;
         padding-bottom: 4px;
@@ -299,6 +349,7 @@
         color: #555;
         border-bottom: 1px solid #e4e4e7;
       }
+
       .detections__list {
         list-style: none;
         margin: 0;
@@ -307,6 +358,7 @@
         flex-direction: column;
         gap: 6px;
       }
+
       .detection {
         padding: 8px 10px;
         border: 1px solid #fde68a;
@@ -314,23 +366,27 @@
         border-radius: 6px;
         font-size: 12px;
       }
+
       .detection strong {
         display: block;
         font-weight: 600;
         color: #92400e;
       }
+
       .detection__host {
         margin: 2px 0 0;
         font-size: 11px;
         color: #555;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
+
       .detection__detail {
         margin: 4px 0 0;
         font-size: 11px;
         color: #666;
         line-height: 1.3;
       }
+
       .detection__cancel {
         display: inline-block;
         margin: 4px 0 0;
@@ -338,17 +394,21 @@
         color: #2563eb;
         text-decoration: none;
       }
+
       .detection__cancel:hover {
         text-decoration: underline;
       }
+
       .detection__source {
         margin: 4px 0 0;
         font-size: 10px;
         color: #888;
       }
+
       .rule-counts {
         margin: 0 0 12px;
       }
+
       .rule-counts__heading {
         margin: 0 0 6px;
         padding-bottom: 4px;
@@ -359,6 +419,7 @@
         color: #555;
         border-bottom: 1px solid #e4e4e7;
       }
+
       .rule-counts__list {
         list-style: none;
         margin: 0;
@@ -367,6 +428,7 @@
         flex-direction: column;
         gap: 2px;
       }
+
       .rule-count {
         display: flex;
         align-items: baseline;
@@ -375,9 +437,11 @@
         padding: 4px 8px;
         border-radius: 4px;
       }
+
       .rule-count:nth-child(odd) {
         background: #f8fafc;
       }
+
       .rule-count__label {
         font-size: 12px;
         color: #333;
@@ -385,6 +449,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+
       .rule-count__value {
         flex: none;
         min-width: 24px;
@@ -396,6 +461,7 @@
         border-radius: 999px;
         text-align: center;
       }
+
       .debug-trace {
         margin: 12px 0 0;
         padding: 8px 10px;
@@ -403,6 +469,7 @@
         border-radius: 6px;
         background: #f8fafc;
       }
+
       .debug-trace__header {
         display: flex;
         align-items: center;
@@ -410,6 +477,7 @@
         gap: 8px;
         margin-bottom: 6px;
       }
+
       .debug-trace__heading {
         margin: 0;
         font-size: 11px;
@@ -418,10 +486,12 @@
         letter-spacing: 0.04em;
         color: #555;
       }
+
       .debug-trace__actions {
         display: inline-flex;
         gap: 4px;
       }
+
       .debug-trace__action {
         padding: 2px 6px;
         font: inherit;
@@ -432,16 +502,19 @@
         border-radius: 4px;
         cursor: pointer;
       }
+
       .debug-trace__action:disabled {
         color: #94a3b8;
         cursor: not-allowed;
       }
+
       .debug-trace__empty,
       .debug-trace__meta {
         margin: 0;
         font-size: 11px;
         color: #666;
       }
+
       .popup-toggle {
         display: flex;
         align-items: center;
@@ -453,24 +526,29 @@
         background: #fafafa;
         cursor: pointer;
       }
+
       .popup-toggle__text {
         flex: 1;
         display: inline-flex;
         flex-direction: column;
         gap: 2px;
       }
+
       .popup-toggle__text strong {
         font-size: 13px;
       }
+
       .popup-toggle__hint {
         font-size: 11px;
         color: #666;
         line-height: 1.3;
       }
+
       .loading {
         padding: 14px;
         color: #888;
       }
+
       .popup__footer {
         margin-top: 12px;
         padding-top: 10px;
@@ -479,10 +557,12 @@
         font-size: 11px;
         color: #888;
       }
+
       .popup__footer a {
         color: #2563eb;
         text-decoration: none;
       }
+
       .popup__footer a:hover {
         text-decoration: underline;
       }
