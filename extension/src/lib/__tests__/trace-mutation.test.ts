@@ -25,7 +25,7 @@ function ruleApplicationEvents(): RuleApplicationEvent[] {
   return stub
     .sentEntries()
     .filter(
-      (entry): entry is { type: "rule-application" } & RuleApplicationEvent =>
+      (entry): entry is RuleApplicationEvent & { type: "rule-application" } =>
         entry.type === "rule-application",
     );
 }

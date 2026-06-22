@@ -217,7 +217,6 @@ export default tseslint.config(
       // Partially autofixable — fixable instances are corrected in-tree; the
       // remainder warn until handled in #279.
       "unicorn/no-unnecessary-global-this": "warn",
-      "unicorn/prefer-type-literal-last": "warn",
       "unicorn/prefer-short-arrow-method": "warn",
 
       // Allow underscore-prefixed unused parameters (e.g. `_root` for the
