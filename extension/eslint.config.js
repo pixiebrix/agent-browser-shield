@@ -229,6 +229,20 @@ export default tseslint.config(
       //     are idiomatic and read better nested than split into temporaries.
       "unicorn/max-nested-calls": "off",
 
+      // Off — blocked by the test runtime, not the codebase. The suggested
+      // `Uint8Array.fromBase64()`/`#toBase64()` are present in our Chrome
+      // target (133+; manifest requires 148) and in Bun (the build script),
+      // but Node 24 — which runs Jest/jsdom in CI — only exposes them behind
+      // the experimental `--js-base-64` flag, so they're absent under test.
+      // The 8 sites include two security-relevant decode paths
+      // (`encoded-payload-redact.ts`, `encoded-fixture.ts`) plus their
+      // fixtures; rewriting them would either break the suite or force an
+      // atob/btoa-based polyfill into jsdom — which would then exercise the
+      // shim, not Chrome's native impl, masking any prod divergence on a
+      // decode path. Not worth it for a stylistic rule. Revisit once Node
+      // ships these unflagged. See #279.
+      "unicorn/prefer-uint8array-base64": "off",
+
       // Enforced (recommended `error`). Dynamically-built arrays pass an
       // explicit comparator; the only sites carrying a scoped `eslint-disable`
       // are where the rule can't be satisfied cleanly:
@@ -243,7 +257,6 @@ export default tseslint.config(
       "unicorn/prefer-scoped-selector": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
       "unicorn/prefer-number-coercion": "warn",
-      "unicorn/prefer-uint8array-base64": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.
