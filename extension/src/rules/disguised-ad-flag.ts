@@ -431,7 +431,7 @@ function collectCandidates(root: ParentNode): Candidate[] {
       });
     }
   }
-  return filterToOutermost([...byArticle.values()], (c) => c.article);
+  return filterToOutermost(byArticle.values().toArray(), (c) => c.article);
 }
 
 function hideCandidate(candidate: Candidate): void {

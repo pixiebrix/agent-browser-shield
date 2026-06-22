@@ -3,7 +3,7 @@
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "ESNext.Iterator", "DOM", "DOM.Iterable"],
     "types": ["chrome", "bun"],
     "jsx": "react-jsx",
     "strict": true,

@@ -282,7 +282,9 @@ export function createTabTracker(): TabTracker {
       return a.ruleId.localeCompare(b.ruleId);
     });
     const detectionEntries = tabDetections.get(tabId);
-    const detections = detectionEntries ? [...detectionEntries.values()] : [];
+    const detections = detectionEntries
+      ? detectionEntries.values().toArray()
+      : [];
     return { entries, detections };
   }
 
