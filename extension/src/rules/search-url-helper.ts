@@ -51,7 +51,7 @@ function buildLandmark(recipe: string): HTMLElement {
 }
 
 function apply(_root: ParentNode): void {
-  const recipe = findRecipe(globalThis.location.href);
+  const recipe = findRecipe(location.href);
   if (recipe === null) {
     return;
   }
@@ -75,7 +75,7 @@ function apply(_root: ParentNode): void {
     },
   );
   log.info("search-url-helper applied", {
-    host: globalThis.location.hostname,
+    host: location.hostname,
     recipeLength: recipe.length,
   });
 }

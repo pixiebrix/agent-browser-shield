@@ -54,7 +54,7 @@ const JSON_LD_SELECTOR = 'script[type="application/ld+json" i]';
 const MICRODATA_SELECTOR = "[itemtype][itemscope]";
 
 function getPageHost(): string {
-  return globalThis.location.hostname;
+  return location.hostname;
 }
 
 // ---------- JSON-LD path ----------
@@ -308,7 +308,7 @@ function processItem(item: Element, pageHost: string): void {
   // there isn't suspicious.
   if (isAnnotateOnly) {
     const context = itemPropertyContext(item);
-    if (!context.some((name) => isAuthorityContextProperty(name))) {
+    if (context.every((name) => !isAuthorityContextProperty(name))) {
       return;
     }
     if (item.hasAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR)) {

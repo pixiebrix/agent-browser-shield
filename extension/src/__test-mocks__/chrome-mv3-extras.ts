@@ -16,6 +16,10 @@ interface ChromeScriptingMock {
   getRegisteredContentScripts: jest.Mock;
 }
 
+// The cast adds the `scripting` namespace the mock lib's chrome types omit;
+// dropping the `globalThis` here (as unicorn/no-unnecessary-global-this would)
+// strips the cast and leaves `ChromeScriptingMock` unused / untypeable.
+// eslint-disable-next-line unicorn/no-unnecessary-global-this -- deliberate typed assignment
 (
   globalThis as unknown as { chrome: { scripting: ChromeScriptingMock } }
 ).chrome.scripting = {

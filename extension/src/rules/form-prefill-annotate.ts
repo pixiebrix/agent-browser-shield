@@ -162,7 +162,7 @@ function ensureFocusTracking(): void {
   };
   // capture:true so we record focusin before any page handler can stop
   // propagation.
-  document.addEventListener("focusin", focusInListener, true);
+  document.addEventListener("focusin", focusInListener, { capture: true });
   const active = document.activeElement;
   if (active instanceof HTMLElement) {
     focusedControls.add(active);
@@ -596,7 +596,7 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) {
+  if (!isCheckoutUrl(location.href)) {
     return;
   }
   const candidates = collectCandidates(root);
@@ -612,7 +612,7 @@ function scanAndFlag(root: ParentNode): void {
   log.info("form prefills flagged", {
     count,
     kinds: candidates.map((c) => c.kind),
-    url: globalThis.location.href,
+    url: location.href,
   });
 }
 

@@ -89,9 +89,9 @@ function installShadowDiscoverListener(): void {
   document.addEventListener(SHADOW_DISCOVER_EVENT, (event) => {
     // event.detail is typed `unknown` at the CustomEvent boundary; a
     // forged dispatch could omit it entirely, hence the explicit narrow.
-    const detail = (event as CustomEvent<unknown>).detail as {
+    const detail = (event as CustomEvent<unknown>).detail as null | {
       target?: unknown;
-    } | null;
+    };
     const target = detail ? detail.target : undefined;
     if (target instanceof Node) {
       discoverShadowRootsIn(target);

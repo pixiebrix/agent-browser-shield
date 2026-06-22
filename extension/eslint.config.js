@@ -164,11 +164,64 @@ export default tseslint.config(
       "unicorn/no-for-loop": "warn",
 
       // Filenames are kebab-case across the project, except React component
-      // files which follow PascalCase by ecosystem convention.
+      // files which follow PascalCase by ecosystem convention. v66 added
+      // directory-name checking (`checkDirectories`), which flags the Jest
+      // `__tests__` / `__test-mocks__` convention we deliberately keep — so
+      // restrict the rule to filenames only.
       "unicorn/filename-case": [
         "error",
-        { cases: { kebabCase: true, pascalCase: true } },
+        {
+          cases: { kebabCase: true, pascalCase: true },
+          checkDirectories: false,
+        },
       ],
+
+      // eslint-plugin-unicorn 66 turned on a batch of new recommended rules.
+      // The cleanly autofixable ones are fixed in-tree and stay errors; the
+      // three below are turned off because their autofix is wrong (or
+      // redundant) for this codebase, and the rest are temporarily downgraded
+      // to warnings so the bump lands without a mass manual rewrite. Ratcheting
+      // them back to errors is tracked in #279.
+      //
+      // Off — autofix corrupts source or is redundant here:
+      //   comment-content rewrites prose and real paths in comments
+      //     (`.github/…` → `.GitHub/…`, `*.yaml` → `*.YAML`, `Vue` → `Vue.js`).
+      //   prefer-https rewrites schema.org itemtype URIs and intentional
+      //     `http://` test fixtures, changing their meaning.
+      //   require-css-escape double-escapes values already run through this
+      //     project's `escapeAttributeValue` helper and wraps numeric
+      //     interpolations (`CSS.escape(i)`, which expects a string); the
+      //     dynamic selector values it targets are already escaped via that
+      //     helper, so the rule is redundant noise on the constant cases.
+      "unicorn/comment-content": "off",
+      "unicorn/prefer-https": "off",
+      "unicorn/require-css-escape": "off",
+
+      // Warn — ratchet to error in #279:
+      "unicorn/prefer-scoped-selector": "warn",
+      "unicorn/prefer-await": "warn",
+      "unicorn/no-this-outside-of-class": "warn",
+      "unicorn/no-break-in-nested-loop": "warn",
+      "unicorn/no-computed-property-existence-check": "warn",
+      "unicorn/max-nested-calls": "warn",
+      "unicorn/prefer-includes-over-repeated-comparisons": "warn",
+      "unicorn/prefer-number-coercion": "warn",
+      "unicorn/no-unreadable-new-expression": "warn",
+      "unicorn/require-array-sort-compare": "warn",
+      "unicorn/prefer-uint8array-base64": "warn",
+      "unicorn/no-declarations-before-early-exit": "warn",
+      "unicorn/no-global-object-property-assignment": "warn",
+      "unicorn/prefer-minimal-ternary": "warn",
+      "unicorn/prefer-number-is-safe-integer": "warn",
+      "unicorn/prefer-iterator-to-array": "warn",
+      "unicorn/better-dom-traversing": "warn",
+      "unicorn/no-incorrect-query-selector": "warn",
+      "unicorn/no-top-level-side-effects": "warn",
+      // Partially autofixable — fixable instances are corrected in-tree; the
+      // remainder warn until handled in #279.
+      "unicorn/no-unnecessary-global-this": "warn",
+      "unicorn/prefer-type-literal-last": "warn",
+      "unicorn/prefer-short-arrow-method": "warn",
 
       // Allow underscore-prefixed unused parameters (e.g. `_root` for the
       // Rule#apply signature when a rule ignores the argument).

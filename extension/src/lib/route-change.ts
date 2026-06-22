@@ -34,7 +34,7 @@ interface NavigationGlobal {
 }
 
 function emit(): void {
-  const url = globalThis.location.href;
+  const url = location.href;
   if (url === lastUrl) {
     return;
   }
@@ -50,7 +50,7 @@ function install(): void {
     return;
   }
   installed = true;
-  lastUrl = globalThis.location.href;
+  lastUrl = location.href;
 
   const navigation = (globalThis as NavigationGlobal).navigation;
   if (navigation) {

@@ -185,7 +185,7 @@ function buildLandmark(host: string, warning: WarningPayload): HTMLElement {
 }
 
 function apply(_root: ParentNode): void {
-  const warning = findWarning(globalThis.location.href);
+  const warning = findWarning(location.href);
   if (warning === null) {
     return;
   }
@@ -204,13 +204,11 @@ function apply(_root: ParentNode): void {
       target: document.body,
     },
     () => {
-      document.body.prepend(
-        buildLandmark(globalThis.location.hostname, warning),
-      );
+      document.body.prepend(buildLandmark(location.hostname, warning));
     },
   );
   log.info("roach-motel-annotate applied", {
-    host: globalThis.location.hostname,
+    host: location.hostname,
     difficulty: warning.difficulty,
   });
   // Tell the background so the popup can render a human-visible entry
@@ -219,8 +217,8 @@ function apply(_root: ParentNode): void {
   // service worker just drops it.
   recordDetection({
     kind: "roach-motel",
-    host: globalThis.location.hostname,
-    url: globalThis.location.href,
+    host: location.hostname,
+    url: location.href,
     difficulty: warning.difficulty,
     cancellationUrl: warning.cancellationUrl,
     source: warning.source,

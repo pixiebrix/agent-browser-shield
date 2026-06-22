@@ -109,12 +109,12 @@ describe("installCheckoutCheckboxDefense — URL gate", () => {
     const checkbox = document.querySelector("#upsell") as HTMLInputElement;
     checkbox.setAttribute(CLEARED_ATTR, "");
 
-    globalThis.history.replaceState({}, "", "/account");
+    history.replaceState({}, "", "/account");
     try {
       checkbox.checked = true;
       expect(checkbox.checked).toBe(true);
     } finally {
-      globalThis.history.replaceState({}, "", "/checkout");
+      history.replaceState({}, "", "/checkout");
     }
   });
 });
@@ -181,13 +181,13 @@ describe("parity with the isolated-world rule", () => {
     document.body.innerHTML = `<input id="t" type="checkbox" />`;
     const checkbox = document.querySelector("#t") as HTMLInputElement;
     checkbox.setAttribute(CLEARED_ATTR, "");
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", new URL(url).pathname);
+    const originalHref = location.href;
+    history.replaceState({}, "", new URL(url).pathname);
     try {
       checkbox.checked = true;
       expect(checkbox.checked).toBe(false);
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 
@@ -203,13 +203,13 @@ describe("parity with the isolated-world rule", () => {
     document.body.innerHTML = `<input id="t" type="checkbox" />`;
     const checkbox = document.querySelector("#t") as HTMLInputElement;
     checkbox.setAttribute(CLEARED_ATTR, "");
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", new URL(url).pathname);
+    const originalHref = location.href;
+    history.replaceState({}, "", new URL(url).pathname);
     try {
       checkbox.checked = true;
       expect(checkbox.checked).toBe(true);
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 });

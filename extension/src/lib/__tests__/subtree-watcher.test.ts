@@ -776,7 +776,7 @@ describe("createSubtreeWatcher", () => {
 
     it("instantiates one MutationObserver for two watchers on the same root", () => {
       const constructorSpy = jest.fn();
-      const RealMutationObserver = globalThis.MutationObserver;
+      const RealMutationObserver = MutationObserver;
       class CountingObserver extends RealMutationObserver {
         constructor(callback: MutationCallback) {
           super(callback);
@@ -897,7 +897,7 @@ describe("createSubtreeWatcher", () => {
       // Both call sites should share one observer because resolveTarget
       // collapses Document → its body.
       const constructorSpy = jest.fn();
-      const RealMutationObserver = globalThis.MutationObserver;
+      const RealMutationObserver = MutationObserver;
       class CountingObserver extends RealMutationObserver {
         constructor(callback: MutationCallback) {
           super(callback);

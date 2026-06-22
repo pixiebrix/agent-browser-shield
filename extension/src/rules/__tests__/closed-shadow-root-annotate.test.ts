@@ -341,8 +341,8 @@ describe("closedShadowRootAnnotateRule main-world probe integration", () => {
     expect(recordDetectionMock).toHaveBeenCalledTimes(1);
     expect(recordDetectionMock).toHaveBeenCalledWith({
       kind: "closed-shadow-root",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
+      host: location.hostname,
+      url: location.href,
     });
   });
 });
@@ -365,8 +365,8 @@ describe("closedShadowRootAnnotateRule rule-detection emission", () => {
     expect(recordDetectionMock).toHaveBeenCalledTimes(1);
     expect(recordDetectionMock).toHaveBeenCalledWith({
       kind: "closed-shadow-root",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
+      host: location.hostname,
+      url: location.href,
     });
   });
 

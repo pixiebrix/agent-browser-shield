@@ -157,8 +157,8 @@ export function recordRuleApplication(input: RuleApplicationInput): void {
     selector: input.selector,
     beforeHtml: input.beforeHtml,
     afterHtml: input.afterHtml,
-    ...(input.beforeText === undefined ? {} : { beforeText: input.beforeText }),
-    ...(input.cssOnly ? { cssOnly: true } : {}),
+    ...(input.beforeText !== undefined && { beforeText: input.beforeText }),
+    ...(input.cssOnly && { cssOnly: true }),
   });
 }
 

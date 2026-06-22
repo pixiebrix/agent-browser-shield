@@ -40,9 +40,7 @@ export function createChromeStorageValue<
   const item = new StorageItem<T, T>(key, { defaultValue });
   const read = (raw: T): T => (normalize ? normalize(raw) : raw);
   return {
-    async get() {
-      return read(await item.get());
-    },
+    get: async () => read(await item.get()),
     async set(value) {
       await item.set(value);
     },

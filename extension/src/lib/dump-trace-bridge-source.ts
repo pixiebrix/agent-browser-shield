@@ -57,13 +57,13 @@ export function installDumpTraceBridge(this: Window): void {
     if (event.origin !== bridgeWindow.location.origin) {
       return;
     }
-    const data = event.data as {
+    const data = event.data as null | {
       source?: unknown;
       direction?: unknown;
       id?: unknown;
       entries?: unknown;
       error?: unknown;
-    } | null;
+    };
     if (!data || typeof data !== "object") {
       return;
     }

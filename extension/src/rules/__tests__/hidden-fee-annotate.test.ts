@@ -251,8 +251,8 @@ describe("hiddenFeeAnnotateRule on checkout URLs", () => {
 
 describe("hiddenFeeAnnotateRule URL gating", () => {
   it("does not annotate on a non-checkout URL", () => {
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", "/hotel/details");
+    const originalHref = location.href;
+    history.replaceState({}, "", "/hotel/details");
 
     try {
       document.body.innerHTML = `
@@ -265,7 +265,7 @@ describe("hiddenFeeAnnotateRule URL gating", () => {
       hiddenFeeAnnotateRule.apply(document.body);
       expect(document.querySelectorAll(`.${FLAG_CLASS}`).length).toBe(0);
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 });
@@ -294,7 +294,9 @@ describe("findOrderSummaryAncestor", () => {
   it("tolerates aria-labelledby with leading/trailing whitespace", () => {
     // jsdom in this project does not expose the `CSS` global; polyfill so
     // the labelledby resolution path can execute. Identity escape is fine
-    // here — the test only inserts known-safe id values.
+    // here — the test only inserts known-safe id values. Read via `globalThis`
+    // so the absent global reads as `undefined` instead of throwing.
+    // eslint-disable-next-line unicorn/no-unnecessary-global-this -- global may be undefined here
     const previousCss = (globalThis as { CSS?: unknown }).CSS;
     (globalThis as { CSS?: { escape: (input: string) => string } }).CSS = {
       escape: (input: string) => input,

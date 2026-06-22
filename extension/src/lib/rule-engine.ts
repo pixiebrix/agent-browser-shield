@@ -186,7 +186,7 @@ function applyEnabled(
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!document.body) {
     log.info("rule engine skipping — no document.body", {
-      url: globalThis.location.href,
+      url: location.href,
     });
     return;
   }
@@ -195,7 +195,7 @@ function applyEnabled(
   ).map((r) => r.id);
   log.info("initial rule application", {
     enabled,
-    url: globalThis.location.href,
+    url: location.href,
     topFrame,
   });
   for (const rule of RULES) {
@@ -274,7 +274,7 @@ function mask(states: RuleStates, enforcementEnabled: boolean): RuleStates {
 
 export async function start(): Promise<void> {
   const topFrame = isTopFrame();
-  log.info("rule engine starting", { url: globalThis.location.href, topFrame });
+  log.info("rule engine starting", { url: location.href, topFrame });
   injectStyles();
   // Set the default synchronously so any placeholder created before storage
   // resolves gets the right CSS scoping.

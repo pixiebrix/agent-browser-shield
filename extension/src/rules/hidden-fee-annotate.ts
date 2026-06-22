@@ -508,10 +508,10 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) {
+  if (!isCheckoutUrl(location.href)) {
     return;
   }
-  if (isDenylistedHost(globalThis.location.href)) {
+  if (isDenylistedHost(location.href)) {
     return;
   }
   const candidates = collectCandidates(root);
@@ -524,7 +524,7 @@ function scanAndFlag(root: ParentNode): void {
   log.info("hidden fees flagged", {
     count: candidates.length,
     phrases: candidates.map((c) => c.phrase),
-    url: globalThis.location.href,
+    url: location.href,
   });
 }
 

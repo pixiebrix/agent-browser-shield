@@ -19,7 +19,7 @@ import {
 
 const FLAG_CLASS = "abs-hidden-fee-annotate";
 
-const PHRASES: readonly string[] = [
+const PHRASES: ReadonlySet<string> = new Set([
   "service fee",
   "convenience fee",
   "processing fee",
@@ -29,7 +29,7 @@ const PHRASES: readonly string[] = [
   "handling fee",
   "venue fee",
   "delivery surcharge",
-];
+]);
 
 const EXCLUDE_TERMS: readonly string[] = [
   "tax",
@@ -77,7 +77,7 @@ describe("matchFeePhrase precision (property)", () => {
           // Guard the rare case where fast-check picks a suffix that
           // happens to start with another phrase from the set — the
           // resulting concatenation could still legitimately match.
-          if (PHRASES.includes(`${phrase} ${suffix}`.toLowerCase())) {
+          if (PHRASES.has(`${phrase} ${suffix}`.toLowerCase())) {
             return;
           }
           expect(matchFeePhrase(text)).toBeNull();

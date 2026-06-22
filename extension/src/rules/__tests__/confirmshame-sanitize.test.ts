@@ -177,7 +177,7 @@ describe("isConfirmshameLabel", () => {
 
   it("ignores empty / whitespace text", () => {
     expect(isConfirmshameLabel("")).toBe(false);
-    expect(isConfirmshameLabel("   ")).toBe(false);
+    expect(isConfirmshameLabel(" ".repeat(3))).toBe(false);
   });
 
   it("ignores text longer than the button-label cap", () => {

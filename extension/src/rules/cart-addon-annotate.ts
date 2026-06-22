@@ -179,7 +179,7 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) {
+  if (!isCheckoutUrl(location.href)) {
     return;
   }
   const candidates = findCandidates(root);
@@ -192,7 +192,7 @@ function scanAndFlag(root: ParentNode): void {
   log.info("cart add-ons flagged", {
     count: candidates.length,
     labels: candidates.map((c) => c.label),
-    url: globalThis.location.href,
+    url: location.href,
   });
 }
 

@@ -207,7 +207,7 @@ describe("dump-trace bridge protocol parity", () => {
     // so a future rename doesn't silently break the bridge.
     const dumpTrace = getBridgeWindow().__abs_dumpTrace;
 
-    let observed: { source?: unknown; direction?: unknown } | undefined;
+    let observed: undefined | { source?: unknown; direction?: unknown };
     const interceptor = (event: MessageEvent): void => {
       const data = event.data as { source?: unknown; direction?: unknown };
       if (data.source && data.direction === "request") {

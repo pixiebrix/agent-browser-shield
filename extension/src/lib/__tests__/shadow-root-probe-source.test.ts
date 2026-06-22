@@ -101,8 +101,8 @@ describe("installShadowRootProbe — attachShadow wrap", () => {
 
     expect(capture.events).toHaveLength(1);
     const detail = capture.events[0]?.detail as
-      | { target?: unknown }
-      | undefined;
+      | undefined
+      | { target?: unknown };
     expect(detail?.target).toBe(host);
     capture.off();
   });
@@ -153,8 +153,8 @@ describe("installShadowRootProbe — setHTMLUnsafe wraps", () => {
 
     expect(capture.events).toHaveLength(1);
     const detail = capture.events[0]?.detail as
-      | { target?: unknown }
-      | undefined;
+      | undefined
+      | { target?: unknown };
     expect(detail?.target).toBe(host);
     capture.off();
   });
@@ -179,8 +179,8 @@ describe("installShadowRootProbe — setHTMLUnsafe wraps", () => {
 
     expect(capture.events).toHaveLength(1);
     const detail = capture.events[0]?.detail as
-      | { target?: unknown }
-      | undefined;
+      | undefined
+      | { target?: unknown };
     expect(detail?.target).toBe(shadow);
     capture.off();
   });
