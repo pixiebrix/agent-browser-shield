@@ -164,10 +164,12 @@ function ensureWatcherStarted(): void {
 }
 
 function maybeStopWatcher(): void {
-  if (registrations.size === 0 && sharedWatcher) {
-    sharedWatcher.stop();
-    sharedWatcher = null;
+  if (!(registrations.size === 0 && sharedWatcher)) {
+    return;
   }
+
+  sharedWatcher.stop();
+  sharedWatcher = null;
 }
 
 export interface RegisterOptions {

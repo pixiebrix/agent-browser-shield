@@ -108,7 +108,7 @@ const PHRASE_RE = new RegExp(
 );
 
 function getPageHost(): string {
-  return globalThis.location.hostname;
+  return location.hostname;
 }
 
 function isBadgeShape(element: Element): boolean {

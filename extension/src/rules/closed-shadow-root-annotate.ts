@@ -192,7 +192,7 @@ function ensureLandmark(): void {
     },
   );
   log.info("closed-shadow-root-annotate landmark added", {
-    host: globalThis.location.hostname,
+    host: location.hostname,
   });
   // Per-document dedupe: the landmark short-circuit above ensures we only
   // get here once, no matter how many hosts the page mounts. Fire-and-forget —
@@ -200,8 +200,8 @@ function ensureLandmark(): void {
   // sleeping service worker.
   recordDetection({
     kind: "closed-shadow-root",
-    host: globalThis.location.hostname,
-    url: globalThis.location.href,
+    host: location.hostname,
+    url: location.href,
   });
 }
 

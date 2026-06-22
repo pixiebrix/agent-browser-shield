@@ -51,11 +51,11 @@ export function startSegmentTracker(): void {
   // happen later in the page lifetime and always see the resolved value,
   // so they install synchronously below.
   void initDebugTrace().then(() => {
-    recordSegment("initial-load", { url: globalThis.location.href });
+    recordSegment("initial-load", { url: location.href });
   });
 
   unsubscribeRouteChange = subscribeRouteChange(() => {
-    recordSegment("route-change", { to: globalThis.location.href });
+    recordSegment("route-change", { to: location.href });
   });
 
   // Throttle modal detection — a framework that re-renders the dialog

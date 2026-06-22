@@ -290,10 +290,10 @@ function tryClearInput(
 }
 
 function scanAndClear(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) {
+  if (!isCheckoutUrl(location.href)) {
     return;
   }
-  if (isKillSwitchedHost(globalThis.location.href)) {
+  if (isKillSwitchedHost(location.href)) {
     return;
   }
   const outcome = { cleared: 0, names: [] as string[] };
@@ -318,7 +318,7 @@ function scanAndClear(root: ParentNode): void {
     log.info("hidden affiliate values cleared", {
       count: outcome.cleared,
       names: outcome.names,
-      url: globalThis.location.href,
+      url: location.href,
     });
   }
 }

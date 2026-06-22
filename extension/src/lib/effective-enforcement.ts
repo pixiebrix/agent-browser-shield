@@ -49,7 +49,7 @@ function readTopFrameUrl(): string | null {
   // and updates in real time across SPA pushState. For a subframe it's
   // the iframe's own URL, which is the WRONG URL for denylist purposes,
   // so we fall back to the value cached from the background at init.
-  return isTopFrame() ? globalThis.location.href : cachedTopFrameUrl;
+  return isTopFrame() ? location.href : cachedTopFrameUrl;
 }
 
 function computeEffective(): boolean {

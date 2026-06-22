@@ -90,7 +90,7 @@ describe("URL gate releases the defense off checkout", () => {
       fc.property(
         fc.constantFrom("/account", "/", "/product/123", "/orders/42"),
         (nonCheckoutPath) => {
-          globalThis.history.replaceState({}, "", "/checkout");
+          history.replaceState({}, "", "/checkout");
           document.body.innerHTML = `<input id="upsell" type="checkbox" checked />`;
           const checkbox = document.querySelector(
             "#upsell",
@@ -99,12 +99,12 @@ describe("URL gate releases the defense off checkout", () => {
           expect(checkbox.checked).toBe(false);
           expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(true);
 
-          globalThis.history.replaceState({}, "", nonCheckoutPath);
+          history.replaceState({}, "", nonCheckoutPath);
           try {
             checkbox.checked = true;
             expect(checkbox.checked).toBe(true);
           } finally {
-            globalThis.history.replaceState({}, "", "/checkout");
+            history.replaceState({}, "", "/checkout");
             checkoutCheckboxSanitizeRule.teardown();
             document.body.innerHTML = "";
           }

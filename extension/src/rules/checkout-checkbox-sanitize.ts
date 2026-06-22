@@ -76,7 +76,7 @@ function uncheck(checkbox: HTMLInputElement): void {
 }
 
 function scanAndClear(root: ParentNode): void {
-  if (!isCheckoutUrl(globalThis.location.href)) {
+  if (!isCheckoutUrl(location.href)) {
     return;
   }
 
@@ -96,7 +96,7 @@ function scanAndClear(root: ParentNode): void {
   if (cleared > 0) {
     log.info("checkout checkboxes cleared", {
       count: cleared,
-      url: globalThis.location.href,
+      url: location.href,
     });
   }
 }

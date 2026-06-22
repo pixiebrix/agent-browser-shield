@@ -165,8 +165,8 @@ describe("webdriverProbeAnnotateRule rule-detection emission", () => {
     expect(recordDetectionMock).toHaveBeenCalledTimes(1);
     expect(recordDetectionMock).toHaveBeenCalledWith({
       kind: "webdriver-probe",
-      host: globalThis.location.hostname,
-      url: globalThis.location.href,
+      host: location.hostname,
+      url: location.href,
     });
   });
 

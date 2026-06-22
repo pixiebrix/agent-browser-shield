@@ -353,8 +353,8 @@ describe("formPrefillAnnotateRule — chip cap", () => {
 
 describe("formPrefillAnnotateRule URL gating", () => {
   it("does not annotate on a non-checkout URL", () => {
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", "/profile/edit");
+    const originalHref = location.href;
+    history.replaceState({}, "", "/profile/edit");
     try {
       document.body.innerHTML = `
         <form>
@@ -364,7 +364,7 @@ describe("formPrefillAnnotateRule URL gating", () => {
       formPrefillAnnotateRule.apply(document.body);
       expect(document.querySelectorAll(`.${FLAG_CLASS}`).length).toBe(0);
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 });

@@ -39,9 +39,7 @@ jest.mock("../../lib/llm-client");
 // this single-rule test file mid-chain trip on a circular reference. Stub it.
 jest.mock("../../lib/availability", () => ({
   createApiKeyAvailability: () => ({
-    get() {
-      return Promise.resolve({ available: true });
-    },
+    get: () => Promise.resolve({ available: true }),
     subscribe() {
       return () => {
         // noop

@@ -97,8 +97,6 @@ export function createApiKeyAvailability(reason: string): RuleAvailability {
       const userKey = await getUserApiKey();
       return userKey ? { available: true } : { available: false, reason };
     },
-    subscribe(listener) {
-      return subscribeUserApiKey(listener);
-    },
+    subscribe: (listener) => subscribeUserApiKey(listener),
   };
 }

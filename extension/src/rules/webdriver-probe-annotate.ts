@@ -95,7 +95,7 @@ function ensureLandmark(): void {
     },
   );
   log.info("webdriver-probe-annotate landmark added", {
-    host: globalThis.location.hostname,
+    host: location.hostname,
   });
   // Notify the background so the popup can show a human-visible entry.
   // The line-88 landmark short-circuit above doubles as a per-document
@@ -103,8 +103,8 @@ function ensureLandmark(): void {
   // many times navigator.webdriver gets read.
   recordDetection({
     kind: "webdriver-probe",
-    host: globalThis.location.hostname,
-    url: globalThis.location.href,
+    host: location.hostname,
+    url: location.href,
   });
 }
 

@@ -59,7 +59,7 @@ function resolveExternalOrigin(
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     return null;
   }
-  if (url.origin === globalThis.location.origin) {
+  if (url.origin === location.origin) {
     return null;
   }
   return url.origin;

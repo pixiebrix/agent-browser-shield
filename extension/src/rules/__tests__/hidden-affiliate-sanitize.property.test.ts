@@ -173,8 +173,8 @@ describe("promo / coupon / discount preservation (property)", () => {
 
 describe("URL-gate invariance (property)", () => {
   it("never clears on a non-checkout URL", () => {
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", "/account");
+    const originalHref = location.href;
+    history.replaceState({}, "", "/account");
     try {
       fc.assert(
         fc.property(fc.constantFrom(...AFFILIATE_NAMES), (name) => {
@@ -196,7 +196,7 @@ describe("URL-gate invariance (property)", () => {
         }),
       );
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 });

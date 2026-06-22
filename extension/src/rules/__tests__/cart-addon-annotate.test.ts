@@ -172,10 +172,10 @@ describe("cartAddonAnnotateRule on checkout URLs", () => {
 
 describe("cartAddonAnnotateRule URL gating", () => {
   it("does not annotate on a non-checkout URL", () => {
-    const originalHref = globalThis.location.href;
+    const originalHref = location.href;
     // jsdom doesn't allow direct href assignment in all paths; use the
     // history API to navigate within the same origin.
-    globalThis.history.replaceState({}, "", "/product/widget");
+    history.replaceState({}, "", "/product/widget");
 
     try {
       document.body.innerHTML = `
@@ -189,7 +189,7 @@ describe("cartAddonAnnotateRule URL gating", () => {
       expect(document.querySelectorAll(`[${FLAGGED_ATTR}]`).length).toBe(0);
       expect(document.querySelector(`.${FLAG_CLASS}`)).toBeNull();
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 });

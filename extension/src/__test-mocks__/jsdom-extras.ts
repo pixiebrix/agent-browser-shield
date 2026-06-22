@@ -45,13 +45,15 @@ if (typeof globalWithClone.structuredClone !== "function") {
 // non-zero default so fixture markup makes it through the visibility filter;
 // individual tests can still stub getBoundingClientRect for size-sensitive
 // assertions.
-Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
-  configurable: true,
-  get: () => 100,
-});
-Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
-  configurable: true,
-  get: () => 100,
+Object.defineProperties(HTMLElement.prototype, {
+  offsetHeight: {
+    configurable: true,
+    get: () => 100,
+  },
+  offsetWidth: {
+    configurable: true,
+    get: () => 100,
+  },
 });
 
 // Constructable stylesheets + adoptedStyleSheets — Baseline 2023, fully
@@ -262,9 +264,7 @@ function polyfilledSetHTMLUnsafe(
   liftNestedDSD(staging);
 
   // Replace the receiver's children with the processed staging contents.
-  while (this.firstChild) {
-    this.firstChild.remove();
-  }
+  this.replaceChildren();
   while (staging.firstChild) {
     this.append(staging.firstChild);
   }

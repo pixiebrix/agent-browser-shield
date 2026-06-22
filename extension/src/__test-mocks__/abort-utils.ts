@@ -27,15 +27,15 @@ export class ReusableAbortController {
 }
 
 type Handle =
+  | ((reason: unknown) => void)
   | { disconnect(): void }
   | { abort(reason: unknown): void }
-  | { abortAndReset(reason: unknown): void }
-  | ((reason: unknown) => void);
+  | { abortAndReset(reason: unknown): void };
 
 export function onAbort(
   signal: AbortController | AbortSignal | undefined,
   ...handles: Handle[]
-): { [Symbol.dispose](): void } | undefined {
+): undefined | { [Symbol.dispose](): void } {
   if (!signal) {
     return undefined;
   }

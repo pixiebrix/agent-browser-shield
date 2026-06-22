@@ -306,8 +306,8 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
   });
 
   it("does not run on a non-checkout URL", () => {
-    const originalHref = globalThis.location.href;
-    globalThis.history.replaceState({}, "", "/blog/post");
+    const originalHref = location.href;
+    history.replaceState({}, "", "/blog/post");
     try {
       document.body.innerHTML = `
         <form>
@@ -318,7 +318,7 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
       const utm = document.querySelector("#utm") as HTMLInputElement;
       expect(utm.value).toBe("email");
     } finally {
-      globalThis.history.replaceState({}, "", originalHref);
+      history.replaceState({}, "", originalHref);
     }
   });
 

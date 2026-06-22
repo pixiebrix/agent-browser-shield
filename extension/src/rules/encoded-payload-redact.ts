@@ -502,7 +502,7 @@ function findNatoRuns(text: string): NatoRun[] {
   const runs: NatoRun[] = [];
   const lower = text.toLowerCase();
   const TOKEN_RE = /[a-z]+/g;
-  let current: { start: number; end: number; letters: string } | null = null;
+  let current: null | { start: number; end: number; letters: string } = null;
   let lastTokenEnd = -1;
   for (const m of lower.matchAll(TOKEN_RE)) {
     const start = m.index;
@@ -590,10 +590,10 @@ function qualifies(
 }
 
 function collectJwtRanges(text: string): Array<[number, number]> {
-  const ranges: Array<[number, number]> = [];
-  for (const m of text.matchAll(JWT_RE)) {
-    ranges.push([m.index, m.index + m[0].length]);
-  }
+  const ranges: Array<[number, number]> = Array.from(
+    text.matchAll(JWT_RE),
+    (m) => [m.index, m.index + m[0].length],
+  );
   return ranges;
 }
 
@@ -656,7 +656,7 @@ function collectPercentRuns(
   // closing the run.
   const MAX_GAP = 8;
   const runs: Array<{ start: number; end: number; count: number }> = [];
-  let current: { start: number; end: number; count: number } | null = null;
+  let current: null | { start: number; end: number; count: number } = null;
   for (const m of text.matchAll(PERCENT_TRIPLET)) {
     const start = m.index;
     const end = start + 3;

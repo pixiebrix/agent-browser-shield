@@ -262,9 +262,10 @@ function observerInit(router: Router): MutationObserverInit {
   return {
     childList: true,
     subtree: true,
-    ...(wantsAttributes
-      ? { attributes: true, attributeFilter: OBSERVED_ATTRIBUTES }
-      : {}),
+    ...(wantsAttributes && {
+      attributes: true,
+      attributeFilter: OBSERVED_ATTRIBUTES,
+    }),
   };
 }
 

@@ -81,7 +81,7 @@ describe("ruleCountsSchema", () => {
       [KNOWN_RULE_ID]: 2,
       "not-a-real-rule": 5,
       [`${KNOWN_RULE_ID}-zero`]: 0,
-      bogusInfinity: Number.POSITIVE_INFINITY,
+      bogusInfinity: Infinity,
     });
     expect(result).toEqual({ [KNOWN_RULE_ID]: 2 });
   });

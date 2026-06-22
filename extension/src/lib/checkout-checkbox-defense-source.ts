@@ -99,7 +99,7 @@ export function installCheckoutCheckboxDefense(this: Window): void {
         if (
           value &&
           this.getAttribute(CLEARED_ATTR) !== null &&
-          isCheckoutHref(globalThis.location.href)
+          isCheckoutHref(location.href)
         ) {
           nativeSetter.call(this, false);
           return;

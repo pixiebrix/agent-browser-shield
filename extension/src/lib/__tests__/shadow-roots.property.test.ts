@@ -467,10 +467,7 @@ describe("setHTMLUnsafe — open DSD registration property", () => {
 // every element. Used to compute the "should have been seen" set for
 // the coverage assertion.
 function elementsInTree(root: ParentNode): Set<Element> {
-  const out = new Set<Element>();
-  for (const element of root.querySelectorAll("*")) {
-    out.add(element);
-  }
+  const out = new Set<Element>(root.querySelectorAll("*"));
   return out;
 }
 

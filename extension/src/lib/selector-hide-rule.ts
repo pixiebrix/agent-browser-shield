@@ -132,7 +132,7 @@ export function createSelectorHideRule<Id extends RuleId>(
   }
 
   function scan(root: ParentNode): void {
-    refreshMemo(globalThis.location.href);
+    refreshMemo(location.href);
     if (memoJoined.length === 0) {
       return;
     }
