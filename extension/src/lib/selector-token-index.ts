@@ -137,12 +137,7 @@ function dispatchToRules(roots: Element[]): void {
         ? new Set(registrations.keys())
         : findTriggeredRules(root);
     for (const ruleId of triggered) {
-      const registration = registrations.get(ruleId);
-
-      if (!registration) {
-        continue;
-      }
-      registration.dispatchScan(root);
+      registrations.get(ruleId)?.dispatchScan(root);
     }
   }
 }

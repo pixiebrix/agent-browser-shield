@@ -192,11 +192,41 @@ function enqueueAttributeMutation(
   }
 }
 
+// Dispatch a single added node into the router. The shared filters
+// (nodeType, IGNORE_TAGS, isConnected) run once per node regardless of
+// subscriber count — the whole point of the router.
+function dispatchAddedNode(router: Router, added: Node): void {
+  if (added.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+  const element = added as Element;
+  if (IGNORE_TAGS.has(element.tagName)) {
+    return;
+  }
+  // React-style reconciliation routinely adds-then-removes a node in
+  // the same tick. By the time MutationObserver fires (microtask
+  // afterward), the addition record is still there but the node is
+  // already detached. drainSubscriber() filters by isConnected too —
+  // checking at enqueue avoids buffering churn in pending during a
+  // 5k-node route swap with high in-tick removal rate.
+  if (!element.isConnected) {
+    return;
+  }
+  enqueueForAllSubscribers(router, element);
+  // A freshly-inserted host element may already have a populated
+  // open shadow root (custom elements that build their shadow in
+  // the constructor, lit/stencil components, etc.). adoptShadowRoot
+  // observes the root and dispatches its initial children — without
+  // this, mutation observation would only catch FUTURE additions
+  // into the shadow, never the content present at insertion time.
+  for (const shadow of discoverShadowRootsIn(element)) {
+    adoptShadowRoot(router, shadow);
+  }
+}
+
 function fanOut(router: Router, mutations: MutationRecord[]): void {
   // Walk every added node once and dispatch into each subscriber's pending
-  // set. The shared filters (nodeType, IGNORE_TAGS, isConnected) run once
-  // per node regardless of subscriber count — the whole point of the
-  // router. Per-subscriber filters (skipPlaceholderSubtrees) still run
+  // set. Per-subscriber filters (skipPlaceholderSubtrees) still run
   // per (node, subscriber) pair, but they're cheap classlist reads.
   for (const mutation of mutations) {
     if (mutation.type === "attributes") {
@@ -208,32 +238,7 @@ function fanOut(router: Router, mutations: MutationRecord[]): void {
       continue;
     }
     for (const added of mutation.addedNodes) {
-      if (added.nodeType !== Node.ELEMENT_NODE) {
-        continue;
-      }
-      const element = added as Element;
-      if (IGNORE_TAGS.has(element.tagName)) {
-        continue;
-      }
-      // React-style reconciliation routinely adds-then-removes a node in
-      // the same tick. By the time MutationObserver fires (microtask
-      // afterward), the addition record is still there but the node is
-      // already detached. drainSubscriber() filters by isConnected too —
-      // checking at enqueue avoids buffering churn in pending during a
-      // 5k-node route swap with high in-tick removal rate.
-      if (!element.isConnected) {
-        continue;
-      }
-      enqueueForAllSubscribers(router, element);
-      // A freshly-inserted host element may already have a populated
-      // open shadow root (custom elements that build their shadow in
-      // the constructor, lit/stencil components, etc.). adoptShadowRoot
-      // observes the root and dispatches its initial children — without
-      // this, mutation observation would only catch FUTURE additions
-      // into the shadow, never the content present at insertion time.
-      for (const shadow of discoverShadowRootsIn(element)) {
-        adoptShadowRoot(router, shadow);
-      }
+      dispatchAddedNode(router, added);
     }
   }
 

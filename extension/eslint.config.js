@@ -279,8 +279,15 @@ export default tseslint.config(
       // so enabling it means breaking shadow-DOM scans or scoped-disabling
       // ~10+ correct sites. Not worth it. See #279.
       "unicorn/prefer-scoped-selector": "off",
-      // Warn — ratchet to error in #279:
-      "unicorn/no-break-in-nested-loop": "warn",
+      // Off — not a clean ratchet (see #279). The rule treats a `switch`
+      // inside a loop as a "nested loop", so ~9 sites are idiomatic
+      // switch-case `break`s (required syntax, not loop control) that it
+      // would force into pointless function extractions. The genuinely
+      // improvable production sites — guard inversions, `.some()`, and small
+      // helper extractions — were cleaned up directly, but the rule itself
+      // can't be narrowed to exclude `switch` or the remaining test/mock
+      // sites, so leaving it on would be all churn for no further upside.
+      "unicorn/no-break-in-nested-loop": "off",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.

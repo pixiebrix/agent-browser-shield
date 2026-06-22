@@ -721,21 +721,20 @@ function collectSubstitutionCiphers(
     ) {
       continue;
     }
-    for (const decoder of SUBSTITUTION_DECODERS) {
-      if (
+    const decodes = SUBSTITUTION_DECODERS.some(
+      (decoder) =>
         tryCipherDecode(
           candidate,
           decoder,
           SUB_RULES.substitutionCipher.minCommonWords,
-        ) !== null
-      ) {
-        matches.push({
-          start: m.index,
-          end: m.index + candidate.length,
-          label: "[encoded payload hidden]",
-        });
-        break;
-      }
+        ) !== null,
+    );
+    if (decodes) {
+      matches.push({
+        start: m.index,
+        end: m.index + candidate.length,
+        label: "[encoded payload hidden]",
+      });
     }
   }
 }
