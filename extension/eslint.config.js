@@ -209,7 +209,9 @@ export default tseslint.config(
       "unicorn/require-array-sort-compare": "warn",
       "unicorn/prefer-uint8array-base64": "warn",
       "unicorn/no-declarations-before-early-exit": "warn",
-      "unicorn/no-global-object-property-assignment": "warn",
+      // no-global-object-property-assignment stays at its recommended `error`
+      // for production code; it's disabled only for tests (which legitimately
+      // assign globals to set up mocks) in the test-files block below.
       "unicorn/prefer-minimal-ternary": "warn",
       "unicorn/prefer-iterator-to-array": "warn",
       "unicorn/no-incorrect-query-selector": "warn",
@@ -250,6 +252,9 @@ export default tseslint.config(
       // Tests legitimately use literal nulls and many small `for` loops.
       "unicorn/no-useless-undefined": "off",
       "unicorn/consistent-function-scoping": "off",
+      // Tests assign onto global objects to install mocks / stubs; the rule
+      // stays an error everywhere else.
+      "unicorn/no-global-object-property-assignment": "off",
       // Jest matchers and mock patterns routinely pass methods by reference.
       "@typescript-eslint/unbound-method": "off",
 
