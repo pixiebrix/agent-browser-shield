@@ -158,9 +158,9 @@ export interface NavigationEvent {
 }
 
 export type DebugTraceEntry =
-  | ({ type: "segment" } & SegmentMarker)
-  | ({ type: "rule-application" } & RuleApplicationEvent)
-  | ({ type: "navigation" } & NavigationEvent);
+  | (SegmentMarker & { type: "segment" })
+  | (RuleApplicationEvent & { type: "rule-application" })
+  | (NavigationEvent & { type: "navigation" });
 
 // Stored shape returned by `getEventsForTab`. Mirrors the `StoredEvent`
 // interface in `debug-trace-store.ts`; kept structurally parallel here
