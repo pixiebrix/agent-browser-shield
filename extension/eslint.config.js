@@ -222,6 +222,12 @@ export default tseslint.config(
       "unicorn/no-computed-property-existence-check": "off",
       "unicorn/prefer-await": "off",
       "unicorn/no-top-level-side-effects": "off",
+      //   max-nested-calls — the call-depth cap doesn't fit the two places we
+      //     nest deeply on purpose: zod schema builders
+      //     (`z.record(z.string(), z.union([z.string(), z.number()]))`) and
+      //     fast-check generators (`fc.array(fc.tuple(fc.nat(…), …))`). Both
+      //     are idiomatic and read better nested than split into temporaries.
+      "unicorn/max-nested-calls": "off",
 
       // Enforced (recommended `error`). Dynamically-built arrays pass an
       // explicit comparator; the only sites carrying a scoped `eslint-disable`
@@ -236,7 +242,6 @@ export default tseslint.config(
       // Warn — ratchet to error in #279:
       "unicorn/prefer-scoped-selector": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
-      "unicorn/max-nested-calls": "warn",
       "unicorn/prefer-number-coercion": "warn",
       "unicorn/prefer-uint8array-base64": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
