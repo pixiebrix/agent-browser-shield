@@ -108,10 +108,6 @@ export function walkTextNodesChunked(
     shouldSkipParent ? { minLength, shouldSkipParent } : { minLength },
   );
 
-  if (signal?.aborted) {
-    return;
-  }
-
   let index = 0;
 
   function runFinalize(): void {
@@ -196,10 +192,6 @@ export function walkTextNodeGroupsChunked(
     root,
     shouldSkipParent ? { minLength, shouldSkipParent } : { minLength },
   );
-
-  if (signal?.aborted) {
-    return;
-  }
 
   let index = 0;
 

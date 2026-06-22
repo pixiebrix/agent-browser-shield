@@ -46,15 +46,6 @@ export function installCheckoutCheckboxDefense(this: Window): void {
   }
   defenseWindow[FLAG] = true;
 
-  // Mirror of CHECKOUT_CHECKBOX_CLEARED_ATTR from lib/dom-markers.ts.
-  // Hard-coded because this function runs in the page world with no
-  // module imports; the isolated-world rule and the markers registry
-  // share the same literal, asserted by a unit test. The lint rule that
-  // bans inline `data-abs-*` literals exists to keep the registry the
-  // single source of truth — this is the one principled exception.
-  // eslint-disable-next-line no-restricted-syntax
-  const CLEARED_ATTR = "data-abs-cleared";
-
   // Mirror of the URLPattern set in lib/checkout-url.ts as a single
   // anchored regex. `/cart`, `/cart/`, `/cart/sub` match; `/cartx`,
   // `/products/cart-bag`, `/orders` do not. Asserted against the rule's
@@ -87,6 +78,16 @@ export function installCheckoutCheckboxDefense(this: Window): void {
     // disable the defense rather than block the page.
     return;
   }
+
+  // Mirror of CHECKOUT_CHECKBOX_CLEARED_ATTR from lib/dom-markers.ts.
+  // Hard-coded because this function runs in the page world with no
+  // module imports; the isolated-world rule and the markers registry
+  // share the same literal, asserted by a unit test. The lint rule that
+  // bans inline `data-abs-*` literals exists to keep the registry the
+  // single source of truth — this is the one principled exception.
+  // eslint-disable-next-line no-restricted-syntax
+  const CLEARED_ATTR = "data-abs-cleared";
+
   const nativeSetter = descriptor.set;
   const nativeGetter = descriptor.get;
 

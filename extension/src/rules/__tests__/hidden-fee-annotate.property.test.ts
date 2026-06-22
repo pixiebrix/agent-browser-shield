@@ -73,13 +73,13 @@ describe("matchFeePhrase precision (property)", () => {
         fc.constantFrom(...PHRASES),
         fc.stringMatching(/^[A-Za-z][A-Za-z ]{0,30}$/),
         (phrase, suffix) => {
-          const text = `${phrase} ${suffix}`;
           // Guard the rare case where fast-check picks a suffix that
           // happens to start with another phrase from the set — the
           // resulting concatenation could still legitimately match.
           if (PHRASES.has(`${phrase} ${suffix}`.toLowerCase())) {
             return;
           }
+          const text = `${phrase} ${suffix}`;
           expect(matchFeePhrase(text)).toBeNull();
         },
       ),

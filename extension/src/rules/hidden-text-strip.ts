@@ -257,10 +257,10 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
     return false;
   }
   const width = parsePixelLength(style.width);
-  const height = parsePixelLength(style.height);
   if (width === null || width > SR_ONLY_MAX_SIZE_PX) {
     return false;
   }
+  const height = parsePixelLength(style.height);
   if (height === null || height > SR_ONLY_MAX_SIZE_PX) {
     return false;
   }
