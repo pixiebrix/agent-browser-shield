@@ -267,7 +267,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/**/__tests__/**/*.{ts,tsx}"],
+    files: [
+      "src/**/__tests__/**/*.{ts,tsx}",
+      // `__test-mocks__` is test infrastructure (loaded via Jest setupFiles);
+      // it gets the same relaxations — same grouping tsconfig.test.json uses.
+      "src/__test-mocks__/**/*.{ts,tsx}",
+    ],
     plugins: { jest },
     rules: {
       // Tests legitimately use literal nulls and many small `for` loops.
