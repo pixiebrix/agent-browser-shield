@@ -159,7 +159,7 @@ export function startBackgroundLifecycle(tracker: TabTracker): void {
   // type is contravariantly assignable — no cast needed.
   tabPauseMap.onChanged((key, value: TabPause | undefined) => {
     const tabId = Number(key);
-    if (!Number.isInteger(tabId)) {
+    if (!Number.isSafeInteger(tabId)) {
       return;
     }
     tracker.setTabPause(tabId, value);
@@ -177,7 +177,7 @@ export function startBackgroundLifecycle(tracker: TabTracker): void {
     try {
       for await (const [key, value] of tabPauseMap.entries()) {
         const tabId = Number(key);
-        if (Number.isInteger(tabId)) {
+        if (Number.isSafeInteger(tabId)) {
           tracker.setTabPause(tabId, value);
         }
       }
