@@ -85,14 +85,12 @@ export const siteDenylistStorage = createChromeStorageValue<string[]>({
 // would be a no-op on those URLs even if storage accepted a pattern for
 // them. file:// runs the content script when the user has granted access,
 // so we include it.
+const CONTENT_SCHEME_PROTOCOLS = new Set(["http:", "https:", "file:"]);
+
 export function isContentSchemeUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return (
-      parsed.protocol === "http:" ||
-      parsed.protocol === "https:" ||
-      parsed.protocol === "file:"
-    );
+    return CONTENT_SCHEME_PROTOCOLS.has(parsed.protocol);
   } catch {
     return false;
   }

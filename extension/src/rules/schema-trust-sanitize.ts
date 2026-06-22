@@ -208,6 +208,11 @@ function scopedDescendants(scope: Element, itempropName: string): Element[] {
   return out;
 }
 
+// Microdata URL carriers: <a>/<link>/<area> expose the value via href,
+// <img>/<audio>/<video>/<source> via src.
+const HREF_CARRIER_TAGS = new Set(["A", "LINK", "AREA"]);
+const SRC_CARRIER_TAGS = new Set(["IMG", "AUDIO", "VIDEO", "SOURCE"]);
+
 function readItempropValue(element: Element): string {
   // The microdata spec defines the itemprop value per element type:
   // <meta> uses content, <a>/<link>/<area> use href, <img>/<audio>/etc.
@@ -218,10 +223,10 @@ function readItempropValue(element: Element): string {
   if (tag === "META") {
     return element.getAttribute("content") ?? "";
   }
-  if (tag === "A" || tag === "LINK" || tag === "AREA") {
+  if (HREF_CARRIER_TAGS.has(tag)) {
     return element.getAttribute("href") ?? "";
   }
-  if (tag === "IMG" || tag === "AUDIO" || tag === "VIDEO" || tag === "SOURCE") {
+  if (SRC_CARRIER_TAGS.has(tag)) {
     return element.getAttribute("src") ?? "";
   }
   // `textContent` on an Element (not a Document or DocumentType) is
@@ -239,14 +244,14 @@ function blankItempropValue(element: Element): boolean {
     }
     return false;
   }
-  if (tag === "A" || tag === "LINK" || tag === "AREA") {
+  if (HREF_CARRIER_TAGS.has(tag)) {
     if (element.getAttribute("href") !== "") {
       element.setAttribute("href", "");
       return true;
     }
     return false;
   }
-  if (tag === "IMG" || tag === "AUDIO" || tag === "VIDEO" || tag === "SOURCE") {
+  if (SRC_CARRIER_TAGS.has(tag)) {
     if (element.getAttribute("src") !== "") {
       element.setAttribute("src", "");
       return true;

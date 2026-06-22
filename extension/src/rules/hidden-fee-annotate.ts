@@ -176,42 +176,52 @@ export function isCurrencyAmount(text: string): boolean {
   return CURRENCY_ONLY_RE.test(text);
 }
 
+const INTERACTIVE_TAGS = new Set([
+  "button",
+  "select",
+  "option",
+  "input",
+  "textarea",
+  "label",
+]);
+const INTERACTIVE_ROLES = new Set([
+  "button",
+  "tab",
+  "menuitem",
+  "option",
+  "checkbox",
+  "radio",
+  "switch",
+]);
+const NAVIGATION_TAGS = new Set(["nav", "header", "footer"]);
+const NAVIGATION_ROLES = new Set(["navigation", "banner", "contentinfo"]);
+const PAGE_BOUNDARY_TAGS = new Set(["main", "body", "html"]);
+const ORDER_SUMMARY_CONTAINER_TAGS = new Set([
+  "aside",
+  "section",
+  "div",
+  "ul",
+  "ol",
+]);
+
 function isInteractiveAncestor(element: Element): boolean {
-  const name = element.localName;
-  if (
-    name === "button" ||
-    name === "select" ||
-    name === "option" ||
-    name === "input" ||
-    name === "textarea" ||
-    name === "label"
-  ) {
+  if (INTERACTIVE_TAGS.has(element.localName)) {
     return true;
   }
   const role = element.getAttribute("role");
-  return (
-    role === "button" ||
-    role === "tab" ||
-    role === "menuitem" ||
-    role === "option" ||
-    role === "checkbox" ||
-    role === "radio" ||
-    role === "switch"
-  );
+  return role !== null && INTERACTIVE_ROLES.has(role);
 }
 
 function isNavigationAncestor(element: Element): boolean {
-  const name = element.localName;
-  if (name === "nav" || name === "header" || name === "footer") {
+  if (NAVIGATION_TAGS.has(element.localName)) {
     return true;
   }
   const role = element.getAttribute("role");
-  return role === "navigation" || role === "banner" || role === "contentinfo";
+  return role !== null && NAVIGATION_ROLES.has(role);
 }
 
 function isPageBoundary(element: Element): boolean {
-  const name = element.localName;
-  if (name === "main" || name === "body" || name === "html") {
+  if (PAGE_BOUNDARY_TAGS.has(element.localName)) {
     return true;
   }
   return element.getAttribute("role") === "main";
@@ -261,13 +271,7 @@ function isOrderSummaryContainer(element: Element): boolean {
     return true;
   }
   // Container element with cart-shaped class or id.
-  if (
-    tag === "aside" ||
-    tag === "section" ||
-    tag === "div" ||
-    tag === "ul" ||
-    tag === "ol"
-  ) {
+  if (ORDER_SUMMARY_CONTAINER_TAGS.has(tag)) {
     const className =
       typeof element.className === "string" ? element.className : "";
     const idAttribute = element.id;
