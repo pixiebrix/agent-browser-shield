@@ -243,12 +243,6 @@ export default tseslint.config(
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.
-      // prefer-minimal-ternary: 2 of 3 sites rewrite cleanly, but
-      // confirmshame-sanitize's `instanceof`-narrowed ternary can't satisfy it
-      // — factoring the call (`(cond ? f : g)(x)`) widens the arg and breaks
-      // narrowing, while an `if`/`else` trips `prefer-ternary`. Would need a
-      // disable, so kept as warn; tracked in #279.
-      "unicorn/prefer-minimal-ternary": "warn",
       // Partially autofixable — fixable instances are corrected in-tree; the
       // remainder warn until handled in #279.
       "unicorn/no-unnecessary-global-this": "warn",

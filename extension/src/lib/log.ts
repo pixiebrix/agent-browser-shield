@@ -32,11 +32,7 @@ function emit(
     return;
   }
   const sink =
-    level === "warn"
-      ? console.warn
-      : level === "error"
-        ? console.error
-        : console.log;
+    console[level === "warn" ? "warn" : level === "error" ? "error" : "log"];
   if (details === undefined) {
     sink(prefix, message);
   } else {
