@@ -193,12 +193,7 @@ function referenceTextNodes(
     // Match the helpers' NON_CONTENT_TAGS pruning. The generator
     // doesn't emit script/style/noscript/template, so this is just
     // a defensive mirror.
-    if (
-      element.tagName === "SCRIPT" ||
-      element.tagName === "STYLE" ||
-      element.tagName === "NOSCRIPT" ||
-      element.tagName === "TEMPLATE"
-    ) {
+    if (["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"].includes(element.tagName)) {
       return;
     }
     for (const child of element.childNodes) {

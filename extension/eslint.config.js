@@ -204,7 +204,6 @@ export default tseslint.config(
       "unicorn/no-break-in-nested-loop": "warn",
       "unicorn/no-computed-property-existence-check": "warn",
       "unicorn/max-nested-calls": "warn",
-      "unicorn/prefer-includes-over-repeated-comparisons": "warn",
       "unicorn/prefer-number-coercion": "warn",
       "unicorn/no-unreadable-new-expression": "warn",
       "unicorn/require-array-sort-compare": "warn",

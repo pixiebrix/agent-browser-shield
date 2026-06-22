@@ -140,34 +140,33 @@ function matchLabel(text: string): LabelMatch | null {
   return null;
 }
 
+const INTERACTIVE_TAGS = new Set([
+  "button",
+  "select",
+  "option",
+  "input",
+  "textarea",
+  "label",
+]);
+const INTERACTIVE_ROLES = new Set([
+  "button",
+  "tab",
+  "menuitem",
+  "option",
+  "checkbox",
+  "radio",
+  "switch",
+]);
+
 // Interactive / form-control ancestors indicate the candidate is a filter
 // chip, sort option, or button — not an advertorial label. Stop walking
 // upward as soon as one of these is hit.
 function isInteractiveAncestor(element: Element): boolean {
-  const name = element.localName;
-  if (
-    name === "button" ||
-    name === "select" ||
-    name === "option" ||
-    name === "input" ||
-    name === "textarea" ||
-    name === "label"
-  ) {
+  if (INTERACTIVE_TAGS.has(element.localName)) {
     return true;
   }
   const role = element.getAttribute("role");
-  if (
-    role === "button" ||
-    role === "tab" ||
-    role === "menuitem" ||
-    role === "option" ||
-    role === "checkbox" ||
-    role === "radio" ||
-    role === "switch"
-  ) {
-    return true;
-  }
-  return false;
+  return role !== null && INTERACTIVE_ROLES.has(role);
 }
 
 // Navigation / landmark ancestors — labels here are nav links to the
@@ -182,6 +181,8 @@ function isNavigationAncestor(element: Element): boolean {
   return role === "navigation" || role === "banner";
 }
 
+const PAGE_BOUNDARY_TAGS = new Set(["main", "body", "html"]);
+
 // Boundary tags we treat as "you've walked too far". Once we reach <main>,
 // <body>, or <html>, the label isn't sitting on an article card.
 // `<section>` is intentionally not a boundary — it's the natural wrapper
@@ -189,8 +190,7 @@ function isNavigationAncestor(element: Element): boolean {
 // crossing it would let a label inside one card adopt sibling cards'
 // signals (see #228 — entire reddit feed replaced as one placeholder).
 function isPageBoundary(element: Element): boolean {
-  const name = element.localName;
-  if (name === "main" || name === "body" || name === "html") {
+  if (PAGE_BOUNDARY_TAGS.has(element.localName)) {
     return true;
   }
   const role = element.getAttribute("role");
