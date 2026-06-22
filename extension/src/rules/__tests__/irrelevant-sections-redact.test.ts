@@ -40,10 +40,8 @@ jest.mock("../../lib/llm-client");
 jest.mock("../../lib/availability", () => ({
   createApiKeyAvailability: () => ({
     get: () => Promise.resolve({ available: true }),
-    subscribe() {
-      return () => {
-        // noop
-      };
+    subscribe: () => () => {
+      // noop
     },
   }),
 }));
