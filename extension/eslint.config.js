@@ -208,7 +208,6 @@ export default tseslint.config(
       "unicorn/no-unreadable-new-expression": "warn",
       "unicorn/require-array-sort-compare": "warn",
       "unicorn/prefer-uint8array-base64": "warn",
-      "unicorn/no-declarations-before-early-exit": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.

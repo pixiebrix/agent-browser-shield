@@ -171,10 +171,6 @@ function flattenIssues(
 ): z.core.$ZodIssue[] {
   const out: z.core.$ZodIssue[] = [];
   for (const issue of issues) {
-    const prefixedIssue =
-      prefix.length === 0
-        ? issue
-        : { ...issue, path: [...prefix, ...issue.path] };
     if (
       issue.code === "invalid_union" &&
       "errors" in issue &&
@@ -199,6 +195,10 @@ function flattenIssues(
         continue;
       }
     }
+    const prefixedIssue =
+      prefix.length === 0
+        ? issue
+        : { ...issue, path: [...prefix, ...issue.path] };
     out.push(prefixedIssue);
   }
   return out;

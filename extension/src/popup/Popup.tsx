@@ -31,6 +31,9 @@ export function Popup() {
       });
   }, []);
 
+  // Hooks must run unconditionally before any early return, so this cannot
+  // move below the loading guard (would violate react-hooks/rules-of-hooks).
+  // eslint-disable-next-line unicorn/no-declarations-before-early-exit -- React hook ordering
   const trace = useTabDebugTrace(debugTraceEnabled ? activeTabId : null);
 
   if (enforcementEnabled === null || debugTraceEnabled === null) {
