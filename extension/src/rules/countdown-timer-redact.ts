@@ -63,10 +63,10 @@ const UNIT_MULTIPLIERS: ReadonlyArray<readonly [RegExp, number]> = [
 export function parseTotalSeconds(text: string): number | null {
   const colon = /(?<!\d)(\d{1,3}):([0-5]\d)(?::([0-5]\d))?(?!\d)/.exec(text);
   if (colon) {
-    const a = Number.parseInt(colon[1] ?? "0", 10);
-    const b = Number.parseInt(colon[2] ?? "0", 10);
+    const a = Number(colon[1] ?? "0");
+    const b = Number(colon[2] ?? "0");
     if (colon[3] !== undefined) {
-      const c = Number.parseInt(colon[3], 10);
+      const c = Number(colon[3]);
       return a * 3600 + b * 60 + c;
     }
     return a * 60 + b;
@@ -77,7 +77,7 @@ export function parseTotalSeconds(text: string): number | null {
   for (const [pattern, multiplier] of UNIT_MULTIPLIERS) {
     const match = text.match(pattern);
     if (match?.[1] !== undefined) {
-      total += Number.parseInt(match[1], 10) * multiplier;
+      total += Number(match[1]) * multiplier;
       found = true;
     }
   }

@@ -252,11 +252,18 @@ export default tseslint.config(
       //     (readdir results, computed diffs) get a `localeCompare` comparator.
       //   no-incorrect-query-selector — a deliberate `querySelectorAll("#id")`
       //     used to assert the element count.
+      //   prefer-number-coercion — `Number()` replaces `parseInt(x, 10)` /
+      //     `parseFloat(x)` only where the input is a bare numeric token (a
+      //     `\d`-anchored regex capture, `String(i)`); the two scoped
+      //     disables in `hidden-text-strip.ts` are where `parseFloat`'s
+      //     leading-numeric parse is load-bearing: unit-suffixed CSS
+      //     durations (`"0.5s"`) and a possibly-`""` computed `opacity`,
+      //     both of which `Number()` would mis-coerce.
+      "unicorn/prefer-number-coercion": "error",
 
       // Warn — ratchet to error in #279:
       "unicorn/prefer-scoped-selector": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
-      "unicorn/prefer-number-coercion": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.
