@@ -105,7 +105,7 @@ function checkHideable(element: Element): string | null {
   }
 
   // Sticky / fixed elements leave a layout hole behind if replaced.
-  const position = globalThis.getComputedStyle(element).position;
+  const position = getComputedStyle(element).position;
   if (position === "fixed" || position === "sticky") {
     return `position-${position}`;
   }

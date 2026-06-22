@@ -54,12 +54,12 @@ export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
       }
     };
     void poll();
-    const intervalId = globalThis.setInterval(() => {
+    const intervalId = setInterval(() => {
       void poll();
     }, POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
-      globalThis.clearInterval(intervalId);
+      clearInterval(intervalId);
     };
   }, [tabId]);
 

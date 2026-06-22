@@ -27,7 +27,7 @@ const NEWSLETTER_TEXT =
 const MIN_VIEWPORT_AREA_RATIO = 0.25;
 
 function looksLikeNewsletterModal(element: HTMLElement): boolean {
-  const style = globalThis.getComputedStyle(element);
+  const style = getComputedStyle(element);
   if (style.position !== "fixed" && style.position !== "sticky") {
     return false;
   }

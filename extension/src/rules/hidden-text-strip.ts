@@ -747,7 +747,7 @@ export function __resetColorProbeForTesting(): void {
 function effectiveBackgroundColor(element: Element): RGB | null {
   let current: Element | null = element;
   while (current) {
-    const style = globalThis.getComputedStyle(current);
+    const style = getComputedStyle(current);
     const bg = parseColor(style.backgroundColor);
     if (!bg) {
       return null;
@@ -832,7 +832,7 @@ function findCandidates(root: ParentNode): Candidate[] {
     if (!hasNonemptyText(element)) {
       continue;
     }
-    const style = globalThis.getComputedStyle(element);
+    const style = getComputedStyle(element);
     if (hasStructuralSrOnlyPattern(style)) {
       continue;
     }

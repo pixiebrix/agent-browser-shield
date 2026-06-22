@@ -242,10 +242,6 @@ export default tseslint.config(
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.
-      // Partially autofixable — fixable instances are corrected in-tree; the
-      // remainder warn until handled in #279.
-      "unicorn/no-unnecessary-global-this": "warn",
-
       // Allow underscore-prefixed unused parameters (e.g. `_root` for the
       // Rule#apply signature when a rule ignores the argument).
       "@typescript-eslint/no-unused-vars": [
@@ -280,6 +276,10 @@ export default tseslint.config(
       // Tests assign onto global objects to install mocks / stubs; the rule
       // stays an error everywhere else.
       "unicorn/no-global-object-property-assignment": "off",
+      // Tests reach for `globalThis.*` deliberately — overriding globals for
+      // mocks (`globalThis.MutationObserver = …`) and dispatching events /
+      // reading computed style against the jsdom global. Enforced in prod.
+      "unicorn/no-unnecessary-global-this": "off",
       // Jest matchers and mock patterns routinely pass methods by reference.
       "@typescript-eslint/unbound-method": "off",
 
