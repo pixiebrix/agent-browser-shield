@@ -49,7 +49,10 @@ function extractTopLevelRuleLabel(source: string): string | null {
 
 function collectCanaries(): Canary[] {
   const canaries: Canary[] = [];
-  for (const name of readdirSync(RULES_DIR).toSorted()) {
+  const ruleFiles = readdirSync(RULES_DIR).toSorted((a, b) =>
+    a.localeCompare(b),
+  );
+  for (const name of ruleFiles) {
     if (!name.endsWith(".ts")) {
       continue;
     }

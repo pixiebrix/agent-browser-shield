@@ -61,7 +61,7 @@ interface WarningBlock {
 function loadSites(): ParsedSiteFile[] {
   const entries = readdirSync(SITES_DIR)
     .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
-    .toSorted();
+    .toSorted((a, b) => a.localeCompare(b));
   const errors: string[] = [];
   const parsed: ParsedSiteFile[] = [];
 

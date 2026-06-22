@@ -213,11 +213,6 @@ export default tseslint.config(
       //     `if (states[rule.id])`, `targetMask[i]`), not existence checks —
       //     `Object.hasOwn` would change meaning, and the rule has no option to
       //     narrow scope.
-      //   require-array-sort-compare wants a compare fn on every `.sort()`, but
-      //     every site sorts strings (rule ids, permission names) where the
-      //     default lexicographic order is already correct.
-      //   no-incorrect-query-selector's only hit is `querySelectorAll("#id")`
-      //     used deliberately to count copies (`toHaveLength`).
       //   prefer-await flags the fire-and-forget `void promise.then/.catch()`
       //     idiom (our `no-floating-promises` convention) in void fns, React
       //     effects, event-listener/`setTimeout` callbacks, and classic-script
@@ -225,10 +220,18 @@ export default tseslint.config(
       //   no-top-level-side-effects's only hit is a deliberate, documented
       //     module-load `registerMethods({…})`.
       "unicorn/no-computed-property-existence-check": "off",
-      "unicorn/require-array-sort-compare": "off",
-      "unicorn/no-incorrect-query-selector": "off",
       "unicorn/prefer-await": "off",
       "unicorn/no-top-level-side-effects": "off",
+
+      // Enforced (recommended `error`). Dynamically-built arrays pass an
+      // explicit comparator; the only sites carrying a scoped `eslint-disable`
+      // are where the rule can't be satisfied cleanly:
+      //   require-array-sort-compare — compile-time-constant catalog lists
+      //     (`RULE_IDS`, `Object.keys(RULE_DEFAULTS)`, …) sorted only to
+      //     compare order-independently in tests; non-constant arrays
+      //     (readdir results, computed diffs) get a `localeCompare` comparator.
+      //   no-incorrect-query-selector — a deliberate `querySelectorAll("#id")`
+      //     used to assert the element count.
 
       // Warn — ratchet to error in #279:
       "unicorn/prefer-scoped-selector": "warn",

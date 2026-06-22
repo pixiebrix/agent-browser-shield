@@ -41,7 +41,9 @@ describe("rule catalog invariants", () => {
   });
 
   it("exposes the same id set via RULE_IDS as RULES", () => {
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     expect([...RULE_IDS].toSorted()).toEqual(
+      // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
       RULES.map((rule) => rule.id).toSorted(),
     );
   });
@@ -60,7 +62,9 @@ describe("rule catalog invariants", () => {
   // test catches the case where a rule is registered in `rules/index.ts`
   // without a corresponding metadata entry (or vice versa).
   it("declares a default for every rule and no extras", () => {
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     const defaultsKeys = Object.keys(RULE_DEFAULTS).toSorted();
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     expect(defaultsKeys).toEqual([...RULE_IDS].toSorted());
   });
 
@@ -94,6 +98,7 @@ describe("rule catalog invariants", () => {
       (id, index) => grouped.indexOf(id) !== index,
     );
     expect(duplicates).toEqual([]);
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     expect([...grouped].toSorted()).toEqual([...RULE_IDS].toSorted());
   });
 
@@ -108,7 +113,9 @@ describe("rule catalog invariants", () => {
   // so background.js purity isn't violated by the strings) — this check is
   // the canary for that drift.
   it("every rule has a popup label", () => {
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     const labelIds = Object.keys(RULE_LABELS).toSorted();
+    // eslint-disable-next-line unicorn/require-array-sort-compare -- string sort; default lexicographic order is intended
     expect(labelIds).toEqual([...RULE_IDS].toSorted());
     const blank = Object.entries(RULE_LABELS).filter(
       ([, value]) => typeof value !== "string" || value.length === 0,
