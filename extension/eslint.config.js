@@ -261,8 +261,25 @@ export default tseslint.config(
       //     both of which `Number()` would mis-coerce.
       "unicorn/prefer-number-coercion": "error",
 
+      // Off — the rule's `:scope` rewrite is unsound for this codebase's
+      // dominant receiver type. It assumes the query receiver is an Element,
+      // where `el.querySelectorAll("foo")` and `el.querySelectorAll(":scope
+      // foo")` are equivalent. But our shadow-piercing scanners take
+      // `root: ParentNode` and run against `Document`, `ShadowRoot`, and
+      // `DocumentFragment` receivers at runtime — where `:scope` is NOT
+      // equivalent: it matches nothing on a ShadowRoot/DocumentFragment
+      // (so `:scope *`/`:scope noscript` silently return empty) and excludes
+      // `<html>` on a Document. Mechanically applying the suggestion would
+      // silently disable defenses inside shadow DOM (noscript-strip,
+      // hidden-text-strip, unicode-invisibles-strip, trust-badge-annotate,
+      // closed-shadow-root-annotate, …). The Element-receiver sites where
+      // `:scope` *is* safe are all single-compound selectors with no
+      // descendant combinator, so there's no correctness upside there either.
+      // The rule can't narrow to Element receivers or combinator selectors,
+      // so enabling it means breaking shadow-DOM scans or scoped-disabling
+      // ~10+ correct sites. Not worth it. See #279.
+      "unicorn/prefer-scoped-selector": "off",
       // Warn — ratchet to error in #279:
-      "unicorn/prefer-scoped-selector": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
