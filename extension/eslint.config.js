@@ -205,15 +205,37 @@ export default tseslint.config(
       // hit would need a disable, so the rule is pure noise here. See #279.
       "unicorn/no-this-outside-of-class": "off",
 
+      // Off — fire only on intentional patterns in this repo, so they have no
+      // path to `error`; disabled rather than left as standing warning noise
+      // (investigated under #279):
+      //   no-computed-property-existence-check flags any `obj[dynamicKey]` in a
+      //     boolean position, but our hits are value reads (`!RULE_DEFAULTS[id]`,
+      //     `if (states[rule.id])`, `targetMask[i]`), not existence checks —
+      //     `Object.hasOwn` would change meaning, and the rule has no option to
+      //     narrow scope.
+      //   require-array-sort-compare wants a compare fn on every `.sort()`, but
+      //     every site sorts strings (rule ids, permission names) where the
+      //     default lexicographic order is already correct.
+      //   no-incorrect-query-selector's only hit is `querySelectorAll("#id")`
+      //     used deliberately to count copies (`toHaveLength`).
+      //   prefer-await flags the fire-and-forget `void promise.then/.catch()`
+      //     idiom (our `no-floating-promises` convention) in void fns, React
+      //     effects, event-listener/`setTimeout` callbacks, and classic-script
+      //     top-level — none of which can cleanly take `await`.
+      //   no-top-level-side-effects's only hit is a deliberate, documented
+      //     module-load `registerMethods({…})`.
+      "unicorn/no-computed-property-existence-check": "off",
+      "unicorn/require-array-sort-compare": "off",
+      "unicorn/no-incorrect-query-selector": "off",
+      "unicorn/prefer-await": "off",
+      "unicorn/no-top-level-side-effects": "off",
+
       // Warn — ratchet to error in #279:
       "unicorn/prefer-scoped-selector": "warn",
-      "unicorn/prefer-await": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
-      "unicorn/no-computed-property-existence-check": "warn",
       "unicorn/max-nested-calls": "warn",
       "unicorn/prefer-number-coercion": "warn",
       "unicorn/no-unreadable-new-expression": "warn",
-      "unicorn/require-array-sort-compare": "warn",
       "unicorn/prefer-uint8array-base64": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
@@ -224,8 +246,6 @@ export default tseslint.config(
       // narrowing, while an `if`/`else` trips `prefer-ternary`. Would need a
       // disable, so kept as warn; tracked in #279.
       "unicorn/prefer-minimal-ternary": "warn",
-      "unicorn/no-incorrect-query-selector": "warn",
-      "unicorn/no-top-level-side-effects": "warn",
       // Partially autofixable — fixable instances are corrected in-tree; the
       // remainder warn until handled in #279.
       "unicorn/no-unnecessary-global-this": "warn",
