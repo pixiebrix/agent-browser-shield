@@ -193,7 +193,7 @@ function parsePixelLength(value: string): number | null {
   if (!match?.[1]) {
     return null;
   }
-  return Number.parseFloat(match[1]);
+  return Number(match[1]);
 }
 
 // Pick the first non-empty value from a list of computed-style reads.
@@ -285,6 +285,11 @@ function hasNonzeroDuration(value: string | null | undefined): boolean {
   if (!value) {
     return false;
   }
+  // parseFloat, not Number: the computed `transition-duration` /
+  // `animation-duration` values carry a unit suffix (`"0.5s"`, `"150ms"`,
+  // or a comma-separated list), and `Number("0.5s")` is `NaN` — which would
+  // make every non-zero duration read as zero and silently disable the check.
+  // eslint-disable-next-line unicorn/prefer-number-coercion -- unit suffix; Number() would yield NaN
   const numeric = Number.parseFloat(value);
   return Number.isFinite(numeric) && numeric > 0;
 }
@@ -297,7 +302,7 @@ function shorthandHasNonzeroDuration(shorthand: string): boolean {
   DURATION_TOKEN_PATTERN.lastIndex = 0;
   let match: RegExpExecArray | null = DURATION_TOKEN_PATTERN.exec(shorthand);
   while (match !== null) {
-    if (Number.parseFloat(match[1] ?? "") > 0) {
+    if (Number(match[1] ?? "") > 0) {
       return true;
     }
     match = DURATION_TOKEN_PATTERN.exec(shorthand);
@@ -434,7 +439,7 @@ function isCollapsedTransform(transform: string): boolean {
   }
   const matrix = /^matrix\(([^)]+)\)$/.exec(transform);
   if (matrix?.[1]) {
-    const parts = matrix[1].split(",").map((s) => Number.parseFloat(s.trim()));
+    const parts = matrix[1].split(",").map((s) => Number(s.trim()));
     if (
       parts.length >= 4 &&
       (Math.abs(parts[0] ?? 1) < 1e-6 || Math.abs(parts[3] ?? 1) < 1e-6)
@@ -444,9 +449,7 @@ function isCollapsedTransform(transform: string): boolean {
   }
   const matrix3d = /^matrix3d\(([^)]+)\)$/.exec(transform);
   if (matrix3d?.[1]) {
-    const parts = matrix3d[1]
-      .split(",")
-      .map((s) => Number.parseFloat(s.trim()));
+    const parts = matrix3d[1].split(",").map((s) => Number(s.trim()));
     // matrix3d is column-major 4×4; scale-x lives at m11 (index 0),
     // scale-y at m22 (index 5).
     if (
@@ -479,6 +482,11 @@ function detectHiddenByCss(
     };
   }
   if (
+    // parseFloat, not Number: an unset computed `opacity` comes back as `""`
+    // (notably under jsdom), and `Number("") === 0` would flag every such
+    // element as opacity-0 and redact it. `parseFloat("")` is `NaN`, so only a
+    // genuine `0`/`0.0` opacity matches here.
+    // eslint-disable-next-line unicorn/prefer-number-coercion -- "" opacity; Number("") === 0 false-positives
     Number.parseFloat(style.opacity) === 0 &&
     !hasOpacityAnimationInFlight(style)
   ) {
@@ -651,10 +659,10 @@ function parseColorViaRegex(value: string): RGBA | null {
   if (!match?.[1] || !match[2] || !match[3]) {
     return null;
   }
-  const r = Number.parseFloat(match[1]);
-  const g = Number.parseFloat(match[2]);
-  const b = Number.parseFloat(match[3]);
-  const a = match[4] === undefined ? 1 : Number.parseFloat(match[4]);
+  const r = Number(match[1]);
+  const g = Number(match[2]);
+  const b = Number(match[3]);
+  const a = match[4] === undefined ? 1 : Number(match[4]);
   if ([r, g, b, a].some((n) => Number.isNaN(n))) {
     return null;
   }
