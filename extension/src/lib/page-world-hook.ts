@@ -109,7 +109,7 @@ export function createPageWorldHook(
     if (target === current) {
       return;
     }
-    await (target ? register() : unregister());
+    await (target ? register : unregister)();
   }
 
   return {

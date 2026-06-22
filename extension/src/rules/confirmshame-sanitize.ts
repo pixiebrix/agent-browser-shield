@@ -234,7 +234,12 @@ function neutralize(element: HTMLElement): boolean {
   return traceMutation(
     { ruleId: RULE_ID, kind: "sanitize", target: element },
     () => {
+      // Can't satisfy prefer-minimal-ternary here: factoring the call into
+      // `(cond ? rewriteInput : rewriteButtonLike)(element)` widens the
+      // argument back to Element and loses the `instanceof` narrowing that
+      // `rewriteInput` needs; an `if`/`else` would trip `prefer-ternary`.
       const changed =
+        // eslint-disable-next-line unicorn/prefer-minimal-ternary -- instanceof narrowing
         element instanceof HTMLInputElement
           ? rewriteInput(element)
           : rewriteButtonLike(element);
