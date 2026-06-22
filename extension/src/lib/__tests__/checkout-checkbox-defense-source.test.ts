@@ -182,7 +182,8 @@ describe("parity with the isolated-world rule", () => {
     const checkbox = document.querySelector("#t") as HTMLInputElement;
     checkbox.setAttribute(CLEARED_ATTR, "");
     const originalHref = location.href;
-    history.replaceState({}, "", new URL(url).pathname);
+    const parsed = new URL(url);
+    history.replaceState({}, "", parsed.pathname);
     try {
       checkbox.checked = true;
       expect(checkbox.checked).toBe(false);
@@ -204,7 +205,8 @@ describe("parity with the isolated-world rule", () => {
     const checkbox = document.querySelector("#t") as HTMLInputElement;
     checkbox.setAttribute(CLEARED_ATTR, "");
     const originalHref = location.href;
-    history.replaceState({}, "", new URL(url).pathname);
+    const parsed = new URL(url);
+    history.replaceState({}, "", parsed.pathname);
     try {
       checkbox.checked = true;
       expect(checkbox.checked).toBe(true);

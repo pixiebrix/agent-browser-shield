@@ -89,7 +89,8 @@ export interface SpoofTriggers {
 // the input on URL-parse failure (e.g. invalid characters).
 function toPunycodeHost(domain: string): string {
   try {
-    return new URL(`https://${domain}/`).hostname;
+    const parsed = new URL(`https://${domain}/`);
+    return parsed.hostname;
   } catch {
     return domain;
   }

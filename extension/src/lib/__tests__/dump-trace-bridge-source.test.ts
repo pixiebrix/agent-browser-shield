@@ -193,7 +193,8 @@ describe("installDumpTraceBridge", () => {
     // queued dispatch into this case); filter the snapshot to ids that
     // appear at least once, then confirm cardinality and uniqueness.
     expect(seen.length).toBeGreaterThanOrEqual(3);
-    expect(new Set(seen).size).toBe(seen.length);
+    const uniqueSeen = new Set(seen);
+    expect(uniqueSeen.size).toBe(seen.length);
     window.removeEventListener("message", interceptor);
   });
 });

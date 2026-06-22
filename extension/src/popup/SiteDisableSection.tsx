@@ -52,7 +52,8 @@ export function SiteDisableSection({
 
   let host = "this site";
   try {
-    host = new URL(activeTabUrl).host;
+    const parsed = new URL(activeTabUrl);
+    host = parsed.host;
   } catch {
     // Should not happen — isContentSchemeUrl already parsed it. Fall through
     // to the generic copy.

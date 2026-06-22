@@ -35,11 +35,10 @@ export function generateIcons(): number {
     }
     const svg = readFileSync(source);
     for (const size of sizes) {
-      const png = new Resvg(svg, {
+      const renderer = new Resvg(svg, {
         fitTo: { mode: "width", value: size },
-      })
-        .render()
-        .asPng();
+      });
+      const png = renderer.render().asPng();
       writeFileSync(join(ICONS, `${prefix}-${size}.png`), png);
       written += 1;
     }

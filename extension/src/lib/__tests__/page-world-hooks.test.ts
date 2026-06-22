@@ -32,7 +32,8 @@ jest.mock("abort-utils", () => ({
       // noop
     }
     get signal(): AbortSignal {
-      return new AbortController().signal;
+      const controller = new AbortController();
+      return controller.signal;
     }
   },
   onAbort: (): (() => void) => () => {

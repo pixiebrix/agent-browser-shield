@@ -89,7 +89,8 @@ export function useTabDebugTrace(tabId: number | null): TabDebugTrace {
     const blob = new Blob([payload], {
       type: "application/x-ndjson;charset=utf-8",
     });
-    const timestamp = new Date()
+    const now = new Date();
+    const timestamp = now
       .toISOString()
       .replaceAll(/[.:]/g, "-")
       .replaceAll("T", "_")
