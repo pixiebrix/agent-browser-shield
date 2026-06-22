@@ -169,10 +169,9 @@ const watcher = createSubtreeWatcher({
     const candidates: Candidate[] = [];
     for (const root of roots) {
       for (const candidate of findCandidates(root)) {
-        if (trackedElements.has(candidate.element)) {
-          continue;
+        if (!trackedElements.has(candidate.element)) {
+          candidates.push(candidate);
         }
-        candidates.push(candidate);
       }
     }
     scheduleReconcile(candidates);

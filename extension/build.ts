@@ -38,6 +38,33 @@ function parseDefaultsFlag(argv: readonly string[]): string | undefined {
   return undefined;
 }
 
+// Parse a dotenv-style file body for `name`, returning the (de-quoted) value
+// or undefined if the key isn't present.
+function findEnvValueInContent(
+  content: string,
+  name: string,
+): string | undefined {
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) {
+      continue;
+    }
+    const eq = line.indexOf("=");
+    if (eq === -1 || line.slice(0, eq).trim() !== name) {
+      continue;
+    }
+    let value = line.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    return value;
+  }
+  return undefined;
+}
+
 function readEnvValue(name: string): string {
   if (process.env[name]) {
     return process.env[name] ?? "";
@@ -49,25 +76,8 @@ function readEnvValue(name: string): string {
     } catch {
       continue;
     }
-    for (const rawLine of content.split("\n")) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith("#")) {
-        continue;
-      }
-      const eq = line.indexOf("=");
-      if (eq === -1) {
-        continue;
-      }
-      if (line.slice(0, eq).trim() !== name) {
-        continue;
-      }
-      let value = line.slice(eq + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
+    const value = findEnvValueInContent(content, name);
+    if (value !== undefined) {
       return value;
     }
   }

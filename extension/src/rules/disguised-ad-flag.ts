@@ -300,13 +300,9 @@ function isArticleShaped(element: Element, labelElement: Element): boolean {
     if (child.querySelector(HEADING_SELECTOR) !== null) {
       continue;
     }
-    let hasNestedCandidate = false;
-    for (const nested of child.querySelectorAll("p, span, div, li")) {
-      if (candidateSet.has(nested)) {
-        hasNestedCandidate = true;
-        break;
-      }
-    }
+    const hasNestedCandidate = [
+      ...child.querySelectorAll("p, span, div, li"),
+    ].some((nested) => candidateSet.has(nested));
     if (hasNestedCandidate) {
       continue;
     }

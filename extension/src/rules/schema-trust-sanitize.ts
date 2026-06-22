@@ -177,6 +177,20 @@ function microdataTypeNames(itemtype: string): string[] {
 // Find the descendant `[itemprop=NAME]` that belongs to this item's
 // scope — i.e. is not nested inside a deeper `[itemscope]` first. The
 // microdata spec scopes itemprops to their nearest ancestor itemscope.
+// Nearest ancestor with an `[itemscope]` attribute, or null if none.
+function nearestItemscope(element: Element): Element | null {
+  for (
+    let parent = element.parentElement;
+    parent !== null;
+    parent = parent.parentElement
+  ) {
+    if (parent.hasAttribute("itemscope")) {
+      return parent;
+    }
+  }
+  return null;
+}
+
 function scopedDescendants(scope: Element, itempropName: string): Element[] {
   const out: Element[] = [];
   // Caller is the rule's internal code path; itempropName is one of a
@@ -190,18 +204,9 @@ function scopedDescendants(scope: Element, itempropName: string): Element[] {
     if (candidate === scope) {
       continue;
     }
-    // Walk up to find the nearest itemscope ancestor; if it isn't us,
-    // the itemprop belongs to a nested scope.
-    let parent = candidate.parentElement;
-    let nearestScope: Element | null = null;
-    while (parent !== null) {
-      if (parent.hasAttribute("itemscope")) {
-        nearestScope = parent;
-        break;
-      }
-      parent = parent.parentElement;
-    }
-    if (nearestScope === scope) {
+    // The itemprop belongs to us only if our scope is its nearest
+    // itemscope ancestor; otherwise it's claimed by a deeper scope.
+    if (nearestItemscope(candidate) === scope) {
       out.push(candidate);
     }
   }

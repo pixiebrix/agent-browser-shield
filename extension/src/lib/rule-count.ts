@@ -114,27 +114,36 @@ function currentCounts(): Record<string, number> {
       if (matches.length > 0) {
         counts[ruleId] = (counts[ruleId] ?? 0) + matches.length;
       }
-      if (!traceCssMatches) {
-        continue;
-      }
-      for (const element of matches) {
-        if (reg.traced.has(element)) {
-          continue;
-        }
-        reg.traced.add(element);
-        const html = element.outerHTML;
-        recordRuleApplication({
-          ruleId,
-          kind: "hide",
-          selector: reg.union,
-          beforeHtml: html,
-          afterHtml: html,
-          cssOnly: true,
-        });
+      if (traceCssMatches) {
+        traceUnionMatches(ruleId, reg, matches);
       }
     }
   }
   return counts;
+}
+
+// Emit a debug-trace `rule-application` event per newly-matched element for a
+// CSS-first union. See currentCounts() for why these are `cssOnly`.
+function traceUnionMatches(
+  ruleId: string,
+  reg: CssFirstUnion,
+  matches: NodeListOf<Element>,
+): void {
+  for (const element of matches) {
+    if (reg.traced.has(element)) {
+      continue;
+    }
+    reg.traced.add(element);
+    const html = element.outerHTML;
+    recordRuleApplication({
+      ruleId,
+      kind: "hide",
+      selector: reg.union,
+      beforeHtml: html,
+      afterHtml: html,
+      cssOnly: true,
+    });
+  }
 }
 
 function shallowEqual(
