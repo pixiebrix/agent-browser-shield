@@ -44,8 +44,12 @@ function delta(before: readonly string[], after: readonly string[]): Delta {
   const beforeSet = new Set(before);
   const afterSet = new Set(after);
   return {
-    added: [...afterSet].filter((value) => !beforeSet.has(value)).toSorted(),
-    removed: [...beforeSet].filter((value) => !afterSet.has(value)).toSorted(),
+    added: [...afterSet]
+      .filter((value) => !beforeSet.has(value))
+      .toSorted((a, b) => a.localeCompare(b)),
+    removed: [...beforeSet]
+      .filter((value) => !afterSet.has(value))
+      .toSorted((a, b) => a.localeCompare(b)),
   };
 }
 

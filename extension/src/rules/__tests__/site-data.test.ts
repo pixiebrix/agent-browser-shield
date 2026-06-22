@@ -23,7 +23,7 @@ const SITES_DIR = join(__dirname, "..", "..", "..", "data", "sites");
 function listSiteFiles(): string[] {
   return readdirSync(SITES_DIR)
     .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"))
-    .toSorted();
+    .toSorted((a, b) => a.localeCompare(b));
 }
 
 describe("site data YAML files", () => {

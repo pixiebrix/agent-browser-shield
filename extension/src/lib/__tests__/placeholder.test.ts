@@ -122,6 +122,9 @@ describe("reveal click flow", () => {
     }).not.toThrow();
 
     // Still exactly one copy of the original target in the DOM.
+    // querySelectorAll (not getElementById) is deliberate: we're asserting the
+    // element *count*, which getElementById can't express.
+    // eslint-disable-next-line unicorn/no-incorrect-query-selector -- counting matches
     expect(document.querySelectorAll("#target")).toHaveLength(1);
   });
 
