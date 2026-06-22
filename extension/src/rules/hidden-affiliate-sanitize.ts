@@ -192,7 +192,8 @@ export function shouldClearName(name: string): boolean {
 
 function isKillSwitchedHost(href: string): boolean {
   try {
-    return HOST_KILL_SWITCH.has(new URL(href).hostname);
+    const parsed = new URL(href);
+    return HOST_KILL_SWITCH.has(parsed.hostname);
   } catch {
     return false;
   }

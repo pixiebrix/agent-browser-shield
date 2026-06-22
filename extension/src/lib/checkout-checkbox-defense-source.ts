@@ -55,7 +55,8 @@ export function installCheckoutCheckboxDefense(this: Window): void {
 
   function isCheckoutHref(href: string): boolean {
     try {
-      return CHECKOUT_PATH_RE.test(new URL(href).pathname);
+      const parsed = new URL(href);
+      return CHECKOUT_PATH_RE.test(parsed.pathname);
     } catch {
       return false;
     }

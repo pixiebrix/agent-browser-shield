@@ -238,7 +238,6 @@ export default tseslint.config(
       "unicorn/no-break-in-nested-loop": "warn",
       "unicorn/max-nested-calls": "warn",
       "unicorn/prefer-number-coercion": "warn",
-      "unicorn/no-unreadable-new-expression": "warn",
       "unicorn/prefer-uint8array-base64": "warn",
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately

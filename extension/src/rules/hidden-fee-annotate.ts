@@ -415,7 +415,8 @@ export function countPricedRows(container: Element): number {
 
 function isDenylistedHost(href: string): boolean {
   try {
-    return HOST_DENYLIST.has(new URL(href).hostname);
+    const parsed = new URL(href);
+    return HOST_DENYLIST.has(parsed.hostname);
   } catch {
     return false;
   }

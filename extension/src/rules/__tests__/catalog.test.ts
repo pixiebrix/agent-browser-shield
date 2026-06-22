@@ -16,7 +16,8 @@ jest.mock("abort-utils", () => ({
       // noop
     }
     get signal(): AbortSignal {
-      return new AbortController().signal;
+      const controller = new AbortController();
+      return controller.signal;
     }
   },
   onAbort: (): (() => void) => () => {
@@ -104,7 +105,8 @@ describe("rule catalog invariants", () => {
 
   it("group ids are unique", () => {
     const ids = RULE_GROUPS.map((group) => group.id);
-    expect(new Set(ids).size).toBe(ids.length);
+    const uniqueIds = new Set(ids);
+    expect(uniqueIds.size).toBe(ids.length);
   });
 
   // Popup's per-rule activity section looks up labels via RULE_LABELS. Keep
