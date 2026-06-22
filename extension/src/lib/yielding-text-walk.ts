@@ -66,7 +66,7 @@ export interface WalkTextNodesChunkedOptions {
 function defaultYieldStrategy(): Promise<void> {
   if (typeof requestIdleCallback === "function") {
     return new Promise<void>((resolve) => {
-      globalThis.requestIdleCallback(() => {
+      requestIdleCallback(() => {
         resolve();
       });
     });

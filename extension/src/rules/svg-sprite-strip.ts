@@ -65,7 +65,7 @@ function isHidden(svg: SVGSVGElement): boolean {
   if (svg.getAttribute("aria-hidden") === "true") {
     return true;
   }
-  const style = globalThis.getComputedStyle(svg);
+  const style = getComputedStyle(svg);
   if (style.display === "none") {
     return true;
   }

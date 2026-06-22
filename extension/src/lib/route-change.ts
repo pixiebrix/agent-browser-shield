@@ -56,8 +56,8 @@ function install(): void {
   if (navigation) {
     navigation.addEventListener("navigatesuccess", emit);
   }
-  globalThis.addEventListener("popstate", emit);
-  globalThis.addEventListener("hashchange", emit);
+  addEventListener("popstate", emit);
+  addEventListener("hashchange", emit);
 }
 
 // Listener is called once per detected URL change. The same listener
@@ -81,8 +81,8 @@ export function __resetRouteChangeForTesting(): void {
     if (navigation) {
       navigation.removeEventListener("navigatesuccess", emit);
     }
-    globalThis.removeEventListener("popstate", emit);
-    globalThis.removeEventListener("hashchange", emit);
+    removeEventListener("popstate", emit);
+    removeEventListener("hashchange", emit);
   }
   listeners.clear();
   installed = false;

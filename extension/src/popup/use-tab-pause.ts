@@ -55,11 +55,11 @@ export function useTabPause(tabId: number | null): TabPauseState {
   }, [tabId]);
 
   useEffect(() => {
-    const intervalId = globalThis.setInterval(() => {
+    const intervalId = setInterval(() => {
       setNow(Date.now());
     }, TICK_INTERVAL_MS);
     return () => {
-      globalThis.clearInterval(intervalId);
+      clearInterval(intervalId);
     };
   }, []);
 

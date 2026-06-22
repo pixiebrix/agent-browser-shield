@@ -296,7 +296,6 @@ describe("findOrderSummaryAncestor", () => {
     // the labelledby resolution path can execute. Identity escape is fine
     // here — the test only inserts known-safe id values. Read via `globalThis`
     // so the absent global reads as `undefined` instead of throwing.
-    // eslint-disable-next-line unicorn/no-unnecessary-global-this -- global may be undefined here
     const previousCss = (globalThis as { CSS?: unknown }).CSS;
     (globalThis as { CSS?: { escape: (input: string) => string } }).CSS = {
       escape: (input: string) => input,

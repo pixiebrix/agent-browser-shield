@@ -71,7 +71,7 @@ export function pickPaletteFromAncestor(
 ): PlaceholderPalette {
   let node: Element | null = start;
   while (node) {
-    const bg = globalThis.getComputedStyle(node).backgroundColor;
+    const bg = getComputedStyle(node).backgroundColor;
     const brightness = parseBackgroundBrightness(bg);
     if (brightness !== null) {
       return brightness < 0.5 ? "dark" : "light";
@@ -208,7 +208,7 @@ export function replaceWithBlockPlaceholder(
   label: string,
 ): HTMLDivElement {
   const rect = element.getBoundingClientRect();
-  const computed = globalThis.getComputedStyle(element);
+  const computed = getComputedStyle(element);
 
   // Outer container is a non-interactive <div> so the inner reveal button can
   // use position: sticky (which doesn't work as a child of <button>). Click

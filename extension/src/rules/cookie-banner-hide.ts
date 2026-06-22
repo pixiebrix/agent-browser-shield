@@ -21,7 +21,7 @@ function isOverlay(element: HTMLElement): boolean {
   if (role && OVERLAY_ROLES.has(role)) {
     return true;
   }
-  const position = globalThis.getComputedStyle(element).position;
+  const position = getComputedStyle(element).position;
   return OVERLAY_POSITIONS.has(position);
 }
 
