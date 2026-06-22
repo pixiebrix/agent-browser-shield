@@ -212,9 +212,7 @@ export default tseslint.config(
       "unicorn/no-declarations-before-early-exit": "warn",
       "unicorn/no-global-object-property-assignment": "warn",
       "unicorn/prefer-minimal-ternary": "warn",
-      "unicorn/prefer-number-is-safe-integer": "warn",
       "unicorn/prefer-iterator-to-array": "warn",
-      "unicorn/better-dom-traversing": "warn",
       "unicorn/no-incorrect-query-selector": "warn",
       "unicorn/no-top-level-side-effects": "warn",
       // Partially autofixable — fixable instances are corrected in-tree; the

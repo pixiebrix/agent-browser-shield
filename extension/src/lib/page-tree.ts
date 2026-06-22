@@ -263,9 +263,9 @@ function getElementTree(element: HTMLElement): Node | undefined {
     }
     if (
       compressedElement.childNodes.length === 1 &&
-      compressedElement.childNodes[0]?.nodeType !== Node.TEXT_NODE
+      compressedElement.firstChild?.nodeType !== Node.TEXT_NODE
     ) {
-      return compressedElement.childNodes[0];
+      return compressedElement.firstChild ?? undefined;
     }
   }
 
