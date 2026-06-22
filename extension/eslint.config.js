@@ -197,10 +197,17 @@ export default tseslint.config(
       "unicorn/prefer-https": "off",
       "unicorn/require-css-escape": "off",
 
+      // Off — fires only on legitimate, unavoidable `this`-outside-a-class:
+      // native-prototype monkeypatches (`Element.prototype.attachShadow =
+      // function (this: Element) {…}`), `defineProperty` get/set accessors,
+      // page-world `executeScript` entry fns (`this: Window`), and
+      // webext-messaging handlers — none rewritable as class methods. Every
+      // hit would need a disable, so the rule is pure noise here. See #279.
+      "unicorn/no-this-outside-of-class": "off",
+
       // Warn — ratchet to error in #279:
       "unicorn/prefer-scoped-selector": "warn",
       "unicorn/prefer-await": "warn",
-      "unicorn/no-this-outside-of-class": "warn",
       "unicorn/no-break-in-nested-loop": "warn",
       "unicorn/no-computed-property-existence-check": "warn",
       "unicorn/max-nested-calls": "warn",
