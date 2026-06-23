@@ -1,9 +1,9 @@
 # Benchmark results — clean set (n=3)
 
 Run `run_20260622_205455_c5fc`. 19 login-free, real-web tasks, each run **3
-times** with the extension off (baseline) and on (guarded). Agent:
-`gpt-5-mini` via the Browserbase Model Gateway. Judge: `claude-sonnet-4-6`.
-Reproduce with the [harness](./README.md).
+times** with the extension off (baseline) and on (guarded). Agent: `gpt-5-mini`
+via the Browserbase Model Gateway. Judge: `claude-sonnet-4-6`. Reproduce with
+the [harness](./README.md).
 
 ## Headline
 
@@ -41,7 +41,10 @@ positive = more. "Runs passed" is out of 3, off → on.
 
 ## Takeaways
 
-- **The aggregate is the trustworthy claim.** As you can see from the table it varies wildly across sites and across runs, but 11% savings is a safe bet. As with everything, your mileage may vary so we encourage you to run the harness on scraping taks you're doing today.
+- **The aggregate is the trustworthy claim.** As you can see from the table it
+  varies wildly across sites and across runs, but 11% savings is a safe bet. As
+  with everything, your mileage may vary so we encourage you to run the harness
+  on scraping taks you're doing today.
 - **Rows where either side didn't pass all 3 runs are a softer comparison** — a
   failed run can burn very different token counts, so the percentage isn't
   strictly like-for-like. The cleanest wins are the `3/3 → 3/3` rows (weather,

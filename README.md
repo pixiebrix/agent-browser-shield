@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD041 -->
+
 <p align="center">
   <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png" width="84" alt="Agent Browser Shield">
 </p>
@@ -39,7 +41,7 @@
 
 > **Alpha prototype:** rulesets may change without notice
 
----
+______________________________________________________________________
 
 **The safety layer for the agentic web.** Agent Browser Shield sits between a
 browser-use AI agent and the web pages it visits, cleaning and securing each
@@ -68,7 +70,7 @@ the page, not the traps.
 
 Same agent, same tasks, extension off vs on:
 
-```
+```text
 ┌────────────────────────────────────────────────────┐
 │  TOKENS SAVED (avg)   ██░░░░░░░░  ~11% (up to 62%) │
 │  TASK SUCCESS         █████████░  81% → 91%        │
@@ -77,7 +79,8 @@ Same agent, same tasks, extension off vs on:
 └────────────────────────────────────────────────────┘
 ```
 
-Token savings climb much higher on noisy pages. Here are some pages we've seen strong token improvements with Agent Browser Shield vs without:
+Token savings climb much higher on noisy pages. Here are some pages we've seen
+strong token improvements with Agent Browser Shield vs without:
 
 | Page                  | Tokens vs baseline |
 | --------------------- | ------------------ |
@@ -88,13 +91,16 @@ Token savings climb much higher on noisy pages. Here are some pages we've seen s
 | Amazon product search | **−19%**           |
 
 Overall it's ~11% fewer tokens and task success from 81% to 91%. We keep the
-misses in the data too, a few pages regress under the shield. See the [full per-task results](./benchmark/RESULTS.md) for every site and the [harness docs](./benchmark) for the method.
+misses in the data too, a few pages regress under the shield. See the
+[full per-task results](./benchmark/RESULTS.md) for every site and the
+[harness docs](./benchmark) for the method.
 
 ## Measure it on your own sites
 
 Our ~11% is an average across 19 tasks. **Your** number depends entirely on what
 your agent visits: noisy pages save far more (weather.gov −62%), lean pages save
-little, and a few regress (we're honest!). So don't take our word for it, get yours.
+little, and a few regress (we're honest!). So don't take our word for it, get
+yours.
 
 Point the harness at your own task list. It runs the same off-vs-on comparison
 and hands back a report with your real token and accuracy deltas:
