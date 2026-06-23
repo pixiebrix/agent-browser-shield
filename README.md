@@ -1,45 +1,147 @@
-# agent-browser-shield
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png" width="84" alt="Agent Browser Shield">
+</p>
 
-[![CI](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml/badge.svg)](https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/pixiebrix/agent-browser-shield)](https://github.com/pixiebrix/agent-browser-shield/releases/latest)
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/gnejacdioaelglahihpagpfjpddpnamd?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)
-[![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange)](./LICENSE)
+<h1 align="center">Agent Browser Shield</h1>
+
+<p align="center">
+  <em>Your agent sees the page, not the traps.</em>
+</p>
+
+<p align="center">
+  <a href="https://github.com/pixiebrix/agent-browser-shield/commits/main"><img src="https://img.shields.io/github/last-commit/pixiebrix/agent-browser-shield?style=flat-square&label=last%20commit" alt="Last commit"></a>
+  <a href="https://github.com/pixiebrix/agent-browser-shield/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/pixiebrix/agent-browser-shield/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+  <a href="https://github.com/pixiebrix/agent-browser-shield/releases/latest"><img src="https://img.shields.io/github/v/release/pixiebrix/agent-browser-shield?style=flat-square&label=release" alt="Latest release"></a>
+  <a href="https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd"><img src="https://img.shields.io/chrome-web-store/v/gnejacdioaelglahihpagpfjpddpnamd?style=flat-square&label=Chrome%20Web%20Store" alt="Chrome Web Store"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-orange?style=flat-square" alt="License"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Chromium-supported-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chromium">
+  <img src="https://img.shields.io/badge/Chrome%20Extension-MV3-555?style=flat-square" alt="Chrome Extension MV3">
+  <img src="https://img.shields.io/badge/works%20with-browser--use-1f1f1f?style=flat-square" alt="Works with browser-use">
+  <img src="https://img.shields.io/badge/works%20with-Browserbase-1f1f1f?style=flat-square" alt="Works with Browserbase">
+</p>
+
+<p align="center">
+  <strong>~11% fewer tokens &middot; prompt injection blocked &middot; PII masked</strong><br>
+  <sub>gpt-5-mini via Browserbase, 19 real-web tasks, 3 runs each. A directional signal, not a published paper. Full method and task list in <a href="./benchmark">benchmark/</a>.</sub>
+</p>
+
+<p align="center">
+  <a href="#what-it-does">What it does</a> &middot;
+  <a href="#benchmarks">Benchmarks</a> &middot;
+  <a href="#measure-it-on-your-own-sites">Test your sites</a> &middot;
+  <a href="#try-it">Install</a> &middot;
+  <a href="https://shield-dark-pattern-demo.vercel.app/">Live demo</a> &middot;
+  <a href="https://pixiebrix.github.io/agent-browser-shield/">Docs</a>
+</p>
 
 > **Alpha prototype:** rulesets may change without notice
 
-Agent Browser Shield is a Chromium extension for making agentic browser-use more
-effective and secure:
+---
 
-- **Token efficiency:** strip page chrome (footers, cookie banners, chat
-  widgets, sponsored content) so agents spend tokens on the user's task.
-- **Security & compliance:** mask PII and credentials before they reach the
-  model, and suppress hidden text, HTML comments, and user-generated content
+**The safety layer for the agentic web.** Agent Browser Shield sits between a
+browser-use AI agent and the web pages it visits, cleaning and securing each
+page before it ever reaches the model.
+
+AI agents are powerful but blind to manipulation. They burn tokens reading
+cookie banners and ad rails, get steered by prompt injection hidden in invisible
+text, and chase dark patterns instead of the user's task. Agent Browser Shield
+strips the noise, masks sensitive data, and blocks injection, so your agent sees
+the page, not the traps.
+
+![Agent task with and without agent-browser-shield](./images/demo.webp)
+
+## What it does
+
+- **Token efficiency.** Strips page chrome (footers, cookie banners, chat
+  widgets, sponsored content) so the agent spends its context on the user's
+  task.
+- **Security and compliance.** Masks PII and credentials before they reach the
+  model, and suppresses hidden text, HTML comments, and user-generated content
   that could carry prompt-injection payloads.
-- **Accuracy:** block manipulative dark patterns and hide engagement rails and
-  other content that could distract the model from the user's task.
+- **Accuracy.** Blocks manipulative dark patterns and hides engagement rails
+  that distract the model from the user's task.
+
+## Benchmarks
+
+Same agent, same tasks, extension off vs on:
+
+```
+┌────────────────────────────────────────────────────┐
+│  TOKENS SAVED (avg)   ██░░░░░░░░  ~11% (up to 62%) │
+│  TASK SUCCESS         █████████░  81% → 91%        │
+│  PROMPT INJECTION     ██████████  blocked          │
+│  PII / CREDENTIALS    ██████████  masked           │
+└────────────────────────────────────────────────────┘
+```
+
+Token savings climb much higher on noisy pages. Here are some pages we've seen strong token improvements with Agent Browser Shield vs without:
+
+| Page                  | Tokens vs baseline |
+| --------------------- | ------------------ |
+| weather.gov forecast  | **−62%**           |
+| GitHub issue search   | **−42%**           |
+| MDN docs              | **−26%**           |
+| Python docs           | **−26%**           |
+| Amazon product search | **−19%**           |
+
+Overall it's ~11% fewer tokens and task success from 81% to 91%. We keep the
+misses in the data too, a few pages regress under the shield. See the [full per-task results](./benchmark/RESULTS.md) for every site and the [harness docs](./benchmark) for the method.
+
+## Measure it on your own sites
+
+Our ~11% is an average across 19 tasks. **Your** number depends entirely on what
+your agent visits: noisy pages save far more (weather.gov −62%), lean pages save
+little, and a few regress (we're honest!). So don't take our word for it, get yours.
+
+Point the harness at your own task list. It runs the same off-vs-on comparison
+and hands back a report with your real token and accuracy deltas:
+
+```sh
+# add the URLs + tasks your agent actually runs to a CSV, then:
+uv run scripts/benchmark_run.py \
+    --scenarios benchmark/scenarios.example.yaml \
+    --tasks your-tasks.csv -n 3
+uv run scripts/benchmark_report.py --run-id <run_id> --open
+```
+
+It runs on your own Browserbase account, nothing leaves your machine but the
+agent traffic you already send. Full guide in [`benchmark/`](./benchmark).
+
+## Try it
 
 **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/agent-browser-shield/gnejacdioaelglahihpagpfjpddpnamd)**
-— works on any Chromium-based browser (Chrome, Edge, Brave, Arc, Opera). For
-agent runtimes that need an unpacked extension or a ZIP, see the
+works on any Chromium-based browser (Chrome, Edge, Brave, Arc, Opera). For agent
+runtimes that need an unpacked extension or a ZIP, see the
 [install guide](https://pixiebrix.github.io/agent-browser-shield/install/).
 
-**[Documentation](https://pixiebrix.github.io/agent-browser-shield/)** — install
-guide, rule reference, and configuration.
-
-**[Live demo site](https://shield-dark-pattern-demo.vercel.app/)** — RiverMart,
-a mock e-commerce SPA that exercises every rule. Load it with and without the
+**[Live demo site](https://shield-dark-pattern-demo.vercel.app/):** RiverMart, a
+mock e-commerce SPA that exercises every rule. Load it with and without the
 extension to see the before/after difference.
 
-**[ClawHub skill](https://clawhub.ai/pixiebrix/agent-browser-shield)** — for
+**[Documentation](https://pixiebrix.github.io/agent-browser-shield/):** install
+guide, rule reference, and configuration.
+
+**[ClawHub skill](https://clawhub.ai/pixiebrix/agent-browser-shield):** for
 skill-aware [OpenClaw](https://openclaw.ai) agents, install with
 `clawhub install agent-browser-shield` to load the install paths and runtime
 behavior contract.
 
-![Agent task with and without agent-browser-shield](./images/demo.webp)
-
 | Before                                              | After                                             |
 | --------------------------------------------------- | ------------------------------------------------- |
 | ![Before agent-browser-shield](./images/before.png) | ![After agent-browser-shield](./images/after.png) |
+
+## Where this is going
+
+The agentic web is new, and its safety layer isn't solved yet. We're building it
+in the open: more rules, benchmarks across more models and sites, and a runtime
+contract agents can rely on.
+
+If that's a problem you care about, star the repo to follow along, and
+[open an issue](https://github.com/pixiebrix/agent-browser-shield/issues) with
+the sites or attacks you want covered.
 
 ## Prerequisites
 
