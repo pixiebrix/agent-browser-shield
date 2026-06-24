@@ -27,7 +27,7 @@
 
 <p align="center">
   <strong>~11% fewer tokens &middot; prompt injection blocked &middot; PII masked</strong><br>
-  <sub>gpt-5-mini via Browserbase, 19 real-web tasks, 3 runs each. A directional signal, not a published paper. Full method and task list in <a href="./benchmark">benchmark/</a>.</sub>
+  <sub>The token number is measured: gpt-5-mini via Browserbase, 19 real-web tasks, 3 runs each. Injection blocking and PII masking are built-in protections, not part of that token benchmark. A directional signal, not a published paper. Full method and task list in <a href="./benchmark">benchmark/</a>.</sub>
 </p>
 
 <p align="center">
@@ -71,16 +71,24 @@ the page, not the traps.
 Same agent, same tasks, extension off vs on:
 
 ```text
-┌────────────────────────────────────────────────────┐
-│  TOKENS SAVED (avg)   ██░░░░░░░░  ~11% (up to 62%) │
-│  TASK SUCCESS         █████████░  81% → 91%        │
-│  PROMPT INJECTION     ██████████  blocked          │
-│  PII / CREDENTIALS    ██████████  masked           │
-└────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  MEASURED   gpt-5-mini, 19 real-web tasks, 3 runs each  │
+│                                                         │
+│  TOKENS SAVED (avg)   ██░░░░░░░░  ~11%                  │
+│  TASK SUCCESS         █████████░  81% → 91%             │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│  BUILT-IN  (not part of this token benchmark)           │
+│  PROMPT INJECTION     blocked                           │
+│  PII / CREDENTIALS    masked                            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Token savings climb much higher on noisy pages. Here are some pages we've seen
-strong token improvements with Agent Browser Shield vs without:
+The injection and PII rows are protections the shield always applies, not
+outcomes of this token benchmark (the 19 tasks are all scraping tasks). Token
+savings climb much higher on noisy pages, our single biggest drop was −71% on
+GitHub's trending feed. Here are some clean, repeatable wins, every run passed
+both with and without the shield:
 
 | Page                  | Tokens vs baseline |
 | --------------------- | ------------------ |
