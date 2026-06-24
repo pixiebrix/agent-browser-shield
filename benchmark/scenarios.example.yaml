@@ -52,7 +52,7 @@
 
 defaults:
   max_steps: 15
-  judge_model: openai/gpt-4o-mini
+  judge_model: anthropic/claude-sonnet-4-6
   judge_temperature: 0
   repetitions: 3
 
