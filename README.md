@@ -41,7 +41,7 @@
 
 > **Alpha prototype:** rulesets may change without notice
 
----
+______________________________________________________________________
 
 **The safety layer for the agentic web.** Agent Browser Shield sits between a
 browser-use AI agent and the web pages it visits, cleaning and securing each
