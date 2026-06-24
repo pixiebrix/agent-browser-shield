@@ -41,7 +41,7 @@
 
 > **Alpha prototype:** rulesets may change without notice
 
-______________________________________________________________________
+---
 
 **The safety layer for the agentic web.** Agent Browser Shield sits between a
 browser-use AI agent and the web pages it visits, cleaning and securing each
@@ -76,11 +76,6 @@ Same agent, same tasks, extension off vs on:
 │                                                         │
 │  TOKENS SAVED (avg)   ██░░░░░░░░  ~11%                  │
 │  TASK SUCCESS         █████████░  81% → 91%             │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│  BUILT-IN  (not part of this token benchmark)           │
-│  PROMPT INJECTION     blocked                           │
-│  PII / CREDENTIALS    masked                            │
 └─────────────────────────────────────────────────────────┘
 ```
 
