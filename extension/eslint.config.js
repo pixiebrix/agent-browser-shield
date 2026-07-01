@@ -120,7 +120,8 @@ export default tseslint.config(
       "unicorn/no-array-callback-reference": "off",
       "unicorn/no-nested-ternary": "off",
 
-      "unicorn/prevent-abbreviations": [
+      // Renamed from `prevent-abbreviations` in unicorn v68 (same options).
+      "unicorn/name-replacements": [
         "error",
         {
           replacements: {
@@ -139,6 +140,14 @@ export default tseslint.config(
             // Common file/module naming convention (`dom-utils.ts`, etc.).
             utils: false,
             util: false,
+            // Added to unicorn's defaults in v68; opted out to preserve prior
+            // behavior. `proto` is our prototype-capture shorthand in DOM
+            // patching; `app`/`application(s)` are used interchangeably in
+            // rule-application naming.
+            proto: false,
+            app: false,
+            application: false,
+            applications: false,
             // Loop counters and map/filter callback params. The rule is
             // not scope-aware, so these are allowed globally.
             i: false,
@@ -288,6 +297,42 @@ export default tseslint.config(
       // can't be narrowed to exclude `switch` or the remaining test/mock
       // sites, so leaving it on would be all churn for no further upside.
       "unicorn/no-break-in-nested-loop": "off",
+
+      // eslint-plugin-unicorn 68 turned on another batch of recommended rules
+      // (and renamed `prevent-abbreviations` → `name-replacements`, handled
+      // above). The cleanly autofixable ones (prefer-boolean-return,
+      // prefer-continue, prefer-else-if, prefer-hoisting-branch-code,
+      // prefer-promise-with-resolvers) are fixed in-tree and stay at their
+      // recommended `error`. The five below fire only on intentional patterns
+      // or false positives, so they have no path to `error`; disabled rather
+      // than left as warning noise, investigated under #279:
+      //   consistent-boolean-name flags ~130 booleans without an is/has/…
+      //     prefix. Its autofix only reaches ~half (renames that don't collide)
+      //     and coins awkward compound names (`isMockHasBuiltInKey`); the rest
+      //     would need a mass manual rename across ~50 files. A rename-only
+      //     ratchet, not a bump concern.
+      //   no-top-level-assignment-in-function flags our module-singleton
+      //     lazy-init idiom — a top-level `let` (unsubscribe handle,
+      //     `listenerAttached` guard) assigned from inside the init/teardown
+      //     function that owns it. Rewriting to avoid the pattern is the
+      //     opposite of clearer here.
+      //   no-non-function-verb-prefix fires on test spies named after the DOM
+      //     method they wrap (`getAttributeSpy`, `setTimeoutSpy`, `setHtmlCount`)
+      //     and the `removeEntirely` rule-option flag — all intentional.
+      //   no-nonstandard-builtin-properties flags `Symbol.dispose`, which is
+      //     standard as of explicit resource management (TS 5.2 / ES2024) and
+      //     present in our Chrome/Node targets — the rule's builtin list is just
+      //     stale.
+      //   no-unreadable-for-of-expression fires on idiomatic function-call /
+      //     `Object.values(…)` / `?? []` iterables in `for…of` headers
+      //     (`for (const x of Object.values(fn(id)))`), which read fine; hoisting
+      //     them to temporaries would be pure churn.
+      "unicorn/consistent-boolean-name": "off",
+      "unicorn/no-top-level-assignment-in-function": "off",
+      "unicorn/no-non-function-verb-prefix": "off",
+      "unicorn/no-nonstandard-builtin-properties": "off",
+      "unicorn/no-unreadable-for-of-expression": "off",
+
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.

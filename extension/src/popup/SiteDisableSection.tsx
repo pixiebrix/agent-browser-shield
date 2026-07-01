@@ -61,13 +61,11 @@ export function SiteDisableSection({
 
   const handleClick = async (): Promise<void> => {
     const current = await siteDenylistStorage.get();
-    if (denylisted) {
-      const { patterns } = removeMatchingPatterns(activeTabUrl, current);
-      await siteDenylistStorage.set(patterns);
-    } else {
-      const { patterns } = addHostPattern(activeTabUrl, current);
-      await siteDenylistStorage.set(patterns);
-    }
+    const { patterns } = (denylisted ? removeMatchingPatterns : addHostPattern)(
+      activeTabUrl,
+      current,
+    );
+    await siteDenylistStorage.set(patterns);
   };
 
   return (

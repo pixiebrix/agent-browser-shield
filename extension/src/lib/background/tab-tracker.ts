@@ -248,12 +248,14 @@ export function createTabTracker(): TabTracker {
 
   function clearDetectionsOfKind(kind: DetectionKind): void {
     for (const [tabId, entry] of tabDetections) {
-      if (entry.delete(kind)) {
-        if (entry.size === 0) {
-          tabDetections.delete(tabId);
-        }
-        refreshBadge(tabId);
+      if (!entry.delete(kind)) {
+        continue;
       }
+
+      if (entry.size === 0) {
+        tabDetections.delete(tabId);
+      }
+      refreshBadge(tabId);
     }
   }
 

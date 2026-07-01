@@ -284,10 +284,7 @@ function isOrderSummaryContainer(element: Element): boolean {
   }
   // schema.org Order microdata.
   const itemtype = element.getAttribute("itemtype");
-  if (itemtype !== null && /\bOrder\b/i.test(itemtype)) {
-    return true;
-  }
-  return false;
+  return itemtype !== null && /\bOrder\b/i.test(itemtype);
 }
 
 export function findOrderSummaryAncestor(label: Element): HTMLElement | null {
@@ -443,10 +440,7 @@ function isCandidateSkipped(element: HTMLElement): boolean {
   // If a descendant has already been flagged (annotated *or* considered
   // and rejected), the matching text lives there — re-evaluating an
   // ancestor with inherited textContent would be redundant.
-  if (element.querySelector(`[${FLAGGED_ATTR}]`)) {
-    return true;
-  }
-  return false;
+  return Boolean(element.querySelector(`[${FLAGGED_ATTR}]`));
 }
 
 function collectCandidates(root: ParentNode): Candidate[] {

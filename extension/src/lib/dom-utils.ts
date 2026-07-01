@@ -322,10 +322,7 @@ export function collectTextNodesWithInlineGroups(
       return false;
     }
     const value = text.nodeValue;
-    if (!value || value.length < minLength) {
-      return false;
-    }
-    return true;
+    return !(!value || value.length < minLength);
   }
 
   function visit(node: Node): void {

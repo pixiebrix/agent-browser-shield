@@ -50,10 +50,7 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
     return false;
   }
 
-  if (!element.querySelector('input[type="email"]')) {
-    return false;
-  }
-  return true;
+  return !!element.querySelector('input[type="email"]');
 }
 
 const { rule } = createSelectorHideRule({

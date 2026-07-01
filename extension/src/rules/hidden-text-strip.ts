@@ -225,10 +225,7 @@ function isClippedToZero(style: CSSStyleDeclaration): boolean {
   if (clip === "rect(0px 0px 0px 0px)") {
     return true;
   }
-  if (clip === "rect(0, 0, 0, 0)") {
-    return true;
-  }
-  return false;
+  return clip === "rect(0, 0, 0, 0)";
 }
 
 interface MatchDetail {
@@ -261,10 +258,7 @@ function hasStructuralSrOnlyPattern(style: CSSStyleDeclaration): boolean {
     return false;
   }
   const height = parsePixelLength(style.height);
-  if (height === null || height > SR_ONLY_MAX_SIZE_PX) {
-    return false;
-  }
-  return true;
+  return !(height === null || height > SR_ONLY_MAX_SIZE_PX);
 }
 
 // True if the element's opacity is currently being animated — either via a
