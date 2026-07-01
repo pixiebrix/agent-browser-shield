@@ -303,14 +303,22 @@ export default tseslint.config(
       // above). The cleanly autofixable ones (prefer-boolean-return,
       // prefer-continue, prefer-else-if, prefer-hoisting-branch-code,
       // prefer-promise-with-resolvers) are fixed in-tree and stay at their
-      // recommended `error`. The five below fire only on intentional patterns
-      // or false positives, so they have no path to `error`; disabled rather
-      // than left as warning noise, investigated under #279:
-      //   consistent-boolean-name flags ~130 booleans without an is/has/…
-      //     prefix. Its autofix only reaches ~half (renames that don't collide)
-      //     and coins awkward compound names (`isMockHasBuiltInKey`); the rest
-      //     would need a mass manual rename across ~50 files. A rename-only
-      //     ratchet, not a bump concern.
+      // recommended `error`. The five below fire only on intentional patterns,
+      // false positives, or established conventions, so they have no clean path
+      // to `error`; disabled rather than left as warning noise, investigated
+      // under #279:
+      //   consistent-boolean-name flags ~130 boolean bindings without an
+      //     is/has/… prefix. ~23 are genuine plain-variable wins
+      //     (`enabled` → `isEnabled`, `hidden` → `isHidden`), but the rule also
+      //     enforces the prefix on boolean-returning FUNCTIONS and offers no
+      //     option to check variables only. That collides with this codebase's
+      //     deliberate predicate-verb naming (`matchesDenylist`,
+      //     `containsInjection`, `looksLikeNewsletterModal`, `passesLuhn`,
+      //     `overlapsAny`) — ~35 helpers whose current names read better than
+      //     any `is`/`has` form, and which `prefixes`-allowlisting every verb
+      //     stem would only neuter the rule to allow. It also flags
+      //     SCREAMING_CASE `*_ENABLED_DEFAULT` constants, where the convention
+      //     doesn't map. Net: not worth enabling as shipped.
       //   no-top-level-assignment-in-function flags our module-singleton
       //     lazy-init idiom — a top-level `let` (unsubscribe handle,
       //     `listenerAttached` guard) assigned from inside the init/teardown
