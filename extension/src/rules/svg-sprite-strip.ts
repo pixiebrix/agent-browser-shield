@@ -79,10 +79,7 @@ function isHidden(svg: SVGSVGElement): boolean {
   // ("position:absolute;width:0;height:0") even when computed style isn't
   // populated (jsdom doesn't parse longhand-from-shorthand reliably).
   const inline = svg.getAttribute("style") ?? "";
-  if (/width\s*:\s*0/i.test(inline) && /height\s*:\s*0/i.test(inline)) {
-    return true;
-  }
-  return false;
+  return /width\s*:\s*0/i.test(inline) && /height\s*:\s*0/i.test(inline);
 }
 
 function scan(root: ParentNode): void {

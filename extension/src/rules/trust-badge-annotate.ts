@@ -161,17 +161,17 @@ function readAccessibleName(element: Element): string {
     // selector matching by bare tag name is not portable across DOM
     // implementations.
     for (const child of element.children) {
-      if (child.localName === "title") {
-        const text = child.textContent.trim();
-        if (text !== "") {
-          return text;
-        }
-        break;
+      if (child.localName !== "title") {
+        continue;
       }
-    }
-  }
 
-  if (localName === "img") {
+      const text = child.textContent.trim();
+      if (text !== "") {
+        return text;
+      }
+      break;
+    }
+  } else if (localName === "img") {
     const alt = element.getAttribute("alt");
     if (alt !== null && alt.trim() !== "") {
       return alt.trim();

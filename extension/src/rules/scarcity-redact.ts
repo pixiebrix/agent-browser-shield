@@ -73,10 +73,7 @@ function isSkipped(element: HTMLElement): boolean {
   if (element.getAttribute(REVEALED_ATTR) === RULE_ID) {
     return true;
   }
-  if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) {
-    return true;
-  }
-  return false;
+  return Boolean(element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`));
 }
 
 function scanAndHide(root: ParentNode): void {

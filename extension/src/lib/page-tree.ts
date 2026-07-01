@@ -121,10 +121,7 @@ function isElementVisible(element: HTMLElement): boolean {
     // display:contents elements have no layout box (checkVisibility returns
     // false) but participate in parent layout normally. Pay for
     // getComputedStyle only on this uncommon fall-through path.
-    if (getComputedStyle(element).display === "contents") {
-      return true;
-    }
-    return false;
+    return getComputedStyle(element).display === "contents";
   }
 
   if (zeroDimensionAllowlist.has(element.tagName)) {
@@ -133,11 +130,7 @@ function isElementVisible(element: HTMLElement): boolean {
 
   // Catch zero-dimension elements (e.g. height:0 + overflow:hidden) that
   // checkVisibility considered visible.
-  if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-    return false;
-  }
-
-  return true;
+  return !(element.offsetHeight === 0 && element.offsetWidth === 0);
 }
 
 function isInteractiveElement(element: HTMLElement): boolean {
@@ -166,10 +159,7 @@ function isStampableContainer(element: HTMLElement): boolean {
   if (element.querySelector(DIRECT_HEADING_SELECTOR)) {
     return true;
   }
-  if (element.querySelector(NESTED_HEADING_SELECTOR)) {
-    return true;
-  }
-  return false;
+  return Boolean(element.querySelector(NESTED_HEADING_SELECTOR));
 }
 
 function shouldStampReference(element: HTMLElement): boolean {

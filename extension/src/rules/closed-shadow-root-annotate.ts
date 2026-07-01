@@ -142,10 +142,7 @@ function looksLikeClosedShadowHost(element: Element): boolean {
   if (hasLightContent(element)) {
     return false;
   }
-  if (!isVisiblyRendered(element)) {
-    return false;
-  }
-  return true;
+  return isVisiblyRendered(element);
 }
 
 function findClosedShadowHosts(root: ParentNode): Element[] {

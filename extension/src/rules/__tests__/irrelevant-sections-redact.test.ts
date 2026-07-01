@@ -83,17 +83,10 @@ interface DeferredClassifyResponse {
 }
 
 function createDeferredClassifyResponse(): DeferredClassifyResponse {
-  // The Promise executor runs synchronously, but the type system doesn't
-  // know that — initialize with a noop so `resolveFunction` is always defined.
-  let resolveFunction: DeferredClassifyResponse["resolve"] = () => {
-    // overwritten by the executor below
-  };
-  const promise = new Promise<{
+  const { promise, resolve } = Promise.withResolvers<{
     irrelevant: { ref: string; summary: string }[];
-  }>((resolve) => {
-    resolveFunction = resolve;
-  });
-  return { promise, resolve: resolveFunction };
+  }>();
+  return { promise, resolve };
 }
 
 // jsdom's getBoundingClientRect returns zeros. The rule's "taller than 70% of

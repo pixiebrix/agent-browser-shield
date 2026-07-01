@@ -76,10 +76,12 @@ function sanitizeAuthorityNode(
   mutated: { value: boolean },
 ): void {
   for (const key of SANITIZE_KEYS) {
-    if (key in node && node[key] !== "") {
-      node[key] = "";
-      mutated.value = true;
+    if (!(key in node && node[key] !== "")) {
+      continue;
     }
+
+    node[key] = "";
+    mutated.value = true;
   }
 }
 

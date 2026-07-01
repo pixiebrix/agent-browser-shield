@@ -123,10 +123,7 @@ function isSkipped(element: HTMLElement): boolean {
   // If a descendant is already flagged, the matching text lives in that
   // descendant — annotating the enclosing container as well would be
   // redundant and noisy.
-  if (element.querySelector(`[${FLAGGED_ATTR}]`)) {
-    return true;
-  }
-  return false;
+  return Boolean(element.querySelector(`[${FLAGGED_ATTR}]`));
 }
 
 function findCandidates(root: ParentNode): Candidate[] {
