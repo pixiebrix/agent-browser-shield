@@ -3,7 +3,7 @@
 
 // Lightweight ESLint config for the demo site — Biome owns formatting and
 // the common-error recommended set; ESLint runs only the rules Biome does
-// not have. Today that's just `unicorn/prevent-abbreviations` so the React
+// not have. Today that's just `unicorn/name-replacements` so the React
 // surface stays grep-friendly with the extension's naming convention.
 
 import js from "@eslint/js";
@@ -24,8 +24,10 @@ export default [
     plugins: { unicorn },
     rules: {
       // Mirrors `extension/eslint.config.js`'s replacement allowlist so the
-      // same idiomatic short names work in both codebases.
-      "unicorn/prevent-abbreviations": [
+      // same idiomatic short names work in both codebases. Renamed from
+      // `prevent-abbreviations` in unicorn v68 (same options); `proto`/`app`/
+      // `application(s)` opt out of v68's new default replacements.
+      "unicorn/name-replacements": [
         "error",
         {
           replacements: {
@@ -45,6 +47,10 @@ export default [
             k: false,
             x: false,
             y: false,
+            proto: false,
+            app: false,
+            application: false,
+            applications: false,
           },
         },
       ],
