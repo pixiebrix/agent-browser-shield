@@ -2,7 +2,7 @@ import { htmlCommentStripRule } from "../html-comment-strip";
 import { FIXTURES } from "./injection-fixtures";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

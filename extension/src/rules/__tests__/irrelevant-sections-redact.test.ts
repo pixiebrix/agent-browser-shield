@@ -128,7 +128,7 @@ async function applyAndSettle(): Promise<void> {
 // src/__test-mocks__/jsdom-extras.ts via the global setupFiles hook.
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
   mockClassify.mockReset();
 });

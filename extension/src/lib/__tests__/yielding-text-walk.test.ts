@@ -18,7 +18,7 @@ import { PLACEHOLDER_CLASS } from "../placeholder";
 import { walkTextNodesChunked } from "../yielding-text-walk";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("walkTextNodesChunked — sync fast path", () => {

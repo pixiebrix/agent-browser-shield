@@ -11,7 +11,7 @@ function expectHidden(element: Element | null): void {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

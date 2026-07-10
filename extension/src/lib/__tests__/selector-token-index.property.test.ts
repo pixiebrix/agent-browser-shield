@@ -137,7 +137,7 @@ const RULE_NEWSLETTER = "newsletter-modal-hide" as RuleId;
 const RULE_FALLBACK = "ads-hide" as RuleId;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetSelectorTokenIndexForTesting();
   __resetSubtreeWatcherForTesting();
 });

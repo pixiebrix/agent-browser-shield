@@ -6,7 +6,7 @@ import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { socialEmbedRedactRule } from "../social-embed-redact";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

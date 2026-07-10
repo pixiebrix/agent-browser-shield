@@ -1,7 +1,7 @@
 import { svgSpriteStripRule } from "../svg-sprite-strip";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

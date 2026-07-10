@@ -35,7 +35,7 @@ async function flushStorageReads(): Promise<void> {
 }
 
 beforeEach(async () => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();

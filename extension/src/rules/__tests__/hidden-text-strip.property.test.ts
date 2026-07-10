@@ -45,7 +45,7 @@ const PAYLOAD = fc.constantFrom(
 const CHILD_COUNT = fc.integer({ min: 0, max: 6 });
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {
@@ -60,7 +60,7 @@ describe("hidden-text-strip (property)", () => {
         PAYLOAD,
         CHILD_COUNT,
         (style, payload, childCount) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement("div");
           target.id = "target";
           target.setAttribute("style", style);
@@ -125,7 +125,7 @@ describe("hidden-text-strip (property)", () => {
         PAYLOAD,
         CHILD_COUNT,
         (attributes, payload, childCount) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement("div");
           target.id = "target";
           target.setAttribute("style", "display: none");
@@ -183,7 +183,7 @@ describe("hidden-text-strip (property)", () => {
   it("strips text under any transform whose x or y scale collapses to zero", () => {
     fc.assert(
       fc.property(COLLAPSING_TRANSFORM, PAYLOAD, (transform, payload) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const target = document.createElement("div");
         target.id = "target";
         target.setAttribute("style", `transform: ${transform}`);
@@ -219,7 +219,7 @@ describe("hidden-text-strip (property)", () => {
   it("preserves text whose transform leaves both axes non-zero", () => {
     fc.assert(
       fc.property(NON_COLLAPSING_TRANSFORM, (transform) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const target = document.createElement("div");
         target.id = "target";
         target.setAttribute("style", `transform: ${transform}`);
@@ -264,7 +264,7 @@ describe("hidden-text-strip (property)", () => {
         fc.array(TRANSPARENT_COLOR, { minLength: 2, maxLength: 5 }),
         PAYLOAD,
         (kind, stops, payload) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement("div");
           target.id = "target";
           target.setAttribute(
@@ -297,7 +297,7 @@ describe("hidden-text-strip (property)", () => {
           if (stops.length < 2) {
             stops.push(opaqueStops[0] ?? "black");
           }
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement("div");
           target.id = "target";
           target.setAttribute(
@@ -366,7 +366,7 @@ describe("hidden-text-strip (property)", () => {
         TRIGGER_AND_TRAP_TRANSITION,
         PAYLOAD,
         ({ style }, payload) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement("div");
           target.id = "target";
           target.setAttribute("style", style);
@@ -414,7 +414,7 @@ describe("hidden-text-strip (property)", () => {
         NON_POSITIONAL_TRIGGER,
         PAYLOAD,
         (tag, positional, positionalStyle, nonPositionalStyle, payload) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const target = document.createElement(tag);
           target.id = "target";
           target.setAttribute(
@@ -443,7 +443,7 @@ describe("hidden-text-strip (property)", () => {
         NON_POSITIONAL_TRIGGER,
         PAYLOAD,
         (positional, positionalStyle, nonPositionalStyle, payload) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const wrapper = document.createElement("div");
           wrapper.setAttribute("aria-hidden", "true");
           const target = document.createElement("span");
@@ -472,7 +472,7 @@ describe("hidden-text-strip (property)", () => {
     // detector families.
     fc.assert(
       fc.property(PAYLOAD, CHILD_COUNT, (payload, childCount) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const wrapper = document.createElement("section");
         wrapper.setAttribute("style", "background-color: rgb(20, 20, 20)");
         const target = document.createElement("span");

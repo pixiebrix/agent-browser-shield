@@ -16,7 +16,7 @@ import {
 import { adoptStylesheetIntoShadowRoots } from "../shadow-stylesheets";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 });

@@ -21,7 +21,7 @@ import {
 import { adoptStylesheetIntoShadowRoots } from "../shadow-stylesheets";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 });
@@ -50,7 +50,7 @@ describe("adoptStylesheetIntoShadowRoots — properties", () => {
   it("sheet membership equals current-open-shadows × active-handles", () => {
     fc.assert(
       fc.property(opSequenceArb, (ops) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
 
@@ -130,7 +130,7 @@ describe("adoptStylesheetIntoShadowRoots — properties", () => {
         fc.integer({ min: 1, max: 8 }),
         fc.integer({ min: 1, max: 4 }),
         (shadowCount, adoptCount) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           __resetShadowRootsForTesting();
           installShadowRootHook();
 

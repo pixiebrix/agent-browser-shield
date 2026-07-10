@@ -26,7 +26,7 @@ const LABEL_PHRASES = [
 
 afterEach(() => {
   disguisedAdFlagRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 function buildFeed(
@@ -60,7 +60,7 @@ describe("disguisedAdFlagRule feed-wrapper invariants (property)", () => {
         fc.integer({ min: 2, max: 6 }),
         fc.constantFrom(...LABEL_PHRASES),
         (cardCount, labelText) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const wrapper = buildFeed(cardCount, labelText, 0);
           document.body.append(wrapper);
 
@@ -92,7 +92,7 @@ describe("disguisedAdFlagRule feed-wrapper invariants (property)", () => {
         fc.integer({ min: 1, max: 5 }),
         (totalCards, headlessRaw) => {
           const headlessCount = Math.min(headlessRaw, totalCards - 1);
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const wrapper = buildFeed(totalCards, "Promoted", headlessCount);
           document.body.append(wrapper);
 
@@ -130,7 +130,7 @@ describe("disguisedAdFlagRule feed-wrapper invariants (property)", () => {
         fc.integer({ min: 1, max: 5 }),
         fc.constantFrom(...LABEL_PHRASES),
         (wrapperDepth, labelText) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const card = document.createElement("article");
           card.dataset.fixture = "card";
           const label = document.createElement("span");
@@ -171,7 +171,7 @@ describe("disguisedAdFlagRule feed-wrapper invariants (property)", () => {
         fc.integer({ min: 1, max: 5 }),
         fc.constantFrom(...LABEL_PHRASES),
         (cardCount, labelText) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const wrapper = buildFeed(cardCount, labelText, cardCount);
           wrapper.setAttribute("role", "feed");
           document.body.append(wrapper);

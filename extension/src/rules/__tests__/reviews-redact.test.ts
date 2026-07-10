@@ -3,7 +3,7 @@ import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { reviewsRedactRule, selectorsFor } from "../reviews-redact";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("selectorsFor", () => {

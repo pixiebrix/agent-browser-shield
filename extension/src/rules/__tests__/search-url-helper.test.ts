@@ -8,7 +8,7 @@ import { findRecipe, searchUrlHelperRule } from "../search-url-helper";
 const LANDMARK_SELECTOR = 'section[data-abs-rule="search-url-helper"]';
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

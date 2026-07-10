@@ -76,7 +76,7 @@ function buildTree(spec: FlatTree): HTMLElement {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("walkTextNodesChunked (property)", () => {
@@ -86,7 +86,7 @@ describe("walkTextNodesChunked (property)", () => {
         flatTreeArb,
         fc.integer({ min: 1, max: 8 }),
         (tree, minLength) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const root = buildTree(tree);
           document.body.append(root);
 
@@ -116,7 +116,7 @@ describe("walkTextNodesChunked (property)", () => {
         fc.integer({ min: 1, max: 4 }),
         fc.integer({ min: 1, max: 8 }),
         async (tree, chunkSize, minLength) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const root = buildTree(tree);
           document.body.append(root);
 
@@ -163,7 +163,7 @@ describe("walkTextNodesChunked (property)", () => {
         flatTreeArb,
         fc.integer({ min: 1, max: 5 }),
         async (tree, chunkSize) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const root = buildTree(tree);
           document.body.append(root);
 

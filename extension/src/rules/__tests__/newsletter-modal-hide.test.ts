@@ -5,7 +5,7 @@ import { newsletterModalHideRule } from "../newsletter-modal-hide";
 const RULE_ID = "newsletter-modal-hide";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

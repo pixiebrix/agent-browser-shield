@@ -27,8 +27,8 @@ const STYLE_ID = "abs-css-hide-property-test";
 const SELECTORS = [".prop-test-target"] as const;
 
 beforeEach(() => {
-  document.head.innerHTML = "";
-  document.body.innerHTML = "";
+  document.head.replaceChildren();
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 });
@@ -64,8 +64,8 @@ function stylesById(): HTMLStyleElement[] {
 function run(ops: ReadonlyArray<{ kind: string }>): {
   activeHandles: Array<{ remove: () => void }>;
 } {
-  document.head.innerHTML = "";
-  document.body.innerHTML = "";
+  document.head.replaceChildren();
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 

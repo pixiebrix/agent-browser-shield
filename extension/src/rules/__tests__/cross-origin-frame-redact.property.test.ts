@@ -68,7 +68,7 @@ const INERT_URL = fc.constantFrom(
 );
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {
@@ -79,7 +79,7 @@ describe("cross-origin-frame-redact (property)", () => {
   it("redacts any http(s) cross-origin iframe regardless of host or path", () => {
     fc.assert(
       fc.property(CROSS_ORIGIN_URL, (src) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const iframe = document.createElement("iframe");
         iframe.setAttribute("src", src);
         document.body.append(iframe);
@@ -97,7 +97,7 @@ describe("cross-origin-frame-redact (property)", () => {
   it("redacts any http(s) cross-origin <object data=…>", () => {
     fc.assert(
       fc.property(CROSS_ORIGIN_URL, (data) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const object = document.createElement("object");
         object.setAttribute("data", data);
         document.body.append(object);
@@ -115,7 +115,7 @@ describe("cross-origin-frame-redact (property)", () => {
   it("redacts any http(s) cross-origin <embed src=…>", () => {
     fc.assert(
       fc.property(CROSS_ORIGIN_URL, (src) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const embed = document.createElement("embed");
         embed.setAttribute("src", src);
         document.body.append(embed);
@@ -136,7 +136,7 @@ describe("cross-origin-frame-redact (property)", () => {
         SAME_ORIGIN_URL,
         fc.constantFrom("iframe", "object", "embed"),
         (url, tag) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const element = document.createElement(tag);
           element.setAttribute(tag === "object" ? "data" : "src", url);
           document.body.append(element);
@@ -158,7 +158,7 @@ describe("cross-origin-frame-redact (property)", () => {
         INERT_URL,
         fc.constantFrom("iframe", "object", "embed"),
         (url, tag) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const element = document.createElement(tag);
           element.setAttribute(tag === "object" ? "data" : "src", url);
           document.body.append(element);
@@ -189,7 +189,7 @@ describe("cross-origin-frame-redact (property)", () => {
         fc.string({ minLength: 1, maxLength: 64 }),
         ANY_SRC,
         (srcdocBody, src) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const iframe = document.createElement("iframe");
           iframe.setAttribute("srcdoc", `<p>${srcdocBody}</p>`);
           if (src !== undefined) {

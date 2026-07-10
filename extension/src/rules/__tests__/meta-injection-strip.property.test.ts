@@ -53,7 +53,7 @@ function resetHead(): void {
 
 afterEach(() => {
   metaInjectionStripRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   resetHead();
 });
 

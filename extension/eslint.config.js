@@ -341,6 +341,22 @@ export default tseslint.config(
       "unicorn/no-nonstandard-builtin-properties": "off",
       "unicorn/no-unreadable-for-of-expression": "off",
 
+      // eslint-plugin-unicorn 70 turned on four more recommended rules. All
+      // four were resolvable cleanly in-tree, so none needs an override — they
+      // stay at their recommended `error`:
+      //   prefer-dom-node-replace-children — autofixed the `el.innerHTML = ""`
+      //     DOM-reset idiom (test beforeEach teardown, ~150 sites) to
+      //     `el.replaceChildren()`.
+      //   prefer-simplified-conditions — autofixed two De Morgan negations
+      //     (`!(a && !b)` → `!a || b`) in rule-engine/schema-trust-sanitize.
+      //   prefer-toggle-attribute — the one hit was an if/else setAttribute("",
+      //     "")/removeAttribute pair on `checked`; rewritten as
+      //     `toggleAttribute("checked", element.checked)`.
+      //   no-unnecessary-array-flat-map — the one hit was a
+      //     `flatMap(x => cond ? [v] : [])` filter-map fusion; rewritten as
+      //     `.map().filter(x => x !== undefined).map()`, which the inferred
+      //     type predicate (TS 6) narrows without a non-null assertion.
+
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.

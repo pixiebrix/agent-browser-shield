@@ -50,7 +50,7 @@ const FRAMEWORK_MARKER = fc.constantFrom(
 const EXCLUDED_PARENT_TAG = fc.constantFrom("script", "style", "noscript");
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {
@@ -61,7 +61,7 @@ describe("html-comment-strip (property)", () => {
   it("blanks any comment whose data carries injection text", () => {
     fc.assert(
       fc.property(POISONED, (payload) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const comment = document.createComment(payload);
         document.body.append(comment);
 
@@ -76,7 +76,7 @@ describe("html-comment-strip (property)", () => {
   it("leaves framework markers and benign comments untouched", () => {
     fc.assert(
       fc.property(FRAMEWORK_MARKER, (data) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const comment = document.createComment(data);
         document.body.append(comment);
 

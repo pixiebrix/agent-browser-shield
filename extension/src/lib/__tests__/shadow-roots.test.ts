@@ -14,7 +14,7 @@ import {
 } from "../shadow-roots";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 });

@@ -76,7 +76,7 @@ const NON_GEO_SELECT_NAMES: readonly string[] = [
 
 afterEach(() => {
   formPrefillAnnotateRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("autocomplete-token gating (property)", () => {
@@ -86,7 +86,7 @@ describe("autocomplete-token gating (property)", () => {
         fc.constantFrom(...AUTOFILL_TOKENS),
         fc.stringMatching(/^[A-Za-z][A-Za-z0-9 @.-]{0,30}$/),
         (token, value) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           const label = document.createElement("label");
           const input = document.createElement("input");
@@ -113,7 +113,7 @@ describe("autocomplete-token gating (property)", () => {
         fc.constantFrom(...NON_AUTOFILL_TOKENS),
         fc.stringMatching(/^[A-Za-z][A-Za-z0-9 @.-]{0,30}$/),
         (token, value) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           const label = document.createElement("label");
           const input = document.createElement("input");
@@ -142,7 +142,7 @@ describe("isGeoSelect (property)", () => {
         fc.constantFrom(...GEO_NAMES),
         fc.constantFrom("name", "id", "aria-label"),
         (geo, where) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const select = document.createElement("select");
           select.setAttribute(where, `user_${geo}_picker`);
           document.body.append(select);
@@ -159,7 +159,7 @@ describe("isGeoSelect (property)", () => {
         fc.constantFrom(...NON_GEO_SELECT_NAMES),
         fc.constantFrom("name", "id", "aria-label"),
         (nonGeo, where) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const select = document.createElement("select");
           select.setAttribute(where, nonGeo);
           document.body.append(select);
@@ -187,7 +187,7 @@ describe("<select> first-option invariant (property)", () => {
       fc.property(
         fc.array(selectArb, { minLength: 1, maxLength: 6 }),
         (specs) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           let expected = 0;
           for (const spec of specs) {
@@ -233,7 +233,7 @@ describe("idempotency (property)", () => {
           { minLength: 1, maxLength: 6 },
         ),
         (specs) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           for (const [i, spec] of specs.entries()) {
             if (spec.kind === "text") {

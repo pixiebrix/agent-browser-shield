@@ -18,7 +18,7 @@ const LANDMARK_SELECTOR = 'section[data-abs-rule="roach-motel-annotate"]';
 const recordDetectionMock = recordDetection as jest.Mock;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

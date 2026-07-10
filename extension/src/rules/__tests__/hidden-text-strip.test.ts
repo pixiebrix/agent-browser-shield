@@ -6,7 +6,7 @@ import {
 import { FIXTURES } from "./injection-fixtures";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

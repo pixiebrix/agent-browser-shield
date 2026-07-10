@@ -26,7 +26,7 @@ async function flushWatcher(): Promise<void> {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetSubtreeWatcherForTesting();
   __resetRouteChangeForTesting();
   jest.useFakeTimers();

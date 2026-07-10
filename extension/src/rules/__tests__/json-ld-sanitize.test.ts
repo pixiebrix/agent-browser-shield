@@ -20,7 +20,7 @@ function parseScript(script: HTMLScriptElement): unknown {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 

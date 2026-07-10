@@ -18,7 +18,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("installCheckoutCheckboxDefense — prototype wrap", () => {

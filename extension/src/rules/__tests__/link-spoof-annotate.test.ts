@@ -22,7 +22,7 @@ function makeAnchor(text: string, href: string): HTMLAnchorElement {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 

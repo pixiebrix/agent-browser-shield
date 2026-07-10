@@ -167,7 +167,7 @@ function isApplicableHere(
   // overlays, per-host URL recipes). Running them in subframes would either
   // be a no-op (selectors don't match) or actively harmful (duplicate
   // landmark injection into every iframe's body).
-  return !(rule.topFrameOnly && !topFrame);
+  return !rule.topFrameOnly || topFrame;
 }
 
 function applyEnabled(

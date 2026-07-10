@@ -131,9 +131,9 @@ export const PAGE_WORLD_HOOKS: readonly PageWorldHookEntry[] = [
 const hooks = PAGE_WORLD_HOOKS.map((entry) => createPageWorldHook(entry));
 
 const injectorsByType = new Map(
-  PAGE_WORLD_HOOKS.flatMap((entry) =>
-    entry.inject ? [[entry.inject.injectType, entry.inject] as const] : [],
-  ),
+  PAGE_WORLD_HOOKS.map((entry) => entry.inject)
+    .filter((inject) => inject !== undefined)
+    .map((inject) => [inject.injectType, inject] as const),
 );
 
 // Start every page-world hook's register/unregister life-cycle. Called once

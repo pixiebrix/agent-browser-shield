@@ -80,7 +80,7 @@ const SECURITY_TOKENS: readonly string[] = [
 
 afterEach(() => {
   hiddenAffiliateSanitizeRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("allowlist / denylist disjointness (property)", () => {
@@ -145,7 +145,7 @@ describe("promo / coupon / discount preservation (property)", () => {
         fc.constantFrom(...PROMO_NAMES),
         fc.stringMatching(/^[A-Z0-9-]{4,16}$/),
         (name, code) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           const promo = document.createElement("input");
           promo.type = "hidden";
@@ -178,7 +178,7 @@ describe("URL-gate invariance (property)", () => {
     try {
       fc.assert(
         fc.property(fc.constantFrom(...AFFILIATE_NAMES), (name) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           const input = document.createElement("input");
           input.type = "hidden";
@@ -223,7 +223,7 @@ describe("idempotency (property)", () => {
         NAMES_ARB,
         fc.stringMatching(/^[A-Za-z0-9-]{1,15}$/),
         (names, value) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           const form = document.createElement("form");
           const inputs: HTMLInputElement[] = [];
           for (const name of names) {

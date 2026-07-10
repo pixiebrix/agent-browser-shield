@@ -179,11 +179,7 @@ function setValueAttributesInPlace({
     compressedElement.setAttribute("value", element.value);
     if (element.type === "checkbox" || element.type === "radio") {
       // `checked` is a binary property.
-      if (element.checked) {
-        compressedElement.setAttribute("checked", "");
-      } else {
-        compressedElement.removeAttribute("checked");
-      }
+      compressedElement.toggleAttribute("checked", element.checked);
     }
   } else if (element instanceof HTMLTextAreaElement) {
     // Truncate the same way other text nodes are truncated so a multi-page
