@@ -60,7 +60,7 @@ let stop: (() => void) | null = null;
 
 beforeEach(() => {
   jest.useFakeTimers();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   stub = installDebugTraceStub();
 });
 

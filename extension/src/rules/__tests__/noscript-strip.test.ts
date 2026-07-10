@@ -7,7 +7,7 @@ async function flushMutations(): Promise<void> {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   document.head.querySelectorAll("noscript").forEach((n) => {
     n.remove();
   });

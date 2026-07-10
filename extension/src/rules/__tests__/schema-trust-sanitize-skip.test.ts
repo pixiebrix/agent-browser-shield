@@ -12,8 +12,8 @@ import { schemaTrustSanitizeRule } from "../schema-trust-sanitize";
 
 afterEach(() => {
   schemaTrustSanitizeRule.teardown();
-  document.body.innerHTML = "";
-  document.head.innerHTML = "";
+  document.body.replaceChildren();
+  document.head.replaceChildren();
 });
 
 it("leaves a mismatched publisher claim alone when the page host is a known syndicator", () => {

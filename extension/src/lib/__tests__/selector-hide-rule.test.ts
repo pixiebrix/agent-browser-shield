@@ -21,7 +21,7 @@ const RULE_ID = "footer-redact" as RuleId;
 const HIDE_LABEL = "[hidden — click to reveal]";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   // Reset the shared dispatcher / watcher / route-change subscription so
   // tests that build watchSubtrees=true rules don't leak registrations
   // across cases.

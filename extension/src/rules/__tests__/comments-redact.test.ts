@@ -61,7 +61,7 @@ describe("selectorsFor", () => {
 
 describe("commentsRedactRule.apply", () => {
   beforeEach(() => {
-    document.body.innerHTML = "";
+    document.body.replaceChildren();
   });
 
   it("replaces always-on comment containers with a placeholder", () => {

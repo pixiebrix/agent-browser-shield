@@ -239,7 +239,6 @@ function neutralize(element: HTMLElement): boolean {
       // argument back to Element and loses the `instanceof` narrowing that
       // `rewriteInput` needs; an `if`/`else` would trip `prefer-ternary`.
       const changed =
-        // eslint-disable-next-line unicorn/prefer-minimal-ternary -- instanceof narrowing
         element instanceof HTMLInputElement
           ? rewriteInput(element)
           : rewriteButtonLike(element);

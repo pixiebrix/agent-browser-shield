@@ -72,7 +72,7 @@ function restorePrototypes(): void {
 beforeEach(() => {
   resetProbeFlag();
   restorePrototypes();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterAll(() => {

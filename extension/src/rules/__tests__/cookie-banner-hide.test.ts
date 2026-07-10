@@ -5,7 +5,7 @@ import { cookieBannerHideRule } from "../cookie-banner-hide";
 const RULE_ID = "cookie-banner-hide";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

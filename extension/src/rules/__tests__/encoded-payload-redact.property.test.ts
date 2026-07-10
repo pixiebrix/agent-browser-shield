@@ -79,7 +79,7 @@ const highEntropyBytesArb = fc
   });
 
 function applyToText(text: string): HTMLElement {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   const p = document.createElement("p");
   p.textContent = text;
   document.body.append(p);
@@ -89,7 +89,7 @@ function applyToText(text: string): HTMLElement {
 
 afterEach(() => {
   encodedPayloadRedactRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("encoded-payload-redact (property)", () => {
@@ -173,7 +173,7 @@ function applyToSpanSplitText(
   encoded: string,
   splits: readonly number[],
 ): HTMLElement {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   const p = document.createElement("p");
   let cursor = 0;
   for (const split of splits) {
@@ -439,7 +439,7 @@ describe("encoded-payload-redact cross-node detection (property)", () => {
         // legitimately fire on one half alone — not a cross-block leak.
         expect(mid).toBeLessThan(MIN_BASE64_LENGTH);
 
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const a = document.createElement("p");
         const b = document.createElement("p");
         a.textContent = encoded.slice(0, mid);

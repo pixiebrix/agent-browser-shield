@@ -20,7 +20,7 @@ const RULE_ID = "footer-redact" as RuleId;
 const PII_RULE_ID = "pii-redact" as RuleId;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   document.body.removeAttribute("style");
   // Default to off so the cache state of one test doesn't leak into the
   // next. Each test that needs the toggle on flips it explicitly.

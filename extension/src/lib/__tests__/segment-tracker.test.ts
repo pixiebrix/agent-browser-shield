@@ -38,7 +38,7 @@ beforeEach(() => {
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();
   __resetSegmentTrackerForTesting();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   history.replaceState(null, "", "/initial");
   stub = installDebugTraceStub();
   stub.setEnabled(true);

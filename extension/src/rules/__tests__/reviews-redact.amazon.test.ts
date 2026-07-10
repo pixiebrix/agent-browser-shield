@@ -6,7 +6,7 @@ import { PLACEHOLDER_CLASS } from "../../lib/placeholder";
 import { reviewsRedactRule } from "../reviews-redact";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("reviews-redact on amazon.com", () => {

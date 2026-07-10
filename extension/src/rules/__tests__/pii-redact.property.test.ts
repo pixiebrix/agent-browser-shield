@@ -48,7 +48,7 @@ const invalidCardDigitsArb = cardDigitsArb.map((valid) => {
 });
 
 function applyPiiToText(text: string): HTMLElement {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   const p = document.createElement("p");
   p.textContent = text;
   document.body.append(p);
@@ -58,7 +58,7 @@ function applyPiiToText(text: string): HTMLElement {
 
 afterEach(() => {
   piiRedactRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("pii-redact Luhn detection (property)", () => {
@@ -96,7 +96,7 @@ function applyPiiToSpanSplitText(
   text: string,
   splits: readonly number[],
 ): HTMLElement {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   const p = document.createElement("p");
   let cursor = 0;
   for (const split of splits) {
@@ -157,7 +157,7 @@ describe("pii-redact cross-node detection (property)", () => {
   it("never masks card digits split across two block elements", () => {
     fc.assert(
       fc.property(cardDigitsArb, (card) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const a = document.createElement("p");
         const b = document.createElement("p");
         const mid = Math.floor(card.length / 2);

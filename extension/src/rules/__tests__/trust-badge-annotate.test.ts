@@ -36,7 +36,7 @@ function makeSvgWithTitle(titleText: string): SVGElement {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 

@@ -24,7 +24,7 @@ const RULE_ID = "footer-redact" as RuleId;
 const PII_RULE_ID = "pii-redact" as RuleId;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("replaceWithBlockPlaceholder", () => {

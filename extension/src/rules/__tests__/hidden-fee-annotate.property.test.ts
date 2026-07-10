@@ -44,7 +44,7 @@ const EXCLUDE_TERMS: readonly string[] = [
 
 afterEach(() => {
   hiddenFeeAnnotateRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("matchFeePhrase precision (property)", () => {
@@ -222,7 +222,7 @@ describe("single-item-cart invariant (property)", () => {
     const nonFeeRowsArb = fc.array(rowArb, { minLength: 0, maxLength: 5 });
     fc.assert(
       fc.property(nonFeeRowsArb, (nonFeeRows) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const feeRow: SyntheticRow = {
           label: "Resort Fee",
           amount: 45,
@@ -255,7 +255,7 @@ describe("idempotency (property)", () => {
     const nonFeeRowsArb = fc.array(rowArb, { minLength: 1, maxLength: 5 });
     fc.assert(
       fc.property(nonFeeRowsArb, (nonFeeRows) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const feeRow: SyntheticRow = {
           label: "Service Fee",
           amount: 5,

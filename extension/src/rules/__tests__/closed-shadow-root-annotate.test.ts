@@ -68,7 +68,7 @@ function mockZeroRect(element: Element): void {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

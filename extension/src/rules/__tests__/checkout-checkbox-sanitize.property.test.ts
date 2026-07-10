@@ -27,7 +27,7 @@ beforeAll(() => {
 
 afterEach(() => {
   checkoutCheckboxSanitizeRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("cleared checkbox stays cleared under arbitrary .checked writes", () => {
@@ -51,7 +51,7 @@ describe("cleared checkbox stays cleared under arbitrary .checked writes", () =>
             expect(checkbox.checked).toBe(false);
           }
           checkoutCheckboxSanitizeRule.teardown();
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
         },
       ),
     );
@@ -77,7 +77,7 @@ describe("non-cleared checkbox is unaffected by the prototype patch", () => {
           // Marker was never stamped on a box that started unchecked.
           expect(checkbox.hasAttribute(CLEARED_ATTR)).toBe(false);
           checkoutCheckboxSanitizeRule.teardown();
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
         },
       ),
     );
@@ -106,7 +106,7 @@ describe("URL gate releases the defense off checkout", () => {
           } finally {
             history.replaceState({}, "", "/checkout");
             checkoutCheckboxSanitizeRule.teardown();
-            document.body.innerHTML = "";
+            document.body.replaceChildren();
           }
         },
       ),

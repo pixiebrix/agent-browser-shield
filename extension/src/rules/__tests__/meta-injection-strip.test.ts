@@ -33,7 +33,7 @@ function resetHead(): void {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   resetHead();
   jest.useFakeTimers();
 });

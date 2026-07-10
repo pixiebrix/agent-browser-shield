@@ -35,7 +35,7 @@ import {
 const THROTTLE_MS = 250;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   __resetRouteChangeForTesting();
   __resetSubtreeWatcherForTesting();
@@ -179,7 +179,7 @@ describe("shadow-root tracker — closed-root isolation", () => {
   it("getOpenShadowRoots only ever contains open roots, for any random tree", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         const built = buildTree(tree);
         document.body.append(built.root);
@@ -213,7 +213,7 @@ describe("shadow-root tracker — closed-root isolation", () => {
   it("the tracker size equals the number of nodes with open shadows", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         const built = buildTree(tree);
         document.body.append(built.root);
@@ -263,7 +263,7 @@ describe("discoverShadowRootsIn — set-idempotence", () => {
         // many times in one `it`, and any host left behind in body
         // would still be findable by a discoverShadowRootsIn call in
         // a later iteration.
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         const hosts = Array.from({ length: hostCount }, () => {
           const host = document.createElement("div");
@@ -306,7 +306,7 @@ describe("discoverShadowRootsIn — set-idempotence", () => {
   it("discovery rebuilds every open root reachable from body without crossing closed shadows", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         const built = buildTree(tree);
         document.body.append(built.root);
@@ -419,7 +419,7 @@ describe("setHTMLUnsafe — open DSD registration property", () => {
   it("registers exactly the open declarative shadows in the parsed HTML", () => {
     fc.assert(
       fc.property(dsdTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
 
@@ -491,7 +491,7 @@ describe("subtree watcher — shadow dispatch coverage", () => {
       fc.asyncProperty(flatTreeArb, async (tree) => {
         __resetShadowRootsForTesting();
         __resetSubtreeWatcherForTesting();
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         installShadowRootHook();
 
         const built = buildTree(tree);

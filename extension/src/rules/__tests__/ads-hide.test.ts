@@ -22,8 +22,8 @@ async function flushMutations(): Promise<void> {
 const EASYLIST_STYLE_ID = "abs-ads-hide-easylist";
 
 beforeEach(() => {
-  document.head.innerHTML = "";
-  document.body.innerHTML = "";
+  document.head.replaceChildren();
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 

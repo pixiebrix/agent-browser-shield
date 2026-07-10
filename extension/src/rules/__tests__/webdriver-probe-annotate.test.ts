@@ -33,7 +33,7 @@ const requestInjectMock = requestPageWorldInject as jest.Mock;
 const recordDetectionMock = recordDetection as jest.Mock;
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

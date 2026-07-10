@@ -114,14 +114,14 @@ function freshRule() {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("scan() outermost-match (property)", () => {
   it("places exactly one placeholder per outermost match", () => {
     fc.assert(
       fc.property(treeWithMask, (input) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root, candidates } = realize(input);
         document.body.append(root);
 
@@ -139,7 +139,7 @@ describe("scan() outermost-match (property)", () => {
   it("removes every original target from the DOM after scan", () => {
     fc.assert(
       fc.property(treeWithMask, (input) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root } = realize(input);
         document.body.append(root);
 
@@ -157,7 +157,7 @@ describe("scan() outermost-match (property)", () => {
   it("does not place a placeholder that is itself a descendant of another placeholder", () => {
     fc.assert(
       fc.property(treeWithMask, (input) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root } = realize(input);
         document.body.append(root);
 
@@ -182,7 +182,7 @@ describe("scan() outermost-match (property)", () => {
   it("is idempotent: applying twice yields the same placeholder count", () => {
     fc.assert(
       fc.property(treeWithMask, (input) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root } = realize(input);
         document.body.append(root);
 
@@ -294,7 +294,7 @@ describe("processed-WeakSet idempotence under apply N times (property)", () => {
   it("DOM after apply once == DOM after apply N (placeholder mode)", () => {
     fc.assert(
       fc.property(scenarioArb, (scenario) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root } = buildMarkedTree(scenario);
         document.body.append(root);
 
@@ -322,7 +322,7 @@ describe("processed-WeakSet idempotence under apply N times (property)", () => {
   it("DOM after apply once == DOM after apply N (removeEntirely mode)", () => {
     fc.assert(
       fc.property(scenarioArb, (scenario) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const { root } = buildMarkedTree(scenario);
         document.body.append(root);
 

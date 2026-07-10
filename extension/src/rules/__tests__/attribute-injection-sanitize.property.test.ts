@@ -75,7 +75,7 @@ function buildElement(
   attribute: string,
   value: string,
 ): HTMLElement {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   const element = document.createElement(tag);
   element.setAttribute(attribute, value);
   document.body.append(element);
@@ -84,7 +84,7 @@ function buildElement(
 
 afterEach(() => {
   attributeInjectionSanitizeRule.teardown();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("attribute-injection-sanitize (property)", () => {
@@ -126,7 +126,7 @@ describe("attribute-injection-sanitize (property)", () => {
   it("strips value on disabled and hidden inputs, leaves enabled visible inputs alone", () => {
     fc.assert(
       fc.property(ADVERSARIAL, (payload) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         const disabled = document.createElement("input");
         disabled.setAttribute("disabled", "");
         disabled.setAttribute("value", payload);

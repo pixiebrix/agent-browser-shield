@@ -32,7 +32,7 @@ function ruleApplicationEvents(): RuleApplicationEvent[] {
 
 beforeEach(() => {
   stub = installDebugTraceStub();
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 afterEach(() => {

@@ -22,8 +22,8 @@ function parseScript(script: HTMLScriptElement): unknown {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
-  document.head.innerHTML = "";
+  document.body.replaceChildren();
+  document.head.replaceChildren();
   jest.useFakeTimers();
 });
 

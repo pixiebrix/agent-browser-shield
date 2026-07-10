@@ -30,7 +30,7 @@ async function flushMutations(): Promise<void> {
 }
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 

@@ -73,7 +73,7 @@ describe("installShadowRootProbe — property: event tally matches op tally", ()
     fc.assert(
       fc.property(sequenceArb, ({ hostCount, ops }) => {
         resetProbe();
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         installShadowRootProbe.call(globalThis as unknown as Window);
 
         const hosts = Array.from({ length: hostCount }, () => {
@@ -152,7 +152,7 @@ describe("installShadowRootProbe — property: discover target equals receiver",
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 8 }), (count) => {
         resetProbe();
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         installShadowRootProbe.call(globalThis as unknown as Window);
 
         const hosts = Array.from({ length: count }, () => {

@@ -4,7 +4,7 @@ import { promptInjectionRedactRule } from "../prompt-injection-redact";
 import { FIXTURES } from "./injection-fixtures";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 describe("prompt-injection-redact", () => {
@@ -238,7 +238,7 @@ describe("prompt-injection-redact", () => {
     // would black out the whole page. findContainer returns null on the
     // BODY/HTML guard.
     it("does not redact text that is a direct child of <body>", () => {
-      document.body.innerHTML = "";
+      document.body.replaceChildren();
       document.body.append(document.createTextNode(FIXTURES.IGNORE_ALL));
 
       promptInjectionRedactRule.apply(document.body);

@@ -30,7 +30,7 @@ import {
 import { walkTextNodesChunked } from "../yielding-text-walk";
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   __resetShadowRootsForTesting();
   installShadowRootHook();
 });
@@ -226,7 +226,7 @@ describe("walkTextNodes — shadow coverage", () => {
         flatTreeArb,
         fc.integer({ min: 0, max: 6 }),
         (tree, minLength) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           __resetShadowRootsForTesting();
           installShadowRootHook();
           const built = buildTree(tree);
@@ -243,7 +243,7 @@ describe("walkTextNodes — shadow coverage", () => {
   it("collectTextNodesShadowPiercing matches walkTextNodes (same core)", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
         const built = buildTree(tree);
@@ -265,7 +265,7 @@ describe("walkTextNodes — shadow coverage", () => {
   it("never returns text living inside a closed shadow root", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
         const built = buildTree(tree);
@@ -334,7 +334,7 @@ describe("visibleTextContent — shadow coverage", () => {
   it("concatenates the same reachable text in pre-order for any tree", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
         const built = buildTree(tree);
@@ -358,7 +358,7 @@ describe("walkTextNodesChunked — shadow equivalence with walkTextNodes", () =>
   it("union of chunks equals walkTextNodes output across nested shadows (sync)", () => {
     fc.assert(
       fc.property(flatTreeArb, (tree) => {
-        document.body.innerHTML = "";
+        document.body.replaceChildren();
         __resetShadowRootsForTesting();
         installShadowRootHook();
         const built = buildTree(tree);
@@ -387,7 +387,7 @@ describe("walkTextNodesChunked — shadow equivalence with walkTextNodes", () =>
         flatTreeArb,
         fc.integer({ min: 1, max: 3 }),
         async (tree, chunkSize) => {
-          document.body.innerHTML = "";
+          document.body.replaceChildren();
           __resetShadowRootsForTesting();
           installShadowRootHook();
           const built = buildTree(tree);

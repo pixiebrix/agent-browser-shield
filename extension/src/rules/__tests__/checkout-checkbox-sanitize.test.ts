@@ -34,7 +34,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
   jest.useFakeTimers();
 });
 
