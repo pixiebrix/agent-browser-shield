@@ -48,7 +48,7 @@ jobs:
           fi
       - name: Upsert sticky PR comment
         if: steps.build.outputs.changed == 'true'
-        uses: marocchino/sticky-pull-request-comment@v3
+        uses: marocchino/sticky-pull-request-comment@v3.0.4
         with:
           header: manifest-permission-diff
           path: diff.md
