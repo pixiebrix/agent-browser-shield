@@ -76,7 +76,7 @@ repos:
     hooks:
       - id: biome-check
         name: Biome check (format + lint)
-        additional_dependencies: ["@biomejs/biome@2.5.2"]
+        additional_dependencies: ["@biomejs/biome@2.5.3"]
         # File scope here mirrors the `includes` in the root `biome.json`. Keep
         # them in sync — Biome resolves its own scope from biome.json; the regex
         # below is purely to skip invoking the hook on irrelevant changes.
