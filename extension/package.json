@@ -87,7 +87,7 @@
     "stylelint-config-standard": "^40.0.0",
     "ts-jest": "^29",
     "type-fest": "^5.8.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "8.63.0",
     "zod": "^4.4.3"
   }
