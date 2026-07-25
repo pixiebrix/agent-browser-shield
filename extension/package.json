@@ -57,7 +57,7 @@
     "webext-storage": "^3.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.3",
+    "@biomejs/biome": "2.5.4",
     "@cfworker/json-schema": "^4.1.1",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/js": "10.0.1",
@@ -81,14 +81,14 @@
     "jest-environment-jsdom": "^30",
     "jest-webextension-mock": "^4.2.0",
     "js-yaml": "^5.2.1",
-    "knip": "^6.26.0",
+    "knip": "^6.27.0",
     "postcss-html": "^1.8.1",
     "stylelint": "^17.14.0",
     "stylelint-config-standard": "^40.0.0",
     "ts-jest": "^29",
     "type-fest": "^5.8.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "8.63.0",
+    "typescript-eslint": "8.64.0",
     "zod": "^4.4.3"
   }
 }
