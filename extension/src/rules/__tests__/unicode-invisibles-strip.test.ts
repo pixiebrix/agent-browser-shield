@@ -141,18 +141,17 @@ describe("unicode-invisibles-strip text nodes", () => {
   // Script/style/noscript text is parsed as raw content; agents typically
   // don't read it as prose. `walkTextNodes` already skips these, but pin the
   // behavior so a future helper change can't silently regress it.
-  it.each([
-    "script",
-    "style",
-    "noscript",
-  ])("does not modify text inside <%s>", (tag) => {
-    const payload = `${TAG_A}${ZWSP}`;
-    document.body.innerHTML = `<${tag}>const s = "x${payload}y";</${tag}>`;
-    const before = document.querySelector(tag)?.textContent ?? "";
-    unicodeInvisiblesStripRule.apply(document.body);
+  it.each(["script", "style", "noscript"])(
+    "does not modify text inside <%s>",
+    (tag) => {
+      const payload = `${TAG_A}${ZWSP}`;
+      document.body.innerHTML = `<${tag}>const s = "x${payload}y";</${tag}>`;
+      const before = document.querySelector(tag)?.textContent ?? "";
+      unicodeInvisiblesStripRule.apply(document.body);
 
-    expect(document.querySelector(tag)?.textContent).toBe(before);
-  });
+      expect(document.querySelector(tag)?.textContent).toBe(before);
+    },
+  );
 });
 
 describe("unicode-invisibles-strip attribute values", () => {

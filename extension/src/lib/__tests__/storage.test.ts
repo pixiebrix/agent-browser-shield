@@ -127,11 +127,14 @@ describe("storage default states", () => {
     ["null", "null"],
     ["an array", JSON.stringify([true, false])],
     ["a primitive number", "42"],
-  ])("ignores EXTENSION_DEFAULT_OVERRIDES that decodes to %s", async (_label, raw) => {
-    process.env.EXTENSION_DEFAULT_OVERRIDES = raw;
-    const { getRuleStates } = await loadStorage();
-    await expect(getRuleStates()).resolves.toEqual(RULE_DEFAULTS);
-  });
+  ])(
+    "ignores EXTENSION_DEFAULT_OVERRIDES that decodes to %s",
+    async (_label, raw) => {
+      process.env.EXTENSION_DEFAULT_OVERRIDES = raw;
+      const { getRuleStates } = await loadStorage();
+      await expect(getRuleStates()).resolves.toEqual(RULE_DEFAULTS);
+    },
+  );
 });
 
 describe("normalize via getRuleStates", () => {
