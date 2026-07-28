@@ -51,7 +51,7 @@
     "nanoid": "^5.1.16",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "tldts": "^7.4.8",
+    "tldts": "^7.4.9",
     "urlpattern-polyfill": "10.1.0",
     "webext-messenger": "^0.36.0",
     "webext-storage": "^3.1.0"
