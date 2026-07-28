@@ -1,0 +1,52 @@
+{
+  "src/lib/__tests__/selector-hide-rule.property.test.ts": {
+    "unicorn/prefer-dom-node-html-methods": {
+      "count": 4
+    }
+  },
+  "src/lib/message-schemas.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/lib/placeholder.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/lib/selector-token-index.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/rules/__tests__/encoded-payload-redact.property.test.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/rules/__tests__/form-prefill-annotate.property.test.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/rules/__tests__/noscript-strip.test.ts": {
+    "unicorn/prefer-dom-node-html-methods": {
+      "count": 2
+    }
+  },
+  "src/rules/__tests__/schema-trust-sanitize.test.ts": {
+    "unicorn/prefer-dom-node-html-methods": {
+      "count": 6
+    }
+  },
+  "src/rules/hidden-text-strip.ts": {
+    "unicorn/prefer-simple-condition-first": {
+      "count": 1
+    }
+  },
+  "src/rules/irrelevant-sections-redact.ts": {
+    "unicorn/prefer-dom-node-html-methods": {
+      "count": 1
+    }
+  }
+}
