@@ -78,26 +78,25 @@ describe("htmlCommentStripRule", () => {
   // <script>/<style>/<noscript> content is parsed as raw text, so comments
   // written via innerHTML never become Comment nodes. To exercise the guard
   // we have to insert the Comment via the DOM API.
-  it.each([
-    ["script"],
-    ["style"],
-    ["noscript"],
-  ])("preserves Comment nodes inside <%s> appended via the DOM API", (tagName) => {
-    document.body.innerHTML = `<${tagName}></${tagName}>`;
-    const element = document.querySelector(tagName);
-    expect(element).not.toBeNull();
-    element?.append(
-      document.createComment(` ${FIXTURES.HTML_COMMENT_IGNORE} `),
-    );
+  it.each([["script"], ["style"], ["noscript"]])(
+    "preserves Comment nodes inside <%s> appended via the DOM API",
+    (tagName) => {
+      document.body.innerHTML = `<${tagName}></${tagName}>`;
+      const element = document.querySelector(tagName);
+      expect(element).not.toBeNull();
+      element?.append(
+        document.createComment(` ${FIXTURES.HTML_COMMENT_IGNORE} `),
+      );
 
-    htmlCommentStripRule.apply(document.body);
+      htmlCommentStripRule.apply(document.body);
 
-    const comments = commentNodesIn(element as Node);
-    expect(comments).toHaveLength(1);
-    // Excluded parent — content preserved verbatim even though it would
-    // otherwise match the injection patterns.
-    expect(comments[0]?.data).not.toBe("");
-  });
+      const comments = commentNodesIn(element as Node);
+      expect(comments).toHaveLength(1);
+      // Excluded parent — content preserved verbatim even though it would
+      // otherwise match the injection patterns.
+      expect(comments[0]?.data).not.toBe("");
+    },
+  );
 
   it("is idempotent on a second apply", () => {
     document.body.innerHTML = `${FIXTURES.HTML_COMMENT_IGNORE}<p>x</p>`;

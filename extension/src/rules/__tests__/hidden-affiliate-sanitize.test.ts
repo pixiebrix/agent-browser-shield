@@ -126,15 +126,12 @@ describe("isDenylistedName — preserves CSRF/session/cart shapes", () => {
 });
 
 describe("shouldClearName — allowlist trimmed by denylist", () => {
-  it.each([
-    "utm_source",
-    "ref",
-    "affiliate_id",
-    "gclid",
-    "click_id",
-  ])("clears %s", (name) => {
-    expect(shouldClearName(name)).toBe(true);
-  });
+  it.each(["utm_source", "ref", "affiliate_id", "gclid", "click_id"])(
+    "clears %s",
+    (name) => {
+      expect(shouldClearName(name)).toBe(true);
+    },
+  );
 
   it.each([
     "csrf_token",
@@ -341,29 +338,32 @@ describe("hiddenAffiliateSanitizeRule on checkout URLs", () => {
     ["coupon_id", "abc-123"],
     ["discount_code", "STUDENT15"],
     ["discount_id", "loyalty-tier-2"],
-  ])("preserves a hidden %s input alongside the rule (legitimate user discount)", (name, value) => {
-    document.body.innerHTML = `
+  ])(
+    "preserves a hidden %s input alongside the rule (legitimate user discount)",
+    (name, value) => {
+      document.body.innerHTML = `
         <form>
           <input type="hidden" name="utm_source" value="email">
           <input type="hidden" name="${name}" value="${value}">
           <button type="submit">Place order</button>
         </form>
       `;
-    hiddenAffiliateSanitizeRule.apply(document.body);
+      hiddenAffiliateSanitizeRule.apply(document.body);
 
-    const utm = document.querySelector(
-      'input[name="utm_source"]',
-    ) as HTMLInputElement;
-    const promo = document.querySelector(
-      `input[name="${name}"]`,
-    ) as HTMLInputElement;
-    // Attribution still cleared.
-    expect(utm.value).toBe("");
-    // Promo / coupon / discount kept intact so the user's discount
-    // survives the agent's submit.
-    expect(promo.value).toBe(value);
-    expect(promo.getAttribute(CLEARED_ATTR)).toBe("skipped");
-  });
+      const utm = document.querySelector(
+        'input[name="utm_source"]',
+      ) as HTMLInputElement;
+      const promo = document.querySelector(
+        `input[name="${name}"]`,
+      ) as HTMLInputElement;
+      // Attribution still cleared.
+      expect(utm.value).toBe("");
+      // Promo / coupon / discount kept intact so the user's discount
+      // survives the agent's submit.
+      expect(promo.value).toBe(value);
+      expect(promo.getAttribute(CLEARED_ATTR)).toBe("skipped");
+    },
+  );
 
   it("works for inputs associated with a form via the `form` attribute", () => {
     document.body.innerHTML = `

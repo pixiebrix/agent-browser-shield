@@ -49,15 +49,16 @@ describe("rule catalog invariants", () => {
     );
   });
 
-  it.each(
-    RULES.map((rule) => [rule.id, rule] as const),
-  )("%s declares the required Rule fields", (_id, rule) => {
-    expect(typeof rule.label).toBe("string");
-    expect(rule.label.length).toBeGreaterThan(0);
-    expect(typeof rule.description).toBe("string");
-    expect(rule.description.length).toBeGreaterThan(0);
-    expect(typeof rule.apply).toBe("function");
-  });
+  it.each(RULES.map((rule) => [rule.id, rule] as const))(
+    "%s declares the required Rule fields",
+    (_id, rule) => {
+      expect(typeof rule.label).toBe("string");
+      expect(rule.label.length).toBeGreaterThan(0);
+      expect(typeof rule.description).toBe("string");
+      expect(rule.description.length).toBeGreaterThan(0);
+      expect(typeof rule.apply).toBe("function");
+    },
+  );
 
   // Defaults live in `rules/rule-metadata.ts` and are hand-edited. This
   // test catches the case where a rule is registered in `rules/index.ts`

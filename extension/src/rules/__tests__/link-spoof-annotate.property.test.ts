@@ -97,14 +97,15 @@ const LEGITIMATE_IDN_PAIRS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 describe("link-spoof-annotate IDN cross-form equivalence", () => {
-  it.each(
-    LEGITIMATE_IDN_PAIRS,
-  )("does not flag legitimate IDN %s ↔ %s", (unicode, punycode) => {
-    const anchor = makeAnchor(unicode, `https://${punycode}/`);
-    const triggers = detectSpoof(anchor);
-    // textDomain mismatch must not fire — both sides resolve to the
-    // same registrable domain after punycode normalization.
-    expect(triggers?.textDomain ?? null).toBeNull();
-    expect(triggers?.hrefHost ?? null).toBeNull();
-  });
+  it.each(LEGITIMATE_IDN_PAIRS)(
+    "does not flag legitimate IDN %s ↔ %s",
+    (unicode, punycode) => {
+      const anchor = makeAnchor(unicode, `https://${punycode}/`);
+      const triggers = detectSpoof(anchor);
+      // textDomain mismatch must not fire — both sides resolve to the
+      // same registrable domain after punycode normalization.
+      expect(triggers?.textDomain ?? null).toBeNull();
+      expect(triggers?.hrefHost ?? null).toBeNull();
+    },
+  );
 });
