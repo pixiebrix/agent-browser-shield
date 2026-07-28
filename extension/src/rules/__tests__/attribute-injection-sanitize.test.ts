@@ -29,14 +29,17 @@ describe("attribute-injection-sanitize candidate attributes", () => {
     ["title", "span"],
     ["placeholder", "input"],
     ["data-tooltip", "div"],
-  ])("removes %s when its value matches an injection pattern", (attribute, tag) => {
-    document.body.innerHTML = `<${tag} ${attribute}="${FIXTURES.IGNORE_HACKED}"></${tag}>`;
+  ])(
+    "removes %s when its value matches an injection pattern",
+    (attribute, tag) => {
+      document.body.innerHTML = `<${tag} ${attribute}="${FIXTURES.IGNORE_HACKED}"></${tag}>`;
 
-    attributeInjectionSanitizeRule.apply(document.body);
+      attributeInjectionSanitizeRule.apply(document.body);
 
-    const element = document.body.querySelector(tag);
-    expect(element?.hasAttribute(attribute)).toBe(false);
-  });
+      const element = document.body.querySelector(tag);
+      expect(element?.hasAttribute(attribute)).toBe(false);
+    },
+  );
 
   it.each([
     ["aria-label", "button", "Add to cart"],
