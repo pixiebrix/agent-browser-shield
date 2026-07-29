@@ -68,8 +68,8 @@ const ruleCountsSchema = z
     const sanitized: RuleCountMap = {};
     for (const [key, value] of Object.entries(raw)) {
       if (
-        KNOWN_RULE_IDS.has(key) &&
         typeof value === "number" &&
+        KNOWN_RULE_IDS.has(key) &&
         Number.isFinite(value) &&
         value > 0
       ) {

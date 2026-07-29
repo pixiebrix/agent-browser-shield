@@ -541,7 +541,7 @@ function detectHiddenByCss(
       style.backgroundClip === "text" ||
       (style as { webkitBackgroundClip?: string }).webkitBackgroundClip ===
         "text";
-    if (parsed?.[3] === 0 && !backgroundClipsToText) {
+    if (!backgroundClipsToText && parsed?.[3] === 0) {
       return {
         reason: "text-fill-transparent",
         details: { webkitTextFillColor: textFill },

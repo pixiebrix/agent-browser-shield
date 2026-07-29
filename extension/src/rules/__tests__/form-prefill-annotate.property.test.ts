@@ -251,7 +251,7 @@ describe("idempotency (property)", () => {
                 const option = document.createElement("option");
                 option.value = `o${j}`;
                 option.textContent = `O${j}`;
-                if (spec.sneaky && j === 2) {
+                if (j === 2 && spec.sneaky) {
                   option.setAttribute("selected", "");
                 }
                 select.append(option);

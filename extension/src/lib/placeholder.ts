@@ -127,7 +127,7 @@ function attachReveal(container: HTMLElement, original: Node): void {
     event.preventDefault();
     event.stopPropagation();
     container.removeEventListener("click", reveal);
-    if (original.nodeType === Node.ELEMENT_NODE && ruleId) {
+    if (ruleId && original.nodeType === Node.ELEMENT_NODE) {
       (original as Element).setAttribute(REVEALED_ATTR, ruleId);
     }
     container.replaceWith(original);

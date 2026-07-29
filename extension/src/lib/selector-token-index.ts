@@ -159,7 +159,7 @@ function ensureWatcherStarted(): void {
 }
 
 function maybeStopWatcher(): void {
-  if (!(registrations.size === 0 && sharedWatcher)) {
+  if (!(sharedWatcher && registrations.size === 0)) {
     return;
   }
 
