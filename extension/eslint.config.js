@@ -298,6 +298,23 @@ export default tseslint.config(
       // sites, so leaving it on would be all churn for no further upside.
       "unicorn/no-break-in-nested-loop": "off",
 
+      // eslint-plugin-unicorn 72 promoted two more rules to recommended.
+      // prefer-simple-condition-first was ratcheted in-tree (the six sites were
+      // reordered so the cheap operand short-circuits first) and stays at its
+      // recommended `error`. prefer-dom-node-html-methods is turned off:
+      //   Off — the rule rewrites `.innerHTML` *reads* to `element.getHTML()`,
+      //     but for a plain read the two are equivalent (both serialize the
+      //     light-DOM descendants and exclude shadow content); getHTML()'s only
+      //     added value is its shadow-root serialization options, which the fix
+      //     doesn't pass. So there's no correctness or behavior upside. Worse,
+      //     getHTML() is a recent DOM API absent from jsdom, and 12 of the 13
+      //     hits are jsdom tests asserting on serialized output — rewriting them
+      //     would throw `getHTML is not a function` at runtime (same test-runtime
+      //     block as prefer-uint8array-base64). The lone production read
+      //     (serializePageTree in irrelevant-sections-redact.ts) could switch,
+      //     but only to be inconsistent with every test for no gain. Not worth it.
+      "unicorn/prefer-dom-node-html-methods": "off",
+
       // eslint-plugin-unicorn 68 turned on another batch of recommended rules
       // (and renamed `prevent-abbreviations` → `name-replacements`, handled
       // above). The cleanly autofixable ones (prefer-boolean-return,

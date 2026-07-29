@@ -67,10 +67,10 @@ const highEntropyBytesArb = fc
     let printable = 0;
     for (const b of bytes) {
       if (
-        (b >= PRINTABLE_LOW && b <= PRINTABLE_HIGH) ||
         b === 9 ||
         b === 10 ||
-        b === 13
+        b === 13 ||
+        (b >= PRINTABLE_LOW && b <= PRINTABLE_HIGH)
       ) {
         printable++;
       }
