@@ -14,8 +14,8 @@
     "check": "biome check . && eslint . && stylelint \"src/**/*.css\""
   },
   "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^6.0.4",
     "eslint": "^10.7.0",
     "eslint-plugin-unicorn": "^72.0.0",
     "globals": "^17.7.0",
