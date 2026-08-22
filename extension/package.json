@@ -82,7 +82,7 @@
     "jest-webextension-mock": "^4.2.0",
     "js-yaml": "^5.2.3",
     "knip": "^6.32.0",
-    "postcss-html": "^1.8.1",
+    "postcss-html": "^2.0.0",
     "stylelint": "^17.14.1",
     "stylelint-config-standard": "^40.0.0",
     "ts-jest": "^29",
