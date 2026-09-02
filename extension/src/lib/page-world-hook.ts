@@ -23,11 +23,17 @@
 import { log } from "./log";
 
 export interface PageWorldHookConfig {
-  /** chrome.scripting content-script id; doubles as the unregister key. */
+  /**
+   * chrome.scripting content-script id; doubles as the unregister key.
+   */
   readonly scriptId: string;
-  /** Bundled entrypoint filename registered as the MAIN-world script. */
+  /**
+   * Bundled entrypoint filename registered as the MAIN-world script.
+   */
   readonly scriptFile: string;
-  /** Short label used in this hook's log lines. */
+  /**
+   * Short label used in this hook's log lines.
+   */
   readonly logLabel: string;
   /**
    * Whether to inject into same-origin subframes (`allFrames`). Each
@@ -36,7 +42,9 @@ export interface PageWorldHookConfig {
    * all-frames when each frame has its own prototype copy to patch.
    */
   readonly allFrames: boolean;
-  /** Is the hook eligible to be registered right now? */
+  /**
+   * Is the hook eligible to be registered right now?
+   */
   readonly shouldRegister: () => Promise<boolean>;
   /**
    * Storage change-sources that can flip `shouldRegister`'s result. Each is
@@ -47,7 +55,9 @@ export interface PageWorldHookConfig {
 }
 
 export interface PageWorldHook {
-  /** Reconcile once at startup, then on every subscribed change. */
+  /**
+   * Reconcile once at startup, then on every subscribed change.
+   */
   start: () => void;
 }
 
