@@ -68,7 +68,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.25",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "eslint": "10.9.0",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-jest": "^29.16.1",
