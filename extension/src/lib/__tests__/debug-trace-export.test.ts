@@ -127,11 +127,10 @@ function fixtures(): DebugTraceStoredEntry[] {
 }
 
 function firstFixture(): DebugTraceStoredEntry {
-  const [first, ...rest] = fixtures();
+  const [first] = fixtures();
   if (!first) {
     throw new Error("fixtures() must return at least one record");
   }
-  void rest;
   return first;
 }
 

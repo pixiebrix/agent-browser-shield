@@ -70,6 +70,7 @@ function isReservedKey(key: string): key is ReservedKey {
 // by the schema below for every `siteDenylist` entry.
 function isValidUrlPattern(entry: string): boolean {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- construct only to validate; invalid patterns throw, the instance is discarded
     void new URLPattern(entry);
     return true;
   } catch {

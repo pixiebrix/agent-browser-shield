@@ -205,6 +205,7 @@ describe("page-world probe", () => {
 
     const handler = jest.fn();
     document.addEventListener(EVENT_NAME, handler);
+    // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- reading the property fires the probe getter (the behavior under test); value discarded
     void navigator.webdriver;
     expect(handler).toHaveBeenCalledTimes(1);
     document.removeEventListener(EVENT_NAME, handler);
@@ -227,6 +228,7 @@ describe("page-world probe", () => {
 
     const handler = jest.fn();
     document.addEventListener(EVENT_NAME, handler);
+    // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- reading the property fires the probe getter (the behavior under test); value discarded
     void navigator.webdriver;
     // Two installs would compose into two dispatches on a single read
     // if the guard weren't holding.
