@@ -121,6 +121,7 @@ is mostly noise).
 ```python
 import json, re, difflib
 
+
 # Stagehand sends the current a11y tree as the latest user-role message
 # in the messages array; pluck the user-role text from each proxy record.
 def turns(log_path, session_id=None):
@@ -134,14 +135,18 @@ def turns(log_path, session_id=None):
             for m in reversed(msgs):
                 if m.get("role") == "user":
                     c = m.get("content")
-                    text = c if isinstance(c, str) else " ".join(
-                        p.get("text","") for p in c if isinstance(p, dict))
+                    text = (
+                        c
+                        if isinstance(c, str)
+                        else " ".join(p.get("text", "") for p in c if isinstance(p, dict))
+                    )
                     out.append((r.get("timestamp"), text))
                     break
     return out
 
+
 baseline = turns("output/llm-proxy/proxy_<ts>.jsonl")  # filter to baseline session if multi
-guarded  = turns("output/llm-proxy/proxy_<ts>.jsonl")  # filter to guarded session
+guarded = turns("output/llm-proxy/proxy_<ts>.jsonl")  # filter to guarded session
 
 # Pick the turn at the divergence point (usually 1-3 turns after both
 # scenarios agree on the same opening act/goto)

@@ -72,11 +72,14 @@ trace = page.evaluate("async () => await window.__abs_dumpTrace()")
 #### Raw CDP
 
 ```python
-result = client.send("Runtime.evaluate", {
-    "expression": "(async () => await window.__abs_dumpTrace())()",
-    "awaitPromise": True,
-    "returnByValue": True,
-})
+result = client.send(
+    "Runtime.evaluate",
+    {
+        "expression": "(async () => await window.__abs_dumpTrace())()",
+        "awaitPromise": True,
+        "returnByValue": True,
+    },
+)
 entries = result["result"]["value"]
 ```
 
