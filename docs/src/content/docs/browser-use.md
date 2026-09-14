@@ -70,6 +70,7 @@ from browser_use import Agent
 from browser_use.browser import BrowserProfile, BrowserSession
 from browser_use.llm import ChatOpenAI
 
+
 async def main():
     browser_session = BrowserSession(
         browser_profile=BrowserProfile(
@@ -84,6 +85,7 @@ async def main():
         browser_session=browser_session,
     )
     await agent.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -122,6 +124,7 @@ from browser_use import Agent
 from browser_use.browser import BrowserProfile, BrowserSession
 from browser_use.llm import ChatOpenAI
 
+
 async def main():
     bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
     with open("output/agent-browser-shield-extension.zip", "rb") as fh:
@@ -142,6 +145,7 @@ async def main():
         browser_session=browser_session,
     )
     await agent.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
