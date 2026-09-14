@@ -26,6 +26,7 @@ export interface ChromeStorageValue<T> {
 // from the value type. The constraint lets us forward `T` to those methods
 // without per-call casts.
 export function createChromeStorageValue<
+  // eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- NonNullable<unknown> deliberately rules out null/undefined while still allowing primitive stored values
   T extends NonNullable<unknown>,
 >(options: {
   key: string;
