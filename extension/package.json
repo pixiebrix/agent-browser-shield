@@ -57,12 +57,12 @@
     "webext-storage": "^3.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.13",
     "@cfworker/json-schema": "^4.1.1",
-    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.0",
     "@eslint/js": "10.0.1",
     "@resvg/resvg-js": "^2.6.2",
-    "@types/bun": "^1.4.1",
+    "@types/bun": "^1.4.2",
     "@types/chrome": "^0.2.9",
     "@types/file-saver": "^2.0.7",
     "@types/jest": "^30.0.0",
@@ -75,13 +75,13 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-unicorn": "74.0.0",
     "fake-indexeddb": "^6.2.5",
-    "fast-check": "^4.9.0",
+    "fast-check": "^4.10.0",
     "globals": "17.12.0",
     "jest": "^30",
     "jest-environment-jsdom": "^30",
     "jest-webextension-mock": "^4.2.0",
     "js-yaml": "^5.4.1",
-    "knip": "^6.34.0",
+    "knip": "^6.35.1",
     "postcss-html": "^2.0.0",
     "stylelint": "^17.15.0",
     "stylelint-config-standard": "^40.0.0",
@@ -89,6 +89,6 @@
     "type-fest": "^5.9.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "8.70.0",
-    "zod": "^4.5.4"
+    "zod": "^4.6.2"
   }
 }
