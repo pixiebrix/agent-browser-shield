@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.13",
     "postcss-html": "^2.0.0",
     "stylelint": "^17.15.0",
     "stylelint-config-standard": "^40.0.0",
