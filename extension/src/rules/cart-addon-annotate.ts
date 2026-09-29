@@ -143,10 +143,7 @@ function findCandidates(root: ParentNode): Candidate[] {
 
 function flag(candidate: Candidate): void {
   const { element, label, matched } = candidate;
-  if (!element.isConnected) {
-    return;
-  }
-  if (element.hasAttribute(FLAGGED_ATTR)) {
+  if (!element.isConnected || element.hasAttribute(FLAGGED_ATTR)) {
     return;
   }
   // The chip is prepended INTO the element, so the element's own

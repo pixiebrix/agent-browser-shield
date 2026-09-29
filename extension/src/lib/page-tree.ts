@@ -81,10 +81,9 @@ function normalizeTextContent(raw: string): string | null {
   if (collapsed.length === 0) {
     return null;
   }
-  if (collapsed.length <= MAX_TEXT_NODE_CHARS) {
-    return collapsed;
-  }
-  return `${collapsed.slice(0, MAX_TEXT_NODE_CHARS).trimEnd()}…`;
+  return collapsed.length <= MAX_TEXT_NODE_CHARS
+    ? collapsed
+    : `${collapsed.slice(0, MAX_TEXT_NODE_CHARS).trimEnd()}…`;
 }
 
 // Containers that anchor a meaningful subtree. Stamped with a ref so the LLM
@@ -153,13 +152,11 @@ function isInteractiveElement(element: HTMLElement): boolean {
 // block with a heading child also qualifies because that's the common shape of
 // a recommendation rail ("You might also like" + grid of cards).
 function isStampableContainer(element: HTMLElement): boolean {
-  if (containerTagAllowlist.has(element.tagName)) {
-    return true;
-  }
-  if (element.querySelector(DIRECT_HEADING_SELECTOR)) {
-    return true;
-  }
-  return Boolean(element.querySelector(NESTED_HEADING_SELECTOR));
+  return (
+    containerTagAllowlist.has(element.tagName) ||
+    element.querySelector(DIRECT_HEADING_SELECTOR) !== null ||
+    element.querySelector(NESTED_HEADING_SELECTOR) !== null
+  );
 }
 
 function shouldStampReference(element: HTMLElement): boolean {

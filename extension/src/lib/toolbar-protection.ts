@@ -41,10 +41,7 @@ export function computeProtectionState(input: {
   if (input.tabUrl !== null && matchesDenylist(input.tabUrl, input.denylist)) {
     return { off: true, reason: "site" };
   }
-  if (input.paused) {
-    return { off: true, reason: "paused" };
-  }
-  return { off: false };
+  return input.paused ? { off: true, reason: "paused" } : { off: false };
 }
 
 // Toolbar action icon variants, as chrome.action.setIcon expects them

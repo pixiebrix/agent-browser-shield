@@ -374,6 +374,31 @@ export default tseslint.config(
       //     `.map().filter(x => x !== undefined).map()`, which the inferred
       //     type predicate (TS 6) narrows without a non-null assertion.
 
+      // eslint-plugin-unicorn 76 promoted six more rules to recommended
+      // `error`. All were resolvable in-tree, so none needs an override — they
+      // stay at their recommended `error`:
+      //   prefer-combined-guards — merged consecutive early-exit guards
+      //     (`if (a) continue; if (b) continue;` → `if (a || b) continue;`, and
+      //     the `return` equivalents) across the DOM scanners.
+      //   prefer-ternary — collapsed if/else that return two values into a
+      //     single ternary. Where the autofix produced a boolean-literal
+      //     ternary (`cond ? true/false : x`) it was hand-rewritten to the
+      //     logical-operator form the next rule wants; the guard-clause helpers
+      //     it left as mixed if+ternary (the env-var `resolveDefault`s,
+      //     `newsletter-modal-hide`) were restructured by hand so nothing reads
+      //     worse than the original guards.
+      //   prefer-logical-operator-over-ternary — the boolean-literal ternaries
+      //     above became `a || b` / `!a && b` (`x ? true : y` → `x || y`,
+      //     `x ? false : y` → `!x && y`), keeping the boolean return type.
+      //   prefer-continue / prefer-early-return — inverted the last wrapping
+      //     `if` in a loop/function into an early `continue`/`return` so the
+      //     body dedents; the non-autofixable sites were done by hand.
+      //   prefer-dom-node-replace-children — the one hit was a test fixture
+      //     doing `body.replaceChildren(); body.append(node)`, collapsed to a
+      //     single `replaceChildren(node)`. Production carrier-scrubbing blanks
+      //     attributes/textContent rather than emptying-and-refilling, so the
+      //     rule doesn't fire there.
+
       // no-global-object-property-assignment stays at its recommended `error`
       // for production code; it's disabled only for tests (which legitimately
       // assign globals to set up mocks) in the test-files block below.

@@ -110,10 +110,10 @@ const SKIP_HOST_SUFFIXES: readonly string[] = [
 
 export function shouldSkipPage(pageHost: string): boolean {
   const host = pageHost.toLowerCase();
-  if (SKIP_EXACT_HOSTS.has(host)) {
-    return true;
-  }
-  return SKIP_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+  return (
+    SKIP_EXACT_HOSTS.has(host) ||
+    SKIP_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))
+  );
 }
 
 // Normalize a `@type` value (string or array of strings, with optional
@@ -164,8 +164,5 @@ export function isAuthorityUrlMismatch(
   }
   const claimRD = registrableDomain(parsed.hostname);
   const pageRD = registrableDomain(pageHost);
-  if (claimRD === null || pageRD === null) {
-    return false;
-  }
-  return claimRD !== pageRD;
+  return claimRD !== null && pageRD !== null && claimRD !== pageRD;
 }

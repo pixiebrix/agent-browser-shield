@@ -51,10 +51,10 @@ export function installDumpTraceBridge(this: Window): void {
   }
 
   bridgeWindow.addEventListener("message", (event: MessageEvent) => {
-    if (event.source !== bridgeWindow) {
-      return;
-    }
-    if (event.origin !== bridgeWindow.location.origin) {
+    if (
+      event.source !== bridgeWindow ||
+      event.origin !== bridgeWindow.location.origin
+    ) {
       return;
     }
     const data = event.data as null | {
@@ -64,13 +64,13 @@ export function installDumpTraceBridge(this: Window): void {
       entries?: unknown;
       error?: unknown;
     };
-    if (!data || typeof data !== "object") {
-      return;
-    }
-    if (data.source !== SOURCE || data.direction !== "response") {
-      return;
-    }
-    if (typeof data.id !== "string") {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      data.source !== SOURCE ||
+      data.direction !== "response" ||
+      typeof data.id !== "string"
+    ) {
       return;
     }
     const handler = pending.get(data.id);

@@ -278,10 +278,9 @@ export function createTabTracker(): TabTracker {
       }
     }
     entries.sort((a, b) => {
-      if (b.count !== a.count) {
-        return b.count - a.count;
-      }
-      return a.ruleId.localeCompare(b.ruleId);
+      return b.count === a.count
+        ? a.ruleId.localeCompare(b.ruleId)
+        : b.count - a.count;
     });
     const detectionEntries = tabDetections.get(tabId);
     const detections = detectionEntries

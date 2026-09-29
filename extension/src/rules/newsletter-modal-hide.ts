@@ -38,19 +38,16 @@ function looksLikeNewsletterModal(element: HTMLElement): boolean {
   const rect = element.getBoundingClientRect();
   const rectArea = rect.width * rect.height;
   const viewportArea = window.innerWidth * window.innerHeight;
-  if (
+  const tooSmall =
     rectArea > 0 &&
     viewportArea > 0 &&
-    rectArea < viewportArea * MIN_VIEWPORT_AREA_RATIO
-  ) {
-    return false;
-  }
+    rectArea < viewportArea * MIN_VIEWPORT_AREA_RATIO;
 
-  if (!NEWSLETTER_TEXT.test(element.textContent)) {
-    return false;
-  }
-
-  return !!element.querySelector('input[type="email"]');
+  return (
+    !tooSmall &&
+    NEWSLETTER_TEXT.test(element.textContent) &&
+    element.querySelector('input[type="email"]') !== null
+  );
 }
 
 const { rule } = createSelectorHideRule({

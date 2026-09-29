@@ -100,12 +100,11 @@ export function installScriptingRegistry(): ScriptingRegistryHandle {
   );
   getRegisteredMock.mockImplementation(
     (filter?: { ids?: string[] }): Promise<RegisteredScript[]> => {
-      if (!filter?.ids) {
-        return Promise.resolve([...store]);
-      }
-      return Promise.resolve(
-        store.filter((script) => filter.ids?.includes(script.id)),
-      );
+      return filter?.ids
+        ? Promise.resolve(
+            store.filter((script) => filter.ids?.includes(script.id)),
+          )
+        : Promise.resolve([...store]);
     },
   );
 

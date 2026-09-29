@@ -41,10 +41,9 @@ export function parseSelector(selector: string): ParsedSelector {
     return { kind: "id", token: idMatch[1] as string };
   }
   const classMatch = CLASS_SELECTOR.exec(trimmed);
-  if (classMatch) {
-    return { kind: "class", token: classMatch[1] as string };
-  }
-  return { kind: "complex", token: "" };
+  return classMatch
+    ? { kind: "class", token: classMatch[1] as string }
+    : { kind: "complex", token: "" };
 }
 
 interface Registration {
@@ -236,10 +235,12 @@ export function __resetSelectorTokenIndexForTesting(): void {
   classIndex.clear();
   complexFallback.clear();
   registrations.clear();
-  if (sharedWatcher) {
-    sharedWatcher.stop();
-    sharedWatcher = null;
+  if (!sharedWatcher) {
+    return;
   }
+
+  sharedWatcher.stop();
+  sharedWatcher = null;
 }
 
 // Test-only: introspect index contents. Lets unit tests assert that

@@ -67,13 +67,11 @@ export function matchesScarcityPattern(text: string): boolean {
 }
 
 function isSkipped(element: HTMLElement): boolean {
-  if (isInsidePlaceholder(element)) {
-    return true;
-  }
-  if (element.getAttribute(REVEALED_ATTR) === RULE_ID) {
-    return true;
-  }
-  return Boolean(element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`));
+  return (
+    isInsidePlaceholder(element) ||
+    element.getAttribute(REVEALED_ATTR) === RULE_ID ||
+    element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`) !== null
+  );
 }
 
 function scanAndHide(root: ParentNode): void {
@@ -84,13 +82,10 @@ function scanAndHide(root: ParentNode): void {
     // Innermost-match preference is built into findInnermostMatches — keeps
     // us from blacking out a whole product card when only a badge inside
     // carries the urgency message.
-    match: (text) => (matchesScarcityPattern(text) ? true : null),
+    match: (text) => matchesScarcityPattern(text) || null,
   });
   for (const { element } of matches) {
-    if (!element.isConnected) {
-      continue;
-    }
-    if (isInsidePlaceholder(element)) {
+    if (!element.isConnected || isInsidePlaceholder(element)) {
       continue;
     }
     replaceWithBlockPlaceholder(

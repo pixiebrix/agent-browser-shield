@@ -66,13 +66,12 @@ function isHidden(svg: SVGSVGElement): boolean {
     return true;
   }
   const style = getComputedStyle(svg);
-  if (style.display === "none") {
-    return true;
-  }
-  if (style.visibility === "hidden") {
-    return true;
-  }
-  if (svg.getAttribute("width") === "0" || svg.getAttribute("height") === "0") {
+  if (
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    svg.getAttribute("width") === "0" ||
+    svg.getAttribute("height") === "0"
+  ) {
     return true;
   }
   // Inline width:0; height:0 is a common idiom for invisible sprite sheets
@@ -85,13 +84,7 @@ function isHidden(svg: SVGSVGElement): boolean {
 function scan(root: ParentNode): void {
   const referenced = collectReferencedSymbolIds();
   for (const svg of root.querySelectorAll<SVGSVGElement>("svg")) {
-    if (!svg.isConnected) {
-      continue;
-    }
-    if (!isSpriteShaped(svg)) {
-      continue;
-    }
-    if (!isHidden(svg)) {
+    if (!svg.isConnected || !isSpriteShaped(svg) || !isHidden(svg)) {
       continue;
     }
     const symbols = [...svg.querySelectorAll<SVGSymbolElement>("symbol[id]")];

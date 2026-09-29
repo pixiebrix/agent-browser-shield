@@ -166,10 +166,7 @@ export function matchFeePhrase(text: string): PhraseMatch | null {
     return null;
   }
   const captured = match[1];
-  if (captured === undefined) {
-    return null;
-  }
-  return { phrase: captured.toLowerCase() };
+  return captured === undefined ? null : { phrase: captured.toLowerCase() };
 }
 
 export function isCurrencyAmount(text: string): boolean {
@@ -221,10 +218,10 @@ function isNavigationAncestor(element: Element): boolean {
 }
 
 function isPageBoundary(element: Element): boolean {
-  if (PAGE_BOUNDARY_TAGS.has(element.localName)) {
-    return true;
-  }
-  return element.getAttribute("role") === "main";
+  return (
+    PAGE_BOUNDARY_TAGS.has(element.localName) ||
+    element.getAttribute("role") === "main"
+  );
 }
 
 function readAriaLabel(element: Element): string {
@@ -291,10 +288,11 @@ export function findOrderSummaryAncestor(label: Element): HTMLElement | null {
   let cursor: Element | null = label.parentElement;
   let hops = 0;
   while (cursor !== null && hops < MAX_ANCESTOR_HOPS) {
-    if (isInteractiveAncestor(cursor) || isNavigationAncestor(cursor)) {
-      return null;
-    }
-    if (isPageBoundary(cursor)) {
+    if (
+      isInteractiveAncestor(cursor) ||
+      isNavigationAncestor(cursor) ||
+      isPageBoundary(cursor)
+    ) {
       return null;
     }
     if (cursor instanceof HTMLElement && isOrderSummaryContainer(cursor)) {
@@ -381,10 +379,11 @@ export function countPricedRows(container: Element): number {
       continue;
     }
     const text = element.textContent.trim();
-    if (text.length === 0 || text.length > 100) {
-      continue;
-    }
-    if (!EMBEDDED_AMOUNT_RE.test(text)) {
+    if (
+      text.length === 0 ||
+      text.length > 100 ||
+      !EMBEDDED_AMOUNT_RE.test(text)
+    ) {
       continue;
     }
     // Two row shapes:
@@ -507,10 +506,7 @@ function flag(candidate: Candidate): void {
 }
 
 function scanAndFlag(root: ParentNode): void {
-  if (!isCheckoutUrl(location.href)) {
-    return;
-  }
-  if (isDenylistedHost(location.href)) {
+  if (!isCheckoutUrl(location.href) || isDenylistedHost(location.href)) {
     return;
   }
   const candidates = collectCandidates(root);

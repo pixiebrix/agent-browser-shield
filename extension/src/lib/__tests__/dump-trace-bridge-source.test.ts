@@ -73,22 +73,24 @@ describe("installDumpTraceBridge", () => {
         direction?: unknown;
         id?: unknown;
       };
-      if (data.source === "abs-dump-trace" && data.direction === "request") {
-        requestIds.push(data.id as string);
-        dispatchResponse({
-          source: "abs-dump-trace",
-          direction: "response",
-          id: data.id,
-          entries: [
-            {
-              tabId: 1,
-              frameId: 0,
-              addedAt: 9,
-              entry: { type: "navigation", url: null, timestamp: 1 },
-            },
-          ],
-        });
+      if (!(data.source === "abs-dump-trace" && data.direction === "request")) {
+        return;
       }
+
+      requestIds.push(data.id as string);
+      dispatchResponse({
+        source: "abs-dump-trace",
+        direction: "response",
+        id: data.id,
+        entries: [
+          {
+            tabId: 1,
+            frameId: 0,
+            addedAt: 9,
+            entry: { type: "navigation", url: null, timestamp: 1 },
+          },
+        ],
+      });
     };
     window.addEventListener("message", interceptor);
 
@@ -168,16 +170,17 @@ describe("installDumpTraceBridge", () => {
         direction?: unknown;
         id?: unknown;
       };
-      if (data.source === "abs-dump-trace" && data.direction === "request") {
-        const id = data.id as string;
-        seen.push(id);
-        dispatchResponse({
-          source: "abs-dump-trace",
-          direction: "response",
-          id,
-          entries: [],
-        });
+      if (data.source !== "abs-dump-trace" || data.direction !== "request") {
+        return;
       }
+      const id = data.id as string;
+      seen.push(id);
+      dispatchResponse({
+        source: "abs-dump-trace",
+        direction: "response",
+        id,
+        entries: [],
+      });
     };
     window.addEventListener("message", interceptor);
 

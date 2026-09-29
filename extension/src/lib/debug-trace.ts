@@ -46,13 +46,9 @@ export const DEBUG_TRACE_ENABLED_DEFAULT = false;
 // touching the popup on every session.
 function resolveDefault(): boolean {
   const raw = process.env.EXTENSION_DEBUG_TRACE_DEFAULT;
-  if (raw === "true") {
-    return true;
-  }
-  if (raw === "false") {
-    return false;
-  }
-  return DEBUG_TRACE_ENABLED_DEFAULT;
+  return raw === "true" || raw === "false"
+    ? raw === "true"
+    : DEBUG_TRACE_ENABLED_DEFAULT;
 }
 
 // Storage key intentionally matches the existing prefix; popup reads via

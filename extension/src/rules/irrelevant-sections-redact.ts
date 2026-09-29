@@ -114,11 +114,9 @@ function checkHideable(element: Element): string | null {
   const viewportHeight =
     window.innerHeight || document.documentElement.clientHeight;
   const rect = element.getBoundingClientRect();
-  if (rect.height > viewportHeight * MAX_VIEWPORT_HEIGHT_FRACTION) {
-    return `taller-than-${MAX_VIEWPORT_HEIGHT_FRACTION}-of-viewport`;
-  }
-
-  return null;
+  return rect.height > viewportHeight * MAX_VIEWPORT_HEIGHT_FRACTION
+    ? `taller-than-${MAX_VIEWPORT_HEIGHT_FRACTION}-of-viewport`
+    : null;
 }
 
 // Drop elements whose ancestor is also selected. If the LLM flagged both a
@@ -303,10 +301,12 @@ function stopScrollWatcher(): void {
     window.removeEventListener("scroll", scrollHandler);
     scrollHandler = null;
   }
-  if (scrollDebounceTimer) {
-    clearTimeout(scrollDebounceTimer);
-    scrollDebounceTimer = null;
+  if (!scrollDebounceTimer) {
+    return;
   }
+
+  clearTimeout(scrollDebounceTimer);
+  scrollDebounceTimer = null;
 }
 
 function apply(_root: ParentNode): void {

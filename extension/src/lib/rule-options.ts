@@ -25,10 +25,9 @@ function parseRuleOptionsEnv(): Record<string, unknown> {
   } catch {
     return {};
   }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return {};
-  }
-  return parsed as Record<string, unknown>;
+  return !parsed || typeof parsed !== "object" || Array.isArray(parsed)
+    ? {}
+    : (parsed as Record<string, unknown>);
 }
 
 // Recursively merges a validated override tree over a default tree. Accepts:

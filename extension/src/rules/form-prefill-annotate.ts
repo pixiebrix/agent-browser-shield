@@ -137,10 +137,9 @@ const TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
 // rarely contain quote chars and any id with quotes was never going to
 // pair with a `<label for>` lookup anyway.
 function escapeAttributeValue(value: string): string {
-  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
-    return CSS.escape(value);
-  }
-  return value.replaceAll(/["\\]/g, String.raw`\$&`);
+  return typeof CSS !== "undefined" && typeof CSS.escape === "function"
+    ? CSS.escape(value)
+    : value.replaceAll(/["\\]/g, String.raw`\$&`);
 }
 
 // Track controls that have been focused (or are currently focused) at
@@ -183,13 +182,12 @@ function isFlaggedAlready(element: Element): boolean {
 
 function readAutocompleteTokens(element: HTMLElement): readonly string[] {
   const attribute = element.getAttribute("autocomplete");
-  if (attribute === null) {
-    return [];
-  }
-  return attribute
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((token) => token.length > 0);
+  return attribute === null
+    ? []
+    : attribute
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((token) => token.length > 0);
 }
 
 function hasRecognizedAutofillToken(element: HTMLElement): boolean {
@@ -259,10 +257,10 @@ function isVisibleControl(element: HTMLElement): boolean {
     return false;
   }
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
-  if (style === undefined) {
-    return true;
-  }
-  return style.display !== "none" && style.visibility !== "hidden";
+  return (
+    style === undefined ||
+    (style.display !== "none" && style.visibility !== "hidden")
+  );
 }
 
 function findChipTarget(element: HTMLElement): HTMLElement {
@@ -298,10 +296,7 @@ function buildChip(text: string): HTMLSpanElement {
 }
 
 function countChipsInForm(form: HTMLElement | null): number {
-  if (form === null) {
-    return 0;
-  }
-  return form.querySelectorAll(`.${FLAG_CLASS}`).length;
+  return form === null ? 0 : form.querySelectorAll(`.${FLAG_CLASS}`).length;
 }
 
 function getEnclosingForm(element: HTMLElement): HTMLElement | null {
@@ -334,19 +329,14 @@ type Candidate = TextCandidate | SelectCandidate | RadioCandidate;
 
 function readTextCandidate(input: HTMLInputElement): TextCandidate | null {
   const type = input.type.toLowerCase();
-  if (!TEXT_INPUT_TYPES.has(type)) {
-    return null;
-  }
-  if (input.disabled || input.readOnly) {
-    return null;
-  }
-  if (!isVisibleControl(input)) {
-    return null;
-  }
-  if (focusedControls.has(input)) {
-    return null;
-  }
-  if (hasRecognizedAutofillToken(input)) {
+  if (
+    !TEXT_INPUT_TYPES.has(type) ||
+    input.disabled ||
+    input.readOnly ||
+    !isVisibleControl(input) ||
+    focusedControls.has(input) ||
+    hasRecognizedAutofillToken(input)
+  ) {
     return null;
   }
   // `autocomplete="off"` is intentionally not a skip signal — a site
@@ -359,25 +349,20 @@ function readTextCandidate(input: HTMLInputElement): TextCandidate | null {
   // attribute. The agent's DOM snapshot reads the live property too, so
   // our scan should match what the agent will see. The focused-set
   // skip above already covers the "user typed it" case.
-  if (input.value.trim().length === 0) {
-    return null;
-  }
-  return { kind: "text", control: input, inputType: type };
+  return input.value.trim().length === 0
+    ? null
+    : { kind: "text", control: input, inputType: type };
 }
 
 function readSelectCandidate(
   select: HTMLSelectElement,
 ): SelectCandidate | null {
-  if (select.disabled) {
-    return null;
-  }
-  if (!isVisibleControl(select)) {
-    return null;
-  }
-  if (focusedControls.has(select)) {
-    return null;
-  }
-  if (isGeoSelect(select)) {
+  if (
+    select.disabled ||
+    !isVisibleControl(select) ||
+    focusedControls.has(select) ||
+    isGeoSelect(select)
+  ) {
     return null;
   }
   // Multi-selects don't have a "default option" notion in the same way;
@@ -421,13 +406,11 @@ function findRadioGroupTarget(radio: HTMLInputElement): HTMLElement {
 }
 
 function readRadioCandidate(radio: HTMLInputElement): RadioCandidate | null {
-  if (radio.type.toLowerCase() !== "radio") {
-    return null;
-  }
-  if (radio.disabled) {
-    return null;
-  }
-  if (!isVisibleControl(radio)) {
+  if (
+    radio.type.toLowerCase() !== "radio" ||
+    radio.disabled ||
+    !isVisibleControl(radio)
+  ) {
     return null;
   }
   // Live property covers framework-rendered defaults (React
@@ -510,23 +493,23 @@ function collectCandidates(root: ParentNode): Candidate[] {
       }
       continue;
     }
-    if (type === "radio") {
-      // Only consider the first checked radio per group; the chip lives
-      // on the group container, not on individual radios.
-      const formScope = getEnclosingForm(input);
-      const scopeKey =
-        formScope === null ? "" : `${formScope.id || "_form_"}::`;
-      const groupKey = `${scopeKey}${input.name}`;
-      if (seenRadioGroups.has(groupKey)) {
-        continue;
-      }
-      const candidate = readRadioCandidate(input);
-      if (candidate === null) {
-        continue;
-      }
-      seenRadioGroups.add(groupKey);
-      out.push(candidate);
+    if (type !== "radio") {
+      continue;
     }
+    // Only consider the first checked radio per group; the chip lives
+    // on the group container, not on individual radios.
+    const formScope = getEnclosingForm(input);
+    const scopeKey = formScope === null ? "" : `${formScope.id || "_form_"}::`;
+    const groupKey = `${scopeKey}${input.name}`;
+    if (seenRadioGroups.has(groupKey)) {
+      continue;
+    }
+    const candidate = readRadioCandidate(input);
+    if (candidate === null) {
+      continue;
+    }
+    seenRadioGroups.add(groupKey);
+    out.push(candidate);
   }
 
   for (const select of root.querySelectorAll<HTMLSelectElement>(

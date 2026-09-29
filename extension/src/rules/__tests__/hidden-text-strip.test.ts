@@ -903,10 +903,7 @@ function installMockCanvas(colorMap: Record<string, RGBA>): () => void {
   HTMLCanvasElement.prototype.getContext = function patched(
     kind: string,
   ): unknown {
-    if (kind === "2d") {
-      return stubContext;
-    }
-    return null;
+    return kind === "2d" ? stubContext : null;
   } as typeof HTMLCanvasElement.prototype.getContext;
   __resetColorProbeForTesting();
 

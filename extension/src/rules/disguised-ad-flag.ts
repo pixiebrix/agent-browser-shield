@@ -134,10 +134,7 @@ function matchLabel(text: string): LabelMatch | null {
   if (STANDALONE_RE.test(text)) {
     return { phrase: text };
   }
-  if (SUFFIX_RE.test(text)) {
-    return { phrase: text };
-  }
-  return null;
+  return SUFFIX_RE.test(text) ? { phrase: text } : null;
 }
 
 const INTERACTIVE_TAGS = new Set([
@@ -232,19 +229,13 @@ function hasMultipleCardSubtrees(
 ): boolean {
   const matches: Element[] = [];
   for (const candidate of element.querySelectorAll("*")) {
-    if (candidate === labelElement) {
-      continue;
-    }
-    if (labelElement.contains(candidate)) {
-      continue;
-    }
-    if (candidate.querySelector("img, picture") === null) {
-      continue;
-    }
-    if (candidate.querySelector("a[href]") === null) {
-      continue;
-    }
-    if (matches.some((m) => m.contains(candidate))) {
+    if (
+      candidate === labelElement ||
+      labelElement.contains(candidate) ||
+      candidate.querySelector("img, picture") === null ||
+      candidate.querySelector("a[href]") === null ||
+      matches.some((m) => m.contains(candidate))
+    ) {
       continue;
     }
     matches.push(candidate);
@@ -270,10 +261,7 @@ function hasMultipleCardSubtrees(
 // wrapper `<div>` (label as a sibling to one card-shaped subtree).
 function isArticleShaped(element: Element, labelElement: Element): boolean {
   const heading = element.querySelector(HEADING_SELECTOR);
-  if (heading === null) {
-    return false;
-  }
-  if (hasMultipleCardSubtrees(element, labelElement)) {
+  if (heading === null || hasMultipleCardSubtrees(element, labelElement)) {
     return false;
   }
   const hasImage = element.querySelector("img, picture") !== null;
@@ -294,10 +282,11 @@ function isArticleShaped(element: Element, labelElement: Element): boolean {
   const candidateSet = new Set(proseCandidates);
   let proseLength = 0;
   for (const child of proseCandidates) {
-    if (child === labelElement || labelElement.contains(child)) {
-      continue;
-    }
-    if (child.querySelector(HEADING_SELECTOR) !== null) {
+    if (
+      child === labelElement ||
+      labelElement.contains(child) ||
+      child.querySelector(HEADING_SELECTOR) !== null
+    ) {
       continue;
     }
     const hasNestedCandidate = [
@@ -322,10 +311,11 @@ export function findArticleAncestor(label: Element): HTMLElement | null {
   let cursor: Element | null = label.parentElement;
   let hops = 0;
   while (cursor !== null && hops < MAX_ANCESTOR_HOPS) {
-    if (isInteractiveAncestor(cursor) || isNavigationAncestor(cursor)) {
-      return null;
-    }
-    if (isPageBoundary(cursor)) {
+    if (
+      isInteractiveAncestor(cursor) ||
+      isNavigationAncestor(cursor) ||
+      isPageBoundary(cursor)
+    ) {
       return null;
     }
     if (
@@ -360,10 +350,7 @@ function isCandidateSkipped(element: HTMLElement): boolean {
   if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) {
     return true;
   }
-  if (isInsidePlaceholder(element)) {
-    return true;
-  }
-  if (isInsideHiddenAd(element)) {
+  if (isInsidePlaceholder(element) || isInsideHiddenAd(element)) {
     return true;
   }
   // If any ancestor up to a navigation / interactive boundary is itself

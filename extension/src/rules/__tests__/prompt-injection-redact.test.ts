@@ -238,8 +238,9 @@ describe("prompt-injection-redact", () => {
     // would black out the whole page. findContainer returns null on the
     // BODY/HTML guard.
     it("does not redact text that is a direct child of <body>", () => {
-      document.body.replaceChildren();
-      document.body.append(document.createTextNode(FIXTURES.IGNORE_ALL));
+      document.body.replaceChildren(
+        document.createTextNode(FIXTURES.IGNORE_ALL),
+      );
 
       promptInjectionRedactRule.apply(document.body);
 

@@ -159,10 +159,12 @@ describe("filterToOutermost (property)", () => {
         for (const element of result) {
           const index = candidateIndex.get(element);
           expect(index).toBeDefined();
-          if (index !== undefined) {
-            expect(index).toBeGreaterThan(lastIndex);
-            lastIndex = index;
+          if (index === undefined) {
+            continue;
           }
+
+          expect(index).toBeGreaterThan(lastIndex);
+          lastIndex = index;
         }
       }),
     );

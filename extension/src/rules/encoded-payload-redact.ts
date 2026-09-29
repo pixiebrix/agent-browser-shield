@@ -459,10 +459,7 @@ function tryCipherDecode(
 ): CipherDecodeResult | null {
   const decoded = decoder(candidate);
   const commonWords = countDistinctCommonWords(decoded);
-  if (commonWords < minCommonWords) {
-    return null;
-  }
-  return { decoded, commonWords };
+  return commonWords < minCommonWords ? null : { decoded, commonWords };
 }
 
 // For substitution ciphers, skip candidates whose original text is
@@ -560,10 +557,12 @@ function decodeMorse(candidate: string): MorseDecodeResult {
     for (const sym of symbols) {
       total++;
       const letter = MORSE_MAP[sym];
-      if (letter) {
-        valid++;
-        chunk += letter;
+      if (!letter) {
+        continue;
       }
+
+      valid++;
+      chunk += letter;
     }
     if (chunk.length > 0) {
       decodedWords.push(chunk);
@@ -580,13 +579,11 @@ function qualifies(
   minDecodedLength: number,
   printableRatioThreshold: number,
 ): boolean {
-  if (decoded === null) {
-    return false;
-  }
-  if (decoded.length < minDecodedLength) {
-    return false;
-  }
-  return printableRatio(decoded) >= printableRatioThreshold;
+  return (
+    decoded !== null &&
+    decoded.length >= minDecodedLength &&
+    printableRatio(decoded) >= printableRatioThreshold
+  );
 }
 
 function collectJwtRanges(text: string): Array<[number, number]> {
@@ -787,10 +784,10 @@ function collectMorse(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(MORSE_CANDIDATE)) {
     const candidate = m[0];
     const { decoded, validRatio } = decodeMorse(candidate);
-    if (validRatio < SUB_RULES.morse.validRatio) {
-      continue;
-    }
-    if (countDistinctCommonWords(decoded) < SUB_RULES.morse.minCommonWords) {
+    if (
+      validRatio < SUB_RULES.morse.validRatio ||
+      countDistinctCommonWords(decoded) < SUB_RULES.morse.minCommonWords
+    ) {
       continue;
     }
     matches.push({

@@ -53,11 +53,9 @@ export function isPauseActive(
   pause: TabPause | null | undefined,
   now: number,
 ): boolean {
-  if (!pause) {
-    return false;
-  }
-  if (pause.expiresAt === null) {
-    return true;
-  }
-  return typeof pause.expiresAt === "number" && pause.expiresAt > now;
+  return (
+    pause != null &&
+    (pause.expiresAt === null ||
+      (typeof pause.expiresAt === "number" && pause.expiresAt > now))
+  );
 }

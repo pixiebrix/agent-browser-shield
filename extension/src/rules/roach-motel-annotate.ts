@@ -130,10 +130,7 @@ function findJustDeleteMeWarning(url: string): WarningPayload | null {
     return null;
   }
   const entry = JDM_HOSTNAME_INDEX.get(normalizeHost(parsed.hostname));
-  if (entry === undefined) {
-    return null;
-  }
-  if (!isSignupishPath(parsed.pathname)) {
+  if (entry === undefined || !isSignupishPath(parsed.pathname)) {
     return null;
   }
   const noteLines: string[] = [];

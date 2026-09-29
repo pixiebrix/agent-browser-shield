@@ -59,10 +59,7 @@ function resolveExternalOrigin(
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     return null;
   }
-  if (url.origin === location.origin) {
-    return null;
-  }
-  return url.origin;
+  return url.origin === location.origin ? null : url.origin;
 }
 
 function describeRedaction(element: HTMLElement): string | null {
