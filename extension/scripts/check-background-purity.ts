@@ -53,13 +53,11 @@ function collectCanaries(): Canary[] {
     a.localeCompare(b),
   );
   for (const name of ruleFiles) {
-    if (!name.endsWith(".ts")) {
-      continue;
-    }
-    if (SKIP_FILES.has(name)) {
-      continue;
-    }
-    if (name.endsWith(".generated.ts")) {
+    if (
+      !name.endsWith(".ts") ||
+      SKIP_FILES.has(name) ||
+      name.endsWith(".generated.ts")
+    ) {
       continue;
     }
     const source = readFileSync(join(RULES_DIR, name), "utf8");

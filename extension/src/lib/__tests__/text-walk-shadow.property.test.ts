@@ -296,13 +296,15 @@ describe("walkTextNodes — shadow coverage", () => {
           // still unreachable to the production walker, so its text
           // is in the exclusion set too.
           const index = Number((element as HTMLElement).dataset.index ?? "-1");
-          if (index >= 0) {
-            const shadow = built.shadowsByIndex[index];
-            if (shadow) {
-              for (const child of shadow.childNodes) {
-                collectAllText(child, into);
-              }
-            }
+          if (index < 0) {
+            return;
+          }
+          const shadow = built.shadowsByIndex[index];
+          if (!shadow) {
+            return;
+          }
+          for (const child of shadow.childNodes) {
+            collectAllText(child, into);
           }
         }
         for (let i = 0; i < built.nodes.length; i++) {

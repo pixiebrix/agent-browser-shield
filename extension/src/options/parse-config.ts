@@ -107,8 +107,5 @@ function parseSiteDenylist(
     }
     value.push(entry);
   }
-  if (errors.length > 0) {
-    return { ok: false, errors };
-  }
-  return { ok: true, value };
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, value };
 }

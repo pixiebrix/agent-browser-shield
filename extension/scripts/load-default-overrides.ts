@@ -186,10 +186,12 @@ function flattenIssues(
           (max, sub) => Math.max(max, effectivePathLength(sub)),
           0,
         );
-        if (depth > bestDepth) {
-          bestDepth = depth;
-          best = flat;
+        if (!(depth > bestDepth)) {
+          continue;
         }
+
+        bestDepth = depth;
+        best = flat;
       }
       if (best && best.length > 0) {
         out.push(...best);
@@ -206,14 +208,11 @@ function flattenIssues(
 }
 
 function effectivePathLength(issue: z.core.$ZodIssue): number {
-  if (
-    issue.code === "unrecognized_keys" &&
+  return issue.code === "unrecognized_keys" &&
     "keys" in issue &&
     Array.isArray(issue.keys)
-  ) {
-    return issue.path.length + 1;
-  }
-  return issue.path.length;
+    ? issue.path.length + 1
+    : issue.path.length;
 }
 
 function formatIssue(issue: z.core.$ZodIssue): string[] {
@@ -267,20 +266,21 @@ function splitOverrides(parsed: Record<string, unknown>): DefaultOverrides {
       rules[key] = value;
       continue;
     }
-    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      const object = value as Record<string, unknown>;
-      if (typeof object.enabled === "boolean") {
-        rules[key] = object.enabled;
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      continue;
+    }
+    const object = value as Record<string, unknown>;
+    if (typeof object.enabled === "boolean") {
+      rules[key] = object.enabled;
+    }
+    const optionsOnly: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(object)) {
+      if (k !== "enabled" && v !== undefined) {
+        optionsOnly[k] = v;
       }
-      const optionsOnly: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(object)) {
-        if (k !== "enabled" && v !== undefined) {
-          optionsOnly[k] = v;
-        }
-      }
-      if (Object.keys(optionsOnly).length > 0) {
-        ruleOptions[key] = optionsOnly;
-      }
+    }
+    if (Object.keys(optionsOnly).length > 0) {
+      ruleOptions[key] = optionsOnly;
     }
   }
   return out;

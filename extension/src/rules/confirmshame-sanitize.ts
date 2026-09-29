@@ -156,13 +156,11 @@ const CONFIRMSHAME_PATTERNS: RegExp[] = [
 
 export function isConfirmshameLabel(text: string): boolean {
   const trimmed = text.trim();
-  if (!trimmed) {
-    return false;
-  }
-  if (trimmed.length > MAX_BUTTON_TEXT_LENGTH) {
-    return false;
-  }
-  return CONFIRMSHAME_PATTERNS.some((pattern) => pattern.test(trimmed));
+  return (
+    trimmed !== "" &&
+    trimmed.length <= MAX_BUTTON_TEXT_LENGTH &&
+    CONFIRMSHAME_PATTERNS.some((pattern) => pattern.test(trimmed))
+  );
 }
 
 const BUTTON_SELECTOR = [
@@ -211,24 +209,22 @@ function rewriteAttribute(
   stashAttribute: string,
 ): void {
   const value = element.getAttribute(attributeName);
-  if (value && isConfirmshameLabel(value)) {
-    element.setAttribute(stashAttribute, value);
-    element.setAttribute(attributeName, NEUTRAL_LABEL);
+  if (!(value && isConfirmshameLabel(value))) {
+    return;
   }
+
+  element.setAttribute(stashAttribute, value);
+  element.setAttribute(attributeName, NEUTRAL_LABEL);
 }
 
 function isConfirmshameCandidate(element: HTMLElement): boolean {
-  if (element instanceof HTMLInputElement) {
-    return Boolean(element.value) && isConfirmshameLabel(element.value);
-  }
-  return isConfirmshameLabel(element.textContent);
+  return element instanceof HTMLInputElement
+    ? Boolean(element.value) && isConfirmshameLabel(element.value)
+    : isConfirmshameLabel(element.textContent);
 }
 
 function neutralize(element: HTMLElement): boolean {
-  if (alreadyRewritten(element)) {
-    return false;
-  }
-  if (!isConfirmshameCandidate(element)) {
+  if (alreadyRewritten(element) || !isConfirmshameCandidate(element)) {
     return false;
   }
   return traceMutation(
@@ -306,10 +302,12 @@ function restoreOne(element: Element): void {
     element.removeAttribute(ORIGINAL_ARIA_ATTR);
   }
   const title = element.getAttribute(ORIGINAL_TITLE_ATTR);
-  if (title !== null) {
-    element.setAttribute("title", title);
-    element.removeAttribute(ORIGINAL_TITLE_ATTR);
+  if (title === null) {
+    return;
   }
+
+  element.setAttribute("title", title);
+  element.removeAttribute(ORIGINAL_TITLE_ATTR);
 }
 
 function restoreAll(): void {

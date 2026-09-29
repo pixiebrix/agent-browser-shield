@@ -31,10 +31,10 @@ const RULE_ID = "html-comment-strip" as const;
 const EXCLUDED_PARENT_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT"]);
 
 function isExcludedParent(parent: Node | null): boolean {
-  if (parent?.nodeType !== Node.ELEMENT_NODE) {
-    return false;
-  }
-  return EXCLUDED_PARENT_TAGS.has((parent as Element).tagName);
+  return (
+    parent?.nodeType === Node.ELEMENT_NODE &&
+    EXCLUDED_PARENT_TAGS.has((parent as Element).tagName)
+  );
 }
 
 function containsInjection(value: string): boolean {
@@ -54,24 +54,19 @@ function stripComments(root: ParentNode): void {
       continue;
     }
     const { data } = comment;
-    if (data.length === 0) {
+    if (data.length === 0 || !containsInjection(data)) {
       continue;
     }
-    if (containsInjection(data)) {
-      // Comments don't have outerHTML, but the parent's outerHTML does
-      // include the comment markup (`<!-- … -->`) so before/after on the
-      // parent shows the scrub.
-      const parent = comment.parentElement;
-      if (parent === null) {
+    // Comments don't have outerHTML, but the parent's outerHTML does
+    // include the comment markup (`<!-- … -->`) so before/after on the
+    // parent shows the scrub.
+    const parent = comment.parentElement;
+    if (parent === null) {
+      comment.data = "";
+    } else {
+      traceMutation({ ruleId: RULE_ID, kind: "strip", target: parent }, () => {
         comment.data = "";
-      } else {
-        traceMutation(
-          { ruleId: RULE_ID, kind: "strip", target: parent },
-          () => {
-            comment.data = "";
-          },
-        );
-      }
+      });
     }
   }
 }

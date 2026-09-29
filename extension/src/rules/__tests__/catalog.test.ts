@@ -188,12 +188,11 @@ describe("rule catalog invariants", () => {
   it("reactive `available` accessors expose get + subscribe", () => {
     const offenders = RULES.filter((rule) => {
       const accessor = rule.available;
-      if (accessor === undefined || typeof accessor === "boolean") {
-        return false;
-      }
       return (
-        typeof accessor.get !== "function" ||
-        typeof accessor.subscribe !== "function"
+        accessor !== undefined &&
+        typeof accessor !== "boolean" &&
+        (typeof accessor.get !== "function" ||
+          typeof accessor.subscribe !== "function")
       );
     }).map((rule) => rule.id);
     expect(offenders).toEqual([]);

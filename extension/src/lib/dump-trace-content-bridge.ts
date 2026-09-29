@@ -74,13 +74,11 @@ async function forwardRequest(id: string): Promise<void> {
 }
 
 function bridgeListener(event: MessageEvent): void {
-  if (event.source !== selfWindow) {
-    return;
-  }
-  if (event.origin !== selfWindow.location.origin) {
-    return;
-  }
-  if (!isBridgeRequest(event.data)) {
+  if (
+    event.source !== selfWindow ||
+    event.origin !== selfWindow.location.origin ||
+    !isBridgeRequest(event.data)
+  ) {
     return;
   }
   void forwardRequest(event.data.id);

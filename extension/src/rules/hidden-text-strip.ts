@@ -83,10 +83,7 @@ const OFFSCREEN_THRESHOLD_PX = -9999;
 
 function hasSrOnlyClass(element: Element): boolean {
   for (const cls of element.classList) {
-    if (SR_ONLY_CLASS_NAMES.has(cls)) {
-      return true;
-    }
-    if (/visuallyhidden/i.test(cls)) {
+    if (SR_ONLY_CLASS_NAMES.has(cls) || /visuallyhidden/i.test(cls)) {
       return true;
     }
   }
@@ -190,10 +187,7 @@ function parsePixelLength(value: string): number | null {
     return 0;
   }
   const match = /^(-?\d+(?:\.\d+)?)px$/.exec(value);
-  if (!match?.[1]) {
-    return null;
-  }
-  return Number(match[1]);
+  return match?.[1] ? Number(match[1]) : null;
 }
 
 // Pick the first non-empty value from a list of computed-style reads.
@@ -210,6 +204,14 @@ function firstNonEmpty(...values: ReadonlyArray<string | undefined>): string {
   return "";
 }
 
+// Zero-size `clip` rects, across the comma- and space-separated spellings
+// browsers normalize to (and the unitless legacy form).
+const ZERO_CLIP_RECTS = new Set([
+  "rect(0px, 0px, 0px, 0px)",
+  "rect(0px 0px 0px 0px)",
+  "rect(0, 0, 0, 0)",
+]);
+
 function isClippedToZero(style: CSSStyleDeclaration): boolean {
   const clipPath = style.clipPath;
   if (clipPath === "inset(100%)") {
@@ -219,13 +221,7 @@ function isClippedToZero(style: CSSStyleDeclaration): boolean {
   // visually-hidden CSS in the wild still uses it — keep detecting it.
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   const clip = style.clip;
-  if (clip === "rect(0px, 0px, 0px, 0px)") {
-    return true;
-  }
-  if (clip === "rect(0px 0px 0px 0px)") {
-    return true;
-  }
-  return clip === "rect(0, 0, 0, 0)";
+  return ZERO_CLIP_RECTS.has(clip);
 }
 
 interface MatchDetail {
@@ -375,10 +371,11 @@ function hasOpacityAnimationInFlight(style: CSSStyleDeclaration): boolean {
 const FILTER_OPACITY_ZERO_PATTERN = /\bopacity\(\s*\.?0+(?:\.0+)?%?\s*\)/i;
 
 function hasZeroOpacityFilter(filter: string): boolean {
-  if (!filter || filter === "none") {
-    return false;
-  }
-  return FILTER_OPACITY_ZERO_PATTERN.test(filter);
+  return (
+    filter !== "" &&
+    filter !== "none" &&
+    FILTER_OPACITY_ZERO_PATTERN.test(filter)
+  );
 }
 
 // Treat a mask-image as fully transparent when every color literal in
@@ -393,10 +390,7 @@ const OPAQUE_COLOR_RESIDUAL_PATTERN =
   /rgba?\(|hsla?\(|hwb\(|lab\(|lch\(|oklab\(|oklch\(|color\(|color-mix\(|#[0-9a-f]{3,8}\b|\b(?:white|black|red|green|blue|yellow|cyan|magenta|grey|gray|orange|purple|pink|brown|currentcolor)\b/i;
 
 function isFullyTransparentMask(value: string): boolean {
-  if (!value || value === "none") {
-    return false;
-  }
-  if (!/-gradient\(/i.test(value)) {
+  if (!value || value === "none" || !/-gradient\(/i.test(value)) {
     return false;
   }
   const residual = value
@@ -416,19 +410,13 @@ function isCollapsedTransform(transform: string): boolean {
   if (!transform || transform === "none") {
     return false;
   }
-  if (/^scale\(\s*0(?:\.0+)?\s*(?:,\s*\d+(?:\.\d+)?\s*)?\)$/.test(transform)) {
-    return true;
-  }
-  if (/^scale\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*\)$/.test(transform)) {
-    return true;
-  }
-  if (/^scale[XY]\(\s*0(?:\.0+)?\s*\)$/.test(transform)) {
-    return true;
-  }
-  if (/^scale3d\(\s*0(?:\.0+)?\s*,/.test(transform)) {
-    return true;
-  }
-  if (/^scale3d\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*,/.test(transform)) {
+  if (
+    /^scale\(\s*0(?:\.0+)?\s*(?:,\s*\d+(?:\.\d+)?\s*)?\)$/.test(transform) ||
+    /^scale\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*\)$/.test(transform) ||
+    /^scale[XY]\(\s*0(?:\.0+)?\s*\)$/.test(transform) ||
+    /^scale3d\(\s*0(?:\.0+)?\s*,/.test(transform) ||
+    /^scale3d\(\s*\d+(?:\.\d+)?\s*,\s*0(?:\.0+)?\s*,/.test(transform)
+  ) {
     return true;
   }
   const matrix = /^matrix\(([^)]+)\)$/.exec(transform);
@@ -657,10 +645,7 @@ function parseColorViaRegex(value: string): RGBA | null {
   const g = Number(match[2]);
   const b = Number(match[3]);
   const a = match[4] === undefined ? 1 : Number(match[4]);
-  if ([r, g, b, a].some((n) => Number.isNaN(n))) {
-    return null;
-  }
-  return [r, g, b, a];
+  return [r, g, b, a].some((n) => Number.isNaN(n)) ? null : [r, g, b, a];
 }
 
 // One-time-allocated 1×1 canvas for resolving CSS Color Level 4 syntaxes
@@ -723,10 +708,9 @@ function parseColor(value: string): RGBA | null {
   // Color spec. Real browsers normalize the computed value to the rgba
   // form, but jsdom under Jest returns the keyword verbatim — handle
   // both so callers don't have to.
-  if (value.trim().toLowerCase() === "transparent") {
-    return [0, 0, 0, 0];
-  }
-  return parseColorViaRegex(value) ?? parseColorViaCanvas(value);
+  return value.trim().toLowerCase() === "transparent"
+    ? [0, 0, 0, 0]
+    : (parseColorViaRegex(value) ?? parseColorViaCanvas(value));
 }
 
 // Test-only: clear the cached canvas probe so a test that installs a
@@ -788,10 +772,7 @@ function detectColorMatch(
     return null;
   }
   const fg = parseColor(style.color);
-  if (!fg) {
-    return null;
-  }
-  if (fg[3] === 0) {
+  if (!fg || fg[3] === 0) {
     return null;
   }
   const bg = effectiveBackgroundColor(element);
@@ -819,19 +800,13 @@ interface Candidate extends MatchDetail {
 function findCandidates(root: ParentNode): Candidate[] {
   const matches: Candidate[] = [];
   for (const element of root.querySelectorAll<HTMLElement>("*")) {
-    if (isNonContentTag(element.tagName)) {
-      continue;
-    }
-    if (isInsidePlaceholder(element)) {
-      continue;
-    }
-    if (hasSrOnlyClass(element)) {
-      continue;
-    }
-    if (isExcludedAncestor(element)) {
-      continue;
-    }
-    if (!hasNonemptyText(element)) {
+    if (
+      isNonContentTag(element.tagName) ||
+      isInsidePlaceholder(element) ||
+      hasSrOnlyClass(element) ||
+      isExcludedAncestor(element) ||
+      !hasNonemptyText(element)
+    ) {
       continue;
     }
     const style = getComputedStyle(element);
@@ -849,13 +824,11 @@ function findCandidates(root: ParentNode): Candidate[] {
     // available to assistive tech. visibility:hidden / opacity:0 /
     // color-match inside a landmark or aria-hidden subtree is
     // injection-shaped and gets stripped.
-    if (POSITIONAL_HIDE_REASONS.has(match.reason)) {
-      if (isLandmark(element)) {
-        continue;
-      }
-      if (element.closest('[aria-hidden="true"]')) {
-        continue;
-      }
+    if (
+      POSITIONAL_HIDE_REASONS.has(match.reason) &&
+      (isLandmark(element) || element.closest('[aria-hidden="true"]'))
+    ) {
+      continue;
     }
     matches.push({ element, ...match });
   }

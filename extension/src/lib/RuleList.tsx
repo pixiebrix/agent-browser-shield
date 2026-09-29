@@ -54,7 +54,7 @@ export function RuleList({
                   <label>
                     <input
                       type="checkbox"
-                      checked={unavailable ? false : states[rule.id]}
+                      checked={!unavailable && states[rule.id]}
                       disabled={unavailable}
                       onChange={(event) => {
                         void setRuleEnabled(rule.id, event.target.checked);

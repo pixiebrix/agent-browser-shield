@@ -76,10 +76,12 @@ export function parseTotalSeconds(text: string): number | null {
   let found = false;
   for (const [pattern, multiplier] of UNIT_MULTIPLIERS) {
     const match = text.match(pattern);
-    if (match?.[1] !== undefined) {
-      total += Number(match[1]) * multiplier;
-      found = true;
+    if (match?.[1] === undefined) {
+      continue;
     }
+
+    total += Number(match[1]) * multiplier;
+    found = true;
   }
   return found ? total : null;
 }
@@ -102,10 +104,9 @@ function findCandidates(root: ParentNode): Candidate[] {
         return null;
       }
       const seconds = parseTotalSeconds(text);
-      if (seconds == null) {
-        return null;
-      }
-      return { initialText: text, initialSeconds: seconds };
+      return seconds == null
+        ? null
+        : { initialText: text, initialSeconds: seconds };
     },
   });
   return matches.map(({ element, match }) => ({
@@ -117,10 +118,7 @@ function findCandidates(root: ParentNode): Candidate[] {
 
 function reconcileCandidates(candidates: Candidate[]): void {
   for (const { element, initialText, initialSeconds } of candidates) {
-    if (!element.isConnected) {
-      continue;
-    }
-    if (isInsidePlaceholder(element)) {
+    if (!element.isConnected || isInsidePlaceholder(element)) {
       continue;
     }
     const currentText = element.textContent.trim();
@@ -128,10 +126,7 @@ function reconcileCandidates(candidates: Candidate[]): void {
       continue;
     }
     const currentSeconds = parseTotalSeconds(currentText);
-    if (currentSeconds == null) {
-      continue;
-    }
-    if (currentSeconds >= initialSeconds) {
+    if (currentSeconds == null || currentSeconds >= initialSeconds) {
       continue;
     }
     replaceWithBlockPlaceholder(

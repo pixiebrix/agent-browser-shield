@@ -47,10 +47,7 @@ function findContainer(textNode: Text): HTMLElement | null {
   }
   // No block-level ancestor — fall back to the text node's direct parent,
   // but never escalate to BODY/HTML (would hide the whole page).
-  if (parent.tagName === "BODY" || parent.tagName === "HTML") {
-    return null;
-  }
-  return parent;
+  return parent.tagName === "BODY" || parent.tagName === "HTML" ? null : parent;
 }
 
 // Lifecycle controller cancels in-flight scans when an SPA route swap
@@ -91,10 +88,7 @@ function scanAndMask(root: ParentNode): void {
     // abort before calling us.
     onComplete: () => {
       for (const element of filterToOutermost([...containers])) {
-        if (!element.isConnected) {
-          continue;
-        }
-        if (isInsidePlaceholder(element)) {
+        if (!element.isConnected || isInsidePlaceholder(element)) {
           continue;
         }
         // The container is an ancestor of the matched text node, so the reveal

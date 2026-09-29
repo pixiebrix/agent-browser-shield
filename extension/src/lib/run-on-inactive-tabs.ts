@@ -20,13 +20,9 @@ export const RUN_ON_INACTIVE_TABS_DEFAULT = false;
 // empty string falls back to the committed default above.
 function resolveDefault(): boolean {
   const raw = process.env.EXTENSION_RUN_ON_INACTIVE_TABS_DEFAULT;
-  if (raw === "true") {
-    return true;
-  }
-  if (raw === "false") {
-    return false;
-  }
-  return RUN_ON_INACTIVE_TABS_DEFAULT;
+  return raw === "true" || raw === "false"
+    ? raw === "true"
+    : RUN_ON_INACTIVE_TABS_DEFAULT;
 }
 
 export const runOnInactiveTabsStorage = createChromeStorageValue<boolean>({

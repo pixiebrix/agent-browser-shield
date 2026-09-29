@@ -53,10 +53,7 @@ function readTopFrameUrl(): string | null {
 }
 
 function computeEffective(): boolean {
-  if (!cachedGlobal) {
-    return false;
-  }
-  if (cachedTabPaused) {
+  if (!cachedGlobal || cachedTabPaused) {
     return false;
   }
   const url = readTopFrameUrl();

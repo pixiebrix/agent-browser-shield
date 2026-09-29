@@ -196,13 +196,12 @@ function applyEnabled(
     topFrame,
   });
   for (const rule of RULES) {
-    if (!isApplicableHere(rule, topFrame, availability)) {
+    if (!isApplicableHere(rule, topFrame, availability) || !states[rule.id]) {
       continue;
     }
-    if (states[rule.id]) {
-      createRuleLogger(rule.id).info("applying rule");
-      rule.apply(document.body);
-    }
+
+    createRuleLogger(rule.id).info("applying rule");
+    rule.apply(document.body);
   }
 }
 

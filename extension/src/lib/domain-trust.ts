@@ -32,10 +32,9 @@ export function registrableDomain(host: string): string | null {
     return null;
   }
   const parsed = parse(host, TLDTS_OPTIONS);
-  if (parsed.isIp === true && parsed.hostname !== null) {
-    return parsed.hostname;
-  }
-  return parsed.domain;
+  return parsed.isIp === true && parsed.hostname !== null
+    ? parsed.hostname
+    : parsed.domain;
 }
 
 // True iff both hostnames resolve to the same registrable domain. Returns
@@ -44,8 +43,5 @@ export function registrableDomain(host: string): string | null {
 // trust checks fail closed.
 export function sameRegistrableDomain(a: string, b: string): boolean {
   const dA = registrableDomain(a);
-  if (dA === null) {
-    return false;
-  }
-  return dA === registrableDomain(b);
+  return dA !== null && dA === registrableDomain(b);
 }

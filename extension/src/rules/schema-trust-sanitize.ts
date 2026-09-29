@@ -65,10 +65,7 @@ function extractClaimUrl(node: Record<string, unknown>): string | null {
     return url;
   }
   const id = node["@id"];
-  if (typeof id === "string" && id !== "") {
-    return id;
-  }
-  return null;
+  return typeof id === "string" && id !== "" ? id : null;
 }
 
 function sanitizeAuthorityNode(
@@ -281,10 +278,9 @@ function blankItempropValue(element: Element): boolean {
 // anyone's property.
 function itemPropertyContext(item: Element): string[] {
   const itemprop = item.getAttribute("itemprop");
-  if (itemprop === null) {
-    return [];
-  }
-  return itemprop.split(/\s+/).filter((name) => name !== "");
+  return itemprop === null
+    ? []
+    : itemprop.split(/\s+/).filter((name) => name !== "");
 }
 
 function readClaimUrl(item: Element): string | null {
@@ -296,10 +292,7 @@ function readClaimUrl(item: Element): string | null {
     }
   }
   const itemid = item.getAttribute("itemid");
-  if (itemid !== null && itemid !== "") {
-    return itemid;
-  }
-  return null;
+  return itemid !== null && itemid !== "" ? itemid : null;
 }
 
 function processItem(item: Element, pageHost: string): void {
@@ -320,10 +313,10 @@ function processItem(item: Element, pageHost: string): void {
   // there isn't suspicious.
   if (isAnnotateOnly) {
     const context = itemPropertyContext(item);
-    if (context.every((name) => !isAuthorityContextProperty(name))) {
-      return;
-    }
-    if (item.hasAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR)) {
+    if (
+      context.every((name) => !isAuthorityContextProperty(name)) ||
+      item.hasAttribute(SCHEMA_TRUST_UNVERIFIED_ATTR)
+    ) {
       return;
     }
   }

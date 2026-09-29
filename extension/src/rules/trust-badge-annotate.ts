@@ -116,10 +116,9 @@ function isBadgeShape(element: Element): boolean {
   // `"svg"` lowercase; HTML elements uppercase it. `localName` is always
   // lowercase per spec, which sidesteps the asymmetry.
   const name = element.localName;
-  if (name === "img" || name === "svg") {
-    return true;
-  }
-  return element.getAttribute("role") === "img";
+  return (
+    name === "img" || name === "svg" || element.getAttribute("role") === "img"
+  );
 }
 
 // Accessible-name resolution in priority order: aria-label,
@@ -179,11 +178,7 @@ function readAccessibleName(element: Element): string {
   }
 
   const title = element.getAttribute("title");
-  if (title !== null && title.trim() !== "") {
-    return title.trim();
-  }
-
-  return "";
+  return title !== null && title.trim() !== "" ? title.trim() : "";
 }
 
 export interface TrustBadgeMatch {
@@ -287,10 +282,12 @@ function scanAndAnnotate(root: ParentNode): void {
       continue;
     }
     const match = detectTrustBadge(node, pageHost);
-    if (match !== null) {
-      annotate(node, match.accessibleName);
-      count++;
+    if (match === null) {
+      continue;
     }
+
+    annotate(node, match.accessibleName);
+    count++;
   }
   if (count > 0) {
     log.info("trust badges annotated", { count });

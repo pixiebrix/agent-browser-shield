@@ -38,10 +38,12 @@ function captureResponses(): { responses: ResponseBody[]; stop: () => void } {
   const responses: ResponseBody[] = [];
   const handler = (event: MessageEvent): void => {
     const data = event.data as ResponseBody | null;
-    if (!data || typeof data !== "object") {
-      return;
-    }
-    if (data.source !== "abs-dump-trace" || data.direction !== "response") {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      data.source !== "abs-dump-trace" ||
+      data.direction !== "response"
+    ) {
       return;
     }
     responses.push(data);

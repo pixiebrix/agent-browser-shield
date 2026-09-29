@@ -122,27 +122,21 @@ function isVisiblyRendered(element: Element): boolean {
   // jsdom returns 0×0 for every rect — bypass the gate there so tests
   // don't have to mock layout. Same convention used in
   // `newsletter-modal-hide`.
-  if (rect.width === 0 && rect.height === 0) {
-    return true;
-  }
-  return rect.width > 0 && rect.height > 0;
+  return (
+    (rect.width === 0 && rect.height === 0) ||
+    (rect.width > 0 && rect.height > 0)
+  );
 }
 
 function looksLikeClosedShadowHost(element: Element): boolean {
   const tagName = element.tagName;
-  if (!tagName.includes("-")) {
-    return false;
-  }
-  if (!customElements.get(tagName.toLowerCase())) {
-    return false;
-  }
-  if (element.shadowRoot !== null) {
-    return false;
-  }
-  if (hasLightContent(element)) {
-    return false;
-  }
-  return isVisiblyRendered(element);
+  return (
+    tagName.includes("-") &&
+    customElements.get(tagName.toLowerCase()) !== undefined &&
+    element.shadowRoot === null &&
+    !hasLightContent(element) &&
+    isVisiblyRendered(element)
+  );
 }
 
 function findClosedShadowHosts(root: ParentNode): Element[] {

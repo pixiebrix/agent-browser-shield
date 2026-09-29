@@ -170,23 +170,19 @@ function enqueueAttributeMutation(
     return;
   }
   const element = target as Element;
-  if (IGNORE_TAGS.has(element.tagName)) {
-    return;
-  }
-  if (!element.isConnected) {
+  if (IGNORE_TAGS.has(element.tagName) || !element.isConnected) {
     return;
   }
   for (const subscriber of router.subscribers) {
     if (!subscriber.observeAttributes) {
       continue;
     }
-    if (subscriber.skipPlaceholderSubtrees) {
-      if (element.classList.contains(PLACEHOLDER_CLASS)) {
-        continue;
-      }
-      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
-        continue;
-      }
+    if (
+      subscriber.skipPlaceholderSubtrees &&
+      (element.classList.contains(PLACEHOLDER_CLASS) ||
+        element.closest(`.${PLACEHOLDER_CLASS}`))
+    ) {
+      continue;
     }
     subscriber.pending.add(element);
   }
@@ -298,13 +294,12 @@ function refreshObservation(router: Router): void {
 // shared filters (IGNORE_TAGS, isConnected) are applied by the caller.
 function enqueueForAllSubscribers(router: Router, element: Element): void {
   for (const subscriber of router.subscribers) {
-    if (subscriber.skipPlaceholderSubtrees) {
-      if (element.classList.contains(PLACEHOLDER_CLASS)) {
-        continue;
-      }
-      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
-        continue;
-      }
+    if (
+      subscriber.skipPlaceholderSubtrees &&
+      (element.classList.contains(PLACEHOLDER_CLASS) ||
+        element.closest(`.${PLACEHOLDER_CLASS}`))
+    ) {
+      continue;
     }
     subscriber.pending.add(element);
   }
@@ -340,10 +335,7 @@ function adoptShadowRoot(router: Router, shadowRoot: ShadowRoot): void {
       continue;
     }
     const element = child as Element;
-    if (IGNORE_TAGS.has(element.tagName)) {
-      continue;
-    }
-    if (!element.isConnected) {
+    if (IGNORE_TAGS.has(element.tagName) || !element.isConnected) {
       continue;
     }
     enqueueForAllSubscribers(router, element);
@@ -373,19 +365,15 @@ function seedSubscriberFromShadowRoot(
       continue;
     }
     const element = child as Element;
-    if (IGNORE_TAGS.has(element.tagName)) {
+    if (IGNORE_TAGS.has(element.tagName) || !element.isConnected) {
       continue;
     }
-    if (!element.isConnected) {
+    if (
+      subscriber.skipPlaceholderSubtrees &&
+      (element.classList.contains(PLACEHOLDER_CLASS) ||
+        element.closest(`.${PLACEHOLDER_CLASS}`))
+    ) {
       continue;
-    }
-    if (subscriber.skipPlaceholderSubtrees) {
-      if (element.classList.contains(PLACEHOLDER_CLASS)) {
-        continue;
-      }
-      if (element.closest(`.${PLACEHOLDER_CLASS}`)) {
-        continue;
-      }
     }
     subscriber.pending.add(element);
   }
@@ -397,13 +385,9 @@ function isUnderRouterTarget(router: Router, node: Node): boolean {
   // root's host can live in either tree (or in neither, if the host
   // is detached). Filter so the head router doesn't pick up shadows
   // attached to body-tree hosts.
-  if (router.target === document) {
-    return node.isConnected;
-  }
-  if (!(router.target instanceof Node)) {
-    return false;
-  }
-  return router.target.contains(node);
+  return router.target === document
+    ? node.isConnected
+    : router.target instanceof Node && router.target.contains(node);
 }
 
 function detachRouterObserver(router: Router): void {
@@ -561,10 +545,7 @@ function startRouter(router: Router): void {
   // host lives under our target. Routers that target document.head can
   // skip body-tree shadows and vice versa.
   router.unsubscribeShadowAttach = subscribeShadowRootAttached((shadow) => {
-    if (!router.observer) {
-      return;
-    }
-    if (!isUnderRouterTarget(router, shadow.host)) {
+    if (!router.observer || !isUnderRouterTarget(router, shadow.host)) {
       return;
     }
     adoptShadowRoot(router, shadow);
@@ -588,10 +569,12 @@ function stopRouter(router: Router): void {
   router.unsubscribeRouteChange = null;
   cancelRouteSweep(router);
   routersByTarget.delete(router.target);
-  if (routersByTarget.size === 0) {
-    unsubscribeRunOnInactive?.();
-    unsubscribeRunOnInactive = null;
+  if (routersByTarget.size > 0) {
+    return;
   }
+
+  unsubscribeRunOnInactive?.();
+  unsubscribeRunOnInactive = null;
 }
 
 function getOrCreateRouter(target: Node): Router {

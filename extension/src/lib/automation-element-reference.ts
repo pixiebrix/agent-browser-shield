@@ -33,10 +33,7 @@ export function getReferenceForElement(element: Element): string {
 
 export function resolveReference(ref: string): Element | undefined {
   const element = elementsByRef.get(ref)?.deref();
-  if (!element?.isConnected) {
-    return undefined;
-  }
-  return element;
+  return element?.isConnected ? element : undefined;
 }
 
 // Forget any refs whose elements have been GC'd. Cheap to run between passes;

@@ -181,13 +181,7 @@ export function isDenylistedName(name: string): boolean {
 // the affiliate allowlist should also match the denylist, and vice
 // versa.
 export function shouldClearName(name: string): boolean {
-  if (name.length === 0) {
-    return false;
-  }
-  if (isDenylistedName(name)) {
-    return false;
-  }
-  return isAffiliateName(name);
+  return name.length > 0 && !isDenylistedName(name) && isAffiliateName(name);
 }
 
 function isKillSwitchedHost(href: string): boolean {
@@ -259,13 +253,11 @@ function tryClearInput(
   input: HTMLInputElement,
   outcome: { cleared: number; names: string[] },
 ): void {
-  if (input.hasAttribute(CLEARED_ATTR)) {
-    return;
-  }
-  if (!input.isConnected) {
-    return;
-  }
-  if (!isFormScopedHidden(input)) {
+  if (
+    input.hasAttribute(CLEARED_ATTR) ||
+    !input.isConnected ||
+    !isFormScopedHidden(input)
+  ) {
     return;
   }
   const name = input.name;
@@ -291,10 +283,7 @@ function tryClearInput(
 }
 
 function scanAndClear(root: ParentNode): void {
-  if (!isCheckoutUrl(location.href)) {
-    return;
-  }
-  if (isKillSwitchedHost(location.href)) {
+  if (!isCheckoutUrl(location.href) || isKillSwitchedHost(location.href)) {
     return;
   }
   const outcome = { cleared: 0, names: [] as string[] };

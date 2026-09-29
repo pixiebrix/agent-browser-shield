@@ -154,10 +154,9 @@ export function detectSpoof(link: HTMLAnchorElement): SpoofTriggers | null {
     }
   }
 
-  if (homoglyphWord === null && textDomain === null) {
-    return null;
-  }
-  return { homoglyphWord, homoglyphSkeleton, textDomain, hrefHost };
+  return homoglyphWord === null && textDomain === null
+    ? null
+    : { homoglyphWord, homoglyphSkeleton, textDomain, hrefHost };
 }
 
 function chipText(triggers: SpoofTriggers): string {
@@ -225,10 +224,12 @@ function scanAndFlag(root: ParentNode): void {
       continue;
     }
     const triggers = detectSpoof(anchor);
-    if (triggers !== null) {
-      flag(anchor, triggers);
-      count++;
+    if (triggers === null) {
+      continue;
     }
+
+    flag(anchor, triggers);
+    count++;
   }
   if (count > 0) {
     log.info("link spoofs flagged", { count });

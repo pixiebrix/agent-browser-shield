@@ -31,10 +31,7 @@ export function formatBadge(total: number): string {
   if (total <= 0) {
     return "";
   }
-  if (total > 999) {
-    return "999+";
-  }
-  return String(total);
+  return total > 999 ? "999+" : String(total);
 }
 
 // Paint the explicit "off" badge. Rules don't run (denylisted) or were
@@ -65,12 +62,13 @@ export function paintCountBadge(
   chrome.action.setBadgeText({ tabId, text }).catch(() => {
     // noop
   });
-  if (text) {
-    const color = detection ? BADGE_COLOR_DETECTION : BADGE_COLOR_DEFAULT;
-    chrome.action.setBadgeBackgroundColor({ tabId, color }).catch(() => {
-      // noop
-    });
+  if (!text) {
+    return;
   }
+  const color = detection ? BADGE_COLOR_DETECTION : BADGE_COLOR_DEFAULT;
+  chrome.action.setBadgeBackgroundColor({ tabId, color }).catch(() => {
+    // noop
+  });
 }
 
 // Swap the toolbar icon + tooltip to match the tab's protection state. The

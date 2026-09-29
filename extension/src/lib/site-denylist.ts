@@ -165,10 +165,9 @@ export function addHostPattern(
   if (pattern === null) {
     return { patterns: [...current], added: null };
   }
-  if (current.includes(pattern)) {
-    return { patterns: [...current], added: null };
-  }
-  return { patterns: [...current, pattern], added: pattern };
+  return current.includes(pattern)
+    ? { patterns: [...current], added: null }
+    : { patterns: [...current, pattern], added: pattern };
 }
 
 // Drop every pattern in `current` whose `URLPattern.test` returns true for

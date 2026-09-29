@@ -67,10 +67,10 @@ export function visibleTextContent(element: Element): string {
 // common "don't re-process my own replacement" check that every hide rule
 // performs before considering a candidate.
 export function isInsidePlaceholder(element: Element): boolean {
-  if (element.classList.contains(PLACEHOLDER_CLASS)) {
-    return true;
-  }
-  return element.closest(`.${PLACEHOLDER_CLASS}`) !== null;
+  return (
+    element.classList.contains(PLACEHOLDER_CLASS) ||
+    element.closest(`.${PLACEHOLDER_CLASS}`) !== null
+  );
 }
 
 // Keep only candidates that have no candidate ancestor — the outermost
@@ -154,13 +154,11 @@ export function findInnermostMatches<T>(
   const { isSkipped, maxTextLength, maxDescendants, match } = options;
   const out: Array<{ element: HTMLElement; match: T }> = [];
   for (const element of root.querySelectorAll<HTMLElement>("*")) {
-    if (isNonContentTag(element.tagName)) {
-      continue;
-    }
-    if (isSkipped?.(element)) {
-      continue;
-    }
-    if (element.children.length > maxDescendants) {
+    if (
+      isNonContentTag(element.tagName) ||
+      isSkipped?.(element) ||
+      element.children.length > maxDescendants
+    ) {
       continue;
     }
     const text = element.textContent.trim();
@@ -309,16 +307,12 @@ export function collectTextNodesWithInlineGroups(
 
   function accept(text: Text): boolean {
     const parent = text.parentElement;
-    if (!parent) {
-      return false;
-    }
-    if (isNonContentTag(parent.tagName)) {
-      return false;
-    }
-    if (isInsidePlaceholder(parent)) {
-      return false;
-    }
-    if (shouldSkipParent?.(parent)) {
+    if (
+      !parent ||
+      isNonContentTag(parent.tagName) ||
+      isInsidePlaceholder(parent) ||
+      shouldSkipParent?.(parent)
+    ) {
       return false;
     }
     const value = text.nodeValue;

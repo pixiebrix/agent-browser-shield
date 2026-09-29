@@ -163,10 +163,7 @@ export function createSelectorHideRule<Id extends RuleId>(
     const outermost = new Set<HTMLElement>(filterToOutermost(candidates));
 
     for (const element of candidates) {
-      if (!outermost.has(element)) {
-        continue;
-      }
-      if (!element.isConnected) {
+      if (!outermost.has(element) || !element.isConnected) {
         continue;
       }
       // Fast path: a previous scan already concluded this element should
