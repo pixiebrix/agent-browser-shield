@@ -186,12 +186,11 @@ function setValueAttributesInPlace({
 }
 
 function getElementTree(element: HTMLElement): Node | undefined {
-  if (tagDenyList.has(element.tagName)) {
-    return;
-  }
-
-  // Visibility must be measured on the live element, before any cloning.
-  if (!isElementVisible(element)) {
+  if (
+    tagDenyList.has(element.tagName) ||
+    // Visibility must be measured on the live element, before any cloning.
+    !isElementVisible(element)
+  ) {
     return;
   }
 

@@ -425,15 +425,13 @@ interface Candidate {
 }
 
 function isCandidateSkipped(element: HTMLElement): boolean {
-  if (element.hasAttribute(FLAGGED_ATTR)) {
-    return true;
-  }
-  // Skip the chip itself and anything nested inside it so the chip's own
-  // text doesn't drive recursive re-annotation.
-  if (element.classList.contains(FLAG_CLASS)) {
-    return true;
-  }
-  if (element.closest(`.${FLAG_CLASS}`)) {
+  if (
+    element.hasAttribute(FLAGGED_ATTR) ||
+    // Skip the chip itself and anything nested inside it so the chip's own
+    // text doesn't drive recursive re-annotation.
+    element.classList.contains(FLAG_CLASS) ||
+    element.closest(`.${FLAG_CLASS}`)
+  ) {
     return true;
   }
   // If a descendant has already been flagged (annotated *or* considered
@@ -472,13 +470,13 @@ function collectCandidates(root: ParentNode): Candidate[] {
 
 function flag(candidate: Candidate): void {
   const { element, phrase, amount } = candidate;
-  if (!element.isConnected) {
-    return;
-  }
-  // Re-flagging the same element should be a no-op. `collectCandidates`
-  // sets the attribute on rejected candidates too; an attribute value of
-  // "" indicates an active annotation.
-  if (element.getAttribute(FLAGGED_ATTR) === "") {
+  if (
+    !element.isConnected ||
+    // Re-flagging the same element should be a no-op. `collectCandidates`
+    // sets the attribute on rejected candidates too; an attribute value of
+    // "" indicates an active annotation.
+    element.getAttribute(FLAGGED_ATTR) === ""
+  ) {
     return;
   }
   traceMutation({ ruleId: RULE_ID, kind: "flag", target: element }, () => {

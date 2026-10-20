@@ -128,10 +128,7 @@ function matchLabel(text: string): LabelMatch | null {
   // idioms `[ad hoc]` / `[ad lib]` — which carry internal whitespace — can't
   // match. Check it before the case-insensitive regexes since both could
   // match a `[Ad]` text otherwise.
-  if (BRACKET_RE.test(text)) {
-    return { phrase: text };
-  }
-  if (STANDALONE_RE.test(text)) {
+  if (BRACKET_RE.test(text) || STANDALONE_RE.test(text)) {
     return { phrase: text };
   }
   return SUFFIX_RE.test(text) ? { phrase: text } : null;
@@ -339,18 +336,17 @@ function isInsideHiddenAd(element: Element): boolean {
 }
 
 function isCandidateSkipped(element: HTMLElement): boolean {
-  if (element.hasAttribute(CONSIDERED_ATTR)) {
-    return true;
-  }
-  // Skip if the label sits inside (or is) an element this rule already
-  // hid and the user then revealed. The reveal stamp lives on the article
-  // ancestor — not on the label — so checking only `element.hasAttribute`
-  // missed the common case and let a post-reveal mutation burst re-wrap
-  // the same article into an unrevealable loop.
-  if (element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`)) {
-    return true;
-  }
-  if (isInsidePlaceholder(element) || isInsideHiddenAd(element)) {
+  if (
+    element.hasAttribute(CONSIDERED_ATTR) ||
+    // Skip if the label sits inside (or is) an element this rule already
+    // hid and the user then revealed. The reveal stamp lives on the article
+    // ancestor — not on the label — so checking only `element.hasAttribute`
+    // missed the common case and let a post-reveal mutation burst re-wrap
+    // the same article into an unrevealable loop.
+    element.closest(`[${REVEALED_ATTR}="${RULE_ID}"]`) ||
+    isInsidePlaceholder(element) ||
+    isInsideHiddenAd(element)
+  ) {
     return true;
   }
   // If any ancestor up to a navigation / interactive boundary is itself

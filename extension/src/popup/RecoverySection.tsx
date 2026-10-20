@@ -49,13 +49,13 @@ export function RecoverySection({
 }) {
   const { pause, active, remainingMs } = useTabPause(activeTabId);
 
-  if (activeTabId === null || activeTabUrl === null || denylist === null) {
-    return null;
-  }
-  // The shield doesn't run on browser-internal URLs, and a denylisted site is
-  // already fully off — in both cases there's nothing to reveal or snooze, and
-  // SiteDisableSection already explains the state. Stay out of the way.
   if (
+    activeTabId === null ||
+    activeTabUrl === null ||
+    denylist === null ||
+    // The shield doesn't run on browser-internal URLs, and a denylisted site is
+    // already fully off — in both cases there's nothing to reveal or snooze, and
+    // SiteDisableSection already explains the state. Stay out of the way.
     !isContentSchemeUrl(activeTabUrl) ||
     findMatchingPatterns(activeTabUrl, denylist).length > 0
   ) {

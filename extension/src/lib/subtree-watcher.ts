@@ -196,16 +196,16 @@ function dispatchAddedNode(router: Router, added: Node): void {
     return;
   }
   const element = added as Element;
-  if (IGNORE_TAGS.has(element.tagName)) {
-    return;
-  }
-  // React-style reconciliation routinely adds-then-removes a node in
-  // the same tick. By the time MutationObserver fires (microtask
-  // afterward), the addition record is still there but the node is
-  // already detached. drainSubscriber() filters by isConnected too —
-  // checking at enqueue avoids buffering churn in pending during a
-  // 5k-node route swap with high in-tick removal rate.
-  if (!element.isConnected) {
+  if (
+    IGNORE_TAGS.has(element.tagName) ||
+    // React-style reconciliation routinely adds-then-removes a node in
+    // the same tick. By the time MutationObserver fires (microtask
+    // afterward), the addition record is still there but the node is
+    // already detached. drainSubscriber() filters by isConnected too —
+    // checking at enqueue avoids buffering churn in pending during a
+    // 5k-node route swap with high in-tick removal rate.
+    !element.isConnected
+  ) {
     return;
   }
   enqueueForAllSubscribers(router, element);
@@ -451,11 +451,12 @@ function handleRouteChange(router: Router): void {
   const sweep = (): void => {
     router.routeSweepHandle = null;
     router.routeSweepIsTimeout = false;
-    if (!router.observer || shouldPauseForHidden()) {
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!document.body) {
+    if (
+      !router.observer ||
+      shouldPauseForHidden() ||
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      !document.body
+    ) {
       return;
     }
     for (const subscriber of router.subscribers) {

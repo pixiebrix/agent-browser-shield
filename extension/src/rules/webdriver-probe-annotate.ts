@@ -74,14 +74,14 @@ function buildLandmark(): HTMLElement {
 }
 
 function ensureLandmark(): void {
-  if (document.querySelector(LANDMARK_SELECTOR)) {
-    return;
-  }
-  // Skip if document.body isn't yet available — the engine guards this at
-  // the top level, but the event handler runs asynchronously and could
-  // fire on a frame whose body has been torn down.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!document.body) {
+  if (
+    document.querySelector(LANDMARK_SELECTOR) ||
+    // Skip if document.body isn't yet available — the engine guards this at
+    // the top level, but the event handler runs asynchronously and could
+    // fire on a frame whose body has been torn down.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    !document.body
+  ) {
     return;
   }
   traceMutation(

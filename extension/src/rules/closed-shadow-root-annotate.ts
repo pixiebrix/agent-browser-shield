@@ -165,11 +165,11 @@ function buildLandmark(): HTMLElement {
 }
 
 function ensureLandmark(): void {
-  if (document.querySelector(LANDMARK_SELECTOR)) {
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!document.body) {
+  if (
+    document.querySelector(LANDMARK_SELECTOR) ||
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    !document.body
+  ) {
     return;
   }
   traceMutation(

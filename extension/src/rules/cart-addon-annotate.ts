@@ -109,15 +109,13 @@ interface Candidate {
 }
 
 function isSkipped(element: HTMLElement): boolean {
-  if (element.hasAttribute(FLAGGED_ATTR)) {
-    return true;
-  }
-  // Skip the chip itself and anything nested inside it so the chip's own
-  // text doesn't drive a recursive re-annotation on the next scan.
-  if (element.classList.contains(FLAG_CLASS)) {
-    return true;
-  }
-  if (element.closest(`.${FLAG_CLASS}`)) {
+  if (
+    element.hasAttribute(FLAGGED_ATTR) ||
+    // Skip the chip itself and anything nested inside it so the chip's own
+    // text doesn't drive a recursive re-annotation on the next scan.
+    element.classList.contains(FLAG_CLASS) ||
+    element.closest(`.${FLAG_CLASS}`)
+  ) {
     return true;
   }
   // If a descendant is already flagged, the matching text lives in that

@@ -124,9 +124,10 @@ export default tseslint.config(
       // comment layout belongs to the formatter.
       "unicorn/no-asterisk-prefix-in-documentation-comments": "off",
 
-      // v78 now reports commented branches too. Keep the existing guards and
-      // their explanations until reviewed in context; ratchet back in #486.
-      "unicorn/prefer-combined-guards": "warn",
+      "unicorn/prefer-combined-guards": "error",
+
+      // v78 now reports commented branches too. Keep the remaining warnings
+      // until their rewrites are reviewed in #486.
       "unicorn/prefer-ternary": "warn",
       "unicorn/prefer-logical-operator-over-ternary": "warn",
 
