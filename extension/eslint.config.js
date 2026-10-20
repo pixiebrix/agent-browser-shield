@@ -39,7 +39,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  unicorn.configs["flat/recommended"],
+  unicorn.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: 2024,
@@ -119,6 +119,16 @@ export default tseslint.config(
       "unicorn/no-useless-undefined": "off",
       "unicorn/no-array-callback-reference": "off",
       "unicorn/no-nested-ternary": "off",
+
+      // Preserve conventional JSDoc stars and Jest environment docblocks;
+      // comment layout belongs to the formatter.
+      "unicorn/no-asterisk-prefix-in-documentation-comments": "off",
+
+      // v78 now reports commented branches too. Keep the existing guards and
+      // their explanations until reviewed in context; ratchet back in #486.
+      "unicorn/prefer-combined-guards": "warn",
+      "unicorn/prefer-ternary": "warn",
+      "unicorn/prefer-logical-operator-over-ternary": "warn",
 
       // Renamed from `prevent-abbreviations` in unicorn v68 (same options).
       "unicorn/name-replacements": [
@@ -435,6 +445,10 @@ export default tseslint.config(
     ],
     plugins: { jest },
     rules: {
+      // Explicit fixture arguments describe the scenario even when every
+      // current test passes the same value.
+      "unicorn/no-unnecessary-parameters": "off",
+
       // Tests legitimately use literal nulls and many small `for` loops.
       "unicorn/no-useless-undefined": "off",
       "unicorn/consistent-function-scoping": "off",

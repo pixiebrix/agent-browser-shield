@@ -178,7 +178,7 @@ function readAccessibleName(element: Element): string {
   }
 
   const title = element.getAttribute("title");
-  return title !== null && title.trim() !== "" ? title.trim() : "";
+  return title === null || title.trim() === "" ? "" : title.trim();
 }
 
 export interface TrustBadgeMatch {
