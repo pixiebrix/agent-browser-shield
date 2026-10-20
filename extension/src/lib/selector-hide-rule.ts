@@ -163,12 +163,13 @@ export function createSelectorHideRule<Id extends RuleId>(
     const outermost = new Set<HTMLElement>(filterToOutermost(candidates));
 
     for (const element of candidates) {
-      if (!outermost.has(element) || !element.isConnected) {
-        continue;
-      }
-      // Fast path: a previous scan already concluded this element should
-      // be skipped (or hid it). Saves the 5 marker reads below.
-      if (processed.has(element)) {
+      if (
+        !outermost.has(element) ||
+        !element.isConnected ||
+        // Fast path: a previous scan already concluded this element should
+        // be skipped (or hid it). Saves the 5 marker reads below.
+        processed.has(element)
+      ) {
         continue;
       }
       if (element.classList.contains(PLACEHOLDER_CLASS)) {

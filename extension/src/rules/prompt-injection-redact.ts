@@ -88,17 +88,18 @@ function scanAndMask(root: ParentNode): void {
     // abort before calling us.
     onComplete: () => {
       for (const element of filterToOutermost([...containers])) {
-        if (!element.isConnected || isInsidePlaceholder(element)) {
-          continue;
-        }
-        // The container is an ancestor of the matched text node, so the reveal
-        // stamp lands here — not on the text node we walked from. If a previous
-        // run hid this container and the user revealed it, a re-apply (rule
-        // disable→enable, or a future MutationObserver-driven re-scan) would
-        // otherwise re-hide the same block. Same shape as the disguised-ad-flag
-        // bug fixed in #160. (Originally landed via #161; preserved here after
-        // the chunked-walk refactor moved the hide pass into onComplete.)
-        if (element.closest(REVEALED_SELECTOR)) {
+        if (
+          !element.isConnected ||
+          isInsidePlaceholder(element) ||
+          // The container is an ancestor of the matched text node, so the reveal
+          // stamp lands here — not on the text node we walked from. If a previous
+          // run hid this container and the user revealed it, a re-apply (rule
+          // disable→enable, or a future MutationObserver-driven re-scan) would
+          // otherwise re-hide the same block. Same shape as the disguised-ad-flag
+          // bug fixed in #160. (Originally landed via #161; preserved here after
+          // the chunked-walk refactor moved the hide pass into onComplete.)
+          element.closest(REVEALED_SELECTOR)
+        ) {
           continue;
         }
         replaceWithBlockPlaceholder(

@@ -361,22 +361,18 @@ function readSelectCandidate(
     select.disabled ||
     !isVisibleControl(select) ||
     focusedControls.has(select) ||
-    isGeoSelect(select)
+    isGeoSelect(select) ||
+    // Multi-selects don't have a "default option" notion in the same way;
+    // they ship with whatever rows the page chose to mark `selected`.
+    // Annotating those would add noise without surfacing a sneak pattern.
+    select.multiple ||
+    // Use the live `selectedIndex` rather than scanning for `<option
+    // selected>` because framework defaults (React `<select
+    // defaultValue=…>`, Vue `v-model` initialState) populate the property
+    // without writing the attribute. The focused-set skip above already
+    // covers the "user changed it" case before our scan.
+    select.selectedIndex <= 0
   ) {
-    return null;
-  }
-  // Multi-selects don't have a "default option" notion in the same way;
-  // they ship with whatever rows the page chose to mark `selected`.
-  // Annotating those would add noise without surfacing a sneak pattern.
-  if (select.multiple) {
-    return null;
-  }
-  // Use the live `selectedIndex` rather than scanning for `<option
-  // selected>` because framework defaults (React `<select
-  // defaultValue=…>`, Vue `v-model` initialState) populate the property
-  // without writing the attribute. The focused-set skip above already
-  // covers the "user changed it" case before our scan.
-  if (select.selectedIndex <= 0) {
     return null;
   }
   const option = select.options[select.selectedIndex];
@@ -409,15 +405,13 @@ function readRadioCandidate(radio: HTMLInputElement): RadioCandidate | null {
   if (
     radio.type.toLowerCase() !== "radio" ||
     radio.disabled ||
-    !isVisibleControl(radio)
+    !isVisibleControl(radio) ||
+    // Live property covers framework-rendered defaults (React
+    // `defaultChecked`, Vue `v-model`) the same way the agent's snapshot
+    // would see them. The group-focused skip below covers the case
+    // where the user clicked any sibling in the group before our scan.
+    !radio.checked
   ) {
-    return null;
-  }
-  // Live property covers framework-rendered defaults (React
-  // `defaultChecked`, Vue `v-model`) the same way the agent's snapshot
-  // would see them. The group-focused skip below covers the case
-  // where the user clicked any sibling in the group before our scan.
-  if (!radio.checked) {
     return null;
   }
   const groupName = radio.name;

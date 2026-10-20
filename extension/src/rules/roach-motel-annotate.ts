@@ -183,12 +183,12 @@ function buildLandmark(host: string, warning: WarningPayload): HTMLElement {
 
 function apply(_root: ParentNode): void {
   const warning = findWarning(location.href);
-  if (warning === null) {
-    return;
-  }
-  // Idempotent: a previous apply (initial pass, re-enable from the
-  // options page) may already have inserted the landmark.
-  if (document.querySelector(LANDMARK_SELECTOR)) {
+  if (
+    warning === null ||
+    // Idempotent: a previous apply (initial pass, re-enable from the
+    // options page) may already have inserted the landmark.
+    document.querySelector(LANDMARK_SELECTOR)
+  ) {
     return;
   }
   // Inject at body level (regardless of which subtree root was passed)

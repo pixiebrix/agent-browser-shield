@@ -139,12 +139,12 @@ function decodeBase64(candidate: string): Uint8Array | null {
 }
 
 function decodeHex(candidate: string): Uint8Array | null {
-  if (candidate.length % 2 !== 0) {
-    return null;
-  }
-  // Pure-numeric hex (a long decimal number that happens to be valid
-  // hex) is not a payload. Require at least one a–f character.
-  if (!/[a-fA-F]/.test(candidate)) {
+  if (
+    candidate.length % 2 !== 0 ||
+    // Pure-numeric hex (a long decimal number that happens to be valid
+    // hex) is not a payload. Require at least one a–f character.
+    !/[a-fA-F]/.test(candidate)
+  ) {
     return null;
   }
   const bytes = new Uint8Array(candidate.length / 2);
@@ -740,18 +740,17 @@ function collectLeet(text: string, matches: InlineMatch[]): void {
   for (const m of text.matchAll(LEET_CANDIDATE)) {
     const candidate = m[0];
     if (
-      countLeetSubstitutions(candidate) < SUB_RULES.leetspeak.minSubstitutions
+      countLeetSubstitutions(candidate) <
+        SUB_RULES.leetspeak.minSubstitutions ||
+      // Same already-English gate the substitution ciphers use: deleet leaves
+      // genuine letters untouched, so ordinary prose carrying incidental
+      // leet-shaped digits (version strings like `11.16.0`, dates) survives
+      // `deleet` essentially unchanged and would clear the common-word floor
+      // on its own. A real leet payload obscures its letters behind digits, so
+      // its *raw* form is not yet English. Skip candidates that already read as
+      // English — only an actual encode reveals a hidden directive.
+      alreadyEnglish(candidate, SUB_RULES.leetspeak.minCommonWords)
     ) {
-      continue;
-    }
-    // Same already-English gate the substitution ciphers use: deleet leaves
-    // genuine letters untouched, so ordinary prose carrying incidental
-    // leet-shaped digits (version strings like `11.16.0`, dates) survives
-    // `deleet` essentially unchanged and would clear the common-word floor
-    // on its own. A real leet payload obscures its letters behind digits, so
-    // its *raw* form is not yet English. Skip candidates that already read as
-    // English — only an actual encode reveals a hidden directive.
-    if (alreadyEnglish(candidate, SUB_RULES.leetspeak.minCommonWords)) {
       continue;
     }
     if (

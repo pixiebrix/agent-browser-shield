@@ -52,13 +52,13 @@ function buildLandmark(recipe: string): HTMLElement {
 
 function apply(_root: ParentNode): void {
   const recipe = findRecipe(location.href);
-  if (recipe === null) {
-    return;
-  }
-  // Idempotent: a previous apply (initial pass, re-enable from the
-  // options page, or rule-engine re-fire on history navigation) may
-  // already have inserted the landmark.
-  if (document.querySelector(LANDMARK_SELECTOR)) {
+  if (
+    recipe === null ||
+    // Idempotent: a previous apply (initial pass, re-enable from the
+    // options page, or rule-engine re-fire on history navigation) may
+    // already have inserted the landmark.
+    document.querySelector(LANDMARK_SELECTOR)
+  ) {
     return;
   }
   // The engine passes document.body, but we always inject at body level
