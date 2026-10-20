@@ -292,7 +292,7 @@ function readClaimUrl(item: Element): string | null {
     }
   }
   const itemid = item.getAttribute("itemid");
-  return itemid !== null && itemid !== "" ? itemid : null;
+  return itemid === null || itemid === "" ? null : itemid;
 }
 
 function processItem(item: Element, pageHost: string): void {
