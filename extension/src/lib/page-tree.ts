@@ -110,26 +110,17 @@ const NESTED_HEADING_SELECTOR =
 // Must be called on the live element, not a clone — visibility depends on the
 // live document's computed styles.
 function isElementVisible(element: HTMLElement): boolean {
-  // Hidden inputs are display:none by UA stylesheet but carry form state. Keep
-  // them so the LLM sees the input's role in the form.
-  if (element instanceof HTMLInputElement && element.type === "hidden") {
-    return true;
-  }
-
-  if (!element.checkVisibility()) {
-    // display:contents elements have no layout box (checkVisibility returns
-    // false) but participate in parent layout normally. Pay for
-    // getComputedStyle only on this uncommon fall-through path.
-    return getComputedStyle(element).display === "contents";
-  }
-
-  if (zeroDimensionAllowlist.has(element.tagName)) {
-    return true;
-  }
-
-  // Catch zero-dimension elements (e.g. height:0 + overflow:hidden) that
-  // checkVisibility considered visible.
-  return !(element.offsetHeight === 0 && element.offsetWidth === 0);
+  return (
+    // Hidden inputs carry form state that the LLM needs despite display:none.
+    (element instanceof HTMLInputElement && element.type === "hidden") ||
+    (element.checkVisibility()
+      ? zeroDimensionAllowlist.has(element.tagName) ||
+        // Catch height:0 + overflow:hidden that checkVisibility treats as visible.
+        !(element.offsetHeight === 0 && element.offsetWidth === 0)
+      : // display:contents has no layout box but participates in parent layout.
+        // Only pay for getComputedStyle when checkVisibility returns false.
+        getComputedStyle(element).display === "contents")
+  );
 }
 
 function isInteractiveElement(element: HTMLElement): boolean {

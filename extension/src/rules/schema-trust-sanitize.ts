@@ -230,13 +230,11 @@ function readItempropValue(element: Element): string {
   if (HREF_CARRIER_TAGS.has(tag)) {
     return element.getAttribute("href") ?? "";
   }
-  if (SRC_CARRIER_TAGS.has(tag)) {
-    return element.getAttribute("src") ?? "";
-  }
-  // `textContent` on an Element (not a Document or DocumentType) is
-  // always a string per the DOM spec; the lib.dom.d.ts `string | null`
-  // union is for the Node base type.
-  return element.textContent;
+  // Element.textContent is always a string; Node's nullable type also covers
+  // Document and DocumentType.
+  return SRC_CARRIER_TAGS.has(tag)
+    ? (element.getAttribute("src") ?? "")
+    : element.textContent;
 }
 
 function blankItempropValue(element: Element): boolean {

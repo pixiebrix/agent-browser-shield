@@ -125,10 +125,10 @@ export default tseslint.config(
       "unicorn/no-asterisk-prefix-in-documentation-comments": "off",
 
       "unicorn/prefer-combined-guards": "error",
+      "unicorn/prefer-ternary": "error",
 
       // v78 now reports commented branches too. Keep the remaining warnings
       // until their rewrites are reviewed in #486.
-      "unicorn/prefer-ternary": "warn",
       "unicorn/prefer-logical-operator-over-ternary": "warn",
 
       // Renamed from `prevent-abbreviations` in unicorn v68 (same options).
