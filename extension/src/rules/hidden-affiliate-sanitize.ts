@@ -241,12 +241,8 @@ function clearValue(input: HTMLInputElement): void {
 }
 
 function isFormScopedHidden(input: HTMLInputElement): boolean {
-  if (input.type.toLowerCase() !== "hidden") {
-    return false;
-  }
-  // `input.form` is the live association — works for both the
-  // enclosing-form case and the `form` attribute pointing at a form id.
-  return input.form !== null;
+  // `input.form` covers both enclosing forms and explicit `form` attributes.
+  return input.type.toLowerCase() === "hidden" && input.form !== null;
 }
 
 function tryClearInput(

@@ -160,14 +160,8 @@ function isApplicableHere(
   topFrame: boolean,
   availability: RuleAvailabilityStates,
 ): boolean {
-  if (!availability[rule.id].available) {
-    return false;
-  }
-  // topFrameOnly rules target page-wide concepts (site footer, cookie/newsletter
-  // overlays, per-host URL recipes). Running them in subframes would either
-  // be a no-op (selectors don't match) or actively harmful (duplicate
-  // landmark injection into every iframe's body).
-  return !rule.topFrameOnly || topFrame;
+  // Page-wide rules can duplicate landmarks or act on the wrong page in subframes.
+  return availability[rule.id].available && (!rule.topFrameOnly || topFrame);
 }
 
 function applyEnabled(

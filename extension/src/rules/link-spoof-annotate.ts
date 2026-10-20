@@ -162,13 +162,11 @@ export function detectSpoof(link: HTMLAnchorElement): SpoofTriggers | null {
 function chipText(triggers: SpoofTriggers): string {
   const parts: string[] = [];
   if (triggers.homoglyphWord !== null) {
-    if (triggers.homoglyphSkeleton === null) {
-      parts.push(`mixed-script word "${triggers.homoglyphWord}"`);
-    } else {
-      parts.push(
-        `homoglyph "${triggers.homoglyphWord}" mimics "${triggers.homoglyphSkeleton}"`,
-      );
-    }
+    parts.push(
+      triggers.homoglyphSkeleton === null
+        ? `mixed-script word "${triggers.homoglyphWord}"`
+        : `homoglyph "${triggers.homoglyphWord}" mimics "${triggers.homoglyphSkeleton}"`,
+    );
   }
   if (triggers.textDomain !== null && triggers.hrefHost !== null) {
     parts.push(

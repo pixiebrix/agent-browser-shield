@@ -109,19 +109,17 @@ interface Candidate {
 }
 
 function isSkipped(element: HTMLElement): boolean {
-  if (
+  return (
     element.hasAttribute(FLAGGED_ATTR) ||
     // Skip the chip itself and anything nested inside it so the chip's own
     // text doesn't drive a recursive re-annotation on the next scan.
     element.classList.contains(FLAG_CLASS) ||
-    element.closest(`.${FLAG_CLASS}`)
-  ) {
-    return true;
-  }
-  // If a descendant is already flagged, the matching text lives in that
-  // descendant — annotating the enclosing container as well would be
-  // redundant and noisy.
-  return Boolean(element.querySelector(`[${FLAGGED_ATTR}]`));
+    element.closest(`.${FLAG_CLASS}`) !== null ||
+    // If a descendant is already flagged, the matching text lives in that
+    // descendant — annotating the enclosing container as well would be
+    // redundant and noisy.
+    element.querySelector(`[${FLAGGED_ATTR}]`) !== null
+  );
 }
 
 function findCandidates(root: ParentNode): Candidate[] {

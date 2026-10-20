@@ -57,13 +57,8 @@ function computeEffective(): boolean {
     return false;
   }
   const url = readTopFrameUrl();
-  if (url === null) {
-    // Unknown subframe top-URL — fail open. Silently pausing rules in a
-    // subframe whose tab URL we can't resolve would surprise the user
-    // more than letting rules run.
-    return true;
-  }
-  return !matchesDenylist(url, cachedDenylist);
+  // Keep rules running when a subframe's top URL is unknown.
+  return url === null || !matchesDenylist(url, cachedDenylist);
 }
 
 function notify(): void {
