@@ -24,9 +24,9 @@ export const PLACEHOLDER_ADAPTIVE_PALETTE_DEFAULT = false;
 // value; empty string falls back to the committed default above.
 function resolveDefault(): boolean {
   const raw = process.env.EXTENSION_PLACEHOLDER_ADAPTIVE_PALETTE_DEFAULT;
-  return raw === "true" || raw === "false"
-    ? raw === "true"
-    : PLACEHOLDER_ADAPTIVE_PALETTE_DEFAULT;
+  return (
+    raw === "true" || (raw !== "false" && PLACEHOLDER_ADAPTIVE_PALETTE_DEFAULT)
+  );
 }
 
 export const placeholderAdaptivePaletteStorage =
