@@ -20,9 +20,7 @@ export const OPTIONS_BUTTON_ENABLED_DEFAULT = false;
 // the committed default above.
 function resolveDefault(): boolean {
   const raw = process.env.EXTENSION_OPTIONS_BUTTON_DEFAULT;
-  return raw === "true" || raw === "false"
-    ? raw === "true"
-    : OPTIONS_BUTTON_ENABLED_DEFAULT;
+  return raw === "true" || (raw !== "false" && OPTIONS_BUTTON_ENABLED_DEFAULT);
 }
 
 export const optionsButtonStorage = createChromeStorageValue<boolean>({

@@ -126,10 +126,7 @@ export default tseslint.config(
 
       "unicorn/prefer-combined-guards": "error",
       "unicorn/prefer-ternary": "error",
-
-      // v78 now reports commented branches too. Keep the remaining warnings
-      // until their rewrites are reviewed in #486.
-      "unicorn/prefer-logical-operator-over-ternary": "warn",
+      "unicorn/prefer-logical-operator-over-ternary": "error",
 
       // Renamed from `prevent-abbreviations` in unicorn v68 (same options).
       "unicorn/name-replacements": [
