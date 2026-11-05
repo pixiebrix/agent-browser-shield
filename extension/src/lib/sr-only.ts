@@ -30,6 +30,9 @@ export const SR_ONLY_INLINE_STYLE: Partial<CSSStyleDeclaration> = {
   width: "1px",
   height: "1px",
   overflow: "hidden",
+  // `clip` is deprecated in favor of `clip-path`, but the canonical SR-only
+  // idiom still ships both so the envelope matches legacy content exactly.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   clip: "rect(0 0 0 0)",
   clipPath: "inset(50%)",
   whiteSpace: "nowrap",
